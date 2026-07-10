@@ -31,7 +31,15 @@ func New() *Roller {
 // The same seed always produces the same sequence of rolls.
 func NewWithSeed(seed uint64) *Roller {
 	rng := rand.New(rand.NewPCG(seed, seed^0x9e3779b97f4a7c15))
-	return &Roller{d6: func() int { return rng.IntN(6) + 1 }}
+	return NewSource(func() int { return rng.IntN(6) + 1 })
+}
+
+// NewSource returns a Roller that draws each die from next, which must return
+// values in 1..6. It lets callers supply a custom die source — a replay log or
+// a scripted sequence for deterministic testing — in place of the built-in
+// generator.
+func NewSource(next func() int) *Roller {
+	return &Roller{d6: next}
 }
 
 // Die rolls a single D6, returning 1..6.

@@ -38,11 +38,23 @@ Tooling (go, go-task, poppler's `pdftotext`) is pinned in `Brewfile`.
   `Flux`/`GoodFlux`/`BadFlux`, `HalfDie`, even distributions), the roll-low `Check`/`Resolve`
   mechanic (Mod adjusts the Target, DM adjusts the roll), and a `Parse`/`Eval` for chart
   notation like `2D-2` and `Flux`. Build generators on top of this rather than calling
-  `math/rand` directly.
+  `math/rand` directly. `dice.NewSource(func() int)` supplies a custom/scripted die source,
+  which is how cross-package tests pin exact rolls.
+- `internal/ehex/` — Traveller extended-hex digits (0-9, A-Z omitting I and O). `Digit`
+  encodes, `ParseDigit` decodes. Every UWP characteristic is an eHex value.
+- `internal/uwp/` — the `Profile` type and its `String` in StSAHPGL-T form (e.g. `A788899-C`).
+- `internal/worldgen/` — mainworld UWP creation (Book 3 pp. 16-25). The characteristic
+  formulas are **pure functions** taking their rolls as arguments (test them at their edges);
+  `Generate` rolls in checklist order and composes them. Validated against the book's Regina
+  worked example (golden test → `A788899-C`). Fold new generators into this shape.
+- `cmd/worldgen/` — CLI: `go run ./cmd/worldgen -n 10 -seed 42`.
+
+When adding a generator, transcribe the rule tables/formulas from `docs/reference/` and lock
+them with a golden test built from a worked example in the books.
 
 ## Current state
 
-Early. Beyond the dice engine the repo contains only the source PDFs (`docs/pdf/`), a
+Early. Beyond the engine (dice + worldgen) the repo contains only the source PDFs (`docs/pdf/`), a
 README, and `.gitignore`.
 
 - **Source of truth** for rules is `docs/pdf/` (T5 Core Rules Books 1–3 + Read Me). These PDFs
