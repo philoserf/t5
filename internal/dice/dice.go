@@ -1,0 +1,76 @@
+// Package dice implements the Traveller5 (T5) dice mechanics.
+//
+// Traveller uses only six-sided dice (D6). The notation nD means "roll n
+// six-sided dice and sum them"; an optional +k or -k adjusts the total.
+// Beyond plain sums, T5 defines Flux (D-D, ranging -5..+5), its Good and Bad
+// variants, the half-die (D/2), and several "even distributions" that contort
+// D6 results into ranges like 1-9 or 0-9.
+//
+// All randomness flows through a Roller so callers can seed it for
+// reproducible results. See Book 1, "Traveller Uses Dice" (pp. 18-19) and the
+// Dice Appendix (pp. 253-260).
+package dice
+
+import "math/rand/v2"
+
+// A Roller is the single source of die rolls. Construct one with New (auto
+// seeded) or NewWithSeed (deterministic, for tests and reproducible worlds).
+// The zero value is not usable.
+type Roller struct {
+	// d6 returns a single die result in 1..6. Held as a func so tests can
+	// substitute a scripted sequence.
+	d6 func() int
+}
+
+// New returns a Roller seeded from the runtime's random source.
+func New() *Roller {
+	return NewWithSeed(rand.Uint64())
+}
+
+// NewWithSeed returns a Roller whose rolls are fully determined by seed.
+// The same seed always produces the same sequence of rolls.
+func NewWithSeed(seed uint64) *Roller {
+	rng := rand.New(rand.NewPCG(seed, seed^0x9e3779b97f4a7c15))
+	return &Roller{d6: func() int { return rng.IntN(6) + 1 }}
+}
+
+// Die rolls a single D6, returning 1..6.
+func (r *Roller) Die() int {
+	return r.d6()
+}
+
+// Dice rolls nD: the sum of n six-sided dice, ranging n..6n. It returns 0 for
+// n <= 0.
+func (r *Roller) Dice(n int) int {
+	sum := 0
+	for range n {
+		sum += r.d6()
+	}
+	return sum
+}
+
+// Flux rolls the Flux die: one die minus a second, ranging -5..+5. It is
+// identical in output to 2D-7 and to D-D. By convention the first (light) die
+// is positive and the second (dark) die is subtracted.
+func (r *Roller) Flux() int {
+	return r.d6() - r.d6()
+}
+
+// GoodFlux rolls two dice and subtracts the smaller from the larger, ranging
+// 0..+5 (0 when the dice are equal).
+func (r *Roller) GoodFlux() int {
+	a, b := r.d6(), r.d6()
+	return max(a, b) - min(a, b)
+}
+
+// BadFlux rolls two dice and subtracts the larger from the smaller, ranging
+// -5..0 (0 when the dice are equal).
+func (r *Roller) BadFlux() int {
+	return -r.GoodFlux()
+}
+
+// HalfDie rolls D/2, rounding up (always in the rolling player's favor), and
+// so returns 1..3.
+func (r *Roller) HalfDie() int {
+	return (r.d6() + 1) / 2
+}
