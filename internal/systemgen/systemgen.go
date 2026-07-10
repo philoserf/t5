@@ -3,8 +3,8 @@
 // on internal/worldgen for the mainworld and follows Book 3's Master System
 // Generation Checklist and the System Generation card (pp. 16-17, 28).
 //
-// Orbital placement and per-world detailing are deferred; this generates the
-// system's census and stellar makeup.
+// Secondary stars are placed in orbit bands; per-world detailing (worlds in
+// orbits, habitable zone) is deferred.
 package systemgen
 
 import (
@@ -83,8 +83,11 @@ func Generate(r *dice.Roller) System {
 	s.Belts = belts(r)
 	s.Worlds = 1 + s.GasGiants + s.Belts + r.Dice(2)
 
-	// Place the secondary stars in their orbit bands. Rolled last so adding
-	// placement leaves earlier results unchanged for a given seed.
+	// Place the secondary stars in their orbit bands. Rolled after the counts
+	// so placement does not shift the stars and counts already set for this
+	// system. (Across multiple systems from one roller these rolls do advance
+	// the shared stream, as any added roll would; each system stays
+	// reproducible for a given seed and version.)
 	if s.Close != nil {
 		s.CloseOrbit = closeOrbit(r)
 	}
