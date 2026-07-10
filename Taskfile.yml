@@ -11,6 +11,22 @@ tasks:
     cmds:
       - brew bundle
 
+  extract:
+    desc: Extract the local rulebook PDFs to text reference (git-ignored, not distributed)
+    dir: docs
+    cmds:
+      - mkdir -p reference
+      - |
+        shopt -s nullglob 2>/dev/null || true
+        for pdf in pdf/*.pdf; do
+          out="reference/$(basename "$pdf" .pdf).txt"
+          pdftotext -layout "$pdf" "$out" && echo "extracted $out"
+        done
+    sources:
+      - pdf/*.pdf
+    generates:
+      - reference/*.txt
+
   build:
     desc: Build all packages
     cmds:

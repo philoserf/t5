@@ -1,8 +1,12 @@
 # Go
 /t5
 
+# go-task up-to-date cache
+/.task/
+
 # macOS
 .DS_Store
 
-# Source rulebooks — not distributed (see README)
+# Source rulebooks and their extracted text — copyrighted, not distributed (see README)
 /docs/pdf/*.pdf
+/docs/reference/
