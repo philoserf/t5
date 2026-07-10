@@ -27,9 +27,9 @@ Example output:
 
 ```
 $ go run ./cmd/worldgen -n 3 -seed 42
-D665656-7
-C7A5958-A
-B160113-B
+D665656-7  Ga Ni Ag Ri
+C7A5958-A  Fl Hi In
+B160113-B  De Lo
 
 $ go run ./cmd/systemgen -n 1 -seed 7
 Primary: F8 V
