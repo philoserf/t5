@@ -18,7 +18,7 @@ const (
 //     harder.
 //
 // The check succeeds when the adjusted roll is less than or equal to the
-// adjusted Target. A zero Dice value defaults to Average (2D). See Book 1,
+// adjusted Target. A Dice count of zero or less defaults to Average (2D). See Book 1,
 // "Mods Versus DMs" (p. 19).
 type Check struct {
 	Dice   int
@@ -41,7 +41,7 @@ type CheckResult struct {
 // Resolve rolls the check and reports the result.
 func (r *Roller) Resolve(c Check) CheckResult {
 	n := c.Dice
-	if n == 0 {
+	if n <= 0 {
 		n = Average
 	}
 	roll := r.Dice(n)

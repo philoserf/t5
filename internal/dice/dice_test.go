@@ -5,6 +5,9 @@ import "testing"
 // scripted returns a Roller whose dice come from vals in order, cycling when
 // exhausted, for exact-outcome tests.
 func scripted(vals ...int) *Roller {
+	if len(vals) == 0 {
+		panic("scripted: needs at least one die value")
+	}
 	i := 0
 	return &Roller{d6: func() int {
 		v := vals[i%len(vals)]
