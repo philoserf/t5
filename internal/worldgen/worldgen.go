@@ -112,6 +112,9 @@ func law(flux, gov int) int {
 // characteristic, per the World Creation card, and never falls below 0.
 func techLevel(oneD int, sp byte, size, atm, hyd, pop, gov int) int {
 	tl := oneD
+	// D and E carry no Tech Level modifier. The card also gives spaceports
+	// (F) a +1, but mainworld generation only ever yields A-E or X; spaceports
+	// come from the non-mainworld table, so F is intentionally absent here.
 	switch sp {
 	case 'A':
 		tl += 6
@@ -119,8 +122,6 @@ func techLevel(oneD int, sp byte, size, atm, hyd, pop, gov int) int {
 		tl += 4
 	case 'C':
 		tl += 2
-	case 'F':
-		tl++
 	case 'X':
 		tl -= 4
 	}

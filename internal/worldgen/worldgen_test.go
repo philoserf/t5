@@ -78,6 +78,15 @@ func TestTechLevel(t *testing.T) {
 	if got := techLevel(1, 'X', 7, 8, 8, 8, 13); got != 0 {
 		t.Errorf("techLevel floored = %d, want 0", got)
 	}
+	// Each starport letter's TL modifier, with a neutral world (size 6, atm 6,
+	// hyd 6, pop 6, gov 6 contribute nothing) so only the starport shows.
+	starportTL := map[byte]int{'A': 6, 'B': 4, 'C': 2, 'D': 0, 'E': 0, 'X': -4}
+	for sp, mod := range starportTL {
+		want := max(3+mod, 0) // 1D=3 baseline
+		if got := techLevel(3, sp, 6, 6, 6, 6, 6); got != want {
+			t.Errorf("techLevel starport %q = %d, want %d", sp, got, want)
+		}
+	}
 }
 
 func TestRollSizeReroll(t *testing.T) {
