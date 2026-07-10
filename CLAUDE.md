@@ -10,16 +10,36 @@ A multipurpose Traveller5 (T5) workspace holding three kinds of work in one plac
 - **Rules reference** — the T5 core rulebooks extracted from PDF to markdown, then summarized and synthesized.
 - **Worldbuilding** — setting notes and fiction that draw on the above.
 
-Go module path (when `go mod init` is eventually run): `github.com/philoserf/t5`.
+Go module path: `github.com/philoserf/t5`.
 
 This directory is a git repo sitting under the `philoserf` umbrella workspace
 (`source/philoserf/`), which discovers and syncs it via `gh repo list philoserf`.
 
+## Commands
+
+```sh
+go test ./...            # run all tests
+go test ./internal/dice  # test one package
+go vet ./...             # vet
+gofmt -l internal/       # list unformatted files (should print nothing)
+```
+
+There is no Taskfile yet — add one here when the workflow needs more than raw `go`.
+
+## Code
+
+- `internal/dice/` — the T5 dice engine, faithful to Book 1 pp. 18-19 and the Dice
+  Appendix pp. 253-260. A `Roller` is the single, seedable source of randomness (inject a
+  scripted `d6` for deterministic tests, as the tests do). It provides the primitives (`Dice`,
+  `Flux`/`GoodFlux`/`BadFlux`, `HalfDie`, even distributions), the roll-low `Check`/`Resolve`
+  mechanic (Mod adjusts the Target, DM adjusts the roll), and a `Parse`/`Eval` for chart
+  notation like `2D-2` and `Flux`. Build generators on top of this rather than calling
+  `math/rand` directly.
+
 ## Current state
 
-Early. The repo contains only the source PDFs (`docs/pdf/`), a README, and `.gitignore`.
-There is no Go module, Taskfile, or build tooling yet — do not reference commands that
-do not exist. Add them here as they land.
+Early. Beyond the dice engine the repo contains only the source PDFs (`docs/pdf/`), a
+README, and `.gitignore`.
 
 - **Source of truth** for rules is `docs/pdf/` (T5 Core Rules Books 1–3 + Read Me). These PDFs
   are **git-ignored and not distributed** (copyrighted Far Future Enterprises material) — each
