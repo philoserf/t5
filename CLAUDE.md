@@ -52,7 +52,8 @@ Tooling (go, go-task, poppler's `pdftotext`) is pinned in `Brewfile`.
   grid does not survive text extraction), gas giants, planetoid belts, world count, and the
   mainworld via `worldgen`. `classify` is the pure table lookup; `rollStar`/`Generate` roll and
   compose. Orbital placement and per-world detailing are deferred.
-- `cmd/worldgen/`, `cmd/systemgen/` — CLIs: `go run ./cmd/systemgen -n 10 -seed 42`.
+- `cmd/worldgen/`, `cmd/systemgen/` — CLIs, each taking `-n` and `-seed`:
+  `go run ./cmd/worldgen -n 10 -seed 42` and `go run ./cmd/systemgen -n 10 -seed 42`.
 
 When adding a generator, transcribe the rule tables/formulas from `docs/reference/` and lock
 them with a golden test built from a worked example in the books.

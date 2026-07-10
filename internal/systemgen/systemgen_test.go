@@ -1,6 +1,7 @@
 package systemgen
 
 import (
+	"reflect"
 	"testing"
 
 	"github.com/philoserf/t5/internal/dice"
@@ -35,7 +36,9 @@ func TestGenerateDeterministic(t *testing.T) {
 	for seed := uint64(1); seed <= 200; seed++ {
 		a := Generate(dice.NewWithSeed(seed))
 		b := Generate(dice.NewWithSeed(seed))
-		if a.String() != b.String() {
+		// Compare the generated values, not their formatting, so a future
+		// String() tweak can't fail a determinism test.
+		if !reflect.DeepEqual(a, b) {
 			t.Fatalf("seed %d not reproducible:\n%s\n---\n%s", seed, a, b)
 		}
 		if a.Primary.Type == "" {
@@ -54,6 +57,12 @@ func TestGenerateDeterministic(t *testing.T) {
 		// A companion only exists when its star does.
 		if a.CloseCompanion != nil && a.Close == nil {
 			t.Fatalf("seed %d: close companion without a close star", seed)
+		}
+		if a.NearCompanion != nil && a.Near == nil {
+			t.Fatalf("seed %d: near companion without a near star", seed)
+		}
+		if a.FarCompanion != nil && a.Far == nil {
+			t.Fatalf("seed %d: far companion without a far star", seed)
 		}
 	}
 }
