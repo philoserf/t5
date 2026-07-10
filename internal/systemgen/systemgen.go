@@ -3,8 +3,8 @@
 // on internal/worldgen for the mainworld and follows Book 3's Master System
 // Generation Checklist and the System Generation card (pp. 16-17, 28).
 //
-// Orbital placement and per-world detailing are deferred; this generates the
-// system's census and stellar makeup.
+// Secondary stars are placed in orbit bands; per-world detailing (worlds in
+// orbits, habitable zone) is deferred.
 package systemgen
 
 import (
@@ -32,6 +32,14 @@ type System struct {
 	NearCompanion    *Star
 	Far              *Star
 	FarCompanion     *Star
+
+	// Orbit numbers of the secondary stars around the Primary (Book 3 p. 28),
+	// valid only when the corresponding star is present. A companion orbits
+	// inside its own star's orbit and has no separate number; the Primary's
+	// companion sits inside Orbit 0.
+	CloseOrbit int
+	NearOrbit  int
+	FarOrbit   int
 
 	GasGiants int
 	Belts     int
@@ -74,8 +82,29 @@ func Generate(r *dice.Roller) System {
 	s.GasGiants = gasGiants(r)
 	s.Belts = belts(r)
 	s.Worlds = 1 + s.GasGiants + s.Belts + r.Dice(2)
+
+	// Place the secondary stars in their orbit bands. Rolled after the counts
+	// so placement does not shift the stars and counts already set for this
+	// system. (Across multiple systems from one roller these rolls do advance
+	// the shared stream, as any added roll would; each system stays
+	// reproducible for a given seed and version.)
+	if s.Close != nil {
+		s.CloseOrbit = closeOrbit(r)
+	}
+	if s.Near != nil {
+		s.NearOrbit = nearOrbit(r)
+	}
+	if s.Far != nil {
+		s.FarOrbit = farOrbit(r)
+	}
 	return s
 }
+
+// closeOrbit is 1D-1 (orbits 0-5); nearOrbit is 5+1D (orbits 6-11); farOrbit is
+// 11+1D (orbits 12-17). Book 3 p. 28, "Place Stars in Orbits".
+func closeOrbit(r *dice.Roller) int { return r.Die() - 1 }
+func nearOrbit(r *dice.Roller) int  { return 5 + r.Die() }
+func farOrbit(r *dice.Roller) int   { return 11 + r.Die() }
 
 // gasGiants is 2D/2-2, dropping the fraction and flooring at zero (range 0-4).
 func gasGiants(r *dice.Roller) int {
@@ -91,19 +120,26 @@ func belts(r *dice.Roller) int {
 func (s System) String() string {
 	var b strings.Builder
 	fmt.Fprintf(&b, "Primary: %s\n", s.Primary)
+	// orbit is -1 for stars without a numbered orbit (companions).
 	for _, e := range []struct {
 		label string
 		star  *Star
+		orbit int
 	}{
-		{"Primary Companion", s.PrimaryCompanion},
-		{"Close", s.Close},
-		{"Close Companion", s.CloseCompanion},
-		{"Near", s.Near},
-		{"Near Companion", s.NearCompanion},
-		{"Far", s.Far},
-		{"Far Companion", s.FarCompanion},
+		{"Primary Companion", s.PrimaryCompanion, -1},
+		{"Close", s.Close, s.CloseOrbit},
+		{"Close Companion", s.CloseCompanion, -1},
+		{"Near", s.Near, s.NearOrbit},
+		{"Near Companion", s.NearCompanion, -1},
+		{"Far", s.Far, s.FarOrbit},
+		{"Far Companion", s.FarCompanion, -1},
 	} {
-		if e.star != nil {
+		if e.star == nil {
+			continue
+		}
+		if e.orbit >= 0 {
+			fmt.Fprintf(&b, "%s: %s (Orbit %d)\n", e.label, *e.star, e.orbit)
+		} else {
 			fmt.Fprintf(&b, "%s: %s\n", e.label, *e.star)
 		}
 	}
