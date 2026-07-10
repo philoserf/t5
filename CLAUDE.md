@@ -52,15 +52,18 @@ Tooling (go, go-task, poppler's `pdftotext`) is pinned in `Brewfile`.
   grid does not survive text extraction), gas giants, planetoid belts, world count, and the
   mainworld via `worldgen`. `classify` is the pure table lookup; `rollStar`/`Generate` roll and
   compose. Orbital placement and per-world detailing are deferred.
-- `cmd/worldgen/`, `cmd/systemgen/` — CLIs, each taking `-n` and `-seed`:
-  `go run ./cmd/worldgen -n 10 -seed 42` and `go run ./cmd/systemgen -n 10 -seed 42`.
+- `internal/chargen/` — character creation (Book 1, Characteristics pp. 47+). Generates the
+  six-characteristic UPP (Str/Dex/End/Int/Edu/Soc, each 2D, eHex) and offers `Check` for the
+  Check Characteristic mechanic. Careers are the deferred next stage.
+- `cmd/worldgen/`, `cmd/systemgen/`, `cmd/chargen/` — CLIs, each taking `-n` and `-seed`, e.g.
+  `go run ./cmd/systemgen -n 10 -seed 42`.
 
 When adding a generator, transcribe the rule tables/formulas from `docs/reference/` and lock
 them with a golden test built from a worked example in the books.
 
 ## Current state
 
-Early. Beyond the engine (dice + worldgen + systemgen) the repo contains only the source PDFs (`docs/pdf/`), a
+Early. Beyond the engine (dice + worldgen + systemgen + chargen) the repo contains only the source PDFs (`docs/pdf/`), a
 README, and `.gitignore`.
 
 - **Source of truth** for rules is `docs/pdf/` (T5 Core Rules Books 1–3 + Read Me). These PDFs
