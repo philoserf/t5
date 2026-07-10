@@ -17,14 +17,18 @@ This directory is a git repo sitting under the `philoserf` umbrella workspace
 
 ## Commands
 
+Machine-level workflow runs through `task` (go-task, version 3; see `Taskfile.yml`):
+
 ```sh
-go test ./...            # run all tests
-go test ./internal/dice  # test one package
-go vet ./...             # vet
-gofmt -l internal/       # list unformatted files (should print nothing)
+task            # = task test
+task check      # gofmt -l, go vet, go test — the pre-commit gate
+task test       # go test ./...
+task cover      # go test -cover ./...
+task deps       # brew bundle — install tooling from the Brewfile
 ```
 
-There is no Taskfile yet — add one here when the workflow needs more than raw `go`.
+Or drive `go` directly (e.g. `go test ./internal/dice` for a single package).
+Tooling (go, go-task, poppler's `pdftotext`) is pinned in `Brewfile`.
 
 ## Code
 

@@ -1,0 +1,49 @@
+version: "3"
+
+tasks:
+  default:
+    desc: Run the tests
+    cmds:
+      - task: test
+
+  deps:
+    desc: Install tooling from the Brewfile
+    cmds:
+      - brew bundle
+
+  build:
+    desc: Build all packages
+    cmds:
+      - go build ./...
+
+  test:
+    desc: Run the tests
+    cmds:
+      - go test ./...
+
+  cover:
+    desc: Run the tests with a coverage summary
+    cmds:
+      - go test -cover ./...
+
+  vet:
+    desc: Vet the code
+    cmds:
+      - go vet ./...
+
+  fmt:
+    desc: Format the code
+    cmds:
+      - gofmt -w .
+
+  tidy:
+    desc: Tidy the module files
+    cmds:
+      - go mod tidy
+
+  check:
+    desc: Formatting, vet, and tests — the pre-commit gate
+    cmds:
+      - gofmt -l .
+      - go vet ./...
+      - go test ./...
