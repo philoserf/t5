@@ -2,18 +2,10 @@ package dice
 
 import "testing"
 
-// scripted returns a Roller whose dice come from vals in order, cycling when
-// exhausted, for exact-outcome tests.
+// scripted is a package-local alias for NewScripted, kept for the many
+// exact-outcome tests below.
 func scripted(vals ...int) *Roller {
-	if len(vals) == 0 {
-		panic("scripted: needs at least one die value")
-	}
-	i := 0
-	return &Roller{d6: func() int {
-		v := vals[i%len(vals)]
-		i++
-		return v
-	}}
+	return NewScripted(vals...)
 }
 
 func TestDie(t *testing.T) {

@@ -40,6 +40,17 @@ func TestParseDigitCaseInsensitive(t *testing.T) {
 	}
 }
 
+func TestFormat(t *testing.T) {
+	if got := Format(12); got != "C" {
+		t.Errorf("Format(12) = %q, want C", got)
+	}
+	for _, v := range []int{-1, Max + 1, 40} {
+		if got := Format(v); got != "?" {
+			t.Errorf("Format(%d) = %q, want ? (must not panic)", v, got)
+		}
+	}
+}
+
 func TestDigitPanicsOutOfRange(t *testing.T) {
 	for _, v := range []int{-1, Max + 1} {
 		func() {

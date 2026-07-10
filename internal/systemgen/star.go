@@ -39,7 +39,15 @@ type spectralRow struct {
 // column indexes sizes by spectral type.
 var column = map[string]int{"O": 0, "B": 1, "A": 2, "F": 3, "G": 4, "K": 5, "M": 6}
 
-// spectralTable is indexed by Flux+6, covering Flux -6..+8 (Book 3 p. 28).
+// spectralTable is indexed by Flux+6, covering Flux -6..+8. Transcribed from
+// the Spectral Type and Size table on Book 3 p. 28 and verified against a
+// rendered image of that page (Flux -1 is type G, not F).
+//
+// Note: the book's Regina worked example states "Primary Spectral Type = Flux
+// = -1 = F", which disagrees with this table (a known erratum in the example —
+// its stated Flux is inconsistent with the table it references). The printed
+// table is the generation rule and is authoritative here; do not "correct" the
+// letters to match the example.
 var spectralTable = []spectralRow{
 	{"OB", [7]string{"Ia", "Ia", "Ia", "II", "II", "II", "II"}},
 	{"A", [7]string{"Ia", "Ia", "Ia", "II", "II", "II", "II"}},

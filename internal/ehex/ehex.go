@@ -28,6 +28,16 @@ func Digit(v int) byte {
 	return Alphabet[v]
 }
 
+// Format returns the eHex digit for v as a string, or "?" when v is outside
+// 0..Max. Unlike Digit it never panics, so it is safe on display paths — String
+// methods, logging — where the value may come from outside the generators.
+func Format(v int) string {
+	if v < 0 || v > Max {
+		return "?"
+	}
+	return string(Alphabet[v])
+}
+
 // ParseDigit returns the value of a single eHex character, case-insensitively.
 // It reports an error for any character not in the alphabet.
 func ParseDigit(c byte) (int, error) {

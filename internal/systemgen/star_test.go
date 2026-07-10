@@ -1,19 +1,6 @@
 package systemgen
 
-import (
-	"testing"
-
-	"github.com/philoserf/t5/internal/dice"
-)
-
-func scriptedRoller(vals ...int) *dice.Roller {
-	i := 0
-	return dice.NewSource(func() int {
-		v := vals[i%len(vals)]
-		i++
-		return v
-	})
-}
+import "testing"
 
 func TestStarString(t *testing.T) {
 	cases := []struct {

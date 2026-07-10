@@ -25,17 +25,20 @@ type Profile struct {
 // String renders the profile in standard UWP notation: the starport letter,
 // the six eHex characteristic digits, a hyphen, and the eHex Tech Level —
 // for example "A788899-C".
+// A characteristic outside eHex range renders as "?" rather than panicking:
+// Profile is an exported model whose fields a caller may set directly, and a
+// String method must not crash.
 func (p Profile) String() string {
 	var b strings.Builder
 	b.Grow(9)
 	b.WriteByte(p.Starport)
-	b.WriteByte(ehex.Digit(p.Size))
-	b.WriteByte(ehex.Digit(p.Atmosphere))
-	b.WriteByte(ehex.Digit(p.Hydrographics))
-	b.WriteByte(ehex.Digit(p.Population))
-	b.WriteByte(ehex.Digit(p.Government))
-	b.WriteByte(ehex.Digit(p.Law))
+	b.WriteString(ehex.Format(p.Size))
+	b.WriteString(ehex.Format(p.Atmosphere))
+	b.WriteString(ehex.Format(p.Hydrographics))
+	b.WriteString(ehex.Format(p.Population))
+	b.WriteString(ehex.Format(p.Government))
+	b.WriteString(ehex.Format(p.Law))
 	b.WriteByte('-')
-	b.WriteByte(ehex.Digit(p.TechLevel))
+	b.WriteString(ehex.Format(p.TechLevel))
 	return b.String()
 }
