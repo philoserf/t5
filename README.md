@@ -34,7 +34,7 @@ B160113-B  De Lo
 $ go run ./cmd/systemgen -n 1 -seed 7
 Primary: F8 V
 Primary Companion: M6 VI
-Near: F5 VI
+Near: F5 VI (Orbit 8)
 Gas Giants: 0  Belts: 0  Worlds: 11
 Mainworld: B6667B8-9
 ```
