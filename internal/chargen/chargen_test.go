@@ -46,6 +46,20 @@ func TestCharacteristicString(t *testing.T) {
 	}
 }
 
+func TestScorePanicsOutOfRange(t *testing.T) {
+	c := Generate(scriptedRoller(4, 4))
+	for _, ch := range []Characteristic{-1, count, 99} {
+		func() {
+			defer func() {
+				if recover() == nil {
+					t.Errorf("Score(%d) did not panic", ch)
+				}
+			}()
+			c.Score(ch)
+		}()
+	}
+}
+
 func TestCheck(t *testing.T) {
 	// Endurance 8; a 2D roll of 7 succeeds (7 <= 8).
 	c := Generate(scriptedRoller(4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4)) // all 8s

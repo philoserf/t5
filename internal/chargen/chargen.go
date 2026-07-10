@@ -8,6 +8,7 @@
 package chargen
 
 import (
+	"fmt"
 	"strings"
 
 	"github.com/philoserf/t5/internal/dice"
@@ -55,8 +56,13 @@ func Generate(r *dice.Roller) Character {
 	return c
 }
 
-// Score returns the value of one characteristic.
+// Score returns the value of one characteristic. It panics on a Characteristic
+// outside the defined set — an invalid constant is a programming error, and a
+// clear panic beats masking the bug behind a plausible-looking zero score.
 func (c Character) Score(ch Characteristic) int {
+	if ch < 0 || ch >= count {
+		panic(fmt.Sprintf("chargen: invalid characteristic %d", int(ch)))
+	}
 	return c.scores[ch]
 }
 
