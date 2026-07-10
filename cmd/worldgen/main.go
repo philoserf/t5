@@ -10,6 +10,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"strings"
 
 	"github.com/philoserf/t5/internal/dice"
 	"github.com/philoserf/t5/internal/worldgen"
@@ -26,6 +27,11 @@ func main() {
 	}
 
 	for range *n {
-		fmt.Println(worldgen.Generate(r))
+		p := worldgen.Generate(r)
+		if tc := worldgen.TradeClassifications(p); len(tc) > 0 {
+			fmt.Printf("%s  %s\n", p, strings.Join(tc, " "))
+		} else {
+			fmt.Println(p)
+		}
 	}
 }

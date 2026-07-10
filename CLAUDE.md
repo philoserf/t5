@@ -47,6 +47,8 @@ Tooling (go, go-task, poppler's `pdftotext`) is pinned in `Brewfile`.
   formulas are **pure functions** taking their rolls as arguments (test them at their edges);
   `Generate` rolls in checklist order and composes them. Validated against the book's Regina
   worked example (golden test → `A788899-C`). Fold new generators into this shape.
+  `TradeClassifications` returns the UWP-determinable trade codes (Book 3 p. 25); codes needing
+  climate, orbit, mainworld status, or referee input are intentionally excluded.
 - `internal/systemgen/` — star system creation (Book 3 pp. 16-17, 28): the stars (spectral
   type/decimal/size via the p. 28 table, transcribed from a rendered image since the dense
   grid does not survive text extraction), gas giants, planetoid belts, world count, and the
