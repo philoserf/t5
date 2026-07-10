@@ -9,24 +9,15 @@
 package main
 
 import (
-	"flag"
 	"fmt"
 
 	"github.com/philoserf/t5/internal/chargen"
-	"github.com/philoserf/t5/internal/dice"
+	"github.com/philoserf/t5/internal/cli"
 )
 
 func main() {
-	n := flag.Int("n", 1, "number of characters to generate")
-	seed := flag.Uint64("seed", 0, "random seed; 0 uses a fresh random seed")
-	flag.Parse()
-
-	r := dice.New()
-	if *seed != 0 {
-		r = dice.NewWithSeed(*seed)
-	}
-
-	for range *n {
+	n, r := cli.SeededRoller("characters")
+	for range n {
 		fmt.Println(chargen.Generate(r))
 	}
 }

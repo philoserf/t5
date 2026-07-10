@@ -42,6 +42,22 @@ func NewSource(next func() int) *Roller {
 	return &Roller{d6: next}
 }
 
+// NewScripted returns a Roller that yields the given die faces in order,
+// cycling back to the start once they are exhausted. It is a convenience over
+// NewSource for deterministic tests and replay, and panics if no faces are
+// given.
+func NewScripted(faces ...int) *Roller {
+	if len(faces) == 0 {
+		panic("dice: NewScripted needs at least one face")
+	}
+	i := 0
+	return NewSource(func() int {
+		v := faces[i%len(faces)]
+		i++
+		return v
+	})
+}
+
 // Die rolls a single D6, returning 1..6.
 func (r *Roller) Die() int {
 	return r.d6()

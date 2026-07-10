@@ -91,22 +91,22 @@ func TestTechLevel(t *testing.T) {
 
 func TestRollSizeReroll(t *testing.T) {
 	// 2D = 12 -> would be 10, so reroll as 1D+9. 1D = 3 -> size 12.
-	if got := rollSize(scriptedRoller(6, 6, 3)); got != 12 {
+	if got := rollSize(dice.NewScripted(6, 6, 3)); got != 12 {
 		t.Errorf("rollSize reroll = %d, want 12", got)
 	}
 	// 2D = 9 -> size 7, no reroll.
-	if got := rollSize(scriptedRoller(4, 5)); got != 7 {
+	if got := rollSize(dice.NewScripted(4, 5)); got != 7 {
 		t.Errorf("rollSize = %d, want 7", got)
 	}
 }
 
 func TestRollPopulationReroll(t *testing.T) {
 	// 2D = 12 -> would be 10, so reroll as 2D+3. 2D = 4 -> population 7.
-	if got := rollPopulation(scriptedRoller(6, 6, 2, 2)); got != 7 {
+	if got := rollPopulation(dice.NewScripted(6, 6, 2, 2)); got != 7 {
 		t.Errorf("rollPopulation reroll = %d, want 7", got)
 	}
 	// 2D = 10 -> population 8, no reroll.
-	if got := rollPopulation(scriptedRoller(5, 5)); got != 8 {
+	if got := rollPopulation(dice.NewScripted(5, 5)); got != 8 {
 		t.Errorf("rollPopulation = %d, want 8", got)
 	}
 }
@@ -124,18 +124,7 @@ func TestGenerateRegina(t *testing.T) {
 		3, 3, // Law Flux = 0 -> 9
 		6, // Tech Level 1D = 6, +6 (Starport A) -> 12
 	}
-	if got := Generate(scriptedRoller(rolls...)).String(); got != "A788899-C" {
+	if got := Generate(dice.NewScripted(rolls...)).String(); got != "A788899-C" {
 		t.Fatalf("Generate (Regina) = %q, want A788899-C", got)
 	}
-}
-
-// scriptedRoller returns a Roller drawing from vals in order, cycling once
-// exhausted, so a test can pin an exact sequence of die faces.
-func scriptedRoller(vals ...int) *dice.Roller {
-	i := 0
-	return dice.NewSource(func() int {
-		v := vals[i%len(vals)]
-		i++
-		return v
-	})
 }

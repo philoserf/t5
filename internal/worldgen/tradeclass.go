@@ -68,7 +68,14 @@ func TradeClassifications(p uwp.Profile) []string {
 }
 
 // allows reports whether value v satisfies an allowed eHex-digit set. An empty
-// set allows anything.
+// set allows anything; a value outside eHex range matches no specific set (and
+// never panics, so the exported classifier is safe on hand-built profiles).
 func allows(set string, v int) bool {
-	return set == "" || strings.IndexByte(set, ehex.Digit(v)) >= 0
+	if set == "" {
+		return true
+	}
+	if v < 0 || v > ehex.Max {
+		return false
+	}
+	return strings.IndexByte(set, ehex.Digit(v)) >= 0
 }

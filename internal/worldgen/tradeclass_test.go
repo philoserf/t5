@@ -18,6 +18,17 @@ func TestTradeClassificationsRegina(t *testing.T) {
 	}
 }
 
+func TestTradeClassificationsOutOfRangeSafe(t *testing.T) {
+	// A hand-built Profile with an out-of-range value must not panic; the
+	// value simply matches no constrained classification.
+	got := TradeClassifications(uwp.Profile{Size: 7, Atmosphere: 8, Hydrographics: 8, Population: 40})
+	for _, code := range got {
+		if code == "Ph" || code == "Hi" {
+			t.Fatalf("out-of-range population matched a population class: %v", got)
+		}
+	}
+}
+
 func TestTradeClassifications(t *testing.T) {
 	cases := []struct {
 		name string

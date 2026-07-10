@@ -6,15 +6,6 @@ import (
 	"github.com/philoserf/t5/internal/dice"
 )
 
-func scriptedRoller(vals ...int) *dice.Roller {
-	i := 0
-	return dice.NewSource(func() int {
-		v := vals[i%len(vals)]
-		i++
-		return v
-	})
-}
-
 func TestGenerateUPP(t *testing.T) {
 	// Six 2D rolls in order: 7,7,7,8,9,10 -> eHex "77789A".
 	rolls := []int{
@@ -25,7 +16,7 @@ func TestGenerateUPP(t *testing.T) {
 		4, 5, // Edu 9
 		5, 5, // Soc 10 (A)
 	}
-	c := Generate(scriptedRoller(rolls...))
+	c := Generate(dice.NewScripted(rolls...))
 	if got := c.UPP(); got != "77789A" {
 		t.Fatalf("UPP() = %q, want 77789A", got)
 	}
@@ -47,7 +38,7 @@ func TestCharacteristicString(t *testing.T) {
 }
 
 func TestScorePanicsOutOfRange(t *testing.T) {
-	c := Generate(scriptedRoller(4, 4))
+	c := Generate(dice.NewScripted(4, 4))
 	for _, ch := range []Characteristic{-1, count, 99} {
 		func() {
 			defer func() {
@@ -62,13 +53,13 @@ func TestScorePanicsOutOfRange(t *testing.T) {
 
 func TestCheck(t *testing.T) {
 	// Endurance 8; a 2D roll of 7 succeeds (7 <= 8).
-	c := Generate(scriptedRoller(4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4)) // all 8s
-	res := c.Check(scriptedRoller(3, 4), Endurance, dice.Average, 0)
+	c := Generate(dice.NewScripted(4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4)) // all 8s
+	res := c.Check(dice.NewScripted(3, 4), Endurance, dice.Average, 0)
 	if !res.Success || res.Target != 8 {
 		t.Fatalf("Check = %+v, want success against target 8", res)
 	}
 	// A +2 mod raises the target; an Easy (1D) check uses one die.
-	easy := c.Check(scriptedRoller(6), Strength, dice.Easy, 2)
+	easy := c.Check(dice.NewScripted(6), Strength, dice.Easy, 2)
 	if !easy.Success || easy.Target != 10 {
 		t.Fatalf("Easy check = %+v, want success against target 10", easy)
 	}

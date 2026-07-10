@@ -33,23 +33,23 @@ func TestSystemString(t *testing.T) {
 
 func TestOrbitFormulas(t *testing.T) {
 	// Close = 1D-1 (0-5), Near = 5+1D (6-11), Far = 11+1D (12-17).
-	if got := closeOrbit(scriptedRoller(1)); got != 0 {
+	if got := closeOrbit(dice.NewScripted(1)); got != 0 {
 		t.Errorf("closeOrbit(1D=1) = %d, want 0", got)
 	}
-	if got := closeOrbit(scriptedRoller(6)); got != 5 {
+	if got := closeOrbit(dice.NewScripted(6)); got != 5 {
 		t.Errorf("closeOrbit(1D=6) = %d, want 5", got)
 	}
-	if got := nearOrbit(scriptedRoller(1)); got != 6 {
+	if got := nearOrbit(dice.NewScripted(1)); got != 6 {
 		t.Errorf("nearOrbit(1D=1) = %d, want 6", got)
 	}
-	if got := nearOrbit(scriptedRoller(6)); got != 11 {
+	if got := nearOrbit(dice.NewScripted(6)); got != 11 {
 		t.Errorf("nearOrbit(1D=6) = %d, want 11", got)
 	}
-	if got := farOrbit(scriptedRoller(1)); got != 12 {
+	if got := farOrbit(dice.NewScripted(1)); got != 12 {
 		t.Errorf("farOrbit(1D=1) = %d, want 12", got)
 	}
 	// Regina's worked example: Far star in Orbit 11 + 1D(=5) = 16.
-	if got := farOrbit(scriptedRoller(5)); got != 16 {
+	if got := farOrbit(dice.NewScripted(5)); got != 16 {
 		t.Errorf("farOrbit(1D=5) = %d, want 16 (Regina)", got)
 	}
 }
@@ -61,7 +61,7 @@ func TestGasGiants(t *testing.T) {
 		// Two dice summing to total (use total/2 twice, adjusting for odd).
 		a := total / 2
 		b := total - a
-		if got := gasGiants(scriptedRoller(a, b)); got != want {
+		if got := gasGiants(dice.NewScripted(a, b)); got != want {
 			t.Errorf("gasGiants(2D=%d) = %d, want %d", total, got, want)
 		}
 	}
@@ -70,7 +70,7 @@ func TestGasGiants(t *testing.T) {
 func TestBelts(t *testing.T) {
 	cases := map[int]int{1: 0, 3: 0, 4: 1, 6: 3} // 1D -> belts
 	for die, want := range cases {
-		if got := belts(scriptedRoller(die)); got != want {
+		if got := belts(dice.NewScripted(die)); got != want {
 			t.Errorf("belts(1D=%d) = %d, want %d", die, got, want)
 		}
 	}
