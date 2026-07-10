@@ -47,14 +47,20 @@ Tooling (go, go-task, poppler's `pdftotext`) is pinned in `Brewfile`.
   formulas are **pure functions** taking their rolls as arguments (test them at their edges);
   `Generate` rolls in checklist order and composes them. Validated against the book's Regina
   worked example (golden test → `A788899-C`). Fold new generators into this shape.
-- `cmd/worldgen/` — CLI: `go run ./cmd/worldgen -n 10 -seed 42`.
+- `internal/systemgen/` — star system creation (Book 3 pp. 16-17, 28): the stars (spectral
+  type/decimal/size via the p. 28 table, transcribed from a rendered image since the dense
+  grid does not survive text extraction), gas giants, planetoid belts, world count, and the
+  mainworld via `worldgen`. `classify` is the pure table lookup; `rollStar`/`Generate` roll and
+  compose. Orbital placement and per-world detailing are deferred.
+- `cmd/worldgen/`, `cmd/systemgen/` — CLIs, each taking `-n` and `-seed`:
+  `go run ./cmd/worldgen -n 10 -seed 42` and `go run ./cmd/systemgen -n 10 -seed 42`.
 
 When adding a generator, transcribe the rule tables/formulas from `docs/reference/` and lock
 them with a golden test built from a worked example in the books.
 
 ## Current state
 
-Early. Beyond the engine (dice + worldgen) the repo contains only the source PDFs (`docs/pdf/`), a
+Early. Beyond the engine (dice + worldgen + systemgen) the repo contains only the source PDFs (`docs/pdf/`), a
 README, and `.gitignore`.
 
 - **Source of truth** for rules is `docs/pdf/` (T5 Core Rules Books 1–3 + Read Me). These PDFs
