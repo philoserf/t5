@@ -7,9 +7,50 @@ Go module: `github.com/philoserf/t5`.
 
 ## Layout
 
+- `internal/` — the Go engine: `dice`, `ehex`, `uwp`, and the generators
+- `cmd/` — command-line front ends for the generators
 - `docs/pdf/` — source rulebooks (T5 Core Rules Books 1–3 + Read Me), git-ignored
 - `docs/reference/` — text extracted from those PDFs, git-ignored (see below)
-- `internal/` — the Go engine (`dice`, and generators built on it)
+
+## Generators
+
+All generators share a single seedable dice engine (`internal/dice`), so any run
+is reproducible with `-seed`. Each command takes `-n` (count) and `-seed`.
+
+```sh
+go run ./cmd/worldgen  -n 5 -seed 42   # mainworld Universal World Profiles
+go run ./cmd/systemgen -n 5 -seed 42   # star systems (stars, gas giants, belts, mainworld)
+go run ./cmd/chargen   -n 5 -seed 42   # character UPPs
+```
+
+Example output:
+
+```
+$ go run ./cmd/worldgen -n 3 -seed 42
+D665656-7
+C7A5958-A
+B160113-B
+
+$ go run ./cmd/systemgen -n 1 -seed 7
+Primary: F8 V
+Primary Companion: M6 VI
+Near: F5 VI
+Gas Giants: 0  Belts: 0  Worlds: 11
+Mainworld: B6667B8-9
+```
+
+The engine is faithful to the rules and validated against the books' own worked
+examples — e.g. worldgen reproduces the canonical Regina profile `A788899-C`.
+Careers (chargen), orbital placement and per-world detail (systemgen) are the
+next stages.
+
+## Development
+
+```sh
+task            # run the tests
+task check      # gofmt, vet, test — the pre-commit gate
+task extract    # regenerate docs/reference/ from the PDFs
+```
 
 ## Rulebooks
 
