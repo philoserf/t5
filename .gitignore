@@ -1,0 +1,8 @@
+# Go
+/t5
+
+# macOS
+.DS_Store
+
+# Source rulebooks — not distributed (see README)
+/docs/pdf/*.pdf
