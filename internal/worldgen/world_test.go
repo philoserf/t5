@@ -1,0 +1,69 @@
+package worldgen
+
+import (
+	"testing"
+
+	"github.com/philoserf/t5/internal/dice"
+)
+
+func TestSecondSurveyRegina(t *testing.T) {
+	w := World{
+		Profile:      regina,
+		TradeCodes:   []string{"Ph", "Pa", "Ri"},
+		Importance:   4,
+		Economic:     Economic{Resources: 13, Labor: 7, Infrastructure: 14, Efficiency: 4},
+		Cultural:     Cultural{Heterogeneity: 9, Acceptance: 12, Strangeness: 6, Symbols: 13},
+		Nobility:     "BcCeF",
+		NavalBase:    true,
+		ScoutBase:    true,
+		Zone:         'G',
+		NativeStatus: "Natives",
+	}
+	want := "A788899-C Ph Pa Ri {+4}(D7E+4)[9C6D] BcCeF NS -"
+	if got := w.SecondSurvey(); got != want {
+		t.Fatalf("SecondSurvey() =\n%q\nwant\n%q", got, want)
+	}
+}
+
+func TestSecondSurveyFieldEdges(t *testing.T) {
+	// A world with no trade codes and no bases: the TC slot collapses, and the
+	// bases slot shows a dash. Zero Extensions render as "{+0}(000+0)[0000]".
+	w := World{
+		Profile:  regina,
+		Zone:     'R',
+		Nobility: "B",
+	}
+	want := "A788899-C {+0}(000+0)[0000] B - R"
+	if got := w.SecondSurvey(); got != want {
+		t.Fatalf("SecondSurvey() edges =\n%q\nwant\n%q", got, want)
+	}
+}
+
+func TestPopulationDigit(t *testing.T) {
+	if got := PopulationDigit(dice.NewScripted(1, 1), 0); got != 0 {
+		t.Errorf("PopulationDigit(pop 0) = %d, want 0", got)
+	}
+	r := dice.NewWithSeed(1)
+	for range 500 {
+		if d := PopulationDigit(r, 8); d < 1 || d > 9 {
+			t.Fatalf("PopulationDigit(pop 8) = %d, out of 1-9", d)
+		}
+	}
+}
+
+func TestGenerateWorld(t *testing.T) {
+	for seed := uint64(1); seed <= 100; seed++ {
+		a := GenerateWorld(dice.NewWithSeed(seed), 2, 1, false)
+		// Reproducible and internally consistent.
+		b := GenerateWorld(dice.NewWithSeed(seed), 2, 1, false)
+		if a.SecondSurvey() != b.SecondSurvey() {
+			t.Fatalf("seed %d not reproducible", seed)
+		}
+		if a.Profile.Population > 0 && (a.PopulationDigit < 1 || a.PopulationDigit > 9) {
+			t.Fatalf("seed %d: pop digit %d invalid for pop %d", seed, a.PopulationDigit, a.Profile.Population)
+		}
+		if a.Profile.Population == 0 && a.PopulationDigit != 0 {
+			t.Fatalf("seed %d: pop-0 world has pop digit %d", seed, a.PopulationDigit)
+		}
+	}
+}
