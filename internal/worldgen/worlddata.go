@@ -1,0 +1,131 @@
+package worldgen
+
+import (
+	"slices"
+	"strings"
+
+	"github.com/philoserf/t5/internal/dice"
+	"github.com/philoserf/t5/internal/uwp"
+)
+
+// Additional per-world data from Book 3 Chart F (p. 28): Nobility, Bases,
+// Travel Zone, and Native Status.
+
+// nobleRank pairs a nobility code with the trade codes that grant it.
+var nobleRanks = []struct {
+	code  string
+	codes []string
+}{
+	{"c", []string{"Pa", "Pr"}}, // Baronet
+	{"C", []string{"Ag", "Ri"}}, // Baron
+	{"D", []string{"Pi"}},       // Marquis
+	{"e", []string{"Ph"}},       // Viscount
+	{"E", []string{"In", "Hi"}}, // Count
+}
+
+// Nobility returns the string of noble codes a world holds (Book 3 p. 28). A
+// Knight (B) is always present; further ranks follow from trade codes, from a
+// capital designation (Duke F), or from an Importance of 4+ on a non-capital
+// (Duke f). Archduke (G) is assigned at the domain level and is not derived
+// here. isCapital marks a subsector or sector capital.
+func Nobility(tcs []string, ix int, isCapital bool) string {
+	var b strings.Builder
+	b.WriteString("B") // Knight, always present
+	for _, rank := range nobleRanks {
+		for _, code := range rank.codes {
+			if slices.Contains(tcs, code) {
+				b.WriteString(rank.code)
+				break
+			}
+		}
+	}
+	switch {
+	case isCapital:
+		b.WriteString("F") // Duke of a capital
+	case ix >= 4:
+		b.WriteString("f") // Duke of an important, non-capital world
+	}
+	return b.String()
+}
+
+// RollBases rolls for the presence of Naval and Scout bases, each present when
+// 2D rolls at or under a starport-dependent threshold (Book 3 p. 28). Starports
+// C, E, and X support no Naval base; E and X support no Scout base. Naval Depot
+// and Way Station need region context and are not rolled here.
+func RollBases(r *dice.Roller, starport byte) (naval, scout bool) {
+	if t, ok := map[byte]int{'A': 6, 'B': 5}[starport]; ok {
+		naval = r.Dice(2) <= t
+	}
+	if t, ok := map[byte]int{'A': 4, 'B': 5, 'C': 6, 'D': 7}[starport]; ok {
+		scout = r.Dice(2) <= t
+	}
+	return naval, scout
+}
+
+// TravelZone classifies a world as Green ('G'), Amber ('A'), or Red ('R') from
+// its Government+Law level and starport (Book 3 p. 28): Gov+Law of 20+ is Amber,
+// 22+ is Red, and a class-X starport is Red. The Dangerous/Puzzling (Da/Pz)
+// sub-labels need referee context and are not distinguished here.
+func TravelZone(p uwp.Profile) byte {
+	switch {
+	case p.Starport == 'X':
+		return 'R'
+	case p.Government+p.Law >= 22:
+		return 'R'
+	case p.Government+p.Law >= 20:
+		return 'A'
+	default:
+		return 'G'
+	}
+}
+
+// NativeStatus describes the origin of a world's inhabitants (Book 3 p. 28,
+// NIL), classified from Population, Atmosphere, Tech Level, and Government. A
+// Government of 1 or 6 overrides to Corporate or Colonists. Atmosphere is read
+// in three bands: thin (0–1), exotic (A–C), and standard (2–9, D–F).
+func NativeStatus(p uwp.Profile) string {
+	switch p.Government {
+	case 1:
+		return "Corporate"
+	case 6:
+		return "Colonists"
+	}
+
+	thinAtm := p.Atmosphere <= 1
+	exoticAtm := p.Atmosphere >= 10 && p.Atmosphere <= 12
+	developed := p.TechLevel >= 1
+
+	switch {
+	case p.Population == 0:
+		switch {
+		case thinAtm:
+			if developed {
+				return "Vanished Transplants"
+			}
+			return "None"
+		case exoticAtm:
+			if developed {
+				return "Catastrophic EXN"
+			}
+			return "Extinct Exotic Natives"
+		default:
+			if developed {
+				return "Catastrophic XN"
+			}
+			return "Extinct Natives"
+		}
+	case p.Population <= 3:
+		return "Transients"
+	case p.Population <= 6:
+		return "Settlers"
+	default: // 7+
+		switch {
+		case thinAtm:
+			return "Transplants"
+		case exoticAtm:
+			return "Exotic Natives"
+		default:
+			return "Natives"
+		}
+	}
+}
