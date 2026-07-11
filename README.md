@@ -32,17 +32,19 @@ C7A5958-A  Fl Hi In
 B160113-B  De Lo
 
 $ go run ./cmd/systemgen -n 1 -seed 7
-Primary: F8 V
-Primary Companion: M6 VI
-Near: F5 VI (Orbit 8)
-Gas Giants: 0  Belts: 0  Worlds: 11
-Mainworld: B6667B8-9
+Primary: K5 V
+Primary Companion: M0 VI
+Gas Giants: 1  Belts: 0  Worlds: 6  PBG: 901
+Mainworld: E643231-6 Lo Po {-3}(810-3)[1164] B - -
 ```
 
+The mainworld line is the full world record — UWP, trade classifications, the
+`{Ix}(Ex)[Cx]` Extensions, nobility, bases, and travel zone.
+
 The engine is faithful to the rules and validated against the books' own worked
-examples — e.g. worldgen reproduces the canonical Regina profile `A788899-C`.
-Careers (chargen), orbital placement and per-world detail (systemgen) are the
-next stages.
+examples — e.g. worldgen reproduces the canonical Regina profile `A788899-C` and
+its full record `A788899-C Ph Pa Ri {+4}(D7E+4)[9C6D] BcCeF NS -`.
+Careers (chargen) and per-world orbital detail (systemgen) are the next stages.
 
 ## Development
 

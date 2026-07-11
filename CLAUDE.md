@@ -59,7 +59,9 @@ Tooling (go, go-task, poppler's `pdftotext`) is pinned in `Brewfile`.
   type/decimal/size via the p. 28 table, transcribed from a rendered image since the dense
   grid does not survive text extraction), gas giants, planetoid belts, world count, and the
   mainworld via `worldgen`. `classify` is the pure table lookup; `rollStar`/`Generate` roll and
-  compose. Secondary stars (Close/Near/Far) are placed in orbit bands; per-world detailing is deferred.
+  compose. Secondary stars (Close/Near/Far) are placed in orbit bands. The mainworld is a full
+  `worldgen.World` (UWP + all derived data); `System.SecondSurvey(hex, name, allegiance)` renders
+  the canonical one-line record and `String` shows it with PBG. Per-world orbital detail is deferred.
 - `internal/chargen/` — character creation (Book 1, Characteristics pp. 47+). Generates the
   six-characteristic UPP (Str/Dex/End/Int/Edu/Soc, each 2D, eHex) and offers `Check` for the
   Check Characteristic mechanic. Careers are the deferred next stage.

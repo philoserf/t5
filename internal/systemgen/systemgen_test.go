@@ -6,12 +6,15 @@ import (
 
 	"github.com/philoserf/t5/internal/dice"
 	"github.com/philoserf/t5/internal/uwp"
+	"github.com/philoserf/t5/internal/worldgen"
 )
 
-func TestSystemString(t *testing.T) {
+// reginaSystem is a constructed system carrying Regina's mainworld record and a
+// small stellar set, used to pin the String and SecondSurvey formats.
+func reginaSystem() System {
 	closeStar := Star{Type: "K", Decimal: 8, Size: "VI"}
 	companion := Star{Type: "M", Decimal: 6, Size: "V"}
-	s := System{
+	return System{
 		Primary:        Star{Type: "F", Decimal: 8, Size: "V"},
 		Close:          &closeStar,
 		CloseOrbit:     3,
@@ -19,15 +22,36 @@ func TestSystemString(t *testing.T) {
 		GasGiants:      1,
 		Belts:          2,
 		Worlds:         7,
-		Mainworld:      uwp.Profile{Starport: 'A', Size: 7, Atmosphere: 8, Hydrographics: 8, Population: 8, Government: 9, Law: 9, TechLevel: 12},
+		Mainworld: worldgen.World{
+			Profile:         uwp.Profile{Starport: 'A', Size: 7, Atmosphere: 8, Hydrographics: 8, Population: 8, Government: 9, Law: 9, TechLevel: 12},
+			TradeCodes:      []string{"Ph", "Pa", "Ri"},
+			Importance:      4,
+			Economic:        worldgen.Economic{Resources: 13, Labor: 7, Infrastructure: 14, Efficiency: 4},
+			Cultural:        worldgen.Cultural{Heterogeneity: 9, Acceptance: 12, Strangeness: 6, Symbols: 13},
+			Nobility:        "BcCeF",
+			NavalBase:       true,
+			ScoutBase:       true,
+			Zone:            'G',
+			PopulationDigit: 7,
+		},
 	}
+}
+
+func TestSystemString(t *testing.T) {
 	want := "Primary: F8 V\n" +
-		"Close: K8 VI (Orbit 3)\n" + // numbered orbit shown for a secondary
-		"Close Companion: M6 V\n" + // companion has no orbit number
-		"Gas Giants: 1  Belts: 2  Worlds: 7\n" +
-		"Mainworld: A788899-C"
-	if got := s.String(); got != want {
+		"Close: K8 VI (Orbit 3)\n" +
+		"Close Companion: M6 V\n" +
+		"Gas Giants: 1  Belts: 2  Worlds: 7  PBG: 721\n" +
+		"Mainworld: A788899-C Ph Pa Ri {+4}(D7E+4)[9C6D] BcCeF NS -"
+	if got := reginaSystem().String(); got != want {
 		t.Fatalf("String() =\n%q\nwant\n%q", got, want)
+	}
+}
+
+func TestSystemSecondSurvey(t *testing.T) {
+	want := "1910 Regina A788899-C Ph Pa Ri {+4}(D7E+4)[9C6D] BcCeF NS - 721 7 Im F8 V K8 VI M6 V"
+	if got := reginaSystem().SecondSurvey("1910", "Regina", ""); got != want {
+		t.Fatalf("SecondSurvey() =\n%q\nwant\n%q", got, want)
 	}
 }
 
