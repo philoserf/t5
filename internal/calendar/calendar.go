@@ -28,12 +28,18 @@ func New(year, day int) (Date, error) {
 }
 
 // Weekday returns the day's name: "Holiday" for day 1, otherwise one of the
-// seven weekdays (day 2 is Wonday, day 8 is Senday, day 9 is Wonday again).
+// seven weekdays (day 2 is Wonday, day 8 is Senday, day 9 is Wonday again). A
+// Day outside 1..365 renders as "?" rather than panicking, since Date's fields
+// are exported and a caller may build one without New.
 func (d Date) Weekday() string {
-	if d.Day == 1 {
+	switch {
+	case d.Day < 1 || d.Day > DaysPerYear:
+		return "?"
+	case d.Day == 1:
 		return "Holiday"
+	default:
+		return weekdays[(d.Day-2)%7]
 	}
-	return weekdays[(d.Day-2)%7]
 }
 
 // String renders the date in day-year form, zero-padded to three digits, e.g.

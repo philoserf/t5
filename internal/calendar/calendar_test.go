@@ -19,6 +19,15 @@ func TestWeekday(t *testing.T) {
 	}
 }
 
+func TestWeekdayInvalidDay(t *testing.T) {
+	// An out-of-range Day (constructible via a literal) renders "?" not a panic.
+	for _, day := range []int{0, -3, 366, 1000} {
+		if got := (Date{Year: 1105, Day: day}).Weekday(); got != "?" {
+			t.Errorf("Weekday(day=%d) = %q, want ?", day, got)
+		}
+	}
+}
+
 func TestString(t *testing.T) {
 	if got := (Date{Year: 1105, Day: 1}).String(); got != "001-1105" {
 		t.Errorf("String() = %q, want 001-1105", got)
