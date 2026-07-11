@@ -19,9 +19,9 @@ func reginaSystem() System {
 		Close:          &closeStar,
 		CloseOrbit:     3,
 		CloseCompanion: &companion,
-		GasGiants:      1,
-		Belts:          2,
-		Worlds:         7,
+		GasGiants:      3,
+		Belts:          0,
+		Worlds:         8,
 		Mainworld: worldgen.World{
 			Profile:         uwp.Profile{Starport: 'A', Size: 7, Atmosphere: 8, Hydrographics: 8, Population: 8, Government: 9, Law: 9, TechLevel: 12},
 			TradeCodes:      []string{"Ph", "Pa", "Ri"},
@@ -41,7 +41,7 @@ func TestSystemString(t *testing.T) {
 	want := "Primary: F8 V\n" +
 		"Close: K8 VI (Orbit 3)\n" +
 		"Close Companion: M6 V\n" +
-		"Gas Giants: 1  Belts: 2  Worlds: 7  PBG: 721\n" +
+		"Gas Giants: 3  Belts: 0  Worlds: 8  PBG: 703\n" +
 		"Mainworld: A788899-C Ph Pa Ri {+4}(D7E+4)[9C6D] BcCeF NS -"
 	if got := reginaSystem().String(); got != want {
 		t.Fatalf("String() =\n%q\nwant\n%q", got, want)
@@ -49,7 +49,7 @@ func TestSystemString(t *testing.T) {
 }
 
 func TestSystemSecondSurvey(t *testing.T) {
-	want := "1910 Regina A788899-C Ph Pa Ri {+4}(D7E+4)[9C6D] BcCeF NS - 721 7 Im F8 V K8 VI M6 V"
+	want := "1910 Regina A788899-C Ph Pa Ri {+4}(D7E+4)[9C6D] BcCeF NS - 703 8 Im F8 V K8 VI M6 V"
 	if got := reginaSystem().SecondSurvey("1910", "Regina", ""); got != want {
 		t.Fatalf("SecondSurvey() =\n%q\nwant\n%q", got, want)
 	}

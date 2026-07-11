@@ -47,7 +47,8 @@ type System struct {
 	Mainworld worldgen.World
 }
 
-// Generate rolls a complete system: the counts, the mainworld, and the stars.
+// Generate rolls a complete system: the gas-giant and belt counts, the
+// mainworld built from them, then the stars, the world count, and the orbits.
 func Generate(r *dice.Roller) System {
 	var s System
 	// Gas giants and belts are needed to detail the mainworld (the Economic
