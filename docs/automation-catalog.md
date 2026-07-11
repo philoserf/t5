@@ -38,12 +38,14 @@ Everything in Tiers 5–6 is independent content-generation that can follow in a
 These leverage what's already built, are mostly pure lookups/formulas over the existing
 UWP/star data, and close out the "generate a canonical world/system line" goal.
 
-**1. Complete the UWP-determinable trade classifications** — _B3 p. 26 (Chart D); B2 pp. 204–207_
+**1. Remaining trade classifications** — _B3 p. 26 (Chart D); B2 pp. 204–207_
 · extends worldgen · **S**
-The current classifier omits the economic (Pi, In, Po, Pr, Ri, Ag, Na, Pa) and population
-(Lo, Ni, Hi, and the Gov=0/Law=0 Di/Ba) codes, all of which are pure Siz/Atm/Hyd/Pop/Gov/Law
-digit-set membership — the same table the built subset already reads. Automatable as more
-rows in the existing `tcRules`. Unblocks Ix, Nobility, and Ex-Infrastructure below.
+The classifier already covers the 21 UWP-determinable codes, including the economic (Pi, In,
+Po, Pr, Ri, Ag, Na, Pa) and population (Lo, Ni, Ph, Hi) ones. Genuinely missing are the
+Gov=0/Law=0 pair **Di/Ba** (Ba also needs starport E/X) — pure digit-set membership, a couple
+more `tcRules` rows — and the climate/orbit/context codes (Fr, Ho, Co, Tr, Tu, Tz, Fa, Sa, Lk,
+Cy, Cp/Cs/Cx…) that need systemgen HZ-orbit or region context. The UWP-determinable core that
+Ix/Nobility/Ex depend on is done.
 
 **2. Population multiplier digit / PBG** — _B3 pp. 24–25 (Chart C, PBG)_ · extends worldgen +
 systemgen · **S**
@@ -53,14 +55,14 @@ in the engine; this is a roll plus string assembly. It's the literal next worldg
 
 **3. Importance Extension {Ix}** — _B3 pp. 18, 27 (Chart E)_ · extends worldgen · **S**
 Signed integer = additive DM table over starport, TL, trade classes (Pa/Ag/Hi/In/Ri), Pop,
-and bases; "Important" at +4. Deterministic, no dice. Needs #1 (In/Ri/Pa) first. Feeds
-Nobility, capitals, trade routes, and Book 2 mail contracts.
+and bases; "Important" at +4. Deterministic, no dice. Its trade-code inputs are already built.
+Feeds Nobility, capitals, trade routes, and Book 2 mail contracts. **(Implemented — PR #10.)**
 
 **4. Economic Extension (Ex) + Resource Units** — _B3 pp. 18, 27_ · extends worldgen · **M**
-`(R L I E)` + RU. Resources = 2D (+GG+Belts if TL≥8, both from systemgen); Labor = Pop−1;
-Infrastructure branches on Pop band using Ix; Efficiency = Flux; RU = R·L·I·E. All
-specified formulas; the only nuance is the "0→1 for the product but 0 stays for the min"
-rule and encoding negative Efficiency.
+`(R L I ±E)` + RU. Resources = 2D (+GG+Belts if TL≥8, both from systemgen); Labor = Pop−1;
+Infrastructure branches on Pop band using Ix; Efficiency = Flux; RU = R·L·I·E straight (the
+printed rule has no "0→1" substitution). R/L/I floor at 0; Efficiency may be negative.
+**(Implemented — PR #10.)**
 
 **5. Cultural Extension [Cx]** — _B3 pp. 18, 27_ · extends worldgen · **S**
 `[HASS]` — four independent Flux formulas over Pop/Ix/TL with a clamp-to-1 rule, ehex-encoded.
