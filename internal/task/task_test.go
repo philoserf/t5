@@ -71,4 +71,8 @@ func TestResolveDice(t *testing.T) {
 	if res.Roll != 6 || res.Success {
 		t.Fatalf("cautious = %+v, want roll 6 failure (6 > 5)", res)
 	}
+	// A count below 1 is treated as 1D, not the 2D roll-low default.
+	if got := ResolveDice(dice.NewScripted(4), 0, 5); got.Roll != 4 {
+		t.Fatalf("ResolveDice(0) rolled %d dice worth, want 1D (roll 4)", got.Roll)
+	}
 }

@@ -64,9 +64,11 @@ func Resolve(r *dice.Roller, d Difficulty, target int, mods ...int) dice.CheckRe
 }
 
 // ResolveDice rolls a task with an explicit dice count, for callers using a
-// Hasty or Cautious pace (see Difficulty.Hasty and Difficulty.Cautious).
+// Hasty or Cautious pace (see Difficulty.Hasty and Difficulty.Cautious, which
+// always return at least 1). A count below 1 is treated as 1D rather than
+// falling through to the roll-low default.
 func ResolveDice(r *dice.Roller, numDice, target int, mods ...int) dice.CheckResult {
-	return r.Resolve(dice.Check{Dice: numDice, Target: target + sum(mods)})
+	return r.Resolve(dice.Check{Dice: max(numDice, 1), Target: target + sum(mods)})
 }
 
 func sum(xs []int) int {
