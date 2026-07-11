@@ -68,6 +68,10 @@ Tooling (go, go-task, poppler's `pdftotext`) is pinned in `Brewfile`.
 - `internal/calendar/` — the Imperial Calendar (Book 1 Appendix 02, p. 262): a 365-day `Date` (day 1 is
   Holiday, then 52 weeks Wonday..Senday), with `Weekday`, `Add` (year rollover), and `String`
   (`001-1105`). Pure date math, no dice.
+- `internal/task/` — the Universal Task Format (Book 1 pp. 120-131). A `Difficulty` ladder (Easy
+  1D … Beyond Impossible 8D, with `Hasty`/`Cautious` pace) over the dice engine's roll-low
+  `Resolve`: `task.Resolve(r, difficulty, target, mods...)`, target being characteristic+skill.
+  The play systems (senses, combat, personals) build on this.
 - `cmd/worldgen/`, `cmd/systemgen/`, `cmd/chargen/` — CLIs, each taking `-n` and `-seed`, e.g.
   `go run ./cmd/systemgen -n 10 -seed 42`.
 
