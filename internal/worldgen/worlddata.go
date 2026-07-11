@@ -53,11 +53,21 @@ func Nobility(tcs []string, ix int, isCapital bool) string {
 // C, E, and X support no Naval base; E and X support no Scout base. Naval Depot
 // and Way Station need region context and are not rolled here.
 func RollBases(r *dice.Roller, starport byte) (naval, scout bool) {
-	if t, ok := map[byte]int{'A': 6, 'B': 5}[starport]; ok {
-		naval = r.Dice(2) <= t
+	switch starport {
+	case 'A':
+		naval = r.Dice(2) <= 6
+	case 'B':
+		naval = r.Dice(2) <= 5
 	}
-	if t, ok := map[byte]int{'A': 4, 'B': 5, 'C': 6, 'D': 7}[starport]; ok {
-		scout = r.Dice(2) <= t
+	switch starport {
+	case 'A':
+		scout = r.Dice(2) <= 4
+	case 'B':
+		scout = r.Dice(2) <= 5
+	case 'C':
+		scout = r.Dice(2) <= 6
+	case 'D':
+		scout = r.Dice(2) <= 7
 	}
 	return naval, scout
 }
@@ -84,19 +94,13 @@ func TravelZone(p uwp.Profile) byte {
 // Government of 1 or 6 overrides to Corporate or Colonists. Atmosphere is read
 // in three bands: thin (0–1), exotic (A–C), and standard (2–9, D–F).
 func NativeStatus(p uwp.Profile) string {
-	switch p.Government {
-	case 1:
-		return "Corporate"
-	case 6:
-		return "Colonists"
-	}
-
 	thinAtm := p.Atmosphere <= 1
 	exoticAtm := p.Atmosphere >= 10 && p.Atmosphere <= 12
 	developed := p.TechLevel >= 1
 
-	switch {
-	case p.Population == 0:
+	// An uninhabited world is classified purely by atmosphere and tech
+	// evidence; the Government override below applies only to inhabited worlds.
+	if p.Population == 0 {
 		switch {
 		case thinAtm:
 			if developed {
@@ -114,18 +118,25 @@ func NativeStatus(p uwp.Profile) string {
 			}
 			return "Extinct Natives"
 		}
+	}
+
+	switch p.Government {
+	case 1:
+		return "Corporate"
+	case 6:
+		return "Colonists"
+	}
+
+	switch {
 	case p.Population <= 3:
 		return "Transients"
 	case p.Population <= 6:
 		return "Settlers"
-	default: // 7+
-		switch {
-		case thinAtm:
-			return "Transplants"
-		case exoticAtm:
-			return "Exotic Natives"
-		default:
-			return "Natives"
-		}
+	case thinAtm:
+		return "Transplants"
+	case exoticAtm:
+		return "Exotic Natives"
+	default:
+		return "Natives"
 	}
 }

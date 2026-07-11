@@ -93,6 +93,7 @@ func TestNativeStatus(t *testing.T) {
 		{"catastrophic EXN", uwp.Profile{Population: 0, Atmosphere: 11, TechLevel: 3}, "Catastrophic EXN"},
 		{"vanished transplants", uwp.Profile{Population: 0, Atmosphere: 1, TechLevel: 5}, "Vanished Transplants"},
 		{"barren none", uwp.Profile{Population: 0, Atmosphere: 0, TechLevel: 0}, "None"},
+		{"pop-0 ignores gov override", uwp.Profile{Population: 0, Government: 1, Atmosphere: 6, TechLevel: 5}, "Catastrophic XN"},
 	}
 	for _, c := range cases {
 		if got := NativeStatus(c.p); got != c.want {
