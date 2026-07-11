@@ -7,9 +7,6 @@ import (
 	"github.com/philoserf/t5/internal/uwp"
 )
 
-// reginaWorld is the canonical A788899-C worked example.
-var reginaWorld = uwp.Profile{Starport: 'A', Size: 7, Atmosphere: 8, Hydrographics: 8, Population: 8, Government: 9, Law: 9, TechLevel: 12}
-
 func TestNobilityRegina(t *testing.T) {
 	// Regina (subsector capital, Ix 4, TCs Ph/Pa/Ri): Knight, Baronet (Pa),
 	// Baron (Ri), Viscount (Ph), Duke (capital) = BcCeF.
@@ -62,7 +59,7 @@ func TestRollBases(t *testing.T) {
 
 func TestTravelZone(t *testing.T) {
 	// Regina Gov 9 + Law 9 = 18 -> Green.
-	if got := TravelZone(reginaWorld); got != 'G' {
+	if got := TravelZone(regina); got != 'G' {
 		t.Errorf("Regina zone = %c, want G", got)
 	}
 	// Gov+Law 20 -> Amber; 22 -> Red.
@@ -84,7 +81,7 @@ func TestNativeStatus(t *testing.T) {
 		p    uwp.Profile
 		want string
 	}{
-		{"Regina natives", reginaWorld, "Natives"},
+		{"Regina natives", regina, "Natives"},
 		{"corporate override", uwp.Profile{Government: 1, Population: 8}, "Corporate"},
 		{"colonists override", uwp.Profile{Government: 6, Population: 8}, "Colonists"},
 		{"exotic natives", uwp.Profile{Population: 8, Atmosphere: 11, TechLevel: 9}, "Exotic Natives"},

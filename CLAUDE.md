@@ -50,7 +50,8 @@ Tooling (go, go-task, poppler's `pdftotext`) is pinned in `Brewfile`.
   `TradeClassifications` returns the UWP-determinable trade codes (Book 3 p. 25); codes needing
   climate, orbit, mainworld status, or referee input are intentionally excluded. `Importance`,
   `RollEconomic`, and `RollCultural` compute the {Ix}(Ex)[Cx] Extensions (Book 3 Chart E,
-  validated against Regina's `{+4}(D7E+4)[9C6D]`); Importance feeds the other two.
+  validated against Regina's `{+4}(D7E+4)[9C6D]`); Importance feeds the other two. `Nobility`,
+  `RollBases`, `TravelZone`, and `NativeStatus` add the Chart F world data (p. 28).
 - `internal/systemgen/` — star system creation (Book 3 pp. 16-17, 28): the stars (spectral
   type/decimal/size via the p. 28 table, transcribed from a rendered image since the dense
   grid does not survive text extraction), gas giants, planetoid belts, world count, and the
