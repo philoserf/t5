@@ -69,10 +69,12 @@ Tooling (go, go-task, poppler's `pdftotext`) is pinned in `Brewfile`.
   checklist lifecycle, then serves additional careers while `Policy.NextCareer` supplies them
   (multi-career via `serveCareer`; the CLI's `-career a,b,c` sequence): UPP → homeworld skills (`ApplyHomeworldSkills`, one skill per Trade
   Classification, Book 1 p. 56 — the homeworld is a `worldgen.World` input) → optional education
-  (`educate`, Book 1 pp. 59-60: remedial ED5 then the best-qualifying academic program — College
-  or University, a shared `academicProgram` differing only in prereq/graduation-Edu — via
-  apply/pass-fail/waiver, Major+1 per pass and Minor+1 per 2 passes, BA + Edu bump on graduation;
-  golden-locked to the book's Eneri Dinsha College example `9AB58A`) → qualify → term loop →
+  (`educate`, Book 1 pp. 59-60: remedial ED5, then either a vocational Trade School
+  (`attendTradeSchool`, one year → a `theTrades` Major +2, no Minor/Edu-bump/degree, chosen via
+  `Policy.ChooseTradeSchool`) or the best-qualifying academic program — College or University, a
+  shared `academicProgram` differing only in prereq/graduation-Edu — via apply/pass-fail/waiver,
+  Major+1 per pass and Minor+1 per 2 passes, BA + Edu bump on graduation; golden-locked to the
+  book's Eneri Dinsha College example `9AB58A`) → qualify → term loop →
   muster-out. Education is gated on `Policy.PursueEducation`, so a
   no-education policy leaves any dice trace (e.g. the golden Scout's) untouched. The term engine
   (`career.go`) is career-agnostic with pluggable seams (`CCMode` Rotate/Fixed — under FixedCC the

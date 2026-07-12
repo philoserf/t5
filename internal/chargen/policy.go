@@ -22,9 +22,13 @@ type Policy interface {
 	Continue(c Character, rec CareerRecord) bool
 	// MusterColumn picks the Money or Benefit column for one muster-out roll.
 	MusterColumn(c Character, rec CareerRecord) MusterColumn
-	// PursueEducation reports whether the character attends college before their
-	// career (Book 1 stage C).
+	// PursueEducation reports whether the character attends an educational
+	// institution before their career (Book 1 stage C).
 	PursueEducation(c Character) bool
+	// ChooseTradeSchool reports whether an educated character attends a vocational
+	// Trade School (Major +2) rather than the academic College/University path
+	// (Book 1 p. 60).
+	ChooseTradeSchool(c Character) bool
 	// TakeWaiver reports whether the character attempts an Educational Waiver
 	// after an adverse roll, given the number of waivers already attempted.
 	TakeWaiver(c Character, priorWaivers int) bool
@@ -123,6 +127,11 @@ func (DefaultPolicy) PursueEducation(c Character) bool {
 
 // TakeWaiver always attempts a waiver — staying enrolled beats washing out.
 func (DefaultPolicy) TakeWaiver(Character, int) bool { return true }
+
+// ChooseTradeSchool takes the academic path — a College/University degree raises
+// Edu and grants a Major and Minor, generally worth more than a Trade School's
+// single vocational Major.
+func (DefaultPolicy) ChooseTradeSchool(Character) bool { return false }
 
 // NextCareer stops after one career; a policy that wants a multi-career
 // character (e.g. the CLI's -careers sequence) overrides this.

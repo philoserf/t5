@@ -29,6 +29,7 @@ func (stopAfter) ChooseSkill(_ Character, options []string) string  { return opt
 func (s stopAfter) Continue(_ Character, rec CareerRecord) bool     { return rec.Terms < s.terms }
 func (stopAfter) MusterColumn(Character, CareerRecord) MusterColumn { return BenefitColumn }
 func (stopAfter) PursueEducation(Character) bool                    { return false }
+func (stopAfter) ChooseTradeSchool(Character) bool                  { return false }
 func (stopAfter) TakeWaiver(Character, int) bool                    { return true }
 func (stopAfter) NextCareer(Character) (Career, bool)               { return Career{}, false }
 func (stopAfter) ChooseExplorerDuty(Character) bool                 { return true }

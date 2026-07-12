@@ -127,3 +127,53 @@ func TestCollegeFailsOut(t *testing.T) {
 type noWaiver struct{ DefaultPolicy }
 
 func (noWaiver) TakeWaiver(Character, int) bool { return false }
+
+// tradePolicy takes the vocational Trade School path.
+type tradePolicy struct{ DefaultPolicy }
+
+func (tradePolicy) ChooseTradeSchool(Character) bool { return true }
+
+// TestTradeSchool runs a character through a one-year Trade School: admitted on
+// the Int check, passes the year, and earns a vocational Major +2 (Biologics,
+// theTrades[0], via DefaultPolicy.ChooseSkill) — with no Minor, Edu bump, or
+// degree, and taking the academic path's place.
+func TestTradeSchool(t *testing.T) {
+	c := Character{scores: [count]int{7, 7, 7, 7, 6, 7}} // Int 7, Edu 6
+	seq := []int{
+		3, 4, // apply Check Int(7): 7 <= 7, admitted
+		3, 4, // year Check Int(7): 7 <= 7, pass
+	}
+	educate(dice.NewScripted(seq...), tradePolicy{}, &c)
+	if c.Major != "Biologics" {
+		t.Errorf("Major = %q, want Biologics", c.Major)
+	}
+	if c.Skills.Level("Biologics") != 2 {
+		t.Errorf("Biologics = %d, want 2 (Trade School Major +2)", c.Skills.Level("Biologics"))
+	}
+	if c.Score(Education) != 6 {
+		t.Errorf("Edu = %d, want 6 unchanged (Trade School grants no Edu bump)", c.Score(Education))
+	}
+	if c.Minor != "" || len(c.Degrees) != 0 {
+		t.Errorf("Trade School granted a Minor %q or degree %v, want none", c.Minor, c.Degrees)
+	}
+}
+
+// tradeNoWaiver takes Trade School but never waives a failed year.
+type tradeNoWaiver struct{ DefaultPolicy }
+
+func (tradeNoWaiver) ChooseTradeSchool(Character) bool { return true }
+func (tradeNoWaiver) TakeWaiver(Character, int) bool   { return false }
+
+// TestTradeSchoolFailsOut confirms a failed year with no waiver grants no Major.
+func TestTradeSchoolFailsOut(t *testing.T) {
+	c := Character{scores: [count]int{7, 7, 7, 7, 6, 7}}
+	seq := []int{
+		3, 4, // apply Check Int(7): admitted
+		6, 6, // year Check Int(7): 12 > 7, fail; no waiver -> washes out
+	}
+	educate(dice.NewScripted(seq...), tradeNoWaiver{}, &c)
+	if c.Major != "" || c.Skills.Level("Biologics") != 0 {
+		t.Errorf("failed Trade School still granted Major %q (Biologics %d), want none",
+			c.Major, c.Skills.Level("Biologics"))
+	}
+}

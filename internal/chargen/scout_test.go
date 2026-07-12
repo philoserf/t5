@@ -22,6 +22,7 @@ func (goldenPolicy) ChooseSkill(_ Character, options []string) string  { return 
 func (goldenPolicy) Continue(_ Character, rec CareerRecord) bool       { return rec.Terms < 2 }
 func (goldenPolicy) MusterColumn(Character, CareerRecord) MusterColumn { return BenefitColumn }
 func (goldenPolicy) PursueEducation(Character) bool                    { return false }
+func (goldenPolicy) ChooseTradeSchool(Character) bool                  { return false }
 func (goldenPolicy) TakeWaiver(Character, int) bool                    { return true }
 func (goldenPolicy) NextCareer(Character) (Career, bool)               { return Career{}, false }
 func (goldenPolicy) ChooseExplorerDuty(Character) bool                 { return true }

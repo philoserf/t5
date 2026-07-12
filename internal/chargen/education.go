@@ -8,14 +8,18 @@ import "github.com/philoserf/t5/internal/dice"
 // Pass/Fail Check per year, and on completing every year Graduate for a degree
 // and an Education bump.
 //
-// This slice implements the academic programs (College and University) plus the
-// remedial ED5. Deferred: Trade School, the higher and military institutions,
-// the full Available-Skills matrix, Honors, and the Tra-based training path.
+// This slice implements the remedial ED5, the vocational Trade School, and the
+// academic programs (College and University). Deferred: the higher and military
+// institutions (Service Academy, Masters, Medical/Law, Honors, OTC/NOTC, Flight
+// School), the full Available-Skills matrix, and the Tra-based training path.
 
 const (
 	academicYears = 4 // College and University each require four Pass/Fail Checks
 	ed5MaxEdu     = 4 // ED5 admits a character of Edu 4 or less
 	ed5RaisesTo   = 5 // and raises their Edu to 5
+
+	tradeSchoolPreReqEdu = 5 // Trade School admits a character of Edu 5+
+	tradeSchoolMajorBump = 2 // and, on completion, raises a vocational Major +2
 )
 
 // An academicProgram is a four-year degree course (Book 1 p. 60): College and
@@ -48,12 +52,40 @@ func educate(r *dice.Roller, p Policy, c *Character) {
 	if c.Score(Education) < college.preReqEdu {
 		attemptED5(r, c)
 	}
+	// A character who elects the vocational path attends a Trade School instead of
+	// the academic College/University (they share the Edu 5+ prerequisite).
+	if p.ChooseTradeSchool(*c) && c.Score(Education) >= tradeSchoolPreReqEdu {
+		attendTradeSchool(r, p, c)
+		return
+	}
 	switch {
 	case c.Score(Education) >= university.preReqEdu:
 		attendAcademic(r, p, c, university)
 	case c.Score(Education) >= college.preReqEdu:
 		attendAcademic(r, p, c, college)
 	}
+}
+
+// attendTradeSchool runs a one-year Trade School (Book 1 p. 60): apply with a
+// Check Int (Waiver on failure), then a single Pass/Fail Check (the better of
+// Int or Edu, Waiver on failure). Completing the year declares a vocational
+// Major and raises it +2. Unlike an academic program it grants no Minor, no Edu
+// bump, and no degree.
+func attendTradeSchool(r *dice.Roller, p Policy, c *Character) {
+	if c.Score(Education) < tradeSchoolPreReqEdu {
+		return
+	}
+	priorWaivers := 0
+	if !admitted(r, p, c, Intelligence, &priorWaivers) {
+		return
+	}
+	passCh := bestChar(*c, Intelligence, Education)
+	if !r.Resolve(dice.Check{Dice: 2, Target: c.Score(passCh)}).Success &&
+		!waiverGranted(r, p, c, &priorWaivers) {
+		return // failed the year out — no Major
+	}
+	c.Major = p.ChooseSkill(*c, theTrades)
+	c.Skills.Raise(c.Major, tradeSchoolMajorBump)
 }
 
 // attemptED5 runs the ED5 remedial program (Book 1 p. 60): a character of Edu 4
