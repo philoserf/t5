@@ -63,8 +63,9 @@ Tooling (go, go-task, poppler's `pdftotext`) is pinned in `Brewfile`.
   `worldgen.World` (UWP + all derived data); `System.SecondSurvey(hex, name, allegiance)` renders
   the canonical one-line record and `String` shows it with PBG. Per-world orbital detail is deferred.
 - `internal/chargen/` — character creation (Book 1, Characteristics pp. 47+). Generates the
-  six-characteristic UPP (Str/Dex/End/Int/Edu/Soc, each 2D, eHex) and offers `Check` for the
-  Check Characteristic mechanic. Careers are the deferred next stage.
+  six-characteristic UPP (Str/Dex/End/Int/Edu/Soc, each 2D, eHex) at age 18, offers `Check`,
+  and `AgingCheck` (Book 1 p. 89: `2D < LifeStage`, physical from 34 / mental from 66, with the
+  zero-cascade to illness/death). Careers are being built next (foundations + Scout slice).
 - `internal/calendar/` — the Imperial Calendar (Book 1 Appendix 02, p. 262): a 365-day `Date` (day 1 is
   Holiday, then 52 weeks Wonday..Senday), with `Weekday`, `Add` (year rollover), and `String`
   (`001-1105`). Pure date math, no dice.
