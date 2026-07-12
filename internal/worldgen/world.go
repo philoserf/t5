@@ -72,7 +72,7 @@ func (w World) SecondSurvey() string {
 	fields := []string{
 		w.Profile.String(),
 		strings.Join(w.TradeCodes, " "),
-		fmt.Sprintf("{%+d}%s%s", w.Importance, w.Economic, w.Cultural),
+		importance(w.Importance) + w.Economic.String() + w.Cultural.String(),
 		w.Nobility,
 		dashIfEmpty(w.bases()),
 		dashIfEmpty(w.zone()),
@@ -81,6 +81,15 @@ func (w World) SecondSurvey() string {
 }
 
 func isEmpty(s string) bool { return s == "" }
+
+// importance renders the Importance Extension {Ix}. It is signed when non-zero
+// but bare at zero, matching the book's Importance table (0, +4, -2).
+func importance(ix int) string {
+	if ix == 0 {
+		return "{0}"
+	}
+	return fmt.Sprintf("{%+d}", ix)
+}
 
 // bases renders the base codes: "N" for a Naval base, "S" for a Scout base.
 func (w World) bases() string {
