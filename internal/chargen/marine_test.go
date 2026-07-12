@@ -1,0 +1,63 @@
+package chargen
+
+import (
+	"testing"
+
+	"github.com/philoserf/t5/internal/dice"
+	"github.com/philoserf/t5/internal/worldgen"
+)
+
+// TestGoldenMarine traces a complete two-term Marine, confirming the rank engine
+// generalizes to a second armed-forces career whose promotion characteristics
+// differ from the Soldier's (Enlisted Promotion vs Str, Officer Promotion vs
+// Int). A medal each term, an enlisted promotion, then a Commission to 2nd
+// Lieutenant. Rolls are 3,4 (= 7) unless noted. Starting scores "878877" (the
+// final UPP is 978877 after the Str +1 muster benefit).
+func TestGoldenMarine(t *testing.T) {
+	seq := []int{
+		// UPP: Str 8, Dex 7, End 8, Int 8, Edu 7, Soc 7.
+		4, 4, 3, 4, 4, 4, 4, 4, 3, 4, 3, 4,
+		3, 4, // qualify vs Str 8: 7 <= 8, enters (Private, Fighter-1)
+		// Term 1: CC = Str (8). Risk survive; Reward -> Medal (1).
+		3, 4, // risk
+		3, 4, // reward -> Medal 1
+		5, 5, // Commission vs End 8: 10 > 8, fails
+		4, 4, // Enlisted Promotion vs Str 8 + Medal 1 = 9: 8 <= 9, promote to Lance Corporal
+		1, 1, 1, 1, // 4 skill rolls, Peacekeeper col row 1 = Vacc Suit
+		3, 4, // continue vs Str 8: 7, policy wants term 2
+		// Term 2: CC = Int (8). Risk survive; Reward -> Medal (2).
+		3, 4, // risk
+		3, 4, // reward -> Medal 2
+		3, 4, // Commission vs End 8: 7 <= 8, commissioned -> 2nd Lieutenant (Leader-1)
+		1, 1, 1, 1, // Vacc Suit x4 again
+		3, 4, // continue: policy stops after term 2
+		// Muster out: 2 rolls, Benefit column (Marine's Benefit DM is 0 here).
+		2, // row 2 -> Str +1 (8 -> 9)
+		3, // row 3 -> Wafer Jack
+	}
+
+	// goldenPolicy (scout_test.go) picks skill column 3; for the Marine grid that
+	// column is Peacekeeper (Vacc Suit at row 1).
+	c := GenerateCareered(dice.NewScripted(seq...), goldenPolicy{}, worldgen.World{}, MarineCareer)
+
+	if got := c.UPP(); got != "978877" {
+		t.Errorf("UPP = %q, want %q (Str 8 +1 muster benefit)", got, "978877")
+	}
+	if c.Medals != 2 {
+		t.Errorf("Medals = %d, want 2", c.Medals)
+	}
+	if c.Skills.Level("Fighter") != 1 || c.Skills.Level("Leader") != 1 || c.Skills.Level("Vacc Suit") != 8 {
+		t.Errorf("skills: Fighter=%d Leader=%d Vacc Suit=%d, want 1/1/8",
+			c.Skills.Level("Fighter"), c.Skills.Level("Leader"), c.Skills.Level("Vacc Suit"))
+	}
+	rec := c.Careers[0]
+	if rec.Career != Marine || rec.Terms != 2 || rec.Outcome != MusteredOut {
+		t.Errorf("record = %+v, want Marine/2 terms/MusteredOut", rec)
+	}
+	if !rec.Officer || rec.Rank != 1 {
+		t.Errorf("rank = %d officer %v, want officer rank 1 (2nd Lieutenant)", rec.Rank, rec.Officer)
+	}
+	if len(c.Benefits) != 1 || c.Benefits[0] != "Wafer Jack" {
+		t.Errorf("Benefits = %v, want [Wafer Jack]", c.Benefits)
+	}
+}
