@@ -84,15 +84,17 @@ Tooling (go, go-task, poppler's `pdftotext`) is pinned in `Brewfile`.
   track) else Enlisted Promotion, an officer rolls Officer Promotion; promotion targets are raised
   by `Character.Medals` (a Reward success) and `WoundBadges`, and each rank grants its automatic
   skill. Careers are data, each a file + hand-traced golden: `ScoutCareer` (`scout.go`, p. 79),
-  `RogueCareer` (`rogue.go`, p. 84 — FixedCC), and `SoldierCareer` (`soldier.go`, p. 82 — the first
-  ranked career). The Academic grid column uses `AwardMajor`
+  `RogueCareer` (`rogue.go`, p. 84 — FixedCC), `SoldierCareer` (`soldier.go`, p. 82 — the first
+  ranked career), and `MarineCareer` (`marine.go`, p. 86 — a second ranked career, pure data on the
+  rank engine). The Academic grid column uses `AwardMajor`
   / `AwardMinor` cells that raise the character's College Major/Minor (lost if uneducated, per the
   page footnote); `DefaultPolicy.ChooseSkillColumn` is character-aware, so a graduate specializes
   in the Academic column while an uneducated Scout falls through to Courier. Deferred: the rest of
-  the education institutions (Trade School, higher/military), the other 10 careers, the Scout's
+  the education institutions (Trade School, higher/military), the other 9 careers, the Scout's
   Courier/Explorer duty and R&R reward, the Rogue's Scheme mechanic (payoff/prison/infamy, its
   Scheme-driven eligibility, +Terms on R&R/Continue, the "12 is always failure" rule), the
-  Soldier's Branch/Operations R&R mods and commission/promotion skill eligibility, and Fame.
+  armed-forces Branch/Operations R&R mods and commission/promotion skill eligibility (Soldier and
+  Marine), and Fame.
 - `internal/calendar/` — the Imperial Calendar (Book 1 Appendix 02, p. 262): a 365-day `Date` (day 1 is
   Holiday, then 52 weeks Wonday..Senday), with `Weekday`, `Add` (year rollover), and `String`
   (`001-1105`). Pure date math, no dice.

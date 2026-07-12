@@ -23,6 +23,7 @@ const (
 	Scout   CareerID = iota // the first implemented career
 	Rogue                   // a fixed-CC career (Book 1 p. 84)
 	Soldier                 // the first armed-forces (ranked) career (Book 1 p. 82)
+	Marine                  // a second armed-forces career (Book 1 p. 86)
 )
 
 // CCMode controls how a career's Controlling Characteristic is chosen each term:

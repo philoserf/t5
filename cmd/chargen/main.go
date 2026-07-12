@@ -54,8 +54,10 @@ func careerByName(name string) (chargen.Career, error) {
 		return chargen.RogueCareer, nil
 	case "soldier":
 		return chargen.SoldierCareer, nil
+	case "marine":
+		return chargen.MarineCareer, nil
 	default:
-		return chargen.Career{}, fmt.Errorf("unknown career %q (known: scout, rogue, soldier)", name)
+		return chargen.Career{}, fmt.Errorf("unknown career %q (known: scout, rogue, soldier, marine)", name)
 	}
 }
 
