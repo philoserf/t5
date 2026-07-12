@@ -56,13 +56,12 @@ examples — e.g. worldgen reproduces the canonical Regina profile `A788899-C` a
 its full record `A788899-C Ph Pa Ri {+4}(D7E+4)[9C6D] BcCeF NS -`.
 Chargen runs the character lifecycle (homeworld skills, college with a Major and
 Minor, then career qualification, four-year terms with Risk & Reward and aging,
-skill eligibility, and mustering out) for five careers, each selected with its
-own `-career` value: the Scout (`-career scout`), the fixed-characteristic Rogue
-(`-career rogue`), and three ranked armed-forces careers — the Soldier
-(`-career soldier`), Marine (`-career marine`), and Spacer (`-career spacer`) —
-whose enlisted/officer ladders, Commissions, and Medal-boosted promotions
-exercise the rank engine. The remaining education institutions, the other
-careers, and per-world orbital detail (systemgen) are the next stages.
+skill eligibility, and mustering out) for six careers, each selected with its own
+`-career` value: the Scout, the fixed-characteristic Rogue, the rankless Agent,
+and three ranked armed-forces careers — the Soldier, Marine, and Spacer — whose
+enlisted/officer ladders, Commissions, and Medal-boosted promotions exercise the
+rank engine (e.g. `-career soldier`). The remaining education institutions, the
+other careers, and per-world orbital detail (systemgen) are the next stages.
 
 ## Development
 

@@ -25,6 +25,7 @@ const (
 	Soldier                 // the first armed-forces (ranked) career (Book 1 p. 82)
 	Marine                  // a second armed-forces career (Book 1 p. 86)
 	Spacer                  // the naval armed-forces career (Book 1 p. 81)
+	Agent                   // a rankless career (Book 1 p. 83)
 )
 
 // CCMode controls how a career's Controlling Characteristic is chosen each term:
@@ -72,11 +73,12 @@ func (q Qualification) target(c Character) int {
 // a named characteristic, or the career's Controlling Characteristic (UseCC, for
 // a fixed-CC career like the Rogue) — plus a modifier.
 type ContinueRule struct {
-	UseChar bool
-	UseCC   bool // target is the term's Controlling Characteristic (resolved in continues)
-	Char    Characteristic
-	Fixed   int
-	Mod     int
+	UseChar  bool
+	UseCC    bool // target is the term's Controlling Characteristic (resolved in continues)
+	TermsMod bool // add the number of terms served to the target (Book 1: "Mod +Terms")
+	Char     Characteristic
+	Fixed    int
+	Mod      int
 }
 
 // target resolves the Continue target for a character. UseCC is resolved by the
@@ -531,6 +533,9 @@ func continues(r *dice.Roller, p Policy, c Character, career Career, rec CareerR
 	target := career.Continue.target(c)
 	if career.Continue.UseCC {
 		target = c.Score(run.fixed) + career.Continue.Mod
+	}
+	if career.Continue.TermsMod {
+		target += rec.Terms // more experience makes staying in easier (Book 1 p. 83, Agent)
 	}
 	res := r.Resolve(dice.Check{Dice: 2, Target: target})
 	if res.Roll == 2 {
