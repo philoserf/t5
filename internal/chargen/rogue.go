@@ -2,15 +2,15 @@ package chargen
 
 // Rogue career data, transcribed from Book 1 p. 84.
 //
-// Slice scope: the Rogue's defining Scheme mechanic (each term the Rogue
-// masterminds a Scheme rolled from the Scheme table for a payoff, is imprisoned
-// on a failed Risk, and gains Infamy) is deferred, along with its consequences —
-// the Scheme-driven skill eligibility (Failed Scheme 1 / Successful Scheme 4 / In
-// Prison 2, over the base Per-Term 2), the +Terms modifier on Risk & Reward and
-// Continue, and the "12 is always failure" rule. The Rogue here runs as a
-// fixed-CC career with the standard Risk & Reward, the p. 84 skill grid, base
-// Per-Term 2 eligibility, and the p. 84 mustering-out table (whose Benefit
-// column, unusually, also gets the +Terms DM).
+// Each term the Rogue masterminds a Scheme (SchemeCareer, runRogueTerm): a
+// Scheme rolled from the Rogue Schemes table pays out on a successful Reward,
+// a failed Risk imprisons the Rogue and earns Infamy, and skill eligibility
+// swings with the outcome (Successful Scheme 6 / Failed Scheme 3 / In Prison 2).
+// The Scheme's "Mod +Terms" and "12 is always failure" rules live in the engine.
+// Deferred pieces (the exact prison sentence, the ±1 Flux modification, and
+// selecting a previous career in place of the roll) are noted at runRogueTerm.
+// The Rogue is a fixed-CC career with the p. 84 skill grid and mustering-out
+// table (whose Benefit column, unusually, also gets the +Terms DM).
 
 // allChars is every characteristic — the Rogue selects one as the Controlling
 // Characteristic used throughout the career (Book 1 p. 84).
@@ -28,9 +28,10 @@ var RogueCareer = Career{
 	Qualify:          Qualification{Chars: allChars},
 	CCMode:           FixedCC,
 	ControllingChars: allChars,
-	Continue:         ContinueRule{UseCC: true},
+	Continue:         ContinueRule{UseCC: true, TermsMod: true}, // "Mod +Terms" (Book 1 p. 84)
 	Advance:          RollLow,
 	EligPerTerm:      2,
+	SchemeCareer:     true,
 	BenefitDM:        DMTerms,
 	Skills: SkillGrid{
 		// Col 0 — Personal.

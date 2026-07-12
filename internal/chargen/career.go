@@ -206,6 +206,7 @@ type Career struct {
 	OfficePolitics   bool       // the term resolves Office Politics instead of Risk & Reward (Functionary)
 	ReturnIntrigue   bool       // the term resolves Return & Intrigue instead of Risk & Reward (Noble)
 	ScoutDuty        bool       // the term picks Courier (no R&R, 4 skills) or Explorer (R&R, EligPerTerm skills) (Scout)
+	SchemeCareer     bool       // the term masterminds a Rogue Scheme instead of Risk & Reward (Rogue)
 	RewardKind       RewardKind // what a successful Reward roll earns
 	Skills           SkillGrid
 	MusterOut        MusterTable
@@ -274,6 +275,8 @@ type careerRun struct {
 	rewards     int              // Reward successes so far (the Merchant's escalating Ship Shares)
 	branchMod   int              // the chosen armed-forces Branch's R&R mod
 	branchOpsDM int              // the chosen Branch's DM on Operations rolls
+	terms       int              // terms served before the current one (the Rogue's "Mod +Terms")
+	inPrison    bool             // the Rogue serves the coming term in prison (Book 1 p. 84)
 }
 
 // GenerateCareered generates a character on the given homeworld and runs one
@@ -337,6 +340,7 @@ func RunCareer(r *dice.Roller, p Policy, c *Character, career Career) {
 	}
 
 	for {
+		run.terms = rec.Terms // terms served before this one, for the Rogue's "Mod +Terms"
 		outcome := runTerm(r, p, c, &run, career)
 		rec.Terms++
 		c.Age += termYears
@@ -384,6 +388,9 @@ func runTerm(r *dice.Roller, p Policy, c *Character, run *careerRun, career Care
 	}
 	if career.ReturnIntrigue {
 		return runIntrigueTerm(r, p, c, run, career, cc)
+	}
+	if career.SchemeCareer {
+		return runRogueTerm(r, p, c, run, career, cc)
 	}
 	if career.ScoutDuty && !p.ChooseExplorerDuty(*c) {
 		awardSkillsN(r, p, c, career, courierElig) // Courier duty avoids Risk & Reward
@@ -562,6 +569,120 @@ func runIntrigueTerm(r *dice.Roller, p Policy, c *Character, run *careerRun, car
 	}
 	awardSkills(r, p, c, career)
 	return Ongoing
+}
+
+// A schemeValue is a Rogue Scheme's payoff (Book 1 p. 84): a credit value or,
+// for the Scout and Merchant schemes, one Ship Share.
+type schemeValue struct {
+	credits int
+	share   bool
+}
+
+// rogueSchemes is the Rogue Schemes table (Book 1 p. 84), indexed by Flux + 6
+// (Flux runs -6..+6). A raw Flux roll reaches only -5..+5; the ±1 after-roll
+// modification that extends it to the -6/+6 rows is deferred, as is a Rogue's
+// option to select any previous career in place of the roll.
+var rogueSchemes = [13]schemeValue{
+	{credits: 200_000}, // -6 Craftsman
+	{credits: 100_000}, // -5 Scholar
+	{credits: 300_000}, // -4 Entertainer
+	{credits: 50_000},  // -3 Citizen
+	{share: true},      // -2 Scout
+	{share: true},      // -1 Merchant
+	{credits: 100_000}, //  0 Spacer
+	{credits: 50_000},  // +1 Soldier
+	{credits: 100_000}, // +2 Agent
+	{credits: 100_000}, // +3 Rogue
+	{credits: 500_000}, // +4 Noble
+	{credits: 50_000},  // +5 Marine
+	{credits: 100_000}, // +6 Functionary
+}
+
+// Rogue skill eligibility (Book 1 p. 84 B block): base Per Term 2, plus 4 for a
+// Successful Scheme (Risk held) or 1 for a Failed Scheme (Risk lost); a term
+// served in prison instead grants 2 In-Prison skills and nothing else.
+const (
+	rogueSuccessElig   = 6 // Per Term 2 + Successful Scheme 4
+	rogueFailElig      = 3 // Per Term 2 + Failed Scheme 1
+	roguePrisonElig    = 2 // In Prison 2 (columns 1-2 only, no Term or Scheme skills)
+	prisonMaxSkillsCol = 1 // In Prison draws from Personal (0) or Academic (1) only
+)
+
+// runRogueTerm resolves a Rogue's term (Book 1 p. 84). The Rogue masterminds a
+// Scheme — a plan to amass wealth at others' expense — rolled from the Rogue
+// Schemes table for a Value V. Risk and Reward are two rolls against the
+// Controlling Characteristic (Mod +Terms; a Risk roll of 12 always fails): a
+// successful Reward pays V x (1 + CC - R + Mods), halved when the Risk failed,
+// while a failed Risk sends the Rogue to prison next term and earns Fame +1
+// (actually Infamy). A prison term draws only In-Prison skills (Personal or
+// Academic) and no Scheme payoff.
+//
+// Deferred: the exact prison sentence (0-4 years at the start of the next term
+// is simplified to "any positive sentence costs the following term"), the ±1
+// Flux modification, and selecting a previous career in place of the roll. The
+// Scheme carries no injury — only aging can end the career.
+func runRogueTerm(r *dice.Roller, p Policy, c *Character, run *careerRun, career Career, cc Characteristic) TermOutcome {
+	if run.inPrison {
+		run.inPrison = false
+		awardPrisonSkills(r, p, c, career, roguePrisonElig)
+		return Ongoing
+	}
+
+	scheme := rogueSchemes[min(max(r.Flux()+6, 0), 12)]
+	ccVal := c.Score(cc)
+	riskMod := p.RiskMod(*c, ccVal) // caution (+), bravery (-), or 0
+
+	// "Mod +Terms": experience eases both rolls; Caution/Bravery flips sign for
+	// the Reward (Book 1 p. 84, "opposite sign Mods").
+	risk := r.Resolve(dice.Check{Dice: 2, Target: ccVal + riskMod + run.terms})
+	riskOK := risk.Roll != 12 && risk.Success
+	rewardMods := -riskMod + run.terms
+	reward := r.Resolve(dice.Check{Dice: 2, Target: ccVal + rewardMods})
+	if reward.Success {
+		payScheme(c, scheme, ccVal+rewardMods, reward.Roll, riskOK)
+	}
+
+	elig := rogueSuccessElig
+	if !riskOK {
+		c.Fame++ // Infamy
+		elig = rogueFailElig
+		negMods := 0
+		if riskMod < 0 {
+			negMods = -riskMod
+		}
+		if min(max(negMods+r.Flux(), 0), 4) > 0 { // a positive sentence means prison next term
+			run.inPrison = true
+		}
+	}
+	awardSkillsN(r, p, c, career, elig)
+	return Ongoing
+}
+
+// payScheme applies a successful Rogue Scheme Reward (Book 1 p. 84): a Ship
+// Share Scheme grants one share; a credit Scheme pays V x (1 + CC - R + Mods),
+// which — since the Reward succeeded (R <= rewardTarget = CC + Mods) — is at
+// least V, and is halved when the Risk failed.
+func payScheme(c *Character, s schemeValue, rewardTarget, rewardRoll int, riskOK bool) {
+	if s.share {
+		c.ShipShares++
+		return
+	}
+	payoff := s.credits * (1 + rewardTarget - rewardRoll)
+	if !riskOK {
+		payoff /= 2 // "Payoff (if any) is halved"
+	}
+	c.Credits += payoff
+}
+
+// awardPrisonSkills grants a Rogue's In-Prison skill rolls (Book 1 p. 84), drawn
+// only from the Personal and Academic columns (grid columns 0-1); the policy's
+// column choice is clamped into that range.
+func awardPrisonSkills(r *dice.Roller, p Policy, c *Character, career Career, n int) {
+	prison := SkillGrid{career.Skills[0], career.Skills[1]}
+	for range n {
+		col := min(max(p.ChooseSkillColumn(*c, prison), 0), prisonMaxSkillsCol)
+		applyCell(p, c, prison[col][r.Die()-1])
+	}
 }
 
 // awardCitizenLife applies one Citizen Life success on the Job/Hobby schedule
