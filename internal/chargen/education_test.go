@@ -163,27 +163,30 @@ type gradPolicy struct{ DefaultPolicy }
 
 func (gradPolicy) PursueGraduateSchool(Character) bool { return true }
 
-// TestMastersDegree runs a College graduate on to a Masters: after the BA
-// (Psychology Major-4, Robotics Minor-2, Edu 6 -> 8), the two-year Masters
-// raises only the Minor (Robotics -> 3) and confers an MA with Edu 9.
-func TestMastersDegree(t *testing.T) {
+// TestGraduateLadder climbs the whole academic ladder for a graduate-minded
+// character: College (Psychology Major-4, Robotics Minor-2, BA, Edu 6 -> 8), a
+// Masters that raises only the Minor (Robotics -> 3, MA, Edu 9), and a terminal
+// Professors program that awards no skill (Professor, Edu 12).
+func TestGraduateLadder(t *testing.T) {
 	c := Character{scores: [count]int{7, 7, 7, 8, 6, 7}} // Int 8, Edu 6 -> College
 	seq := []int{
 		3, 4, // College apply Check Int(8): 7 <= 8, admitted
 		3, 4, 3, 4, 3, 4, 3, 4, // 4 College years pass -> Psychology-4, Robotics-2, BA, Edu 8
-		3, 4, // Masters apply Check Int(8): 7 <= 8, admitted
+		3, 4, // Masters apply (best of Int 8/Edu 8): 7 <= 8, admitted
 		3, 4, 3, 4, // 2 Masters years pass -> Robotics +1 (2nd pass) -> 3, MA, Edu 9
+		3, 4, // Professors apply (best of Int 8/Edu 9): 7 <= 9, admitted
+		3, 4, 3, 4, // 2 Professors years pass -> no skill, Professor, Edu 12
 	}
 	educate(dice.NewScripted(seq...), gradPolicy{}, &c)
 	if c.Skills.Level("Psychology") != 4 || c.Skills.Level("Robotics") != 3 {
-		t.Errorf("Psychology=%d Robotics=%d, want 4/3 (the Masters raises only the Minor)",
+		t.Errorf("Psychology=%d Robotics=%d, want 4/3 (Masters raises the Minor; Professors neither)",
 			c.Skills.Level("Psychology"), c.Skills.Level("Robotics"))
 	}
-	if c.Score(Education) != 9 {
-		t.Errorf("Edu = %d, want 9 (MA graduation)", c.Score(Education))
+	if c.Score(Education) != 12 {
+		t.Errorf("Edu = %d, want 12 (Professor graduation)", c.Score(Education))
 	}
-	if !c.hasDegree("BA") || !c.hasDegree("MA") {
-		t.Errorf("Degrees = %v, want both BA and MA", c.Degrees)
+	if !c.hasDegree("BA") || !c.hasDegree("MA") || !c.hasDegree("Professor") {
+		t.Errorf("Degrees = %v, want BA, MA, and Professor", c.Degrees)
 	}
 }
 
@@ -193,6 +196,43 @@ func TestMastersNeedsDegree(t *testing.T) {
 	attendAcademic(dice.NewScripted(1, 1, 1, 1, 1, 1), DefaultPolicy{}, &c, masters)
 	if len(c.Degrees) != 0 || c.Score(Education) != 9 {
 		t.Errorf("Masters admitted without a BA: degrees %v Edu %d", c.Degrees, c.Score(Education))
+	}
+}
+
+// TestProfessorsDegree confirms the terminal Professors program awards no Major
+// or Minor — only Edu 12 and the Professor title — and requires a prior MA.
+func TestProfessorsDegree(t *testing.T) {
+	c := Character{
+		scores:  [count]int{7, 7, 7, 9, 9, 7},
+		Major:   "Psychology",
+		Minor:   "Robotics",
+		Degrees: []string{"BA", "MA"},
+	}
+	c.Skills.Raise("Psychology", 4)
+	c.Skills.Raise("Robotics", 3)
+	seq := []int{
+		3, 4, // apply Check (best of Int 9/Edu 9): 7 <= 9, admitted
+		3, 4, 3, 4, // 2 years pass — no Major or Minor awarded
+	}
+	attendAcademic(dice.NewScripted(seq...), DefaultPolicy{}, &c, professors)
+	if c.Skills.Level("Psychology") != 4 || c.Skills.Level("Robotics") != 3 {
+		t.Errorf("Professors changed Major/Minor: Psychology=%d Robotics=%d, want 4/3 unchanged",
+			c.Skills.Level("Psychology"), c.Skills.Level("Robotics"))
+	}
+	if c.Score(Education) != 12 {
+		t.Errorf("Edu = %d, want 12 (Professor graduation)", c.Score(Education))
+	}
+	if !c.hasDegree("Professor") {
+		t.Errorf("Degrees = %v, want a Professor degree", c.Degrees)
+	}
+}
+
+// TestProfessorsNeedsMasters confirms Professors is refused without an MA.
+func TestProfessorsNeedsMasters(t *testing.T) {
+	c := Character{scores: [count]int{7, 7, 7, 9, 9, 7}, Degrees: []string{"BA"}}
+	attendAcademic(dice.NewScripted(1, 1, 1, 1, 1, 1), DefaultPolicy{}, &c, professors)
+	if c.hasDegree("Professor") || c.Score(Education) != 9 {
+		t.Errorf("Professors admitted without an MA: degrees %v Edu %d", c.Degrees, c.Score(Education))
 	}
 }
 

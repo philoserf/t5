@@ -72,12 +72,12 @@ Tooling (go, go-task, poppler's `pdftotext`) is pinned in `Brewfile`.
   (`educate`, Book 1 pp. 59-60: remedial ED5, then either a vocational Trade School
   (`attendTradeSchool`, one year → a `theTrades` Major +2, no Minor/Edu-bump/degree, chosen via
   `Policy.ChooseTradeSchool`) or the best-qualifying academic program — College or University
-  (undergraduate) then, for a BA-holder electing it (`Policy.PursueGraduateSchool`), a post-graduate
-  Masters — all one parameterized `academicProgram` (years, `awardsMajor`, Edu-or-degree prereq,
-  grad-Edu, degree) through the shared apply/pass-fail/waiver `attendAcademic`: undergraduates get
-  Major+1 per pass and Minor+1 per 2 passes with a BA + Edu bump, the Masters raises only the Minor
-  for an MA + Edu 9; golden-locked to the book's Eneri Dinsha College example `9AB58A`) → qualify →
-  term loop →
+  (undergraduate) then, for a BA-holder electing it (`Policy.PursueGraduateSchool`), the post-graduate
+  Masters → Professors ladder — all one parameterized `academicProgram` (years, `awardsMajor`,
+  `awardsMinor`, Edu-or-degree prereq, grad-Edu, degree) through the shared apply/pass-fail/waiver
+  `attendAcademic`: undergraduates get Major+1 per pass and Minor+1 per 2 passes with a BA + Edu bump,
+  the Masters raises only the Minor (MA, Edu 9), Professors neither (Edu 12); golden-locked to the
+  book's Eneri Dinsha College example `9AB58A`) → qualify → term loop →
   muster-out. Education is gated on `Policy.PursueEducation`, so a
   no-education policy leaves any dice trace (e.g. the golden Scout's) untouched. The term engine
   (`career.go`) is career-agnostic with pluggable seams (`CCMode` Rotate/Fixed — under FixedCC the

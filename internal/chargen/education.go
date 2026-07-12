@@ -9,10 +9,10 @@ import "github.com/philoserf/t5/internal/dice"
 // and an Education bump.
 //
 // This slice implements the remedial ED5, the vocational Trade School, the
-// undergraduate College and University, and the post-graduate Masters. Deferred:
-// the remaining higher and military institutions (Professors, Service Academy,
-// Medical/Law, Honors, OTC/NOTC, Flight School), the full Available-Skills
-// matrix, and the Tra-based training path.
+// undergraduate College and University, and the post-graduate Masters and
+// Professors ladder. Deferred: the professional and military institutions
+// (Service Academy, Medical/Law, Honors, OTC/NOTC, Flight School), the full
+// Available-Skills matrix, and the Tra-based training path.
 
 const (
 	ed5MaxEdu   = 4 // ED5 admits a character of Edu 4 or less
@@ -24,13 +24,15 @@ const (
 
 // An academicProgram is a degree course (Book 1 p. 60): apply, one Pass/Fail
 // Check per year, then graduate for a degree and an Edu bump. The undergraduate
-// College and University award a Major each pass (and a Minor every second);
-// the post-graduate Masters raises only the Minor and is gated on a prior
-// degree rather than an Edu level.
+// College and University award a Major each pass and a Minor every second; the
+// post-graduate Masters raises only the Minor; the terminal Professors program
+// awards neither, conferring only its Edu bump and title. Post-graduate programs
+// are gated on a prior degree rather than an Edu level.
 type academicProgram struct {
 	name         string
 	years        int
-	awardsMajor  bool   // award a Major each pass (College/University), not just the Minor (Masters)
+	awardsMajor  bool   // raise a Major each pass (College/University)
+	awardsMinor  bool   // raise a Minor every second pass (College/University/Masters)
 	preReqEdu    int    // minimum Edu to enroll (0 when preReqDegree is the gate)
 	preReqDegree string // a prior degree required to enroll ("" for undergraduate programs)
 	gradEdu      int
@@ -38,9 +40,10 @@ type academicProgram struct {
 }
 
 var (
-	college    = academicProgram{name: "College", years: 4, awardsMajor: true, preReqEdu: 5, gradEdu: 8, degree: "BA"}
-	university = academicProgram{name: "University", years: 4, awardsMajor: true, preReqEdu: 7, gradEdu: 9, degree: "BA"}
-	masters    = academicProgram{name: "Masters", years: 2, awardsMajor: false, preReqDegree: "BA", gradEdu: 9, degree: "MA"}
+	college    = academicProgram{name: "College", years: 4, awardsMajor: true, awardsMinor: true, preReqEdu: 5, gradEdu: 8, degree: "BA"}
+	university = academicProgram{name: "University", years: 4, awardsMajor: true, awardsMinor: true, preReqEdu: 7, gradEdu: 9, degree: "BA"}
+	masters    = academicProgram{name: "Masters", years: 2, awardsMinor: true, preReqDegree: "BA", gradEdu: 9, degree: "MA"}
+	professors = academicProgram{name: "Professors", years: 2, preReqDegree: "MA", gradEdu: 12, degree: "Professor"}
 )
 
 // academicMajors is a representative list of College Major/Minor subjects (the
@@ -72,9 +75,13 @@ func educate(r *dice.Roller, p Policy, c *Character) {
 	case c.Score(Education) >= college.preReqEdu:
 		attendAcademic(r, p, c, college)
 	}
-	// A graduate — with a BA — may go on to a Masters.
+	// A graduate — with a BA — may climb the post-graduate ladder: a Masters, then
+	// (having earned the MA) a terminal Professors program.
 	if p.PursueGraduateSchool(*c) && c.hasDegree(masters.preReqDegree) {
 		attendAcademic(r, p, c, masters)
+		if c.hasDegree(professors.preReqDegree) {
+			attendAcademic(r, p, c, professors)
+		}
 	}
 }
 
@@ -185,7 +192,7 @@ func awardAcademicPass(c *Character, p Policy, prog academicProgram, passNum int
 		}
 		c.Skills.Raise(c.Major, 1)
 	}
-	if passNum%2 == 0 {
+	if prog.awardsMinor && passNum%2 == 0 {
 		if c.Minor == "" {
 			c.Minor = p.ChooseSkill(*c, without(academicMajors, c.Major))
 		}
