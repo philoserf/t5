@@ -10,10 +10,9 @@ package chargen
 // model — those grid cells are transcribed as NoAward ("lost" per the page's
 // footnote when the character has no Major/Minor). The Personal Soc bump carries
 // a second footnote ("lost if Soc is a Caste"); Caste is not modelled, so it is
-// applied unconditionally. The muster Benefit column's DM is +Fame/2 and Fame is
-// not yet tracked, so a benefit roll is 1D only (rows 1-6) — the high-Fame rows
-// (Ship Share at 8 … Knighthood at 12) are unreachable via Benefit until Fame
-// exists; the Money column reaches them through its +Terms DM.
+// applied unconditionally. The muster Benefit column's DM is +Fame/2 (BenefitDM
+// DMFameHalf); a Scout earns no Fame, so it is 0 — the high-Fame benefit rows are
+// reached through the Money column's +Terms DM.
 
 // Cell constructors keep the grid readable.
 func bump(ch Characteristic) Cell   { return Cell{Kind: AwardBump, Char: ch} }
@@ -29,6 +28,7 @@ func cascade(parent string, knowledges ...string) Cell {
 
 func cash(credits int) Benefit            { return Benefit{Kind: Cash, Value: credits} }
 func charAward(ch Characteristic) Benefit { return Benefit{Kind: CharBump, Value: 1, Char: ch} }
+func fameAward() Benefit                  { return Benefit{Kind: FameBump, Value: 1} }
 func named(name string) Benefit           { return Benefit{Kind: Named, Name: name} }
 
 // major and minor award the character's College Major/Minor (Book 1 p. 79

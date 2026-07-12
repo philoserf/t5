@@ -487,6 +487,17 @@ func runFameTerm(r *dice.Roller, p Policy, c *Character, career Career) TermOutc
 // attempt (Book 1 p. 75).
 const masterpieceMinimum = 40
 
+// masterpieceValue returns a Masterpiece's sale value (Book 1 p. 75):
+// Cr150,000 plus Cr10,000 per Master Point over 40, doubled for a Perfect
+// Masterpiece (55+ Master Points).
+func masterpieceValue(points int) int {
+	v := 150_000 + (points-masterpieceMinimum)*10_000
+	if points >= 55 {
+		v *= 2
+	}
+	return v
+}
+
 // courierElig is the skill eligibility of a Scout's Courier duty (Book 1 p. 79);
 // Explorer duty grants the career's full EligPerTerm.
 const courierElig = 4
@@ -503,6 +514,7 @@ func runCraftsmanTerm(r *dice.Roller, p Policy, c *Character, career Career, cc 
 	elig := career.EligPerTerm
 	if points >= masterpieceMinimum && r.Dice(9) <= points {
 		c.Masterpieces++
+		c.MasterpieceValue += masterpieceValue(points)
 		elig += 3
 	} else {
 		elig++
@@ -721,6 +733,7 @@ type BenefitKind int
 const (
 	Cash     BenefitKind = iota // Value credits
 	CharBump                    // +Value to characteristic Char
+	FameBump                    // +Value to Fame (the Entertainer's "Fame +1")
 	Named                       // a named benefit (Ship Share, TAS Fellowship, …)
 )
 
@@ -774,6 +787,8 @@ func applyBenefit(c *Character, b Benefit) {
 		c.Credits += b.Value
 	case CharBump:
 		c.scores[b.Char] = min(c.scores[b.Char]+b.Value, maxCharacteristic)
+	case FameBump:
+		c.Fame += b.Value
 	case Named:
 		c.Benefits = append(c.Benefits, b.Name)
 	}

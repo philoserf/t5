@@ -65,7 +65,7 @@ var ScholarCareer = Career{
 		6:  {Money: cash(250_000), Benefit: charAward(Dexterity)}, // StarPass
 		7:  {Money: cash(25_000), Benefit: charAward(Endurance)},
 		8:  {Money: cash(30_000), Benefit: charAward(Intelligence)},
-		9:  {Money: cash(35_000), Benefit: named("Fame +1")},
+		9:  {Money: cash(35_000), Benefit: fameAward()},
 		10: {Money: cash(40_000), Benefit: named("Ship Share")},
 		11: {Money: cash(50_000), Benefit: named("TAS Fellowship")},
 		12: {Money: cash(50_000), Benefit: named("TAS Fellowship")},

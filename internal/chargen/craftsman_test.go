@@ -64,6 +64,10 @@ func TestCraftsmanMasterpiece(t *testing.T) {
 	if c.Masterpieces != 1 {
 		t.Errorf("Masterpieces = %d, want 1", c.Masterpieces)
 	}
+	// 48 Master Points: Cr150,000 + 8 x Cr10,000 = Cr230,000 (not Perfect).
+	if c.MasterpieceValue != 230_000 {
+		t.Errorf("MasterpieceValue = %d, want 230000", c.MasterpieceValue)
+	}
 	if c.Skills.Level("Craftsman") != 11 {
 		t.Errorf("Craftsman = %d, want 11 (+1 from the successful term)", c.Skills.Level("Craftsman"))
 	}
