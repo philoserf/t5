@@ -50,8 +50,10 @@ func careerByName(name string) (chargen.Career, error) {
 	switch strings.ToLower(name) {
 	case "scout":
 		return chargen.ScoutCareer, nil
+	case "rogue":
+		return chargen.RogueCareer, nil
 	default:
-		return chargen.Career{}, fmt.Errorf("unknown career %q (known: scout)", name)
+		return chargen.Career{}, fmt.Errorf("unknown career %q (known: scout, rogue)", name)
 	}
 }
 
