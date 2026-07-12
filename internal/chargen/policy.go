@@ -9,6 +9,10 @@ type Policy interface {
 	// The engine only ever passes a non-empty slice (RunCareer rejects a career
 	// with no controlling characteristics).
 	ChooseCC(c Character, available []Characteristic) Characteristic
+	// RiskMod returns the term's Risk & Reward modifier for a Controlling
+	// Characteristic of value cc: positive for Caution (safer, worse reward),
+	// negative for Bravery (riskier, better reward), 0 for no modifier.
+	RiskMod(c Character, cc int) int
 	// Continue reports whether the character wishes to serve another term.
 	Continue(c Character, rec CareerRecord) bool
 }
@@ -28,6 +32,9 @@ func (DefaultPolicy) ChooseCC(c Character, available []Characteristic) Character
 	}
 	return best
 }
+
+// RiskMod takes no modifier — the neutral choice.
+func (DefaultPolicy) RiskMod(Character, int) int { return 0 }
 
 // Continue keeps serving until aging begins (age 34), a simple heuristic that
 // yields a typical few-term character.
