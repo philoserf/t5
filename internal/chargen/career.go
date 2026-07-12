@@ -32,6 +32,7 @@ const (
 	Scholar                     // a single-ladder rank career with Publications (Book 1 p. 76)
 	Functionary                 // an Office Politics career (Book 1 p. 87)
 	Noble                       // a Return & Intrigue career (Book 1 p. 85)
+	Merchant                    // a dual-track (Rating/Officer) career with Ship Shares (Book 1 p. 80)
 )
 
 // CCMode controls how a career's Controlling Characteristic is chosen each term:
@@ -124,6 +125,7 @@ const (
 	RewardNone        RewardKind = iota // the reward benefit is deferred (Scout, Rogue, …)
 	RewardMedal                         // armed forces: a Medal
 	RewardPublication                   // the Scholar: a Publication
+	RewardShipShares                    // the Merchant: escalating Ship Shares (Nth reward = N shares)
 )
 
 // A Career is the data for one career. It grows as later slices add the skill
@@ -207,6 +209,7 @@ type careerRun struct {
 	citizenWins int              // Citizen Life successes so far (drives the Job/Hobby schedule)
 	job, hobby  string           // the Citizen's Job and Hobby skills, set on the 1st/2nd success
 	exiled      bool             // the Noble is currently in Exile (Book 1 p. 85)
+	rewards     int              // Reward successes so far (the Merchant's escalating Ship Shares)
 }
 
 // GenerateCareered generates a character on the given homeworld and runs one
@@ -311,6 +314,9 @@ func runTerm(r *dice.Roller, p Policy, c *Character, run *careerRun, career Care
 				c.Medals++
 			case RewardPublication:
 				c.Publications++
+			case RewardShipShares:
+				run.rewards++ // the Nth Reward success is worth N Ship Shares
+				c.ShipShares += run.rewards
 			}
 		}
 	} else {

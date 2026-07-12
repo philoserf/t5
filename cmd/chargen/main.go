@@ -72,8 +72,10 @@ func careerByName(name string) (chargen.Career, error) {
 		return chargen.FunctionaryCareer, nil
 	case "noble":
 		return chargen.NobleCareer, nil
+	case "merchant":
+		return chargen.MerchantCareer, nil
 	default:
-		return chargen.Career{}, fmt.Errorf("unknown career %q (known: scout, rogue, soldier, marine, spacer, agent, citizen, entertainer, craftsman, scholar, functionary, noble)", name)
+		return chargen.Career{}, fmt.Errorf("unknown career %q (known: scout, rogue, soldier, marine, spacer, agent, citizen, entertainer, craftsman, scholar, functionary, noble, merchant)", name)
 	}
 }
 
@@ -115,6 +117,9 @@ func render(c chargen.Character, career chargen.Career) string {
 	}
 	if c.LandGrants > 0 {
 		fmt.Fprintf(&b, ", %d land grants", c.LandGrants)
+	}
+	if c.ShipShares > 0 {
+		fmt.Fprintf(&b, ", %d ship shares", c.ShipShares)
 	}
 	renderTail(&b, c)
 	return b.String()
