@@ -10,6 +10,7 @@ func TestLifeStage(t *testing.T) {
 	cases := map[int]int{
 		0: 0, 1: 0, 2: 1, 9: 1, 10: 2, 17: 2, 18: 3, 33: 4,
 		34: 5, 41: 5, 42: 6, 65: 8, 66: 9, 71: 9,
+		74: 9, 100: 9, // Retirement is the last stage; older ages stay at 9
 	}
 	for age, want := range cases {
 		if got := lifeStage(age); got != want {

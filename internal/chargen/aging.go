@@ -16,11 +16,12 @@ const (
 
 // lifeStage maps an age to a life stage: 0 for infancy (under 2), then one stage
 // per eight years (2-9 Child = 1 … 34-41 Peak = 5 … 66+ Retirement = 9).
+// Retirement is the last defined stage, so ages past it stay at 9.
 func lifeStage(age int) int {
 	if age < 2 {
 		return 0
 	}
-	return (age-2)/8 + 1
+	return min((age-2)/8+1, 9)
 }
 
 // An Illness is the fallout when characteristics are driven to zero by a single
