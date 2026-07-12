@@ -67,15 +67,19 @@ Tooling (go, go-task, poppler's `pdftotext`) is pinned in `Brewfile`.
   each 2D, eHex) at age 18, offers `Check`, and `AgingCheck` (Book 1 p. 89: `2D < LifeStage`,
   physical from 34 / mental from 66, zero-cascade to illness/death). `GenerateCareered` runs the
   checklist lifecycle: UPP → homeworld skills (`ApplyHomeworldSkills`, one skill per Trade
-  Classification, Book 1 p. 56 — the homeworld is a `worldgen.World` input) → qualify → term loop
-  → muster-out. The term engine (`career.go`) is career-agnostic with pluggable seams (`CCMode`
-  Rotate/Fixed, `AdvanceRule` RollLow/RollHigh, `Qualification` char-set, `ContinueRule`); a
-  `Policy` (with `DefaultPolicy`) supplies every player choice so generation is deterministic and
-  testable. Careers are data: `ScoutCareer` (`scout.go`, transcribed from p. 79 — the 7×6
-  `SkillGrid` + `MusterTable`) is the only one so far, locked by a hand-traced golden Scout.
-  Deferred: education (stage C, which unlocks the "lost" Academic Major/Minor cells), the other
-  12 careers (armed-forces rank machinery is not yet built), and the Scout's Courier/Explorer
-  duty, R&R reward, and Fame.
+  Classification, Book 1 p. 56 — the homeworld is a `worldgen.World` input) → optional college
+  (`AttendCollege`, Book 1 p. 60: apply/pass-fail/waiver, Major+1 per pass and Minor+1 per 2
+  passes, BA + Edu bump on graduation; golden-locked to the book's Eneri Dinsha example `9AB58A`)
+  → qualify → term loop → muster-out. Education is gated on `Policy.PursueEducation`, so a
+  no-education policy leaves any dice trace (e.g. the golden Scout's) untouched. The term engine
+  (`career.go`) is career-agnostic with pluggable seams (`CCMode` Rotate/Fixed, `AdvanceRule`
+  RollLow/RollHigh, `Qualification` char-set, `ContinueRule`); a `Policy` (with `DefaultPolicy`)
+  supplies every player choice so generation is deterministic and testable. Careers are data:
+  `ScoutCareer` (`scout.go`, transcribed from p. 79 — the 7×6 `SkillGrid` + `MusterTable`) is the
+  only one so far, locked by a hand-traced golden Scout. Deferred: the rest of the education
+  institutions (ED5, University, Trade School, higher/military) and wiring Major/Minor into the
+  "lost" Academic grid cells, the other 12 careers (armed-forces rank machinery is not yet
+  built), and the Scout's Courier/Explorer duty, R&R reward, and Fame.
 - `internal/calendar/` — the Imperial Calendar (Book 1 Appendix 02, p. 262): a 365-day `Date` (day 1 is
   Holiday, then 52 weeks Wonday..Senday), with `Weekday`, `Add` (year rollover), and `String`
   (`001-1105`). Pure date math, no dice.

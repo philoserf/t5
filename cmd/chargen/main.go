@@ -59,6 +59,9 @@ func careerByName(name string) (chargen.Career, error) {
 func render(c chargen.Character, career chargen.Career) string {
 	var b strings.Builder
 	fmt.Fprintf(&b, "%s  age %d  homeworld %s", c.UPP(), c.Age, c.Homeworld.Profile)
+	if len(c.Degrees) > 0 {
+		fmt.Fprintf(&b, "  %s (%s/%s)", strings.Join(c.Degrees, " "), c.Major, c.Minor)
+	}
 	if len(c.Careers) == 0 {
 		fmt.Fprintf(&b, "  did not qualify for %s", career.Name)
 		renderTail(&b, c)

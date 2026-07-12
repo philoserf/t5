@@ -22,6 +22,12 @@ type Policy interface {
 	Continue(c Character, rec CareerRecord) bool
 	// MusterColumn picks the Money or Benefit column for one muster-out roll.
 	MusterColumn(c Character, rec CareerRecord) MusterColumn
+	// PursueEducation reports whether the character attends college before their
+	// career (Book 1 stage C).
+	PursueEducation(c Character) bool
+	// TakeWaiver reports whether the character attempts an Educational Waiver
+	// after an adverse roll, given the number of waivers already attempted.
+	TakeWaiver(c Character, priorWaivers int) bool
 }
 
 // DefaultPolicy makes reasonable automatic choices, so a character can be
@@ -80,3 +86,12 @@ func (DefaultPolicy) Continue(c Character, _ CareerRecord) bool {
 func (DefaultPolicy) MusterColumn(Character, CareerRecord) MusterColumn {
 	return BenefitColumn
 }
+
+// PursueEducation sends a character to college when they meet the prerequisite —
+// education raises Edu and grants a Major and Minor worth having.
+func (DefaultPolicy) PursueEducation(c Character) bool {
+	return c.Score(Education) >= collegePreReqEdu
+}
+
+// TakeWaiver always attempts a waiver — staying enrolled beats washing out.
+func (DefaultPolicy) TakeWaiver(Character, int) bool { return true }

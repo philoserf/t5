@@ -139,15 +139,18 @@ type careerRun struct {
 
 // GenerateCareered generates a character on the given homeworld and runs one
 // career on them. It follows the checklist order (Book 1 p. 72): roll the UPP
-// (A), take homeworld skills (B), then attempt the career (D) and muster out
-// (E). The character qualifies on 2D at or under the best of the career's
-// qualifying characteristics; on success they serve terms and muster out, and on
-// failure they enter no career and remain a fresh 18-year-old — but keep their
-// homeworld skills either way.
+// (A), take homeworld skills (B), optionally attend college (C), then attempt
+// the career (D) and muster out (E). The character qualifies on 2D at or under
+// the best of the career's qualifying characteristics; on success they serve
+// terms and muster out, and on failure they enter no career and remain a fresh
+// 18-year-old — but keep their homeworld skills and education either way.
 func GenerateCareered(r *dice.Roller, p Policy, homeworld worldgen.World, career Career) Character {
 	c := Generate(r)
 	c.Homeworld = homeworld
 	ApplyHomeworldSkills(&c, homeworld, p)
+	if p.PursueEducation(c) {
+		AttendCollege(r, p, &c)
+	}
 	if r.Resolve(dice.Check{Dice: 2, Target: career.Qualify.target(c)}).Success {
 		RunCareer(r, p, &c, career)
 		if rec := c.Careers[len(c.Careers)-1]; rec.Outcome != Died {

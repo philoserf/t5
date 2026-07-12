@@ -52,6 +52,9 @@ type Character struct {
 	Dead   bool // set when aging (or a career mishap) kills the character
 
 	Homeworld   worldgen.World // the world the character was raised on (Book 1 p. 56)
+	Major       string         // College Major subject, if educated
+	Minor       string         // College Minor subject, if educated
+	Degrees     []string       // academic degrees earned (BA, …)
 	Skills      skill.Set      // skills and knowledges gained in careers
 	Careers     []CareerRecord // one record per career served
 	Credits     int            // cash mustered out
