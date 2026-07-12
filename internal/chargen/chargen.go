@@ -65,6 +65,7 @@ type Character struct {
 	Talent       int            // the Entertainer's performance ability
 	Masterpieces int            // works of art the Craftsman has created (Book 1 p. 75)
 	Publications int            // research the Scholar has published (Book 1 p. 76)
+	LandGrants   int            // fiefs granted to the Noble on each Elevation (Book 1 p. 85)
 
 	extremeAgings int // aging checks that zeroed 3+ characteristics; the 2nd is fatal
 }
