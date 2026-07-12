@@ -67,10 +67,12 @@ Tooling (go, go-task, poppler's `pdftotext`) is pinned in `Brewfile`.
   each 2D, eHex) at age 18, offers `Check`, and `AgingCheck` (Book 1 p. 89: `2D < LifeStage`,
   physical from 34 / mental from 66, zero-cascade to illness/death). `GenerateCareered` runs the
   checklist lifecycle: UPP → homeworld skills (`ApplyHomeworldSkills`, one skill per Trade
-  Classification, Book 1 p. 56 — the homeworld is a `worldgen.World` input) → optional college
-  (`AttendCollege`, Book 1 p. 60: apply/pass-fail/waiver, Major+1 per pass and Minor+1 per 2
-  passes, BA + Edu bump on graduation; golden-locked to the book's Eneri Dinsha example `9AB58A`)
-  → qualify → term loop → muster-out. Education is gated on `Policy.PursueEducation`, so a
+  Classification, Book 1 p. 56 — the homeworld is a `worldgen.World` input) → optional education
+  (`educate`, Book 1 pp. 59-60: remedial ED5 then the best-qualifying academic program — College
+  or University, a shared `academicProgram` differing only in prereq/graduation-Edu — via
+  apply/pass-fail/waiver, Major+1 per pass and Minor+1 per 2 passes, BA + Edu bump on graduation;
+  golden-locked to the book's Eneri Dinsha College example `9AB58A`) → qualify → term loop →
+  muster-out. Education is gated on `Policy.PursueEducation`, so a
   no-education policy leaves any dice trace (e.g. the golden Scout's) untouched. The term engine
   (`career.go`) is career-agnostic with pluggable seams (`CCMode` Rotate/Fixed, `AdvanceRule`
   RollLow/RollHigh, `Qualification` char-set, `ContinueRule`); a `Policy` (with `DefaultPolicy`)
@@ -80,9 +82,8 @@ Tooling (go, go-task, poppler's `pdftotext`) is pinned in `Brewfile`.
   / `AwardMinor` cells that raise the character's College Major/Minor (lost if uneducated, per the
   page footnote); `DefaultPolicy.ChooseSkillColumn` is character-aware, so a graduate specializes
   in the Academic column while an uneducated Scout falls through to Courier. Deferred: the rest of
-  the education institutions (ED5, University, Trade School, higher/military), the other 12 careers
-  (armed-forces rank machinery is not yet built), and the Scout's Courier/Explorer duty, R&R
-  reward, and Fame.
+  the education institutions (Trade School, higher/military), the other 12 careers (armed-forces
+  rank machinery is not yet built), and the Scout's Courier/Explorer duty, R&R reward, and Fame.
 - `internal/calendar/` — the Imperial Calendar (Book 1 Appendix 02, p. 262): a 365-day `Date` (day 1 is
   Holiday, then 52 weeks Wonday..Senday), with `Weekday`, `Add` (year rollover), and `String`
   (`001-1105`). Pure date math, no dice.

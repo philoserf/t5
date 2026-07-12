@@ -107,9 +107,10 @@ func (DefaultPolicy) MusterColumn(Character, CareerRecord) MusterColumn {
 }
 
 // PursueEducation sends a character to college when they meet the prerequisite —
-// education raises Edu and grants a Major and Minor worth having.
+// education raises Edu and grants a Major and Minor worth having. (A low-Edu
+// character is left to enter a career directly rather than sit ED5 first.)
 func (DefaultPolicy) PursueEducation(c Character) bool {
-	return c.Score(Education) >= collegePreReqEdu
+	return c.Score(Education) >= college.preReqEdu
 }
 
 // TakeWaiver always attempts a waiver — staying enrolled beats washing out.

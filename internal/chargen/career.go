@@ -149,7 +149,7 @@ func GenerateCareered(r *dice.Roller, p Policy, homeworld worldgen.World, career
 	c.Homeworld = homeworld
 	ApplyHomeworldSkills(&c, homeworld, p)
 	if p.PursueEducation(c) {
-		AttendCollege(r, p, &c)
+		educate(r, p, &c)
 	}
 	if r.Resolve(dice.Check{Dice: 2, Target: career.Qualify.target(c)}).Success {
 		RunCareer(r, p, &c, career)
