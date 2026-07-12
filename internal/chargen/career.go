@@ -29,6 +29,7 @@ const (
 	Citizen                     // an auto-begin career using Citizen Life (Book 1 p. 78)
 	Entertainer                 // a Fame/Talent career (Book 1 p. 77)
 	Craftsman                   // a Masterpiece career (Book 1 p. 75)
+	Scholar                     // a single-ladder rank career with Publications (Book 1 p. 76)
 )
 
 // CCMode controls how a career's Controlling Characteristic is chosen each term:
@@ -82,6 +83,7 @@ type ContinueRule struct {
 	UseSkill  string // target is SkillMult times this skill's level (the Craftsman: Craftsman x2)
 	SkillMult int
 	TermsMod  bool // add the number of terms served to the target (Book 1: "Mod +Terms")
+	PubsMod   bool // add the character's Publications to the target (the Scholar)
 	Char      Characteristic
 	Fixed     int
 	Mod       int
@@ -106,11 +108,21 @@ type Rank struct {
 }
 
 // A PromotionRule is a rank-advancement roll: 2D at or under a characteristic,
-// optionally raised by the character's Medals and Wound Badges.
+// optionally raised by the character's Medals and Wound Badges, or Publications.
 type PromotionRule struct {
 	Char            Characteristic
 	MedalsAndWounds bool
+	PubsMod         bool
 }
+
+// A RewardKind is the token a successful Reward roll earns for a career.
+type RewardKind int
+
+const (
+	RewardNone        RewardKind = iota // the reward benefit is deferred (Scout, Rogue, …)
+	RewardMedal                         // armed forces: a Medal
+	RewardPublication                   // the Scholar: a Publication
+)
 
 // A Career is the data for one career. It grows as later slices add the skill
 // grid, ranks, and mustering-out table.
@@ -122,12 +134,13 @@ type Career struct {
 	ControllingChars []Characteristic
 	Continue         ContinueRule
 	Advance          AdvanceRule
-	EligPerTerm      int  // number of skill rolls a surviving term grants
-	MusterBenefitDMT bool // muster Benefit column adds +Terms (else +Fame/2, currently 0)
-	AutoBegin        bool // the career is entered automatically, with no qualify roll (Citizen)
-	CitizenLife      bool // the term uses benign Citizen Life instead of Risk & Reward (Citizen)
-	FameCareer       bool // the term resolves Fame/Talent instead of Risk & Reward (Entertainer)
-	Masterpiece      bool // the term attempts a Masterpiece instead of Risk & Reward (Craftsman)
+	EligPerTerm      int        // number of skill rolls a surviving term grants
+	MusterBenefitDMT bool       // muster Benefit column adds +Terms (else +Fame/2, currently 0)
+	AutoBegin        bool       // the career is entered automatically, with no qualify roll (Citizen)
+	CitizenLife      bool       // the term uses benign Citizen Life instead of Risk & Reward (Citizen)
+	FameCareer       bool       // the term resolves Fame/Talent instead of Risk & Reward (Entertainer)
+	Masterpiece      bool       // the term attempts a Masterpiece instead of Risk & Reward (Craftsman)
+	RewardKind       RewardKind // what a successful Reward roll earns
 	Skills           SkillGrid
 	MusterOut        MusterTable
 
@@ -276,9 +289,14 @@ func runTerm(r *dice.Roller, p Policy, c *Character, run *careerRun, career Care
 	mod := p.RiskMod(*c, ccVal) // caution (+), bravery (-), or 0
 
 	if r.Resolve(dice.Check{Dice: 2, Target: ccVal + mod}).Success {
-		// Survived. Reward roll; for an armed-forces career a success is a Medal.
-		if r.Resolve(dice.Check{Dice: 2, Target: ccVal - mod}).Success && career.hasRanks() {
-			c.Medals++
+		// Survived. Reward roll; success earns the career's reward token.
+		if r.Resolve(dice.Check{Dice: 2, Target: ccVal - mod}).Success {
+			switch career.RewardKind {
+			case RewardMedal:
+				c.Medals++
+			case RewardPublication:
+				c.Publications++
+			}
 		}
 	} else {
 		// Risk failed: the CC drops by any negative (bravery) mod, then Flux.
@@ -385,12 +403,13 @@ func awardCitizenLife(p Policy, c *Character, run *careerRun) {
 	}
 }
 
-// resolveRank runs a surviving armed-forces character's rank step (Book 1 p. 64
-// for the mechanic, p. 82 for the Soldier's targets and ladders). An enlisted
-// character first rolls for Commission (success moves them to
-// the officer track at Officer 1); failing that, they roll Enlisted Promotion.
-// An officer rolls Officer Promotion. Promotion (not Commission) targets are
-// raised by Medals and Wound Badges. Reaching a rank grants its automatic skill.
+// resolveRank runs a surviving ranked character's rank step (Book 1 p. 64 for
+// the mechanic, p. 82 for the Soldier). An armed-forces enlisted character first
+// rolls for Commission (success moves them to the officer track at Officer 1);
+// failing that, they roll Enlisted Promotion, and an officer rolls Officer
+// Promotion. A single-ladder career (no officer track, e.g. the Scholar) only
+// rolls its one promotion. Promotion (not Commission) targets are raised by
+// Medals, Wound Badges, or Publications. Reaching a rank grants its auto-skill.
 func resolveRank(r *dice.Roller, c *Character, run *careerRun, career Career) {
 	if !career.hasRanks() {
 		return
@@ -402,7 +421,8 @@ func resolveRank(r *dice.Roller, c *Character, run *careerRun, career Career) {
 		}
 		return
 	}
-	if promoted(r, *c, career.Commission) {
+	// Commission applies only to careers with an officer track to rise into.
+	if len(career.OfficerRanks) > 0 && promoted(r, *c, career.Commission) {
 		run.officer = true
 		run.rank = 1
 		grantRankSkill(c, career.OfficerRanks, 1)
@@ -415,11 +435,14 @@ func resolveRank(r *dice.Roller, c *Character, run *careerRun, career Career) {
 }
 
 // promoted resolves one promotion roll: 2D at or under the rule's characteristic,
-// raised by Medals and Wound Badges when the rule allows.
+// raised by Medals and Wound Badges, or Publications, when the rule allows.
 func promoted(r *dice.Roller, c Character, rule PromotionRule) bool {
 	target := c.Score(rule.Char)
 	if rule.MedalsAndWounds {
 		target += c.Medals + c.WoundBadges
+	}
+	if rule.PubsMod {
+		target += c.Publications
 	}
 	return r.Resolve(dice.Check{Dice: 2, Target: target}).Success
 }
@@ -653,6 +676,9 @@ func continues(r *dice.Roller, p Policy, c Character, career Career, rec CareerR
 	}
 	if career.Continue.TermsMod {
 		target += rec.Terms // more experience makes staying in easier (Book 1 p. 83, Agent)
+	}
+	if career.Continue.PubsMod {
+		target += c.Publications // the Scholar continues more easily as they publish
 	}
 	res := r.Resolve(dice.Check{Dice: 2, Target: target})
 	if res.Roll == 2 {

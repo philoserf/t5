@@ -23,6 +23,7 @@ var SpacerCareer = Career{
 	Continue:         ContinueRule{UseChar: true, Char: Strength},         // C1
 	Advance:          RollLow,
 	EligPerTerm:      4,
+	RewardKind:       RewardMedal,
 	Commission:       PromotionRule{Char: Dexterity},                        // C2
 	EnlistedPromote:  PromotionRule{Char: Dexterity, MedalsAndWounds: true}, // C2* (Rating Promotion)
 	OfficerPromote:   PromotionRule{Char: Social, MedalsAndWounds: true},    // Soc*

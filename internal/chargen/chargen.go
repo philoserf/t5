@@ -64,6 +64,7 @@ type Character struct {
 	Fame         int            // reputation, the Entertainer's measure of success (Book 1 p. 77)
 	Talent       int            // the Entertainer's performance ability
 	Masterpieces int            // works of art the Craftsman has created (Book 1 p. 75)
+	Publications int            // research the Scholar has published (Book 1 p. 76)
 
 	extremeAgings int // aging checks that zeroed 3+ characteristics; the 2nd is fatal
 }
