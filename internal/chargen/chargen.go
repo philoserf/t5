@@ -13,6 +13,7 @@ import (
 
 	"github.com/philoserf/t5/internal/dice"
 	"github.com/philoserf/t5/internal/ehex"
+	"github.com/philoserf/t5/internal/skill"
 )
 
 // A Characteristic identifies one of the six human characteristics, in UPP
@@ -42,12 +43,17 @@ func (c Characteristic) String() string {
 	return abbrev[c]
 }
 
-// A Character is a Traveller character: the six human characteristic scores
-// plus age. Careers and aging will extend it further.
+// A Character is a Traveller character: the six human characteristic scores,
+// age, and the results of any careers served.
 type Character struct {
 	scores [count]int
 	Age    int  // years; a freshly generated character starts at 18
-	Dead   bool // set when aging (or, later, a career mishap) kills the character
+	Dead   bool // set when aging (or a career mishap) kills the character
+
+	Skills      skill.Set      // skills and knowledges gained in careers
+	Careers     []CareerRecord // one record per career served
+	Credits     int            // cash mustered out
+	WoundBadges int            // career injuries survived
 
 	extremeAgings int // aging checks that zeroed 3+ characteristics; the 2nd is fatal
 }
