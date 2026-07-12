@@ -45,9 +45,10 @@ func TestGoldenScout(t *testing.T) {
 		3, 4, // reward
 		1, 1, 1, 1, 6, 6, 6, 6, // Survey x4, Navigation x4 again
 		3, 4, // continue: policy stops after term 2 (muster out)
-		// Muster out: 2 rolls (2 terms), Benefit column, DM 0.
-		5, // row 5 -> Str +1 (7 -> 8)
-		1, // row 1 -> Ship Share
+		// Muster out: 2 rolls (2 terms), Benefit column. Each Explorer Reward
+		// success was a Discovery (Fame +1), so Fame is 2 and DM = +Fame/2 = 1.
+		4, // 4 + 1 = row 5 -> Str +1 (7 -> 8)
+		1, // 1 + 1 = row 2 -> Forbidden Knowledge
 	}
 
 	// A fixed homeworld: Ag -> Animals-1, Va -> Vacc Suit-1 (dice-free grants that
@@ -82,8 +83,14 @@ func TestGoldenScout(t *testing.T) {
 	if c.Credits != 0 {
 		t.Errorf("Credits = %d, want 0 (both muster rolls took benefits)", c.Credits)
 	}
-	if len(c.Benefits) != 1 || c.Benefits[0] != "Ship Share" {
-		t.Errorf("Benefits = %v, want [Ship Share]", c.Benefits)
+	if len(c.Benefits) != 1 || c.Benefits[0] != "Forbidden Knowledge" {
+		t.Errorf("Benefits = %v, want [Forbidden Knowledge]", c.Benefits)
+	}
+	// Each term's Explorer Reward succeeded, so each was a Discovery: two
+	// Discoveries, two Land Grants, and Fame 2.
+	if c.Discoveries != 2 || c.LandGrants != 2 || c.Fame != 2 {
+		t.Errorf("Discoveries=%d LandGrants=%d Fame=%d, want 2/2/2",
+			c.Discoveries, c.LandGrants, c.Fame)
 	}
 	if c.WoundBadges != 0 || c.Dead {
 		t.Errorf("unexpected injury: badges %d dead %v", c.WoundBadges, c.Dead)

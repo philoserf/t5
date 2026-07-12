@@ -157,6 +157,9 @@ func render(c chargen.Character) string {
 	if c.Publications > 0 {
 		fmt.Fprintf(&b, ", %d publications", c.Publications)
 	}
+	if c.Discoveries > 0 {
+		fmt.Fprintf(&b, ", %d discoveries", c.Discoveries)
+	}
 	if c.LandGrants > 0 {
 		fmt.Fprintf(&b, ", %d land grants", c.LandGrants)
 	}

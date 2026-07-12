@@ -11,8 +11,8 @@ package chargen
 // footnote when the character has no Major/Minor). The Personal Soc bump carries
 // a second footnote ("lost if Soc is a Caste"); Caste is not modelled, so it is
 // applied unconditionally. The muster Benefit column's DM is +Fame/2 (BenefitDM
-// DMFameHalf); a Scout earns no Fame, so it is 0 — the high-Fame benefit rows are
-// reached through the Money column's +Terms DM.
+// DMFameHalf); a Scout earns Fame +1 on each Discovery (a successful Explorer
+// Reward, RewardDiscovery), which also grants a Land Grant.
 
 // Cell constructors keep the grid readable.
 func bump(ch Characteristic) Cell   { return Cell{Kind: AwardBump, Char: ch} }
@@ -63,6 +63,7 @@ var ScoutCareer = Career{
 	Advance:          RollLow,
 	EligPerTerm:      8, // Explorer duty
 	ScoutDuty:        true,
+	RewardKind:       RewardDiscovery, // a successful Explorer Reward is a Discovery
 	BenefitDM:        DMFameHalf,
 	Skills: SkillGrid{
 		// Col 0 — Personal.
