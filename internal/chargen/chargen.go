@@ -51,22 +51,23 @@ type Character struct {
 	Age    int  // years; a freshly generated character starts at 18
 	Dead   bool // set when aging (or a career mishap) kills the character
 
-	Homeworld    worldgen.World // the world the character was raised on (Book 1 p. 56)
-	Major        string         // College Major subject, if educated
-	Minor        string         // College Minor subject, if educated
-	Degrees      []string       // academic degrees earned (BA, …)
-	Skills       skill.Set      // skills and knowledges gained in careers
-	Careers      []CareerRecord // one record per career served
-	Credits      int            // cash mustered out
-	Benefits     []string       // named mustering-out benefits (Ship Share, TAS, …)
-	WoundBadges  int            // career injuries survived
-	Medals       int            // awards earned on successful Reward rolls (armed forces)
-	Fame         int            // reputation, the Entertainer's measure of success (Book 1 p. 77)
-	Talent       int            // the Entertainer's performance ability
-	Masterpieces int            // works of art the Craftsman has created (Book 1 p. 75)
-	Publications int            // research the Scholar has published (Book 1 p. 76)
-	LandGrants   int            // fiefs granted to the Noble on each Elevation (Book 1 p. 85)
-	ShipShares   int            // ownership shares the Merchant accumulates (Book 1 p. 80)
+	Homeworld        worldgen.World // the world the character was raised on (Book 1 p. 56)
+	Major            string         // College Major subject, if educated
+	Minor            string         // College Minor subject, if educated
+	Degrees          []string       // academic degrees earned (BA, …)
+	Skills           skill.Set      // skills and knowledges gained in careers
+	Careers          []CareerRecord // one record per career served
+	Credits          int            // cash mustered out
+	Benefits         []string       // named mustering-out benefits (Ship Share, TAS, …)
+	WoundBadges      int            // career injuries survived
+	Medals           int            // awards earned on successful Reward rolls (armed forces)
+	Fame             int            // reputation, the Entertainer's measure of success (Book 1 p. 77)
+	Talent           int            // the Entertainer's performance ability
+	Masterpieces     int            // works of art the Craftsman has created (Book 1 p. 75)
+	MasterpieceValue int            // total Cr value of those masterpieces
+	Publications     int            // research the Scholar has published (Book 1 p. 76)
+	LandGrants       int            // fiefs granted to the Noble on each Elevation (Book 1 p. 85)
+	ShipShares       int            // ownership shares the Merchant accumulates (Book 1 p. 80)
 
 	extremeAgings int // aging checks that zeroed 3+ characteristics; the 2nd is fatal
 }
