@@ -158,6 +158,44 @@ func TestTradeSchool(t *testing.T) {
 	}
 }
 
+// gradPolicy takes the academic path and goes on to graduate school.
+type gradPolicy struct{ DefaultPolicy }
+
+func (gradPolicy) PursueGraduateSchool(Character) bool { return true }
+
+// TestMastersDegree runs a College graduate on to a Masters: after the BA
+// (Psychology Major-4, Robotics Minor-2, Edu 6 -> 8), the two-year Masters
+// raises only the Minor (Robotics -> 3) and confers an MA with Edu 9.
+func TestMastersDegree(t *testing.T) {
+	c := Character{scores: [count]int{7, 7, 7, 8, 6, 7}} // Int 8, Edu 6 -> College
+	seq := []int{
+		3, 4, // College apply Check Int(8): 7 <= 8, admitted
+		3, 4, 3, 4, 3, 4, 3, 4, // 4 College years pass -> Psychology-4, Robotics-2, BA, Edu 8
+		3, 4, // Masters apply Check Int(8): 7 <= 8, admitted
+		3, 4, 3, 4, // 2 Masters years pass -> Robotics +1 (2nd pass) -> 3, MA, Edu 9
+	}
+	educate(dice.NewScripted(seq...), gradPolicy{}, &c)
+	if c.Skills.Level("Psychology") != 4 || c.Skills.Level("Robotics") != 3 {
+		t.Errorf("Psychology=%d Robotics=%d, want 4/3 (the Masters raises only the Minor)",
+			c.Skills.Level("Psychology"), c.Skills.Level("Robotics"))
+	}
+	if c.Score(Education) != 9 {
+		t.Errorf("Edu = %d, want 9 (MA graduation)", c.Score(Education))
+	}
+	if !c.hasDegree("BA") || !c.hasDegree("MA") {
+		t.Errorf("Degrees = %v, want both BA and MA", c.Degrees)
+	}
+}
+
+// TestMastersNeedsDegree confirms a Masters is refused without a prior degree.
+func TestMastersNeedsDegree(t *testing.T) {
+	c := Character{scores: [count]int{7, 7, 7, 9, 9, 7}} // no degree
+	attendAcademic(dice.NewScripted(1, 1, 1, 1, 1, 1), DefaultPolicy{}, &c, masters)
+	if len(c.Degrees) != 0 || c.Score(Education) != 9 {
+		t.Errorf("Masters admitted without a BA: degrees %v Edu %d", c.Degrees, c.Score(Education))
+	}
+}
+
 // tradeNoWaiver takes Trade School but never waives a failed year.
 type tradeNoWaiver struct{ DefaultPolicy }
 

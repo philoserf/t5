@@ -8,31 +8,39 @@ import "github.com/philoserf/t5/internal/dice"
 // Pass/Fail Check per year, and on completing every year Graduate for a degree
 // and an Education bump.
 //
-// This slice implements the remedial ED5, the vocational Trade School, and the
-// academic programs (College and University). Deferred: the higher and military
-// institutions (Service Academy, Masters, Medical/Law, Honors, OTC/NOTC, Flight
-// School), the full Available-Skills matrix, and the Tra-based training path.
+// This slice implements the remedial ED5, the vocational Trade School, the
+// undergraduate College and University, and the post-graduate Masters. Deferred:
+// the remaining higher and military institutions (Professors, Service Academy,
+// Medical/Law, Honors, OTC/NOTC, Flight School), the full Available-Skills
+// matrix, and the Tra-based training path.
 
 const (
-	academicYears = 4 // College and University each require four Pass/Fail Checks
-	ed5MaxEdu     = 4 // ED5 admits a character of Edu 4 or less
-	ed5RaisesTo   = 5 // and raises their Edu to 5
+	ed5MaxEdu   = 4 // ED5 admits a character of Edu 4 or less
+	ed5RaisesTo = 5 // and raises their Edu to 5
 
 	tradeSchoolPreReqEdu = 5 // Trade School admits a character of Edu 5+
 	tradeSchoolMajorBump = 2 // and, on completion, raises a vocational Major +2
 )
 
-// An academicProgram is a four-year degree course (Book 1 p. 60): College and
-// University share the process and differ only in prerequisite and the Edu they
-// confer on graduation.
+// An academicProgram is a degree course (Book 1 p. 60): apply, one Pass/Fail
+// Check per year, then graduate for a degree and an Edu bump. The undergraduate
+// College and University award a Major each pass (and a Minor every second);
+// the post-graduate Masters raises only the Minor and is gated on a prior
+// degree rather than an Edu level.
 type academicProgram struct {
-	preReqEdu int
-	gradEdu   int
+	name         string
+	years        int
+	awardsMajor  bool   // award a Major each pass (College/University), not just the Minor (Masters)
+	preReqEdu    int    // minimum Edu to enroll (0 when preReqDegree is the gate)
+	preReqDegree string // a prior degree required to enroll ("" for undergraduate programs)
+	gradEdu      int
+	degree       string // the degree conferred on graduation
 }
 
 var (
-	college    = academicProgram{preReqEdu: 5, gradEdu: 8}
-	university = academicProgram{preReqEdu: 7, gradEdu: 9}
+	college    = academicProgram{name: "College", years: 4, awardsMajor: true, preReqEdu: 5, gradEdu: 8, degree: "BA"}
+	university = academicProgram{name: "University", years: 4, awardsMajor: true, preReqEdu: 7, gradEdu: 9, degree: "BA"}
+	masters    = academicProgram{name: "Masters", years: 2, awardsMajor: false, preReqDegree: "BA", gradEdu: 9, degree: "MA"}
 )
 
 // academicMajors is a representative list of College Major/Minor subjects (the
@@ -64,6 +72,20 @@ func educate(r *dice.Roller, p Policy, c *Character) {
 	case c.Score(Education) >= college.preReqEdu:
 		attendAcademic(r, p, c, college)
 	}
+	// A graduate — with a BA — may go on to a Masters.
+	if p.PursueGraduateSchool(*c) && c.hasDegree(masters.preReqDegree) {
+		attendAcademic(r, p, c, masters)
+	}
+}
+
+// hasDegree reports whether the character has earned a given degree.
+func (c Character) hasDegree(degree string) bool {
+	for _, d := range c.Degrees {
+		if d == degree {
+			return true
+		}
+	}
+	return false
 }
 
 // attendTradeSchool runs a one-year Trade School (Book 1 p. 60): apply with a
@@ -101,10 +123,14 @@ func attemptED5(r *dice.Roller, c *Character) {
 	}
 }
 
-// attendAcademic runs a character through a College or University program (Book
-// 1 p. 60). A character below the program's Edu prerequisite cannot attend and
-// is left unchanged.
+// attendAcademic runs a character through an academic program (Book 1 p. 60). A
+// character who fails to meet the program's prerequisite — an Edu level, or a
+// prior degree for a post-graduate program — cannot attend and is left
+// unchanged.
 func attendAcademic(r *dice.Roller, p Policy, c *Character, prog academicProgram) {
+	if prog.preReqDegree != "" && !c.hasDegree(prog.preReqDegree) {
+		return
+	}
 	if c.Score(Education) < prog.preReqEdu {
 		return
 	}
@@ -116,10 +142,10 @@ func attendAcademic(r *dice.Roller, p Policy, c *Character, prog academicProgram
 	// One Pass/Fail Check per year; a failure ends attendance unless Waived.
 	passCh := bestChar(*c, Intelligence, Education)
 	passes := 0
-	for range academicYears {
+	for range prog.years {
 		if r.Resolve(dice.Check{Dice: 2, Target: c.Score(passCh)}).Success {
 			passes++
-			awardAcademicPass(c, p, passes)
+			awardAcademicPass(c, p, prog, passes)
 		} else if !waiverGranted(r, p, c, &priorWaivers) {
 			return // failed out — no graduation
 		}
@@ -148,14 +174,17 @@ func waiverGranted(r *dice.Roller, p Policy, c *Character, priorWaivers *int) bo
 	return res.Success
 }
 
-// awardAcademicPass applies one passed year: Major +1 (declared on the first
-// pass), plus Minor +1 on every second pass (declared on the first — Book 1 p.
-// 60: "Major+1 per Pass" and "Minor+1 per 2 Passes").
-func awardAcademicPass(c *Character, p Policy, passNum int) {
-	if c.Major == "" {
-		c.Major = p.ChooseSkill(*c, academicMajors)
+// awardAcademicPass applies one passed year (Book 1 p. 60: "Major+1 per Pass"
+// and "Minor+1 per 2 Passes"): an undergraduate program raises the Major each
+// pass, and every second pass raises the Minor. A post-graduate program that
+// awards no Major (the Masters) raises only the Minor.
+func awardAcademicPass(c *Character, p Policy, prog academicProgram, passNum int) {
+	if prog.awardsMajor {
+		if c.Major == "" {
+			c.Major = p.ChooseSkill(*c, academicMajors)
+		}
+		c.Skills.Raise(c.Major, 1)
 	}
-	c.Skills.Raise(c.Major, 1)
 	if passNum%2 == 0 {
 		if c.Minor == "" {
 			c.Minor = p.ChooseSkill(*c, without(academicMajors, c.Major))
@@ -165,15 +194,15 @@ func awardAcademicPass(c *Character, p Policy, passNum int) {
 }
 
 // graduate applies a program's graduation benefit: Edu rises to the program's
-// graduation level, or +1 if already there (Book 1 p. 60 note), and a BA is
-// recorded.
+// graduation level, or +1 if already there (Book 1 p. 60 note), and the
+// program's degree is recorded.
 func graduate(c *Character, prog academicProgram) {
 	if c.scores[Education] < prog.gradEdu {
 		c.scores[Education] = prog.gradEdu
 	} else {
 		c.scores[Education] = min(c.scores[Education]+1, maxCharacteristic)
 	}
-	c.Degrees = append(c.Degrees, "BA")
+	c.Degrees = append(c.Degrees, prog.degree)
 }
 
 // bestChar returns the highest-scoring of the given characteristics.
