@@ -76,7 +76,7 @@ Tooling (go, go-task, poppler's `pdftotext`) is pinned in `Brewfile`.
   no-education policy leaves any dice trace (e.g. the golden Scout's) untouched. The term engine
   (`career.go`) is career-agnostic with pluggable seams (`CCMode` Rotate/Fixed — under FixedCC the
   policy picks one CC that serves the whole career, `AdvanceRule` RollLow/RollHigh, `Qualification`
-  char-set, `ContinueRule` fixed/char/UseCC, `MusterBenefitDMT` for a +Terms Benefit-column DM, and
+  char-set, `ContinueRule` fixed/char/UseCC/TermsMod, `MusterBenefitDMT` for a +Terms Benefit-column DM, and
   the rank ladders `EnlistedRanks`/`OfficerRanks` + `Commission`/`EnlistedPromote`/`OfficerPromote`
   rules for armed-forces careers); a `Policy` (with `DefaultPolicy`) supplies every player choice so
   generation is deterministic and testable. The rank step (`resolveRank`) runs after Risk & Reward
@@ -85,13 +85,14 @@ Tooling (go, go-task, poppler's `pdftotext`) is pinned in `Brewfile`.
   by `Character.Medals` (a Reward success) and `WoundBadges`, and each rank grants its automatic
   skill. Careers are data, each a file + hand-traced golden: `ScoutCareer` (`scout.go`, p. 79),
   `RogueCareer` (`rogue.go`, p. 84 — FixedCC), `SoldierCareer` (`soldier.go`, p. 82 — the first
-  ranked career), `MarineCareer` (`marine.go`, p. 86), and `SpacerCareer` (`spacer.go`, p. 81 — the
-  naval career, whose Rating ladder uses the engine's EnlistedPromote) — the last two pure data on
-  the rank engine. The Academic grid column uses `AwardMajor`
+  ranked career), `MarineCareer` (`marine.go`, p. 86), `SpacerCareer` (`spacer.go`, p. 81 — the
+  naval career, whose Rating ladder uses the engine's EnlistedPromote), and `AgentCareer`
+  (`agent.go`, p. 83 — a rankless career whose Continue eases with terms served via
+  `ContinueRule.TermsMod`). The Academic grid column uses `AwardMajor`
   / `AwardMinor` cells that raise the character's College Major/Minor (lost if uneducated, per the
   page footnote); `DefaultPolicy.ChooseSkillColumn` is character-aware, so a graduate specializes
   in the Academic column while an uneducated Scout falls through to Courier. Deferred: the rest of
-  the education institutions (Trade School, higher/military), the other 8 careers, the Scout's
+  the education institutions (Trade School, higher/military), the other 7 careers, the Scout's
   Courier/Explorer duty and R&R reward, the Rogue's Scheme mechanic (payoff/prison/infamy, its
   Scheme-driven eligibility, +Terms on R&R/Continue, the "12 is always failure" rule), the
   armed-forces Branch/Operations R&R mods and commission/promotion skill eligibility (Soldier and
