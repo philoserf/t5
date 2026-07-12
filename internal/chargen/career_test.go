@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/philoserf/t5/internal/dice"
+	"github.com/philoserf/t5/internal/worldgen"
 )
 
 // testCareer is a minimal Scout-shaped career for exercising the engine.
@@ -292,13 +293,13 @@ func TestGenerateCareeredQualify(t *testing.T) {
 	// character runs the career; the policy stops immediately.
 	upp := []int{4, 4, 4, 4, 4, 4, 4, 4, 5, 5, 3, 3} // six 2D rolls; Int = 8
 	seq := append(append([]int{}, upp...), 1, 1 /*qualify 2*/, 3, 4 /*continue*/)
-	c := GenerateCareered(dice.NewScripted(seq...), stopAfter{1}, testCareer)
+	c := GenerateCareered(dice.NewScripted(seq...), stopAfter{1}, worldgen.World{}, testCareer)
 	if len(c.Careers) != 1 {
 		t.Fatalf("qualified but no career recorded: %+v", c.Careers)
 	}
 	// A failed qualify (roll 12 > Int) yields no career.
 	seq2 := append(append([]int{}, upp...), 6, 6 /*qualify 12*/)
-	c2 := GenerateCareered(dice.NewScripted(seq2...), stopAfter{1}, testCareer)
+	c2 := GenerateCareered(dice.NewScripted(seq2...), stopAfter{1}, worldgen.World{}, testCareer)
 	if len(c2.Careers) != 0 {
 		t.Fatalf("failed qualify but career recorded: %+v", c2.Careers)
 	}

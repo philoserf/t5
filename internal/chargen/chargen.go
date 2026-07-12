@@ -14,6 +14,7 @@ import (
 	"github.com/philoserf/t5/internal/dice"
 	"github.com/philoserf/t5/internal/ehex"
 	"github.com/philoserf/t5/internal/skill"
+	"github.com/philoserf/t5/internal/worldgen"
 )
 
 // A Characteristic identifies one of the six human characteristics, in UPP
@@ -50,6 +51,7 @@ type Character struct {
 	Age    int  // years; a freshly generated character starts at 18
 	Dead   bool // set when aging (or a career mishap) kills the character
 
+	Homeworld   worldgen.World // the world the character was raised on (Book 1 p. 56)
 	Skills      skill.Set      // skills and knowledges gained in careers
 	Careers     []CareerRecord // one record per career served
 	Credits     int            // cash mustered out

@@ -36,14 +36,13 @@ func named(name string) Benefit           { return Benefit{Kind: Named, Name: na
 // (not-yet-modelled) education stage — the page's footnote says it is lost.
 var lost = Cell{Kind: NoAward}
 
-// The choice cells' option lists are a representative subset, not the full T5
-// cascade. "One X" and "Starship Skill" choose among distinct skills (flat
-// raise); a chosen Starship Skill that is itself a cascade (Pilot, Engineer, …)
-// is left flat here — its sub-knowledge is deferred. languages are knowledges
-// under the Language cascade skill (see cascade()).
+// One Art and One Trade choices draw the canonical lists (oneArt, theTrades from
+// homeworld.go). The remaining choice lists are a representative subset, not the
+// full T5 cascade: "Starship Skill" chooses among distinct skills (flat raise);
+// a chosen Starship Skill that is itself a cascade (Pilot, Engineer, …) is left
+// flat, its sub-knowledge deferred. languages are knowledges under the Language
+// cascade skill (see cascade()).
 var (
-	trades       = []string{"Steward", "Trader", "Craftsman"}
-	arts         = []string{"Artist", "Author", "Performer"}
 	sciences     = []string{"Biologist", "Chemist", "Physicist"}
 	starshipSkls = []string{"Pilot", "Astrogation", "Engineer", "Sensors", "Gunner"}
 	languages    = []string{"Galanglic", "Vilani", "Zdetl"}
@@ -64,7 +63,7 @@ var ScoutCareer = Career{
 		// Col 0 — Personal.
 		{bump(Strength), bump(Dexterity), bump(Endurance), bump(Intelligence), bump(Education), bump(Social)},
 		// Col 1 — Academic (Major/Minor lost without the education stage).
-		{lost, lost, lost, lost, choose(trades...), choose(trades...)},
+		{lost, lost, lost, lost, choose(theTrades...), choose(theTrades...)},
 		// Col 2 — Courier.
 		{sk("Comms"), cascade("Language", languages...), sk("Computer"), sk("JOT"), sk("Gunner"), choose(starshipSkls...)},
 		// Col 3 — Exploration.
@@ -74,7 +73,7 @@ var ScoutCareer = Career{
 		// Col 5 — Vocation.
 		{sk("Survey"), sk("Flyer"), cascade("Language", languages...), choose(starshipSkls...), sk("Engineer"), sk("Comms")},
 		// Col 6 — Avocation.
-		{choose(arts...), choose(sciences...), sk("Seafarer"), sk("Athlete"), sk("Medic"), choose(trades...)},
+		{choose(oneArt...), choose(sciences...), sk("Seafarer"), sk("Athlete"), sk("Medic"), choose(theTrades...)},
 	},
 	// Muster-out (Book 1 p. 79), indexed 1-12 by (1D + DM). Money-column passages
 	// are recorded at their standard cash value.
