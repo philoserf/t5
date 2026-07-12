@@ -39,8 +39,8 @@ var RogueCareer = Career{
 		{choose(sciences...), major, minor, choose(oneArt...), choose(theTrades...), sk("Gambler")},
 		// Col 2 — World Travel.
 		{sk("Driver"), sk("Flyer"), sk("Hostile Environ"), sk("High-G"), sk("Vacc Suit"), sk("Navigation")},
-		// Col 3 — Space Travel.
-		{choose(starshipSkls...), sk("Pilot"), sk("Engineer"), sk("Zero-G"), sk("Vacc Suit"), sk("Astrogator")},
+		// Col 3 — Space Travel ("Astrogator" on p. 84 is the Astrogation skill).
+		{choose(starshipSkls...), sk("Pilot"), sk("Engineer"), sk("Zero-G"), sk("Vacc Suit"), sk("Astrogation")},
 		// Col 4 — Business.
 		{sk("Trader"), sk("Broker"), sk("Computer"), sk("JOT"), sk("Teacher"), sk("Fighter")},
 		// Col 5 — Vocation.
