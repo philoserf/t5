@@ -70,11 +70,19 @@ func TestED5RaisesLowEdu(t *testing.T) {
 	if c.Score(Education) != 5 {
 		t.Errorf("ED5 pass: Edu = %d, want 5", c.Score(Education))
 	}
-	// A failed Int Check leaves Edu unchanged; Edu already 5+ is a no-op.
+	// A failed Int Check leaves Edu unchanged.
 	c2 := Character{scores: [count]int{7, 7, 7, 4, 3, 7}}
 	attemptED5(dice.NewScripted(6, 6), &c2) // roll 12 > Int 4, fail
 	if c2.Score(Education) != 3 {
 		t.Errorf("ED5 fail: Edu = %d, want 3", c2.Score(Education))
+	}
+	// Edu already above the ED5 ceiling is a no-op: the Check is never made, so
+	// Edu stays 6 rather than being pulled down to the ED5 target of 5 (a passing
+	// roll of 7 is scripted, which would set Edu 5 if the Check were rolled).
+	c3 := Character{scores: [count]int{7, 7, 7, 8, 6, 7}}
+	attemptED5(dice.NewScripted(3, 4), &c3)
+	if c3.Score(Education) != 6 {
+		t.Errorf("ED5 no-op: Edu = %d, want 6", c3.Score(Education))
 	}
 }
 

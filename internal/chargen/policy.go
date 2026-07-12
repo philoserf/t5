@@ -106,9 +106,10 @@ func (DefaultPolicy) MusterColumn(Character, CareerRecord) MusterColumn {
 	return BenefitColumn
 }
 
-// PursueEducation sends a character to college when they meet the prerequisite —
-// education raises Edu and grants a Major and Minor worth having. (A low-Edu
-// character is left to enter a career directly rather than sit ED5 first.)
+// PursueEducation sends a character into the education stage (College or, at Edu
+// 7+, University) when they meet the College prerequisite — education raises Edu
+// and grants a Major and Minor worth having. A low-Edu character is left to enter
+// a career directly rather than sit ED5 first.
 func (DefaultPolicy) PursueEducation(c Character) bool {
 	return c.Score(Education) >= college.preReqEdu
 }

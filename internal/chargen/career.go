@@ -139,8 +139,8 @@ type careerRun struct {
 
 // GenerateCareered generates a character on the given homeworld and runs one
 // career on them. It follows the checklist order (Book 1 p. 72): roll the UPP
-// (A), take homeworld skills (B), optionally attend college (C), then attempt
-// the career (D) and muster out (E). The character qualifies on 2D at or under
+// (A), take homeworld skills (B), optionally run the education stage (C — ED5,
+// College, or University), then attempt the career (D) and muster out (E). The character qualifies on 2D at or under
 // the best of the career's qualifying characteristics; on success they serve
 // terms and muster out, and on failure they enter no career and remain a fresh
 // 18-year-old — but keep their homeworld skills and education either way.
