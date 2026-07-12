@@ -6,10 +6,27 @@ package chargen
 // Enlisted Promotion is vs Str, Officer Promotion vs Int, Continue vs Str), its
 // rank titles, skill grid, and muster table.
 //
-// Slice scope matches the Soldier's: the Branch and Operations R&R modifiers, the
+// Slice scope matches the Soldier's: the
 // +1 skill for a Commission or Promotion, branch automatic skills, the "Retire
 // x2" muster pay (recorded as a named benefit) and its +Officer-Rank Benefit DM,
 // and Command College are all deferred.
+
+// marineBranchOps is the Marine's Branch and Operations tables (Book 1 p. 86).
+var marineBranchOps = BranchOps{
+	Branches: [9]Branch{
+		1: {"Infantry", 1, 2},
+		2: {"Infantry", 1, 2},
+		3: {"Artillery", 1, 5},
+		4: {"Cavalry", 1, 3},
+		5: {"Protected", 2, 1},
+		6: {"Commando", 2, 0},
+		7: {"Technical", 0, 6},
+		8: {"Medical", 0, 4},
+	},
+	// Operations (1D + Branch OpsDM): Combat, Combat, Peace Keeper, Mission, ANM
+	// School, Combat, Peace Keeper, Mission, Garrison.
+	OpsMods: [10]int{1: 2, 2: 2, 3: 1, 4: 2, 5: 0, 6: 3, 7: 1, 8: 2, 9: 0},
+}
 
 // MarineCareer is the Marine (Book 1 p. 86).
 var MarineCareer = Career{
@@ -23,6 +40,7 @@ var MarineCareer = Career{
 	EligPerTerm:      4,
 	BenefitDM:        DMOfficerRank,
 	RewardKind:       RewardMedal,
+	BranchOps:        &marineBranchOps,
 	Commission:       PromotionRule{Char: Endurance},                           // C3
 	EnlistedPromote:  PromotionRule{Char: Strength, MedalsAndWounds: true},     // C1*
 	OfficerPromote:   PromotionRule{Char: Intelligence, MedalsAndWounds: true}, // C4*

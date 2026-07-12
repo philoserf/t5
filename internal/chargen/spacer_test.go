@@ -14,17 +14,22 @@ import (
 // Starting scores "887877" (final UPP 987877 after the Str +1 muster benefit).
 func TestGoldenSpacer(t *testing.T) {
 	seq := []int{
-		// UPP: Str 8, Dex 8, End 7, Int 8, Edu 7, Soc 7.
-		4, 4, 4, 4, 3, 4, 4, 4, 3, 4, 3, 4,
+		// UPP: Str 8, Dex 8, End 7, Int 8, Edu 10(5,5), Soc 7. Edu 10 gives the +2
+		// Branch/Operations bonus, used to reach the Technical branch and Siege
+		// operations so the net Branch/Ops mod is 0 and Risk & Reward are unchanged.
+		4, 4, 4, 4, 3, 4, 4, 4, 5, 5, 3, 4,
 		3, 4, // qualify vs Int 8: 7 <= 8, enters (Spacehand, Fighter-1)
-		// Term 1: CC = Str (8). Risk survive; Reward -> Medal (1).
-		3, 4, // risk
+		5, // Branch: 5 + 2 = 7 -> Technical (mod 0, Ops DM 0)
+		// Term 1: 4 Operations rolls, each 1 + 0 + 2 = 3 -> Siege (mod 0); net 0.
+		1, 1, 1, 1,
+		3, 4, // risk survive; Reward -> Medal (1)
 		3, 4, // reward -> Medal 1
 		5, 5, // Commission vs Dex 8: 10 > 8, fails
 		4, 4, // Rating Promotion vs Dex 8 + Medal 1 = 9: 8 <= 9, promote to Able Spacer
 		1, 1, 1, 1, // 4 skill rolls, Patrol/Strike col row 1 = Astrogation
 		3, 4, // continue vs Str 8: 7, policy wants term 2
-		// Term 2: CC = Dex (8). Risk survive; Reward -> Medal (2).
+		// Term 2: Operations again (net 0). Risk survive; Reward -> Medal (2).
+		1, 1, 1, 1,
 		3, 4, // risk
 		3, 4, // reward -> Medal 2
 		3, 4, // Commission vs Dex 8: 7 <= 8, commissioned -> Ensign (Astrogation-1)
@@ -39,8 +44,8 @@ func TestGoldenSpacer(t *testing.T) {
 	// column is Patrol/Strike (Astrogation at row 1).
 	c := GenerateCareered(dice.NewScripted(seq...), goldenPolicy{}, worldgen.World{}, SpacerCareer)
 
-	if got := c.UPP(); got != "987877" {
-		t.Errorf("UPP = %q, want %q (Str 8 +1 muster benefit)", got, "987877")
+	if got := c.UPP(); got != "9878A7" {
+		t.Errorf("UPP = %q, want %q (Str 8 +1 muster benefit, Edu 10)", got, "9878A7")
 	}
 	if c.Medals != 2 {
 		t.Errorf("Medals = %d, want 2", c.Medals)
