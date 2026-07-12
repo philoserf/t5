@@ -30,6 +30,7 @@ func (s stopAfter) Continue(_ Character, rec CareerRecord) bool     { return rec
 func (stopAfter) MusterColumn(Character, CareerRecord) MusterColumn { return BenefitColumn }
 func (stopAfter) PursueEducation(Character) bool                    { return false }
 func (stopAfter) TakeWaiver(Character, int) bool                    { return true }
+func (stopAfter) NextCareer(Character) (Career, bool)               { return Career{}, false }
 
 func TestContinueTarget(t *testing.T) {
 	c := Character{scores: [count]int{7, 7, 7, 10, 8, 6}}
@@ -335,5 +336,34 @@ func TestGenerateCareeredQualify(t *testing.T) {
 	c2 := GenerateCareered(dice.NewScripted(seq2...), stopAfter{1}, worldgen.World{}, testCareer)
 	if len(c2.Careers) != 0 {
 		t.Fatalf("failed qualify but career recorded: %+v", c2.Careers)
+	}
+}
+
+// twoCitizen serves an extra Citizen career once, then stops.
+type twoCitizen struct {
+	stopAfter
+	served bool
+}
+
+func (p *twoCitizen) NextCareer(Character) (Career, bool) {
+	if !p.served {
+		p.served = true
+		return CitizenCareer, true
+	}
+	return Career{}, false
+}
+
+func TestMultiCareer(t *testing.T) {
+	// The Citizen auto-begins, so a character serves two one-term Citizen careers
+	// in sequence regardless of the exact rolls.
+	c := GenerateCareered(dice.NewScripted(3, 4), &twoCitizen{stopAfter: stopAfter{1}}, worldgen.World{}, CitizenCareer)
+	if len(c.Careers) != 2 {
+		t.Fatalf("careers = %d, want 2 (a sequence of two)", len(c.Careers))
+	}
+	if c.Age != 26 {
+		t.Errorf("age = %d, want 26 (18 + 2 careers x 1 term)", c.Age)
+	}
+	if c.Careers[0].Career != Citizen || c.Careers[1].Career != Citizen {
+		t.Errorf("records = %+v, want two Citizen careers", c.Careers)
 	}
 }

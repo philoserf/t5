@@ -23,6 +23,7 @@ func (goldenPolicy) Continue(_ Character, rec CareerRecord) bool       { return 
 func (goldenPolicy) MusterColumn(Character, CareerRecord) MusterColumn { return BenefitColumn }
 func (goldenPolicy) PursueEducation(Character) bool                    { return false }
 func (goldenPolicy) TakeWaiver(Character, int) bool                    { return true }
+func (goldenPolicy) NextCareer(Character) (Career, bool)               { return Career{}, false }
 
 // TestGoldenScout traces a complete two-term Scout end-to-end from a scripted
 // roller and policy, locking the Scout transcription and the whole career

@@ -64,7 +64,9 @@ Entertainer, the Masterpiece-making Craftsman, the single-ladder Scholar
 Intrigue, Elevation and Land Grants), the dual-track Merchant (Rating/Officer,
 Ship Shares), and three ranked armed-forces careers — the Soldier, Marine, and
 Spacer — whose enlisted/officer ladders, Commissions, and Medal-boosted
-promotions exercise the rank engine (e.g. `-career soldier`). The rest of the
+promotions exercise the rank engine (e.g. `-career soldier`). A character may
+serve **several careers in sequence** — `-career scout,merchant,noble` — aging
+and accumulating skills, benefits, and rank across each. The rest of the
 education institutions and per-world orbital detail (systemgen) are the next
 stages.
 

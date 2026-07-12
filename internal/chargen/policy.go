@@ -28,6 +28,10 @@ type Policy interface {
 	// TakeWaiver reports whether the character attempts an Educational Waiver
 	// after an adverse roll, given the number of waivers already attempted.
 	TakeWaiver(c Character, priorWaivers int) bool
+	// NextCareer chooses another career to attempt after the current one, or
+	// returns false to finish character generation (Book 1: characters may serve
+	// more than one career).
+	NextCareer(c Character) (Career, bool)
 }
 
 // DefaultPolicy makes reasonable automatic choices, so a character can be
@@ -116,3 +120,7 @@ func (DefaultPolicy) PursueEducation(c Character) bool {
 
 // TakeWaiver always attempts a waiver — staying enrolled beats washing out.
 func (DefaultPolicy) TakeWaiver(Character, int) bool { return true }
+
+// NextCareer stops after one career; a policy that wants a multi-career
+// character (e.g. the CLI's -careers sequence) overrides this.
+func (DefaultPolicy) NextCareer(Character) (Career, bool) { return Career{}, false }
