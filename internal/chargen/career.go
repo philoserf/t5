@@ -442,8 +442,14 @@ func runTerm(r *dice.Roller, p Policy, c *Character, run *careerRun, career Care
 		}
 	}
 
-	resolveRank(r, c, run, career) // promotion / commission for a surviving term
-	awardSkills(r, p, c, career)   // a surviving (even wounded) character gains skills
+	// A surviving (even wounded) character gains skills; a term in which they
+	// commission or promote grants one extra (Book 1 p. 82: "1 skill because he
+	// was promoted").
+	elig := career.EligPerTerm
+	if resolveRank(r, c, run, career) {
+		elig++
+	}
+	awardSkillsN(r, p, c, career, elig)
 	return Ongoing
 }
 
@@ -543,11 +549,13 @@ func runCraftsmanTerm(r *dice.Roller, p Policy, c *Character, career Career, cc 
 // returns MusteredOut on a lost job, otherwise Ongoing.
 func runPoliticsTerm(r *dice.Roller, p Policy, c *Character, run *careerRun, career Career, cc Characteristic) TermOutcome {
 	riskKept := r.Resolve(dice.Check{Dice: 2, Target: c.Score(cc)}).Success
+	elig := career.EligPerTerm
 	if r.Resolve(dice.Check{Dice: 2, Target: c.Score(cc)}).Success && run.rank < len(career.EnlistedRanks) {
 		run.rank++
 		grantRankSkill(c, career.EnlistedRanks, run.rank)
+		elig++ // one extra skill on promotion (Book 1 p. 82)
 	}
-	awardSkills(r, p, c, career)
+	awardSkillsN(r, p, c, career, elig)
 	if !riskKept {
 		return MusteredOut
 	}
@@ -717,28 +725,33 @@ func awardCitizenLife(p Policy, c *Character, run *careerRun) {
 // Promotion. A single-ladder career (no officer track, e.g. the Scholar) only
 // rolls its one promotion. Promotion (not Commission) targets are raised by
 // Medals, Wound Badges, or Publications. Reaching a rank grants its auto-skill.
-func resolveRank(r *dice.Roller, c *Character, run *careerRun, career Career) {
+// It reports whether the character commissioned or promoted this term (which
+// earns one extra skill, Book 1 p. 82).
+func resolveRank(r *dice.Roller, c *Character, run *careerRun, career Career) bool {
 	if !career.hasRanks() {
-		return
+		return false
 	}
 	if run.officer {
 		if run.rank < len(career.OfficerRanks) && promoted(r, *c, career.OfficerPromote) {
 			run.rank++
 			grantRankSkill(c, career.OfficerRanks, run.rank)
+			return true
 		}
-		return
+		return false
 	}
 	// Commission applies only to careers with an officer track to rise into.
 	if len(career.OfficerRanks) > 0 && promoted(r, *c, career.Commission) {
 		run.officer = true
 		run.rank = 1
 		grantRankSkill(c, career.OfficerRanks, 1)
-		return
+		return true
 	}
 	if run.rank < len(career.EnlistedRanks) && promoted(r, *c, career.EnlistedPromote) {
 		run.rank++
 		grantRankSkill(c, career.EnlistedRanks, run.rank)
+		return true
 	}
+	return false
 }
 
 // promoted resolves one promotion roll: 2D at or under the rule's characteristic,
