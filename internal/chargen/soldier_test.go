@@ -34,6 +34,8 @@ func TestGoldenSoldier(t *testing.T) {
 		3, // row 3 -> Wafer Jack
 	}
 
+	// goldenPolicy (scout_test.go) picks skill column 3; for the Soldier grid
+	// that column is Peacekeeper (Admin at row 1), not the Scout's Exploration.
 	c := GenerateCareered(dice.NewScripted(seq...), goldenPolicy{}, worldgen.World{}, SoldierCareer)
 
 	if got := c.UPP(); got != "978778" {
