@@ -4,13 +4,14 @@ package chargen
 // career (no rank ladders) with a standard Risk & Reward and a Continue roll
 // that eases with experience ("Str, Mod +Terms").
 //
-// Slice scope: the Agent's defining Undercover Assignment mechanic — each term,
-// two years spent undercover in a different career, taking one skill from that
-// career's tables (the big A/B/C roll table on p. 83) — is deferred, along with
-// its skill eligibility (Undercover 1 / Successful Mission 4 over the base
-// Per-Term 2). Commendations (from Reward successes) and their +Commends muster
-// Benefit DM are also deferred (the Benefit column DM is treated as 0). "Any
-// Knowledge" in the Vocation column is a representative academic-subject choice.
+// Each term the Agent runs an Undercover Assignment (UndercoverCareer,
+// awardUndercover): two years undercover in a rolled career, selecting one
+// skill from that career's tables, then two completing the Mission. Skill
+// eligibility is Per Term 2 + Undercover 1 + Successful Mission 4 (a held Risk).
+// A successful Reward is a Commendation (RewardCommendation), and the muster
+// Benefit column's DM is +Commendations (DMCommends). "Any Knowledge" in the
+// Vocation column is a representative academic-subject choice; the specific
+// C-column skill of the Undercover table is overridden by the Agent's selection.
 
 // AgentCareer is the Agent (Book 1 p. 83).
 var AgentCareer = Career{
@@ -21,7 +22,10 @@ var AgentCareer = Career{
 	ControllingChars: []Characteristic{Strength, Dexterity, Endurance, Intelligence}, // C1 C2 C3 C4
 	Continue:         ContinueRule{UseChar: true, Char: Strength, TermsMod: true},    // Str, Mod +Terms
 	Advance:          RollLow,
-	EligPerTerm:      2,
+	EligPerTerm:      2, // Per Term 2 (Undercover 1 and Successful Mission 4 are added in awardUndercover)
+	UndercoverCareer: true,
+	RewardKind:       RewardCommendation,
+	BenefitDM:        DMCommends,
 	Skills: SkillGrid{
 		// Col 0 — Personal.
 		{bump(Strength), bump(Dexterity), bump(Endurance), bump(Intelligence), bump(Education), bump(Social)},

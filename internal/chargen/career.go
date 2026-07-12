@@ -128,6 +128,7 @@ const (
 	DMOfficerRank                 // + rank, only while on the officer track (armed forces, Merchant)
 	DMRank                        // + rank on any track (single-ladder Scholar, Functionary)
 	DMFameHalf                    // + Fame/2 (the Scout)
+	DMCommends                    // + Commendations (the Agent)
 )
 
 // benefitDM returns the value of a Benefit-column muster DM for a character.
@@ -144,6 +145,8 @@ func benefitDM(dm MusterDM, c Character, rec CareerRecord) int {
 		return rec.Rank
 	case DMFameHalf:
 		return c.Fame / 2
+	case DMCommends:
+		return c.Commendations
 	default:
 		return 0
 	}
@@ -181,11 +184,12 @@ func eduBonus(c Character) int {
 type RewardKind int
 
 const (
-	RewardNone        RewardKind = iota // the reward benefit is deferred (Rogue via its Scheme, …)
-	RewardMedal                         // armed forces: a Medal
-	RewardPublication                   // the Scholar: a Publication
-	RewardShipShares                    // the Merchant: escalating Ship Shares (Nth reward = N shares)
-	RewardDiscovery                     // the Scout: a Discovery — a Land Grant and Fame +1 (Book 1 p. 79)
+	RewardNone         RewardKind = iota // the reward benefit is deferred (Rogue via its Scheme, …)
+	RewardMedal                          // armed forces: a Medal
+	RewardPublication                    // the Scholar: a Publication
+	RewardShipShares                     // the Merchant: escalating Ship Shares (Nth reward = N shares)
+	RewardDiscovery                      // the Scout: a Discovery — a Land Grant and Fame +1 (Book 1 p. 79)
+	RewardCommendation                   // the Agent: an official Commendation (Book 1 p. 83)
 )
 
 // A Career is the data for one career. It grows as later slices add the skill
@@ -208,6 +212,7 @@ type Career struct {
 	ReturnIntrigue   bool       // the term resolves Return & Intrigue instead of Risk & Reward (Noble)
 	ScoutDuty        bool       // the term picks Courier (no R&R, 4 skills) or Explorer (R&R, EligPerTerm skills) (Scout)
 	SchemeCareer     bool       // the term masterminds a Rogue Scheme instead of Risk & Reward (Rogue)
+	UndercoverCareer bool       // the term runs an Undercover Assignment alongside Risk & Reward (Agent)
 	RewardKind       RewardKind // what a successful Reward roll earns
 	Skills           SkillGrid
 	MusterOut        MusterTable
@@ -403,7 +408,8 @@ func runTerm(r *dice.Roller, p Policy, c *Character, run *careerRun, career Care
 
 	// Branch & Operations mods are negative on Risk (riskier) and positive on
 	// Reward (Book 1 p. 82); Caution/Bravery keep their usual signs.
-	if r.Resolve(dice.Check{Dice: 2, Target: ccVal + mod - bo}).Success {
+	riskOK := r.Resolve(dice.Check{Dice: 2, Target: ccVal + mod - bo}).Success
+	if riskOK {
 		// Survived. Reward roll; success earns the career's reward token.
 		if r.Resolve(dice.Check{Dice: 2, Target: ccVal - mod + bo}).Success {
 			switch career.RewardKind {
@@ -418,6 +424,8 @@ func runTerm(r *dice.Roller, p Policy, c *Character, run *careerRun, career Care
 				c.Discoveries++ // a valuable new world or feature: a Land Grant and Fame +1
 				c.LandGrants++
 				c.Fame++
+			case RewardCommendation:
+				c.Commendations++
 			}
 		}
 	} else {
@@ -442,9 +450,14 @@ func runTerm(r *dice.Roller, p Policy, c *Character, run *careerRun, career Care
 		}
 	}
 
-	// A surviving (even wounded) character gains skills; a term in which they
-	// commission or promote grants one extra (Book 1 p. 82: "1 skill because he
-	// was promoted").
+	// A surviving (even wounded) character gains skills. An Agent runs an
+	// Undercover Assignment; everyone else takes their term skills, with one
+	// extra on a term they commission or promote (Book 1 p. 82: "1 skill because
+	// he was promoted").
+	if career.UndercoverCareer {
+		awardUndercover(r, p, c, career, riskOK)
+		return Ongoing
+	}
 	elig := career.EligPerTerm
 	if resolveRank(r, c, run, career) {
 		elig++
@@ -696,6 +709,44 @@ func awardPrisonSkills(r *dice.Roller, p Policy, c *Character, career Career, n 
 		col := min(max(p.ChooseSkillColumn(*c, prison), 0), prisonMaxSkillsCol)
 		applyCell(p, c, prison[col][r.Die()-1])
 	}
+}
+
+// undercoverAssignments maps an Agent's Undercover Assignment roll — die A
+// (1-3) then die B (1-6) — to the career whose skill tables the Agent draws
+// from that term (Book 1 p. 83). "Army" is the Soldier, "Navy" the Spacer; the
+// Enlisted/Officer split and the specific-skill C column are flavor the Agent
+// overrides by selecting the skill.
+var undercoverAssignments = [4][7]CareerID{
+	1: {1: Soldier, 2: Soldier, 3: Marine, 4: Marine, 5: Spacer, 6: Spacer},
+	2: {1: Scholar, 2: Scholar, 3: Entertainer, 4: Entertainer, 5: Citizen, 6: Citizen},
+	3: {1: Merchant, 2: Merchant, 3: Scout, 4: Scout, 5: Noble, 6: Functionary},
+}
+
+// undercoverAssignment rolls an Agent's Undercover Assignment career (Book 1 p.
+// 83): die A rerolled until it is 1-3, then die B (1-6).
+func undercoverAssignment(r *dice.Roller) CareerID {
+	a := r.Die()
+	for a > 3 {
+		a = r.Die()
+	}
+	return undercoverAssignments[a][r.Die()]
+}
+
+// awardUndercover grants an Agent's term skills (Book 1 p. 83): the two Per-Term
+// skills from the Agent's own tables, one Undercover skill selected from the
+// tables of a rolled Undercover Assignment career, and — on a Successful Mission
+// (a held Risk) — four more. The "select (not roll)" Undercover skill is modelled
+// as the first skill of a policy-chosen column of the borrowed grid.
+func awardUndercover(r *dice.Roller, p Policy, c *Character, career Career, missionOK bool) {
+	borrowed := CareerByID(undercoverAssignment(r)).Skills
+	col := min(max(p.ChooseSkillColumn(*c, borrowed), 0), len(borrowed)-1)
+	applyCell(p, c, borrowed[col][0]) // Undercover 1: the selected skill
+
+	elig := career.EligPerTerm
+	if missionOK {
+		elig += 4 // Successful Mission
+	}
+	awardSkillsN(r, p, c, career, elig)
 }
 
 // awardCitizenLife applies one Citizen Life success on the Job/Hobby schedule
