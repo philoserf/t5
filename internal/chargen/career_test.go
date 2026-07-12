@@ -209,6 +209,37 @@ func TestApplyCell(t *testing.T) {
 	if c.scores[Strength] != maxCharacteristic {
 		t.Errorf("bump cap: Str = %d, want %d", c.scores[Strength], maxCharacteristic)
 	}
+	// Major/Minor cells raise the declared subject.
+	c.Major, c.Minor = "Psychology", "Robotics"
+	applyCell(stopAfter{}, &c, Cell{Kind: AwardMajor})
+	applyCell(stopAfter{}, &c, Cell{Kind: AwardMinor})
+	if c.Skills.Level("Psychology") != 1 || c.Skills.Level("Robotics") != 1 {
+		t.Errorf("major/minor award: Psychology=%d Robotics=%d, want 1/1",
+			c.Skills.Level("Psychology"), c.Skills.Level("Robotics"))
+	}
+}
+
+func TestApplyCellMajorLostWithoutEducation(t *testing.T) {
+	// With no Major/Minor declared, the Academic cells are lost (no-op).
+	var c Character
+	applyCell(stopAfter{}, &c, Cell{Kind: AwardMajor})
+	applyCell(stopAfter{}, &c, Cell{Kind: AwardMinor})
+	if c.Skills.String() != "" {
+		t.Errorf("uneducated major/minor cells granted skills: %q", c.Skills.String())
+	}
+}
+
+func TestChooseSkillColumnDependsOnEducation(t *testing.T) {
+	// The Scout Academic column (col 1) is productive only for a graduate; an
+	// uneducated character falls through to Courier (col 2).
+	uneducated := DefaultPolicy{}.ChooseSkillColumn(Character{}, ScoutCareer.Skills)
+	if uneducated != 2 {
+		t.Errorf("uneducated column = %d, want 2 (Courier)", uneducated)
+	}
+	graduate := DefaultPolicy{}.ChooseSkillColumn(Character{Major: "Psychology", Minor: "Robotics"}, ScoutCareer.Skills)
+	if graduate != 1 {
+		t.Errorf("graduate column = %d, want 1 (Academic)", graduate)
+	}
 }
 
 // commsGrid is a grid whose column 0 always awards Comms.

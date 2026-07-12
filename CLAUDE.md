@@ -76,10 +76,13 @@ Tooling (go, go-task, poppler's `pdftotext`) is pinned in `Brewfile`.
   RollLow/RollHigh, `Qualification` char-set, `ContinueRule`); a `Policy` (with `DefaultPolicy`)
   supplies every player choice so generation is deterministic and testable. Careers are data:
   `ScoutCareer` (`scout.go`, transcribed from p. 79 — the 7×6 `SkillGrid` + `MusterTable`) is the
-  only one so far, locked by a hand-traced golden Scout. Deferred: the rest of the education
-  institutions (ED5, University, Trade School, higher/military) and wiring Major/Minor into the
-  "lost" Academic grid cells, the other 12 careers (armed-forces rank machinery is not yet
-  built), and the Scout's Courier/Explorer duty, R&R reward, and Fame.
+  only one so far, locked by a hand-traced golden Scout. The Academic grid column uses `AwardMajor`
+  / `AwardMinor` cells that raise the character's College Major/Minor (lost if uneducated, per the
+  page footnote); `DefaultPolicy.ChooseSkillColumn` is character-aware, so a graduate specializes
+  in the Academic column while an uneducated Scout falls through to Courier. Deferred: the rest of
+  the education institutions (ED5, University, Trade School, higher/military), the other 12 careers
+  (armed-forces rank machinery is not yet built), and the Scout's Courier/Explorer duty, R&R
+  reward, and Fame.
 - `internal/calendar/` — the Imperial Calendar (Book 1 Appendix 02, p. 262): a 365-day `Date` (day 1 is
   Holiday, then 52 weeks Wonday..Senday), with `Weekday`, `Add` (year rollover), and `String`
   (`001-1105`). Pure date math, no dice.

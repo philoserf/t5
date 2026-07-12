@@ -32,9 +32,13 @@ func cash(credits int) Benefit            { return Benefit{Kind: Cash, Value: cr
 func charAward(ch Characteristic) Benefit { return Benefit{Kind: CharBump, Value: 1, Char: ch} }
 func named(name string) Benefit           { return Benefit{Kind: Named, Name: name} }
 
-// lost is an academic Major/Minor award the character cannot claim without the
-// (not-yet-modelled) education stage — the page's footnote says it is lost.
-var lost = Cell{Kind: NoAward}
+// major and minor award the character's College Major/Minor (Book 1 p. 79
+// Academic column). The page's footnote — "lost if the character has no
+// Major/Minor" — is honored by applyCell: an uneducated character gains nothing.
+var (
+	major = Cell{Kind: AwardMajor}
+	minor = Cell{Kind: AwardMinor}
+)
 
 // One Art and One Trade choices draw the canonical lists (oneArt, theTrades from
 // homeworld.go). The remaining choice lists are a representative subset, not the
@@ -62,8 +66,8 @@ var ScoutCareer = Career{
 	Skills: SkillGrid{
 		// Col 0 — Personal.
 		{bump(Strength), bump(Dexterity), bump(Endurance), bump(Intelligence), bump(Education), bump(Social)},
-		// Col 1 — Academic (Major/Minor lost without the education stage).
-		{lost, lost, lost, lost, choose(theTrades...), choose(theTrades...)},
+		// Col 1 — Academic: Major, Major, Minor, Minor, One Trade, One Trade.
+		{major, major, minor, minor, choose(theTrades...), choose(theTrades...)},
 		// Col 2 — Courier.
 		{sk("Comms"), cascade("Language", languages...), sk("Computer"), sk("JOT"), sk("Gunner"), choose(starshipSkls...)},
 		// Col 3 — Exploration.
