@@ -193,6 +193,12 @@ func TestApplyCell(t *testing.T) {
 	if c.Skills.Level("Gambler") != 1 {
 		t.Errorf("choice award = %d, want Gambler 1", c.Skills.Level("Gambler"))
 	}
+	// A cascade choice grants the chosen option as a knowledge under the parent.
+	applyCell(stopAfter{}, &c, Cell{Kind: AwardChoice, Skill: "Language", Options: []string{"Galanglic", "Vilani"}})
+	if c.Skills.KnowledgeLevel("Language", "Galanglic") != 1 || c.Skills.Level("Language") != 0 {
+		t.Errorf("cascade choice wrong: K=%d S=%d, want 1/0",
+			c.Skills.KnowledgeLevel("Language", "Galanglic"), c.Skills.Level("Language"))
+	}
 	// A characteristic bump, capped at the human maximum.
 	c.scores[Strength] = 14
 	applyCell(stopAfter{}, &c, Cell{Kind: AwardBump, Char: Strength})
@@ -270,6 +276,15 @@ func TestAwardSkillsBadColumnPanics(t *testing.T) {
 	}()
 	c := Character{}
 	awardSkills(dice.NewScripted(3), badColumn{}, &c, Career{EligPerTerm: 1, Skills: commsGrid()})
+}
+
+func TestQualificationTargetRejectsEmpty(t *testing.T) {
+	defer func() {
+		if recover() == nil {
+			t.Error("Qualification.target did not panic on an empty characteristic set")
+		}
+	}()
+	Qualification{}.target(Character{})
 }
 
 func TestGenerateCareeredQualify(t *testing.T) {

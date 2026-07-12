@@ -48,10 +48,16 @@ type Qualification struct {
 	Mod   int
 }
 
-// target returns the qualification target: the highest of the characteristics.
+// target returns the qualification target: the highest of the characteristics,
+// plus the modifier. It panics on an empty characteristic set — a career that
+// cannot be qualified for is a data error, not a 0-target impossibility to
+// puzzle out later (compare RunCareer's controlling-characteristics check).
 func (q Qualification) target(c Character) int {
-	best := 0
-	for _, ch := range q.Chars {
+	if len(q.Chars) == 0 {
+		panic("chargen: qualification has no characteristics")
+	}
+	best := c.Score(q.Chars[0])
+	for _, ch := range q.Chars[1:] {
 		best = max(best, c.Score(ch))
 	}
 	return best + q.Mod
@@ -131,7 +137,8 @@ type careerRun struct {
 }
 
 // GenerateCareered generates a character and runs one career on them. The
-// character qualifies (2D at or under the career's characteristic); on failure
+// character qualifies (2D at or under the best of the career's qualifying
+// characteristics); on success they serve terms and muster out, and on failure
 // they enter no career and remain a fresh 18-year-old.
 func GenerateCareered(r *dice.Roller, p Policy, career Career) Character {
 	c := Generate(r)
@@ -241,7 +248,14 @@ func applyCell(p Policy, c *Character, cell Cell) {
 		if len(cell.Options) == 0 {
 			panic("chargen: AwardChoice cell has no options")
 		}
-		c.Skills.Raise(p.ChooseSkill(*c, cell.Options), 1)
+		chosen := p.ChooseSkill(*c, cell.Options)
+		if cell.Skill != "" {
+			// A cascade choice: the options are knowledges under the parent skill
+			// (e.g. Language/Galanglic), granted via the K-K-S progression.
+			c.Skills.GrantCascade(cell.Skill, chosen)
+		} else {
+			c.Skills.Raise(chosen, 1)
+		}
 	}
 }
 
@@ -255,16 +269,18 @@ const (
 	NoAward     CellKind = iota // an empty cell
 	AwardSkill                  // raise Skill (with Knowledge for a cascade skill)
 	AwardBump                   // raise the characteristic Char
-	AwardChoice                 // raise one skill the policy picks from Options
+	AwardChoice                 // grant one skill the policy picks from Options
 )
 
 // A Cell is one entry in a career's skill grid.
 type Cell struct {
-	Kind      CellKind
-	Skill     string         // AwardSkill: the skill (a cascade parent, if cascade)
+	Kind CellKind
+	// Skill names the skill for AwardSkill; for AwardChoice it optionally names a
+	// cascade parent, in which case Options are knowledges granted under it.
+	Skill     string
 	Knowledge string         // AwardSkill: the knowledge, for a cascade skill
 	Char      Characteristic // AwardBump
-	Options   []string       // AwardChoice: the skills to pick among
+	Options   []string       // AwardChoice: the skills (or knowledges) to pick among
 }
 
 // A SkillGrid is a career's skill table: seven columns of six rows. The column

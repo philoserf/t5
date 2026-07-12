@@ -17,9 +17,17 @@ package chargen
 // exists; the Money column reaches them through its +Terms DM.
 
 // Cell constructors keep the grid readable.
-func bump(ch Characteristic) Cell         { return Cell{Kind: AwardBump, Char: ch} }
-func sk(name string) Cell                 { return Cell{Kind: AwardSkill, Skill: name} }
-func choose(options ...string) Cell       { return Cell{Kind: AwardChoice, Options: options} }
+func bump(ch Characteristic) Cell   { return Cell{Kind: AwardBump, Char: ch} }
+func sk(name string) Cell           { return Cell{Kind: AwardSkill, Skill: name} }
+func choose(options ...string) Cell { return Cell{Kind: AwardChoice, Options: options} }
+
+// cascade is a choice among knowledges under a cascade parent skill (e.g. a
+// Language knowledge), granted via the K-K-S progression rather than as a flat
+// skill.
+func cascade(parent string, knowledges ...string) Cell {
+	return Cell{Kind: AwardChoice, Skill: parent, Options: knowledges}
+}
+
 func cash(credits int) Benefit            { return Benefit{Kind: Cash, Value: credits} }
 func charAward(ch Characteristic) Benefit { return Benefit{Kind: CharBump, Value: 1, Char: ch} }
 func named(name string) Benefit           { return Benefit{Kind: Named, Name: name} }
@@ -28,8 +36,11 @@ func named(name string) Benefit           { return Benefit{Kind: Named, Name: na
 // (not-yet-modelled) education stage — the page's footnote says it is lost.
 var lost = Cell{Kind: NoAward}
 
-// The "one X" and "Starship Skill" cells are player choices among a cascade; the
-// option lists here are a representative subset, not the full T5 cascade.
+// The choice cells' option lists are a representative subset, not the full T5
+// cascade. "One X" and "Starship Skill" choose among distinct skills (flat
+// raise); a chosen Starship Skill that is itself a cascade (Pilot, Engineer, …)
+// is left flat here — its sub-knowledge is deferred. languages are knowledges
+// under the Language cascade skill (see cascade()).
 var (
 	trades       = []string{"Steward", "Trader", "Craftsman"}
 	arts         = []string{"Artist", "Author", "Performer"}
@@ -55,13 +66,13 @@ var ScoutCareer = Career{
 		// Col 1 — Academic (Major/Minor lost without the education stage).
 		{lost, lost, lost, lost, choose(trades...), choose(trades...)},
 		// Col 2 — Courier.
-		{sk("Comms"), choose(languages...), sk("Computer"), sk("JOT"), sk("Gunner"), choose(starshipSkls...)},
+		{sk("Comms"), cascade("Language", languages...), sk("Computer"), sk("JOT"), sk("Gunner"), choose(starshipSkls...)},
 		// Col 3 — Exploration.
 		{sk("Survey"), sk("Survival"), sk("Hostile Environ"), sk("Animals"), sk("Vacc Suit"), sk("Navigation")},
 		// Col 4 — Business.
 		{sk("Diplomat"), sk("Sensors"), sk("Trader"), sk("Teacher"), sk("Fighter"), sk("Streetwise")},
 		// Col 5 — Vocation.
-		{sk("Survey"), sk("Flyer"), choose(languages...), choose(starshipSkls...), sk("Engineer"), sk("Comms")},
+		{sk("Survey"), sk("Flyer"), cascade("Language", languages...), choose(starshipSkls...), sk("Engineer"), sk("Comms")},
 		// Col 6 — Avocation.
 		{choose(arts...), choose(sciences...), sk("Seafarer"), sk("Athlete"), sk("Medic"), choose(trades...)},
 	},
