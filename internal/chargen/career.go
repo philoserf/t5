@@ -289,15 +289,29 @@ func GenerateCareered(r *dice.Roller, p Policy, homeworld worldgen.World, career
 	if p.PursueEducation(c) {
 		educate(r, p, &c)
 	}
-	// AutoBegin (the Citizen) enters with no qualify roll; the || short-circuits
-	// so Qualify.target is never evaluated for such a career.
-	if career.AutoBegin || r.Resolve(dice.Check{Dice: 2, Target: career.Qualify.target(c)}).Success {
-		RunCareer(r, p, &c, career)
-		if rec := c.Careers[len(c.Careers)-1]; rec.Outcome != Died {
-			MusterOut(r, p, &c, rec, career)
+	serveCareer(r, p, &c, career)
+	// A character may serve more than one career (Book 1), so long as they live.
+	for !c.Dead {
+		next, ok := p.NextCareer(c)
+		if !ok {
+			break
 		}
+		serveCareer(r, p, &c, next)
 	}
 	return c
+}
+
+// serveCareer attempts one career on a character: on a successful (or automatic)
+// begin it runs the term loop and, unless the character died, musters out.
+func serveCareer(r *dice.Roller, p Policy, c *Character, career Career) {
+	// AutoBegin (the Citizen) enters with no qualify roll; the || short-circuits
+	// so Qualify.target is never evaluated for such a career.
+	if career.AutoBegin || r.Resolve(dice.Check{Dice: 2, Target: career.Qualify.target(*c)}).Success {
+		RunCareer(r, p, c, career)
+		if rec := c.Careers[len(c.Careers)-1]; rec.Outcome != Died {
+			MusterOut(r, p, c, rec, career)
+		}
+	}
 }
 
 // RunCareer runs the term loop of one career on a character, appending a

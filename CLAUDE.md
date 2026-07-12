@@ -66,7 +66,8 @@ Tooling (go, go-task, poppler's `pdftotext`) is pinned in `Brewfile`.
   Master Chargen Checklist p. 72). Generates the six-characteristic UPP (Str/Dex/End/Int/Edu/Soc,
   each 2D, eHex) at age 18, offers `Check`, and `AgingCheck` (Book 1 p. 89: `2D < LifeStage`,
   physical from 34 / mental from 66, zero-cascade to illness/death). `GenerateCareered` runs the
-  checklist lifecycle: UPP → homeworld skills (`ApplyHomeworldSkills`, one skill per Trade
+  checklist lifecycle, then serves additional careers while `Policy.NextCareer` supplies them
+  (multi-career via `serveCareer`; the CLI's `-career a,b,c` sequence): UPP → homeworld skills (`ApplyHomeworldSkills`, one skill per Trade
   Classification, Book 1 p. 56 — the homeworld is a `worldgen.World` input) → optional education
   (`educate`, Book 1 pp. 59-60: remedial ED5 then the best-qualifying academic program — College
   or University, a shared `academicProgram` differing only in prereq/graduation-Edu — via
