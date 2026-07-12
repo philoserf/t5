@@ -27,15 +27,25 @@ func TestSecondSurveyRegina(t *testing.T) {
 
 func TestSecondSurveyFieldEdges(t *testing.T) {
 	// A world with no trade codes and no bases: the TC slot collapses, and the
-	// bases slot shows a dash. Zero Extensions render as "{+0}(000+0)[0000]".
+	// bases slot shows a dash. Zero Extensions render as "{0}(000+0)[0000]".
 	w := World{
 		Profile:  regina,
 		Zone:     'R',
 		Nobility: "B",
 	}
-	want := "A788899-C {+0}(000+0)[0000] B - R"
+	want := "A788899-C {0}(000+0)[0000] B - R"
 	if got := w.SecondSurvey(); got != want {
 		t.Fatalf("SecondSurvey() edges =\n%q\nwant\n%q", got, want)
+	}
+}
+
+func TestSecondSurveyZeroImportance(t *testing.T) {
+	// Ix of zero renders as "{0}", not "{+0}" (the book's Importance table
+	// shows a bare 0).
+	w := World{Profile: regina, Importance: 0, Nobility: "B"}
+	want := "A788899-C {0}(000+0)[0000] B - -"
+	if got := w.SecondSurvey(); got != want {
+		t.Fatalf("SecondSurvey() zero Ix =\n%q\nwant\n%q", got, want)
 	}
 }
 
