@@ -61,6 +61,8 @@ type Character struct {
 	Benefits    []string       // named mustering-out benefits (Ship Share, TAS, …)
 	WoundBadges int            // career injuries survived
 	Medals      int            // awards earned on successful Reward rolls (armed forces)
+	Fame        int            // reputation, the Entertainer's measure of success (Book 1 p. 77)
+	Talent      int            // the Entertainer's performance ability
 
 	extremeAgings int // aging checks that zeroed 3+ characteristics; the 2nd is fatal
 }
