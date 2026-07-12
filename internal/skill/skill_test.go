@@ -16,6 +16,15 @@ func TestRaiseAndCap(t *testing.T) {
 	if s.Level("Gunner") != 0 {
 		t.Errorf("absent skill level = %d, want 0", s.Level("Gunner"))
 	}
+	// A negative change cannot drive a level below 0.
+	s.Raise("Comms", -3)
+	if got := s.Level("Comms"); got != 0 {
+		t.Errorf("Comms after negative raise = %d, want 0", got)
+	}
+	s.RaiseKnowledge("Pilot", "Small Craft", -3)
+	if got := s.KnowledgeLevel("Pilot", "Small Craft"); got != 0 {
+		t.Errorf("knowledge after negative raise = %d, want 0", got)
+	}
 }
 
 func TestRaiseKnowledgeAndCap(t *testing.T) {

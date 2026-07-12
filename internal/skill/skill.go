@@ -50,16 +50,17 @@ func (s Set) TaskLevel(parent, knowledge string) int {
 	return s.Level(parent) + s.KnowledgeLevel(parent, knowledge)
 }
 
-// Raise increases a plain skill by n levels, capped at Max.
+// Raise changes a plain skill by n levels, clamped to 0..Max (n is normally
+// positive; a negative n cannot drive the level below 0).
 func (s *Set) Raise(skill string, n int) {
 	if s.skills == nil {
 		s.skills = make(map[string]int)
 	}
-	s.skills[skill] = min(s.skills[skill]+n, Max)
+	s.skills[skill] = clamp(s.skills[skill]+n, 0, Max)
 }
 
-// RaiseKnowledge increases a knowledge under its parent by n, capped at
-// KnowledgeMax. The parent skill is registered (at least level 0) so the
+// RaiseKnowledge changes a knowledge under its parent by n, clamped to
+// 0..KnowledgeMax. The parent skill is registered (at least level 0) so the
 // character is known to hold the cascade skill.
 func (s *Set) RaiseKnowledge(parent, knowledge string, n int) {
 	if s.skills == nil {
@@ -74,8 +75,10 @@ func (s *Set) RaiseKnowledge(parent, knowledge string, n int) {
 	if s.knowledges[parent] == nil {
 		s.knowledges[parent] = make(map[string]int)
 	}
-	s.knowledges[parent][knowledge] = min(s.knowledges[parent][knowledge]+n, KnowledgeMax)
+	s.knowledges[parent][knowledge] = clamp(s.knowledges[parent][knowledge]+n, 0, KnowledgeMax)
 }
+
+func clamp(v, lo, hi int) int { return min(max(v, lo), hi) }
 
 // GrantCascade applies one career award of a cascade parent's knowledge, per the
 // Knowledge-Knowledge-Skill progression: the first two awards raise the
