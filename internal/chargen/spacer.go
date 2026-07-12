@@ -13,6 +13,24 @@ package chargen
 // "Retire x2" muster pay (a named benefit) and its +Officer-Rank Benefit DM, and
 // Command College.
 
+// spacerBranchOps is the Spacer's Naval Branch and Operations tables (Book 1
+// p. 81). Naval Operations use no per-branch DM, so every branch's OpsDM is 0.
+var spacerBranchOps = BranchOps{
+	Branches: [9]Branch{
+		1: {"Line", 1, 0},
+		2: {"Line", 1, 0},
+		3: {"Line", 1, 0},
+		4: {"Engineer", 0, 0},
+		5: {"Gunnery", 1, 0},
+		6: {"Flight", 2, 0},
+		7: {"Technical", 0, 0},
+		8: {"Medical", 0, 0},
+	},
+	// Naval Operations (1D): Battle, Strike, Siege, Patrol, Mission, ANM School,
+	// Shore Duty, Shore Duty.
+	OpsMods: [10]int{1: 2, 2: 2, 3: 0, 4: 1, 5: 3, 6: 0, 7: 0, 8: 0},
+}
+
 // SpacerCareer is the Spacer (Book 1 p. 81).
 var SpacerCareer = Career{
 	ID:               Spacer,
@@ -25,6 +43,7 @@ var SpacerCareer = Career{
 	EligPerTerm:      4,
 	BenefitDM:        DMOfficerRank,
 	RewardKind:       RewardMedal,
+	BranchOps:        &spacerBranchOps,
 	Commission:       PromotionRule{Char: Dexterity},                        // C2
 	EnlistedPromote:  PromotionRule{Char: Dexterity, MedalsAndWounds: true}, // C2* (Rating Promotion)
 	OfficerPromote:   PromotionRule{Char: Social, MedalsAndWounds: true},    // Soc*
