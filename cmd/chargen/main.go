@@ -52,8 +52,10 @@ func careerByName(name string) (chargen.Career, error) {
 		return chargen.ScoutCareer, nil
 	case "rogue":
 		return chargen.RogueCareer, nil
+	case "soldier":
+		return chargen.SoldierCareer, nil
 	default:
-		return chargen.Career{}, fmt.Errorf("unknown career %q (known: scout, rogue)", name)
+		return chargen.Career{}, fmt.Errorf("unknown career %q (known: scout, rogue, soldier)", name)
 	}
 }
 
@@ -74,11 +76,26 @@ func render(c chargen.Character, career chargen.Career) string {
 	}
 	rec := c.Careers[len(c.Careers)-1]
 	fmt.Fprintf(&b, "  %s: %d terms, %s", career.Name, rec.Terms, rec.Outcome)
+	if title := rankTitle(career, rec); title != "" {
+		fmt.Fprintf(&b, ", %s", title)
+	}
 	if c.WoundBadges > 0 {
 		fmt.Fprintf(&b, ", %d wound badges", c.WoundBadges)
 	}
 	renderTail(&b, c)
 	return b.String()
+}
+
+// rankTitle returns the character's final rank title, or "" for a rankless career.
+func rankTitle(career chargen.Career, rec chargen.CareerRecord) string {
+	ranks := career.EnlistedRanks
+	if rec.Officer {
+		ranks = career.OfficerRanks
+	}
+	if rec.Rank >= 1 && rec.Rank <= len(ranks) {
+		return ranks[rec.Rank-1].Title
+	}
+	return ""
 }
 
 // subjects lists a graduate's Major and, if declared, Minor.

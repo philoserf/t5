@@ -76,17 +76,23 @@ Tooling (go, go-task, poppler's `pdftotext`) is pinned in `Brewfile`.
   no-education policy leaves any dice trace (e.g. the golden Scout's) untouched. The term engine
   (`career.go`) is career-agnostic with pluggable seams (`CCMode` Rotate/Fixed — under FixedCC the
   policy picks one CC that serves the whole career, `AdvanceRule` RollLow/RollHigh, `Qualification`
-  char-set, `ContinueRule` fixed/char/UseCC, `MusterBenefitDMT` for a +Terms Benefit-column DM); a
-  `Policy` (with `DefaultPolicy`) supplies every player choice so generation is deterministic and
-  testable. Careers are data, each a file + hand-traced golden: `ScoutCareer` (`scout.go`, p. 79)
-  and `RogueCareer` (`rogue.go`, p. 84 — the FixedCC career). The Academic grid column uses `AwardMajor`
+  char-set, `ContinueRule` fixed/char/UseCC, `MusterBenefitDMT` for a +Terms Benefit-column DM, and
+  the rank ladders `EnlistedRanks`/`OfficerRanks` + `Commission`/`EnlistedPromote`/`OfficerPromote`
+  rules for armed-forces careers); a `Policy` (with `DefaultPolicy`) supplies every player choice so
+  generation is deterministic and testable. The rank step (`resolveRank`) runs after Risk & Reward
+  for a surviving armed-forces character: an enlisted soldier rolls Commission (success → officer
+  track) else Enlisted Promotion, an officer rolls Officer Promotion; promotion targets are raised
+  by `Character.Medals` (a Reward success) and `WoundBadges`, and each rank grants its automatic
+  skill. Careers are data, each a file + hand-traced golden: `ScoutCareer` (`scout.go`, p. 79),
+  `RogueCareer` (`rogue.go`, p. 84 — FixedCC), and `SoldierCareer` (`soldier.go`, p. 82 — the first
+  ranked career). The Academic grid column uses `AwardMajor`
   / `AwardMinor` cells that raise the character's College Major/Minor (lost if uneducated, per the
   page footnote); `DefaultPolicy.ChooseSkillColumn` is character-aware, so a graduate specializes
   in the Academic column while an uneducated Scout falls through to Courier. Deferred: the rest of
-  the education institutions (Trade School, higher/military), the other 11 careers (armed-forces
-  rank machinery is not yet built), the Scout's Courier/Explorer duty and R&R reward, the Rogue's
-  Scheme mechanic (payoff/prison/infamy, its Scheme-driven eligibility, +Terms on R&R/Continue,
-  the "12 is always failure" rule), and Fame.
+  the education institutions (Trade School, higher/military), the other 10 careers, the Scout's
+  Courier/Explorer duty and R&R reward, the Rogue's Scheme mechanic (payoff/prison/infamy, its
+  Scheme-driven eligibility, +Terms on R&R/Continue, the "12 is always failure" rule), the
+  Soldier's Branch/Operations R&R mods and commission/promotion skill eligibility, and Fame.
 - `internal/calendar/` — the Imperial Calendar (Book 1 Appendix 02, p. 262): a 365-day `Date` (day 1 is
   Holiday, then 52 weeks Wonday..Senday), with `Weekday`, `Add` (year rollover), and `String`
   (`001-1105`). Pure date math, no dice.
