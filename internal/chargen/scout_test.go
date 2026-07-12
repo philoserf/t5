@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/philoserf/t5/internal/dice"
+	"github.com/philoserf/t5/internal/worldgen"
 )
 
 // goldenPolicy makes fully deterministic choices so a scripted Scout can be
@@ -45,13 +46,21 @@ func TestGoldenScout(t *testing.T) {
 		1, // row 1 -> Ship Share
 	}
 
-	c := GenerateCareered(dice.NewScripted(seq...), goldenPolicy{}, ScoutCareer)
+	// A fixed homeworld: Ag -> Animals-1, Va -> Vacc Suit-1 (dice-free grants that
+	// do not collide with the Survey/Navigation earned in the career).
+	homeworld := worldgen.World{TradeCodes: []string{"Ag", "Va"}}
+
+	c := GenerateCareered(dice.NewScripted(seq...), goldenPolicy{}, homeworld, ScoutCareer)
 
 	if got := c.UPP(); got != "877777" {
 		t.Errorf("UPP = %q, want %q (Str 7 +1 muster benefit)", got, "877777")
 	}
 	if c.Age != 26 {
 		t.Errorf("Age = %d, want 26 (18 + 2 terms)", c.Age)
+	}
+	if c.Skills.Level("Animals") != 1 || c.Skills.Level("Vacc Suit") != 1 {
+		t.Errorf("homeworld skills: Animals=%d Vacc Suit=%d, want 1/1",
+			c.Skills.Level("Animals"), c.Skills.Level("Vacc Suit"))
 	}
 	if got := c.Skills.Level("Survey"); got != 8 {
 		t.Errorf("Survey = %d, want 8", got)

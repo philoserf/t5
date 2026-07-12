@@ -18,6 +18,7 @@ import (
 
 	"github.com/philoserf/t5/internal/chargen"
 	"github.com/philoserf/t5/internal/cli"
+	"github.com/philoserf/t5/internal/worldgen"
 )
 
 func main() {
@@ -37,7 +38,10 @@ func main() {
 		os.Exit(2)
 	}
 	for range n {
-		fmt.Println(render(chargen.GenerateCareered(r, chargen.DefaultPolicy{}, career), career))
+		// A homeworld is an input to character generation (selected, assigned, or
+		// rolled). Here it is a freshly generated world with no system context.
+		homeworld := worldgen.GenerateWorld(r, 0, 0, false)
+		fmt.Println(render(chargen.GenerateCareered(r, chargen.DefaultPolicy{}, homeworld, career), career))
 	}
 }
 
@@ -54,9 +58,10 @@ func careerByName(name string) (chargen.Career, error) {
 // render formats a careered character as a one-line sheet.
 func render(c chargen.Character, career chargen.Career) string {
 	var b strings.Builder
-	fmt.Fprintf(&b, "%s  age %d", c.UPP(), c.Age)
+	fmt.Fprintf(&b, "%s  age %d  homeworld %s", c.UPP(), c.Age, c.Homeworld.Profile)
 	if len(c.Careers) == 0 {
 		fmt.Fprintf(&b, "  did not qualify for %s", career.Name)
+		renderTail(&b, c)
 		return b.String()
 	}
 	rec := c.Careers[len(c.Careers)-1]
@@ -64,17 +69,23 @@ func render(c chargen.Character, career chargen.Career) string {
 	if c.WoundBadges > 0 {
 		fmt.Fprintf(&b, ", %d wound badges", c.WoundBadges)
 	}
+	renderTail(&b, c)
+	return b.String()
+}
+
+// renderTail appends the skills, credits, benefits, and deceased marker common
+// to careered and non-qualified characters (both carry homeworld skills).
+func renderTail(b *strings.Builder, c chargen.Character) {
 	if s := c.Skills.String(); s != "" {
-		fmt.Fprintf(&b, "  [%s]", s)
+		fmt.Fprintf(b, "  [%s]", s)
 	}
 	if c.Credits > 0 {
-		fmt.Fprintf(&b, "  Cr%d", c.Credits)
+		fmt.Fprintf(b, "  Cr%d", c.Credits)
 	}
 	if len(c.Benefits) > 0 {
-		fmt.Fprintf(&b, "  benefits: %s", strings.Join(c.Benefits, ", "))
+		fmt.Fprintf(b, "  benefits: %s", strings.Join(c.Benefits, ", "))
 	}
 	if c.Dead {
 		b.WriteString("  DECEASED")
 	}
-	return b.String()
 }
