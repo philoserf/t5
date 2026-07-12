@@ -148,7 +148,9 @@ func (s System) String() string {
 			fmt.Fprintf(&b, "%s: %s\n", e.label, *e.star)
 		}
 	}
-	fmt.Fprintf(&b, "Gas Giants: %d  Belts: %d  Worlds: %d  PBG: %s\n", s.GasGiants, s.Belts, s.Worlds, s.PBG())
+	// PBG already carries the belt and gas-giant counts (its 2nd and 3rd
+	// digits), so they are not labelled separately.
+	fmt.Fprintf(&b, "Worlds: %d  PBG: %s\n", s.Worlds, s.PBG())
 	fmt.Fprintf(&b, "Mainworld: %s", s.Mainworld.SecondSurvey())
 	return b.String()
 }

@@ -41,7 +41,7 @@ func TestSystemString(t *testing.T) {
 	want := "Primary: F8 V\n" +
 		"Close: K8 VI (Orbit 3)\n" +
 		"Close Companion: M6 V\n" +
-		"Gas Giants: 3  Belts: 0  Worlds: 8  PBG: 703\n" +
+		"Worlds: 8  PBG: 703\n" +
 		"Mainworld: A788899-C Ph Pa Ri {+4}(D7E+4)[9C6D] BcCeF NS -"
 	if got := reginaSystem().String(); got != want {
 		t.Fatalf("String() =\n%q\nwant\n%q", got, want)
