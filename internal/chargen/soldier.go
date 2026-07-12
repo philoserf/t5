@@ -25,6 +25,7 @@ var SoldierCareer = Career{
 	Continue:         ContinueRule{UseChar: true, Char: Endurance},        // C3
 	Advance:          RollLow,
 	EligPerTerm:      4,
+	RewardKind:       RewardMedal,
 	Commission:       PromotionRule{Char: Endurance},                        // C3
 	EnlistedPromote:  PromotionRule{Char: Endurance, MedalsAndWounds: true}, // C3*
 	OfficerPromote:   PromotionRule{Char: Social, MedalsAndWounds: true},    // Soc*

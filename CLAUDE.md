@@ -92,14 +92,17 @@ Tooling (go, go-task, poppler's `pdftotext`) is pinned in `Brewfile`.
   `CitizenLife` term (`runCitizenTerm`) replaces Risk & Reward with a benign roll that grants a
   Job/Hobby skill and never injures), `EntertainerCareer` (`entertainer.go`, p. 77 — a
   `FameCareer` whose `runFameTerm` shifts `Character.Fame` by a Flux roll, granting Talent +1 and
-  two extra skills on a rise, and Continues vs Fame via `ContinueRule.UseFame`), and
-  `CraftsmanCareer` (`craftsman.go`, p. 75 — a `Masterpiece` career whose `runCraftsmanTerm`
+  two extra skills on a rise, and Continues vs Fame via `ContinueRule.UseFame`), `CraftsmanCareer` (`craftsman.go`, p. 75 — a `Masterpiece` career whose `runCraftsmanTerm`
   attempts a Masterpiece from Master Points [CC + Craftsman skill + `skill.Set.TopLevels`], raises
-  the Craftsman skill each term, and Continues vs Craftsman×2 via `ContinueRule.UseSkill`). The Academic grid column uses `AwardMajor`
+  the Craftsman skill each term, and Continues vs Craftsman×2 via `ContinueRule.UseSkill`), and
+  `ScholarCareer` (`scholar.go`, p. 76 — standard Risk & Reward where a Reward is a Publication
+  [`RewardKind`], with a single rank ladder [`resolveRank` skips Commission when there is no
+  officer track] and Publication-boosted promotion/continue [`PromotionRule.PubsMod`,
+  `ContinueRule.PubsMod`]). The Academic grid column uses `AwardMajor`
   / `AwardMinor` cells that raise the character's College Major/Minor (lost if uneducated, per the
   page footnote); `DefaultPolicy.ChooseSkillColumn` is character-aware, so a graduate specializes
   in the Academic column while an uneducated Scout falls through to Courier. Deferred: the rest of
-  the education institutions (Trade School, higher/military), the other 4 careers (Scholar, Merchant, Noble, Functionary), the Scout's
+  the education institutions (Trade School, higher/military), the other 3 careers (Merchant, Noble, Functionary), the Scout's
   Courier/Explorer duty and R&R reward, the Rogue's Scheme mechanic (payoff/prison/infamy, its
   Scheme-driven eligibility, +Terms on R&R/Continue, the "12 is always failure" rule), the
   armed-forces Branch/Operations R&R mods and commission/promotion skill eligibility (Soldier and
