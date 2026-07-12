@@ -20,6 +20,8 @@ type Policy interface {
 	ChooseSkill(c Character, options []string) string
 	// Continue reports whether the character wishes to serve another term.
 	Continue(c Character, rec CareerRecord) bool
+	// MusterColumn picks the Money or Benefit column for one muster-out roll.
+	MusterColumn(c Character, rec CareerRecord) MusterColumn
 }
 
 // DefaultPolicy makes reasonable automatic choices, so a character can be
@@ -41,10 +43,28 @@ func (DefaultPolicy) ChooseCC(c Character, available []Characteristic) Character
 // RiskMod takes no modifier — the neutral choice.
 func (DefaultPolicy) RiskMod(Character, int) int { return 0 }
 
-// ChooseSkillColumn favours a specialty column (1) over the Personal column (0),
-// so a default character actually gains skills rather than only characteristic
-// bumps.
-func (DefaultPolicy) ChooseSkillColumn(Character, SkillGrid) int { return 1 }
+// ChooseSkillColumn favours the first specialty column (skipping the Personal
+// column 0) whose cells all award something, so a default character gains a
+// varied spread of skills rather than characteristic bumps or empty cells (for
+// the Scout, this skips the mostly-empty Academic column for Courier).
+func (DefaultPolicy) ChooseSkillColumn(_ Character, grid SkillGrid) int {
+	for col := 1; col < len(grid); col++ {
+		if !hasEmptyCell(grid[col]) {
+			return col
+		}
+	}
+	return 1
+}
+
+// hasEmptyCell reports whether a skill-grid column has any non-awarding cell.
+func hasEmptyCell(column [6]Cell) bool {
+	for _, cell := range column {
+		if cell.Kind == NoAward {
+			return true
+		}
+	}
+	return false
+}
 
 // ChooseSkill takes the first option.
 func (DefaultPolicy) ChooseSkill(_ Character, options []string) string { return options[0] }
@@ -53,4 +73,10 @@ func (DefaultPolicy) ChooseSkill(_ Character, options []string) string { return 
 // yields a typical few-term character.
 func (DefaultPolicy) Continue(c Character, _ CareerRecord) bool {
 	return c.Age < physicalAgingAge
+}
+
+// MusterColumn takes Benefits — the non-cash awards (characteristic bumps, Ship
+// Shares, memberships) generally outweigh a single money roll.
+func (DefaultPolicy) MusterColumn(Character, CareerRecord) MusterColumn {
+	return BenefitColumn
 }
