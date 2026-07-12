@@ -26,6 +26,7 @@ const (
 	Marine                  // a second armed-forces career (Book 1 p. 86)
 	Spacer                  // the naval armed-forces career (Book 1 p. 81)
 	Agent                   // a rankless career (Book 1 p. 83)
+	Citizen                 // an auto-begin career using Citizen Life (Book 1 p. 78)
 )
 
 // CCMode controls how a career's Controlling Characteristic is chosen each term:
@@ -118,6 +119,8 @@ type Career struct {
 	Advance          AdvanceRule
 	EligPerTerm      int  // number of skill rolls a surviving term grants
 	MusterBenefitDMT bool // muster Benefit column adds +Terms (else +Fame/2, currently 0)
+	AutoBegin        bool // the career is entered automatically, with no qualify roll (Citizen)
+	CitizenLife      bool // the term uses benign Citizen Life instead of Risk & Reward (Citizen)
 	Skills           SkillGrid
 	MusterOut        MusterTable
 
@@ -177,6 +180,8 @@ type careerRun struct {
 	fixedChosen bool             // whether fixed has been selected yet
 	rank        int              // current rank number (1-based) for a rank career
 	officer     bool             // whether rank is on the officer track
+	citizenWins int              // Citizen Life successes so far (drives the Job/Hobby schedule)
+	job, hobby  string           // the Citizen's Job and Hobby skills, set on the 1st/2nd success
 }
 
 // GenerateCareered generates a character on the given homeworld and runs one
@@ -193,7 +198,9 @@ func GenerateCareered(r *dice.Roller, p Policy, homeworld worldgen.World, career
 	if p.PursueEducation(c) {
 		educate(r, p, &c)
 	}
-	if r.Resolve(dice.Check{Dice: 2, Target: career.Qualify.target(c)}).Success {
+	// AutoBegin (the Citizen) enters with no qualify roll; the || short-circuits
+	// so Qualify.target is never evaluated for such a career.
+	if career.AutoBegin || r.Resolve(dice.Check{Dice: 2, Target: career.Qualify.target(c)}).Success {
 		RunCareer(r, p, &c, career)
 		if rec := c.Careers[len(c.Careers)-1]; rec.Outcome != Died {
 			MusterOut(r, p, &c, rec, career)
@@ -245,6 +252,9 @@ func RunCareer(r *dice.Roller, p Policy, c *Character, career Career) {
 // Disabled, or Died.
 func runTerm(r *dice.Roller, p Policy, c *Character, run *careerRun, career Career) TermOutcome {
 	cc := selectCC(p, *c, run, career)
+	if career.CitizenLife {
+		return runCitizenTerm(r, p, c, run, career, cc)
+	}
 	ccVal := c.Score(cc)
 	mod := p.RiskMod(*c, ccVal) // caution (+), bravery (-), or 0
 
@@ -277,6 +287,44 @@ func runTerm(r *dice.Roller, p Policy, c *Character, run *careerRun, career Care
 	resolveRank(r, c, run, career) // promotion / commission for a surviving term
 	awardSkills(r, p, c, career)   // a surviving (even wounded) character gains skills
 	return Ongoing
+}
+
+// citizenJobs is a representative list of Citizen Job/Hobby skills; the book's
+// full Citizen Skills-and-Knowledges table (Book 1 p. 78) is deferred.
+var citizenJobs = []string{
+	"Admin", "Broker", "Trader", "Computer", "Steward", "Liaison", "Counsellor", "Driver",
+}
+
+// runCitizenTerm resolves a Citizen's term (Book 1 p. 78). Citizen Life replaces
+// Risk & Reward: a benign 2D roll at or under the Controlling Characteristic —
+// success grants a Job or Hobby skill, failure does nothing (no injury). The
+// character always survives the career step; only aging can end it.
+func runCitizenTerm(r *dice.Roller, p Policy, c *Character, run *careerRun, career Career, cc Characteristic) TermOutcome {
+	if r.Resolve(dice.Check{Dice: 2, Target: c.Score(cc)}).Success {
+		awardCitizenLife(p, c, run)
+	}
+	awardSkills(r, p, c, career)
+	return Ongoing
+}
+
+// awardCitizenLife applies one Citizen Life success on the Job/Hobby schedule
+// (Book 1 p. 78): the 1st success sets the Job at level 4, the 2nd sets the
+// Hobby at level 2, and later successes alternate Job/Hobby at +1 (odd = Job,
+// even = Hobby). Job and Hobby, once chosen, do not change.
+func awardCitizenLife(p Policy, c *Character, run *careerRun) {
+	run.citizenWins++
+	switch {
+	case run.citizenWins == 1:
+		run.job = p.ChooseSkill(*c, citizenJobs)
+		c.Skills.Raise(run.job, 4)
+	case run.citizenWins == 2:
+		run.hobby = p.ChooseSkill(*c, without(citizenJobs, run.job))
+		c.Skills.Raise(run.hobby, 2)
+	case run.citizenWins%2 == 1:
+		c.Skills.Raise(run.job, 1)
+	default:
+		c.Skills.Raise(run.hobby, 1)
+	}
 }
 
 // resolveRank runs a surviving armed-forces character's rank step (Book 1 p. 64

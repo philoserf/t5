@@ -86,13 +86,15 @@ Tooling (go, go-task, poppler's `pdftotext`) is pinned in `Brewfile`.
   skill. Careers are data, each a file + hand-traced golden: `ScoutCareer` (`scout.go`, p. 79),
   `RogueCareer` (`rogue.go`, p. 84 — FixedCC), `SoldierCareer` (`soldier.go`, p. 82 — the first
   ranked career), `MarineCareer` (`marine.go`, p. 86), `SpacerCareer` (`spacer.go`, p. 81 — the
-  naval career, whose Rating ladder uses the engine's EnlistedPromote), and `AgentCareer`
+  naval career, whose Rating ladder uses the engine's EnlistedPromote), `AgentCareer`
   (`agent.go`, p. 83 — a rankless career whose Continue eases with terms served via
-  `ContinueRule.TermsMod`). The Academic grid column uses `AwardMajor`
+  `ContinueRule.TermsMod`), and `CitizenCareer` (`citizen.go`, p. 78 — an `AutoBegin` career whose
+  `CitizenLife` term (`runCitizenTerm`) replaces Risk & Reward with a benign roll that grants a
+  Job/Hobby skill and never injures). The Academic grid column uses `AwardMajor`
   / `AwardMinor` cells that raise the character's College Major/Minor (lost if uneducated, per the
   page footnote); `DefaultPolicy.ChooseSkillColumn` is character-aware, so a graduate specializes
   in the Academic column while an uneducated Scout falls through to Courier. Deferred: the rest of
-  the education institutions (Trade School, higher/military), the other 7 careers, the Scout's
+  the education institutions (Trade School, higher/military), the other 6 careers, the Scout's
   Courier/Explorer duty and R&R reward, the Rogue's Scheme mechanic (payoff/prison/infamy, its
   Scheme-driven eligibility, +Terms on R&R/Continue, the "12 is always failure" rule), the
   armed-forces Branch/Operations R&R mods and commission/promotion skill eligibility (Soldier and
