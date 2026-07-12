@@ -89,8 +89,10 @@ Tooling (go, go-task, poppler's `pdftotext`) is pinned in `Brewfile`.
   `RogueCareer` (`rogue.go`, p. 84 — FixedCC), `SoldierCareer` (`soldier.go`, p. 82 — the first
   ranked career), `MarineCareer` (`marine.go`, p. 86), `SpacerCareer` (`spacer.go`, p. 81 — the
   naval career, whose Rating ladder uses the engine's EnlistedPromote), `AgentCareer`
-  (`agent.go`, p. 83 — a rankless career whose Continue eases with terms served via
-  `ContinueRule.TermsMod`), `CitizenCareer` (`citizen.go`, p. 78 — an `AutoBegin` career whose
+  (`agent.go`, p. 83 — a rankless `UndercoverCareer` whose `awardUndercover` borrows one skill from
+  a rolled career's grid (`undercoverAssignment` + the `CareerByID` registry) each term, adds the
+  Successful-Mission skills on a held Risk, and earns a Commendation on a Reward [`RewardCommendation`,
+  `DMCommends`]; Continue eases with terms served via `ContinueRule.TermsMod`), `CitizenCareer` (`citizen.go`, p. 78 — an `AutoBegin` career whose
   `CitizenLife` term (`runCitizenTerm`) replaces Risk & Reward with a benign roll that grants a
   Job/Hobby skill and never injures), `EntertainerCareer` (`entertainer.go`, p. 77 — a
   `FameCareer` whose `runFameTerm` shifts `Character.Fame` by a Flux roll, granting Talent +1 and

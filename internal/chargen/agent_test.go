@@ -7,41 +7,52 @@ import (
 	"github.com/philoserf/t5/internal/worldgen"
 )
 
-// TestGoldenAgent traces a complete two-term Agent — a rankless career, so no
-// rank step runs and no medals accrue. Rolls are 3,4 (= 7) unless noted.
+// TestGoldenAgent traces a complete two-term Agent, exercising the Undercover
+// Assignment: each term borrows a rolled career's skill and, on a Successful
+// Mission (a held Risk), grants Per Term 2 + Successful Mission 4 = 6 skills,
+// while a successful Reward is a Commendation. Rolls are 3,4 (= 7) unless noted.
 // Starting scores "888777" (final UPP 988777 after the Str +1 muster benefit).
 func TestGoldenAgent(t *testing.T) {
 	seq := []int{
 		// UPP: Str 8, Dex 8, End 8, Int 7, Edu 7, Soc 7.
 		4, 4, 4, 4, 4, 4, 3, 4, 3, 4, 3, 4,
 		3, 4, // qualify vs End 8: 7 <= 8, enters
-		// Term 1: CC = Str (8). Risk survive; Reward (no medal — rankless).
+		// Term 1: CC = Str (8). Risk survive (Successful Mission); Reward -> Commendation.
 		3, 4, // risk
-		3, 4, // reward
-		1, 1, // 2 skill rolls, Mission col row 1 = Survey
+		3, 4, // reward -> Commendation 1
+		1, 1, // Undercover Assignment A=1,B=1 -> Soldier; select col 3 row 1 = Admin
+		1, 1, 1, 1, 1, 1, // Per Term 2 + Successful Mission 4 = 6, Mission col row 1 = Survey
 		3, 4, // continue vs Str 8 + Terms 1 = 9: 7, policy wants term 2
 		// Term 2: CC = Dex (8).
 		3, 4, // risk
-		3, 4, // reward
-		1, 1, // Survey x2 again
+		3, 4, // reward -> Commendation 2
+		1, 1, // Undercover -> Soldier again; Admin
+		1, 1, 1, 1, 1, 1, // Survey x6 again -> 12
 		3, 4, // continue vs Str 8 + Terms 2 = 10: 7, policy stops after term 2
-		// Muster out: 2 rolls, Benefit column.
-		5, // row 5 -> Str +1 (8 -> 9)
-		1, // row 1 -> Ship Share
+		// Muster out: 2 rolls, Benefit column, DM +Commendations (=2).
+		3, // 3 + 2 = row 5 -> Str +1 (8 -> 9)
+		6, // 6 + 2 = row 8 -> Ship Share
 	}
 
 	// goldenPolicy (scout_test.go) picks skill column 3; for the Agent grid that
-	// column is Mission (Survey at row 1).
+	// column is Mission (Survey at row 1), and for the borrowed Soldier grid it
+	// is Peacekeeper (Admin at row 1).
 	c := GenerateCareered(dice.NewScripted(seq...), goldenPolicy{}, worldgen.World{}, AgentCareer)
 
 	if got := c.UPP(); got != "988777" {
 		t.Errorf("UPP = %q, want %q (Str 8 +1 muster benefit)", got, "988777")
 	}
 	if c.Medals != 0 {
-		t.Errorf("Medals = %d, want 0 (rankless career earns no medals)", c.Medals)
+		t.Errorf("Medals = %d, want 0 (the Agent earns Commendations, not Medals)", c.Medals)
 	}
-	if c.Skills.Level("Survey") != 4 {
-		t.Errorf("Survey = %d, want 4 (2 rolls x 2 terms)", c.Skills.Level("Survey"))
+	if c.Commendations != 2 {
+		t.Errorf("Commendations = %d, want 2 (a Reward success each term)", c.Commendations)
+	}
+	if c.Skills.Level("Survey") != 12 {
+		t.Errorf("Survey = %d, want 12 (6 rolls x 2 terms)", c.Skills.Level("Survey"))
+	}
+	if c.Skills.Level("Admin") != 2 {
+		t.Errorf("Admin = %d, want 2 (one Undercover skill borrowed from the Soldier each term)", c.Skills.Level("Admin"))
 	}
 	rec := c.Careers[0]
 	if rec.Career != Agent || rec.Terms != 2 || rec.Outcome != MusteredOut {
@@ -52,6 +63,34 @@ func TestGoldenAgent(t *testing.T) {
 	}
 	if len(c.Benefits) != 1 || c.Benefits[0] != "Ship Share" {
 		t.Errorf("Benefits = %v, want [Ship Share]", c.Benefits)
+	}
+}
+
+func TestUndercoverAssignment(t *testing.T) {
+	// The A/B table maps a roll to the borrowed career.
+	if got := undercoverAssignment(dice.NewScripted(1, 1)); got != Soldier {
+		t.Errorf("A1 B1 = %v, want Soldier", got)
+	}
+	if got := undercoverAssignment(dice.NewScripted(2, 3)); got != Entertainer {
+		t.Errorf("A2 B3 = %v, want Entertainer", got)
+	}
+	// Die A rerolls while it exceeds 3: 5 (reroll) then 3, with B = 5 -> Noble.
+	if got := undercoverAssignment(dice.NewScripted(5, 3, 5)); got != Noble {
+		t.Errorf("A(5->reroll->3) B5 = %v, want Noble", got)
+	}
+}
+
+func TestAwardUndercoverFailedMission(t *testing.T) {
+	c := Character{scores: [count]int{7, 7, 7, 7, 7, 7}}
+	// A failed Mission grants only Per Term 2 plus the 1 Undercover skill, not the
+	// Successful Mission 4. Undercover A=1,B=1 -> Soldier, borrow col 3 row 1 =
+	// Admin; then 2 Survey from the Agent's own Mission column.
+	awardUndercover(dice.NewScripted(1, 1, 1, 1), goldenPolicy{}, &c, AgentCareer, false)
+	if c.Skills.Level("Admin") != 1 {
+		t.Errorf("Admin = %d, want 1 (the borrowed Undercover skill)", c.Skills.Level("Admin"))
+	}
+	if c.Skills.Level("Survey") != 2 {
+		t.Errorf("Survey = %d, want 2 (Per Term 2, no Successful Mission bonus)", c.Skills.Level("Survey"))
 	}
 }
 

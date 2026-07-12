@@ -76,15 +76,6 @@ func (p *sequencePolicy) NextCareer(chargen.Character) (chargen.Career, bool) {
 	return chargen.Career{}, false
 }
 
-// allCareers is every career indexed by its CareerID, for looking up a career
-// from a record (which stores only the ID).
-var allCareers = []chargen.Career{
-	chargen.ScoutCareer, chargen.RogueCareer, chargen.SoldierCareer, chargen.MarineCareer,
-	chargen.SpacerCareer, chargen.AgentCareer, chargen.CitizenCareer, chargen.EntertainerCareer,
-	chargen.CraftsmanCareer, chargen.ScholarCareer, chargen.FunctionaryCareer, chargen.NobleCareer,
-	chargen.MerchantCareer,
-}
-
 // careerByName resolves a -career flag value to its career data.
 func careerByName(name string) (chargen.Career, error) {
 	switch strings.ToLower(name) {
@@ -135,7 +126,7 @@ func render(c chargen.Character) string {
 		return b.String()
 	}
 	for _, rec := range c.Careers {
-		career := allCareers[rec.Career]
+		career := chargen.CareerByID(rec.Career)
 		fmt.Fprintf(&b, "  %s: %d terms, %s", career.Name, rec.Terms, rec.Outcome)
 		title := rankTitle(career, rec)
 		if career.ReturnIntrigue {
@@ -156,6 +147,9 @@ func render(c chargen.Character) string {
 	}
 	if c.Publications > 0 {
 		fmt.Fprintf(&b, ", %d publications", c.Publications)
+	}
+	if c.Commendations > 0 {
+		fmt.Fprintf(&b, ", %d commendations", c.Commendations)
 	}
 	if c.Discoveries > 0 {
 		fmt.Fprintf(&b, ", %d discoveries", c.Discoveries)
