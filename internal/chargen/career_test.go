@@ -22,8 +22,10 @@ type stopAfter struct{ terms int }
 func (stopAfter) ChooseCC(_ Character, available []Characteristic) Characteristic {
 	return available[0]
 }
-func (stopAfter) RiskMod(Character, int) int                    { return 0 }
-func (s stopAfter) Continue(_ Character, rec CareerRecord) bool { return rec.Terms < s.terms }
+func (stopAfter) RiskMod(Character, int) int                       { return 0 }
+func (stopAfter) ChooseSkillColumn(Character, SkillGrid) int       { return 0 }
+func (stopAfter) ChooseSkill(_ Character, options []string) string { return options[0] }
+func (s stopAfter) Continue(_ Character, rec CareerRecord) bool    { return rec.Terms < s.terms }
 
 func TestContinueTarget(t *testing.T) {
 	c := Character{scores: [count]int{7, 7, 7, 10, 8, 6}}
@@ -170,6 +172,77 @@ func TestRunTermFatal(t *testing.T) {
 	got := runOneTerm(dice.NewScripted(2, 2 /*risk 4*/, 1, 4 /*flux -3*/), &c, Strength)
 	if got != Died || !c.Dead {
 		t.Fatalf("fatal: outcome %v dead %v, want Died/true", got, c.Dead)
+	}
+}
+
+func TestApplyCell(t *testing.T) {
+	var c Character
+	// A plain skill.
+	applyCell(stopAfter{}, &c, Cell{Kind: AwardSkill, Skill: "Navigation"})
+	if c.Skills.Level("Navigation") != 1 {
+		t.Errorf("Navigation = %d, want 1", c.Skills.Level("Navigation"))
+	}
+	// A cascade skill grants a knowledge (K-K-S).
+	applyCell(stopAfter{}, &c, Cell{Kind: AwardSkill, Skill: "Pilot", Knowledge: "Small Craft"})
+	if c.Skills.KnowledgeLevel("Pilot", "Small Craft") != 1 || c.Skills.Level("Pilot") != 0 {
+		t.Errorf("cascade award wrong: K=%d S=%d", c.Skills.KnowledgeLevel("Pilot", "Small Craft"), c.Skills.Level("Pilot"))
+	}
+	// A choice picks the first option (DefaultPolicy/stopAfter).
+	applyCell(stopAfter{}, &c, Cell{Kind: AwardChoice, Options: []string{"Gambler", "Carousing"}})
+	if c.Skills.Level("Gambler") != 1 {
+		t.Errorf("choice award = %d, want Gambler 1", c.Skills.Level("Gambler"))
+	}
+	// A characteristic bump, capped at the human maximum.
+	c.scores[Strength] = 14
+	applyCell(stopAfter{}, &c, Cell{Kind: AwardBump, Char: Strength})
+	applyCell(stopAfter{}, &c, Cell{Kind: AwardBump, Char: Strength})
+	if c.scores[Strength] != maxCharacteristic {
+		t.Errorf("bump cap: Str = %d, want %d", c.scores[Strength], maxCharacteristic)
+	}
+}
+
+// commsGrid is a grid whose column 0 always awards Comms.
+func commsGrid() SkillGrid {
+	var g SkillGrid
+	for row := range g[0] {
+		g[0][row] = Cell{Kind: AwardSkill, Skill: "Comms"}
+	}
+	return g
+}
+
+func TestAwardSkills(t *testing.T) {
+	c := Character{}
+	career := Career{EligPerTerm: 3, Skills: commsGrid()}
+	// stopAfter picks column 0; each 1D lands on a Comms cell.
+	awardSkills(dice.NewScripted(2, 4, 6), stopAfter{}, &c, career)
+	if got := c.Skills.Level("Comms"); got != 3 {
+		t.Fatalf("Comms = %d, want 3 (three eligibility rolls)", got)
+	}
+}
+
+func TestRunTermAwardsSkillsOnSurvival(t *testing.T) {
+	c := Character{scores: [count]int{7, 7, 7, 8, 8, 8}}
+	career := Career{Name: "S", ControllingChars: []Characteristic{Strength}, EligPerTerm: 1, Skills: commsGrid()}
+	run := careerRun{ccPool: []Characteristic{Strength}}
+	// Risk 7 (survive), Reward 7, then one skill roll.
+	if got := runTerm(dice.NewScripted(3, 4, 3, 4, 5), stopAfter{}, &c, &run, career); got != Ongoing {
+		t.Fatalf("outcome = %v, want Ongoing", got)
+	}
+	if c.Skills.Level("Comms") != 1 {
+		t.Errorf("survived term granted %d Comms, want 1", c.Skills.Level("Comms"))
+	}
+}
+
+func TestRunTermNoSkillsWhenDisabled(t *testing.T) {
+	c := Character{scores: [count]int{7, 7, 7, 8, 8, 8}}
+	career := Career{Name: "S", ControllingChars: []Characteristic{Strength}, EligPerTerm: 1, Skills: commsGrid()}
+	run := careerRun{ccPool: []Characteristic{Strength}}
+	// Risk fails (8 > 7), Flux -4 disables: no skills awarded.
+	if got := runTerm(dice.NewScripted(4, 4, 1, 5), stopAfter{}, &c, &run, career); got != Disabled {
+		t.Fatalf("outcome = %v, want Disabled", got)
+	}
+	if c.Skills.Level("Comms") != 0 {
+		t.Errorf("disabled term granted skills: Comms %d", c.Skills.Level("Comms"))
 	}
 }
 

@@ -13,6 +13,11 @@ type Policy interface {
 	// Characteristic of value cc: positive for Caution (safer, worse reward),
 	// negative for Bravery (riskier, better reward), 0 for no modifier.
 	RiskMod(c Character, cc int) int
+	// ChooseSkillColumn picks a column (0-6) of a career's skill grid for one
+	// skill award.
+	ChooseSkillColumn(c Character, grid SkillGrid) int
+	// ChooseSkill picks one skill from a choice cell's options.
+	ChooseSkill(c Character, options []string) string
 	// Continue reports whether the character wishes to serve another term.
 	Continue(c Character, rec CareerRecord) bool
 }
@@ -35,6 +40,14 @@ func (DefaultPolicy) ChooseCC(c Character, available []Characteristic) Character
 
 // RiskMod takes no modifier — the neutral choice.
 func (DefaultPolicy) RiskMod(Character, int) int { return 0 }
+
+// ChooseSkillColumn favours a specialty column (1) over the Personal column (0),
+// so a default character actually gains skills rather than only characteristic
+// bumps.
+func (DefaultPolicy) ChooseSkillColumn(Character, SkillGrid) int { return 1 }
+
+// ChooseSkill takes the first option.
+func (DefaultPolicy) ChooseSkill(_ Character, options []string) string { return options[0] }
 
 // Continue keeps serving until aging begins (age 34), a simple heuristic that
 // yields a typical few-term character.
