@@ -30,6 +30,7 @@ const (
 	Entertainer                 // a Fame/Talent career (Book 1 p. 77)
 	Craftsman                   // a Masterpiece career (Book 1 p. 75)
 	Scholar                     // a single-ladder rank career with Publications (Book 1 p. 76)
+	Functionary                 // an Office Politics career (Book 1 p. 87)
 )
 
 // CCMode controls how a career's Controlling Characteristic is chosen each term:
@@ -140,6 +141,7 @@ type Career struct {
 	CitizenLife      bool       // the term uses benign Citizen Life instead of Risk & Reward (Citizen)
 	FameCareer       bool       // the term resolves Fame/Talent instead of Risk & Reward (Entertainer)
 	Masterpiece      bool       // the term attempts a Masterpiece instead of Risk & Reward (Craftsman)
+	OfficePolitics   bool       // the term resolves Office Politics instead of Risk & Reward (Functionary)
 	RewardKind       RewardKind // what a successful Reward roll earns
 	Skills           SkillGrid
 	MusterOut        MusterTable
@@ -259,6 +261,10 @@ func RunCareer(r *dice.Roller, p Policy, c *Character, career Career) {
 			rec.Outcome = Disabled
 			break
 		}
+		if outcome == MusteredOut {
+			rec.Outcome = MusteredOut // a term forced the career to end (Office Politics job loss)
+			break
+		}
 		if !continues(r, p, *c, career, rec, &run) {
 			rec.Outcome = MusteredOut
 			break
@@ -284,6 +290,9 @@ func runTerm(r *dice.Roller, p Policy, c *Character, run *careerRun, career Care
 	}
 	if career.Masterpiece {
 		return runCraftsmanTerm(r, p, c, career, cc)
+	}
+	if career.OfficePolitics {
+		return runPoliticsTerm(r, p, c, run, career, cc)
 	}
 	ccVal := c.Score(cc)
 	mod := p.RiskMod(*c, ccVal) // caution (+), bravery (-), or 0
@@ -380,6 +389,24 @@ func runCraftsmanTerm(r *dice.Roller, p Policy, c *Character, career Career, cc 
 	}
 	c.Skills.Raise("Craftsman", 1) // learning from the work, success or failure
 	awardSkillsN(r, p, c, career, elig)
+	return Ongoing
+}
+
+// runPoliticsTerm resolves a Functionary's term (Book 1 p. 87). Office Politics
+// replaces Risk & Reward with two unmodified rolls against the Controlling
+// Characteristic: a failed Risk ends the career (job loss — the character
+// musters out normally, uninjured), and a successful Reward is a promotion. It
+// returns MusteredOut on a lost job, otherwise Ongoing.
+func runPoliticsTerm(r *dice.Roller, p Policy, c *Character, run *careerRun, career Career, cc Characteristic) TermOutcome {
+	riskKept := r.Resolve(dice.Check{Dice: 2, Target: c.Score(cc)}).Success
+	if r.Resolve(dice.Check{Dice: 2, Target: c.Score(cc)}).Success && run.rank < len(career.EnlistedRanks) {
+		run.rank++
+		grantRankSkill(c, career.EnlistedRanks, run.rank)
+	}
+	awardSkills(r, p, c, career)
+	if !riskKept {
+		return MusteredOut
+	}
 	return Ongoing
 }
 
