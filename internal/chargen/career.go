@@ -205,6 +205,7 @@ type Career struct {
 	Masterpiece      bool       // the term attempts a Masterpiece instead of Risk & Reward (Craftsman)
 	OfficePolitics   bool       // the term resolves Office Politics instead of Risk & Reward (Functionary)
 	ReturnIntrigue   bool       // the term resolves Return & Intrigue instead of Risk & Reward (Noble)
+	ScoutDuty        bool       // the term picks Courier (no R&R, 4 skills) or Explorer (R&R, EligPerTerm skills) (Scout)
 	RewardKind       RewardKind // what a successful Reward roll earns
 	Skills           SkillGrid
 	MusterOut        MusterTable
@@ -384,6 +385,10 @@ func runTerm(r *dice.Roller, p Policy, c *Character, run *careerRun, career Care
 	if career.ReturnIntrigue {
 		return runIntrigueTerm(r, p, c, run, career, cc)
 	}
+	if career.ScoutDuty && !p.ChooseExplorerDuty(*c) {
+		awardSkillsN(r, p, c, career, courierElig) // Courier duty avoids Risk & Reward
+		return Ongoing
+	}
 	ccVal := c.Score(cc)
 	mod := p.RiskMod(*c, ccVal) // caution (+), bravery (-), or 0
 	bo := branchOpsMod(r, c, run, career)
@@ -481,6 +486,10 @@ func runFameTerm(r *dice.Roller, p Policy, c *Character, career Career) TermOutc
 // masterpieceMinimum is the fewest Master Points that allow a Masterpiece
 // attempt (Book 1 p. 75).
 const masterpieceMinimum = 40
+
+// courierElig is the skill eligibility of a Scout's Courier duty (Book 1 p. 79);
+// Explorer duty grants the career's full EligPerTerm.
+const courierElig = 4
 
 // runCraftsmanTerm resolves a Craftsman's term (Book 1 p. 75). The Craftsman
 // attempts a Masterpiece instead of Risk & Reward: Master Points total the

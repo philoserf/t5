@@ -31,6 +31,7 @@ func (stopAfter) MusterColumn(Character, CareerRecord) MusterColumn { return Ben
 func (stopAfter) PursueEducation(Character) bool                    { return false }
 func (stopAfter) TakeWaiver(Character, int) bool                    { return true }
 func (stopAfter) NextCareer(Character) (Career, bool)               { return Career{}, false }
+func (stopAfter) ChooseExplorerDuty(Character) bool                 { return true }
 
 func TestContinueTarget(t *testing.T) {
 	c := Character{scores: [count]int{7, 7, 7, 10, 8, 6}}

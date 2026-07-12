@@ -24,6 +24,7 @@ func (goldenPolicy) MusterColumn(Character, CareerRecord) MusterColumn { return 
 func (goldenPolicy) PursueEducation(Character) bool                    { return false }
 func (goldenPolicy) TakeWaiver(Character, int) bool                    { return true }
 func (goldenPolicy) NextCareer(Character) (Career, bool)               { return Career{}, false }
+func (goldenPolicy) ChooseExplorerDuty(Character) bool                 { return true }
 
 // TestGoldenScout traces a complete two-term Scout end-to-end from a scripted
 // roller and policy, locking the Scout transcription and the whole career
@@ -86,5 +87,25 @@ func TestGoldenScout(t *testing.T) {
 	}
 	if c.WoundBadges != 0 || c.Dead {
 		t.Errorf("unexpected injury: badges %d dead %v", c.WoundBadges, c.Dead)
+	}
+}
+
+// courierPolicy is goldenPolicy but takes Courier duty (no Risk & Reward).
+type courierPolicy struct{ goldenPolicy }
+
+func (courierPolicy) ChooseExplorerDuty(Character) bool { return false }
+
+// TestScoutCourierDuty confirms Courier duty skips Risk & Reward (no injury even
+// for a frail Scout) and grants the 4 Courier skills instead of the 8 Explorer.
+func TestScoutCourierDuty(t *testing.T) {
+	c := Character{scores: [count]int{2, 2, 2, 7, 7, 7}} // frail — Explorer would risk injury
+	run := careerRun{ccPool: []Characteristic{Strength}}
+	// goldenPolicy picks column 3 (Exploration); die 1 -> Survey.
+	got := runTerm(dice.NewScripted(1, 1, 1, 1), courierPolicy{}, &c, &run, ScoutCareer)
+	if got != Ongoing || c.WoundBadges != 0 {
+		t.Errorf("Courier duty: outcome %v wounds %d, want Ongoing/0 (no Risk & Reward)", got, c.WoundBadges)
+	}
+	if c.Skills.Level("Survey") != 4 {
+		t.Errorf("Survey = %d, want 4 (Courier grants 4 skills, not 8)", c.Skills.Level("Survey"))
 	}
 }

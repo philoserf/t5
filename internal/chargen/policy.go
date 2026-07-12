@@ -32,6 +32,9 @@ type Policy interface {
 	// returns false to finish character generation (Book 1: characters may serve
 	// more than one career).
 	NextCareer(c Character) (Career, bool)
+	// ChooseExplorerDuty reports whether a Scout takes Explorer duty this term
+	// (Risk & Reward, more skills) rather than the safer Courier duty (Book 1 p. 79).
+	ChooseExplorerDuty(c Character) bool
 }
 
 // DefaultPolicy makes reasonable automatic choices, so a character can be
@@ -124,3 +127,6 @@ func (DefaultPolicy) TakeWaiver(Character, int) bool { return true }
 // NextCareer stops after one career; a policy that wants a multi-career
 // character (e.g. the CLI's -careers sequence) overrides this.
 func (DefaultPolicy) NextCareer(Character) (Career, bool) { return Career{}, false }
+
+// ChooseExplorerDuty takes the iconic Explorer duty — the risk buys more skills.
+func (DefaultPolicy) ChooseExplorerDuty(Character) bool { return true }
