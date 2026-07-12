@@ -181,10 +181,11 @@ func eduBonus(c Character) int {
 type RewardKind int
 
 const (
-	RewardNone        RewardKind = iota // the reward benefit is deferred (Scout, Rogue, …)
+	RewardNone        RewardKind = iota // the reward benefit is deferred (Rogue via its Scheme, …)
 	RewardMedal                         // armed forces: a Medal
 	RewardPublication                   // the Scholar: a Publication
 	RewardShipShares                    // the Merchant: escalating Ship Shares (Nth reward = N shares)
+	RewardDiscovery                     // the Scout: a Discovery — a Land Grant and Fame +1 (Book 1 p. 79)
 )
 
 // A Career is the data for one career. It grows as later slices add the skill
@@ -413,6 +414,10 @@ func runTerm(r *dice.Roller, p Policy, c *Character, run *careerRun, career Care
 			case RewardShipShares:
 				run.rewards++ // the Nth Reward success is worth N Ship Shares
 				c.ShipShares += run.rewards
+			case RewardDiscovery:
+				c.Discoveries++ // a valuable new world or feature: a Land Grant and Fame +1
+				c.LandGrants++
+				c.Fame++
 			}
 		}
 	} else {
