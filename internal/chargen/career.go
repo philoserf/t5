@@ -31,6 +31,7 @@ const (
 	Craftsman                   // a Masterpiece career (Book 1 p. 75)
 	Scholar                     // a single-ladder rank career with Publications (Book 1 p. 76)
 	Functionary                 // an Office Politics career (Book 1 p. 87)
+	Noble                       // a Return & Intrigue career (Book 1 p. 85)
 )
 
 // CCMode controls how a career's Controlling Characteristic is chosen each term:
@@ -142,6 +143,7 @@ type Career struct {
 	FameCareer       bool       // the term resolves Fame/Talent instead of Risk & Reward (Entertainer)
 	Masterpiece      bool       // the term attempts a Masterpiece instead of Risk & Reward (Craftsman)
 	OfficePolitics   bool       // the term resolves Office Politics instead of Risk & Reward (Functionary)
+	ReturnIntrigue   bool       // the term resolves Return & Intrigue instead of Risk & Reward (Noble)
 	RewardKind       RewardKind // what a successful Reward roll earns
 	Skills           SkillGrid
 	MusterOut        MusterTable
@@ -204,6 +206,7 @@ type careerRun struct {
 	officer     bool             // whether rank is on the officer track
 	citizenWins int              // Citizen Life successes so far (drives the Job/Hobby schedule)
 	job, hobby  string           // the Citizen's Job and Hobby skills, set on the 1st/2nd success
+	exiled      bool             // the Noble is currently in Exile (Book 1 p. 85)
 }
 
 // GenerateCareered generates a character on the given homeworld and runs one
@@ -293,6 +296,9 @@ func runTerm(r *dice.Roller, p Policy, c *Character, run *careerRun, career Care
 	}
 	if career.OfficePolitics {
 		return runPoliticsTerm(r, p, c, run, career, cc)
+	}
+	if career.ReturnIntrigue {
+		return runIntrigueTerm(r, p, c, run, career, cc)
 	}
 	ccVal := c.Score(cc)
 	mod := p.RiskMod(*c, ccVal) // caution (+), bravery (-), or 0
@@ -407,6 +413,28 @@ func runPoliticsTerm(r *dice.Roller, p Policy, c *Character, run *careerRun, car
 	if !riskKept {
 		return MusteredOut
 	}
+	return Ongoing
+}
+
+// runIntrigueTerm resolves a Noble's term (Book 1 p. 85). Return & Intrigue
+// replaces Risk & Reward, with no injury. A Noble in Exile rolls Return (success
+// ends the Exile); one not in Exile rolls Intrigue (failure begins an Exile;
+// success offers an Elevation — a roll-high check of 2D at or over Social
+// Standing that, on success, raises Soc by 1 and awards a Land Grant).
+func runIntrigueTerm(r *dice.Roller, p Policy, c *Character, run *careerRun, career Career, cc Characteristic) TermOutcome {
+	if run.exiled {
+		if r.Resolve(dice.Check{Dice: 2, Target: c.Score(cc)}).Success {
+			run.exiled = false // Return from Exile
+		}
+	} else if r.Resolve(dice.Check{Dice: 2, Target: c.Score(cc)}).Success {
+		if r.Dice(2) >= c.Score(Social) && c.scores[Social] < maxCharacteristic {
+			c.scores[Social]++ // Elevation to the next Noble rank
+			c.LandGrants++
+		}
+	} else {
+		run.exiled = true // Exile
+	}
+	awardSkills(r, p, c, career)
 	return Ongoing
 }
 

@@ -70,8 +70,10 @@ func careerByName(name string) (chargen.Career, error) {
 		return chargen.ScholarCareer, nil
 	case "functionary":
 		return chargen.FunctionaryCareer, nil
+	case "noble":
+		return chargen.NobleCareer, nil
 	default:
-		return chargen.Career{}, fmt.Errorf("unknown career %q (known: scout, rogue, soldier, marine, spacer, agent, citizen, entertainer, craftsman, scholar, functionary)", name)
+		return chargen.Career{}, fmt.Errorf("unknown career %q (known: scout, rogue, soldier, marine, spacer, agent, citizen, entertainer, craftsman, scholar, functionary, noble)", name)
 	}
 }
 
@@ -92,7 +94,11 @@ func render(c chargen.Character, career chargen.Career) string {
 	}
 	rec := c.Careers[len(c.Careers)-1]
 	fmt.Fprintf(&b, "  %s: %d terms, %s", career.Name, rec.Terms, rec.Outcome)
-	if title := rankTitle(career, rec); title != "" {
+	title := rankTitle(career, rec)
+	if career.ReturnIntrigue {
+		title = chargen.NobleTitle(c.Score(chargen.Social)) // the Noble's rank is their Social Standing
+	}
+	if title != "" {
 		fmt.Fprintf(&b, ", %s", title)
 	}
 	if c.WoundBadges > 0 {
@@ -106,6 +112,9 @@ func render(c chargen.Character, career chargen.Career) string {
 	}
 	if c.Publications > 0 {
 		fmt.Fprintf(&b, ", %d publications", c.Publications)
+	}
+	if c.LandGrants > 0 {
+		fmt.Fprintf(&b, ", %d land grants", c.LandGrants)
 	}
 	renderTail(&b, c)
 	return b.String()
