@@ -26,9 +26,9 @@ func TestGoldenFunctionary(t *testing.T) {
 		3, 4, // reward -> promote (rank 3)
 		1, 1, 1, 1, // Biologics x4 (now 8)
 		3, 4, // continue: policy stops after term 2
-		// Muster out: 2 rolls, Benefit column, DM +Terms (=2).
-		3, // 3 + 2 = row 5 -> Dex +1 (8 -> 9)
-		1, // 1 + 2 = row 3 -> Wafer Jack
+		// Muster out: 2 rolls, Benefit column, DM +Rank (=3, Senior Supervisor).
+		2, // 2 + 3 = row 5 -> Dex +1 (8 -> 9)
+		5, // 5 + 3 = row 8 -> Life Insurance
 	}
 
 	// goldenPolicy (scout_test.go) picks skill column 3; for the Functionary grid

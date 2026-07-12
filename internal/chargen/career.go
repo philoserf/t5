@@ -118,6 +118,37 @@ type PromotionRule struct {
 	PubsMod         bool
 }
 
+// A MusterDM selects the die modifier a career's Benefit muster-out column adds
+// to each 1D roll (Book 1 pp. 67-70, each career page's muster DM line).
+type MusterDM int
+
+const (
+	DMNone        MusterDM = iota // no modifier (the zero value)
+	DMTerms                       // + terms served
+	DMOfficerRank                 // + rank, only while on the officer track (armed forces, Merchant)
+	DMRank                        // + rank on any track (single-ladder Scholar, Functionary)
+	DMFameHalf                    // + Fame/2 (the Scout)
+)
+
+// benefitDM returns the value of a Benefit-column muster DM for a character.
+func benefitDM(dm MusterDM, c Character, rec CareerRecord) int {
+	switch dm {
+	case DMTerms:
+		return rec.Terms
+	case DMOfficerRank:
+		if rec.Officer {
+			return rec.Rank
+		}
+		return 0
+	case DMRank:
+		return rec.Rank
+	case DMFameHalf:
+		return c.Fame / 2
+	default:
+		return 0
+	}
+}
+
 // A RewardKind is the token a successful Reward roll earns for a career.
 type RewardKind int
 
@@ -139,7 +170,7 @@ type Career struct {
 	Continue         ContinueRule
 	Advance          AdvanceRule
 	EligPerTerm      int        // number of skill rolls a surviving term grants
-	MusterBenefitDMT bool       // muster Benefit column adds +Terms (else +Fame/2, currently 0)
+	BenefitDM        MusterDM   // die modifier the muster Benefit column adds (Money always adds +Terms)
 	AutoBegin        bool       // the career is entered automatically, with no qualify roll (Citizen)
 	CitizenLife      bool       // the term uses benign Citizen Life instead of Risk & Reward (Citizen)
 	FameCareer       bool       // the term resolves Fame/Talent instead of Risk & Reward (Entertainer)
@@ -638,8 +669,7 @@ type MusterTable [13]MusterRow // index 1-12 used
 // MusterOut resolves a character's mustering-out benefits (Book 1 pp. 67-70).
 // The character rolls once per term served (doubled when disabled); each roll is
 // 1D plus the column DM. The Money column adds +Terms; the Benefit column adds
-// +Terms when the career's MusterBenefitDMT is set (e.g. the Rogue), otherwise
-// +Fame/2 (Fame is not yet tracked, so 0). The policy chooses the column.
+// the career's BenefitDM. The policy chooses the column.
 func MusterOut(r *dice.Roller, p Policy, c *Character, rec CareerRecord, career Career) {
 	rolls := rec.Terms
 	if rec.Outcome == Disabled {
@@ -647,9 +677,9 @@ func MusterOut(r *dice.Roller, p Policy, c *Character, rec CareerRecord, career 
 	}
 	for range rolls {
 		col := p.MusterColumn(*c, rec)
-		dm := 0
-		if col == MoneyColumn || career.MusterBenefitDMT {
-			dm = rec.Terms
+		dm := rec.Terms // Money column DM
+		if col == BenefitColumn {
+			dm = benefitDM(career.BenefitDM, *c, rec)
 		}
 		row := min(max(r.Die()+dm, 1), 12)
 		award := career.MusterOut[row].Money

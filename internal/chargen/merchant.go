@@ -23,7 +23,7 @@ var MerchantCareer = Career{
 	Continue:         ContinueRule{UseChar: true, Char: Strength},                    // Str
 	Advance:          RollLow,
 	EligPerTerm:      4,
-	MusterBenefitDMT: true,
+	BenefitDM:        DMOfficerRank,
 	RewardKind:       RewardShipShares,
 	Commission:       PromotionRule{Char: Intelligence}, // Int
 	EnlistedPromote:  PromotionRule{Char: Dexterity},    // Rating Promotion, Dex

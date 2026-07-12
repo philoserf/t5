@@ -26,7 +26,7 @@ var ScholarCareer = Career{
 	Continue:         ContinueRule{UseChar: true, Char: Education, PubsMod: true},    // Edu, Mod +Pubs
 	Advance:          RollLow,
 	EligPerTerm:      4,
-	MusterBenefitDMT: true,
+	BenefitDM:        DMTerms,
 	RewardKind:       RewardPublication,
 	EnlistedPromote:  PromotionRule{Char: Intelligence, PubsMod: true}, // Int, Mod +Pubs
 	// A single rank ladder (Book 1 p. 76): rank 1 is Lecturer. No auto-skills.

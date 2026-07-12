@@ -31,7 +31,7 @@ var RogueCareer = Career{
 	Continue:         ContinueRule{UseCC: true},
 	Advance:          RollLow,
 	EligPerTerm:      2,
-	MusterBenefitDMT: true,
+	BenefitDM:        DMTerms,
 	Skills: SkillGrid{
 		// Col 0 — Personal.
 		{bump(Strength), bump(Dexterity), bump(Endurance), bump(Intelligence), bump(Education), bump(Social)},

@@ -29,9 +29,9 @@ func TestGoldenSoldier(t *testing.T) {
 		3, 4, // Commission vs End 8: 7 <= 8, commissioned -> 2nd Lieutenant (Leader-1)
 		1, 1, 1, 1, // Admin x4 again
 		3, 4, // continue: policy stops after term 2
-		// Muster out: 2 rolls, Benefit column (Soldier's Benefit DM is 0 here).
-		2, // row 2 -> Str +1 (8 -> 9)
-		3, // row 3 -> Wafer Jack
+		// Muster out: 2 rolls, Benefit column, DM +Officer Rank (=1, 2nd Lieutenant).
+		1, // 1 + 1 = row 2 -> Str +1 (8 -> 9)
+		2, // 2 + 1 = row 3 -> Wafer Jack
 	}
 
 	// goldenPolicy (scout_test.go) picks skill column 3; for the Soldier grid

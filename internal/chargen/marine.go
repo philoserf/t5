@@ -21,6 +21,7 @@ var MarineCareer = Career{
 	Continue:         ContinueRule{UseChar: true, Char: Strength}, // C1
 	Advance:          RollLow,
 	EligPerTerm:      4,
+	BenefitDM:        DMOfficerRank,
 	RewardKind:       RewardMedal,
 	Commission:       PromotionRule{Char: Endurance},                           // C3
 	EnlistedPromote:  PromotionRule{Char: Strength, MedalsAndWounds: true},     // C1*
