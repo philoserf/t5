@@ -74,16 +74,19 @@ Tooling (go, go-task, poppler's `pdftotext`) is pinned in `Brewfile`.
   golden-locked to the book's Eneri Dinsha College example `9AB58A`) → qualify → term loop →
   muster-out. Education is gated on `Policy.PursueEducation`, so a
   no-education policy leaves any dice trace (e.g. the golden Scout's) untouched. The term engine
-  (`career.go`) is career-agnostic with pluggable seams (`CCMode` Rotate/Fixed, `AdvanceRule`
-  RollLow/RollHigh, `Qualification` char-set, `ContinueRule`); a `Policy` (with `DefaultPolicy`)
-  supplies every player choice so generation is deterministic and testable. Careers are data:
-  `ScoutCareer` (`scout.go`, transcribed from p. 79 — the 7×6 `SkillGrid` + `MusterTable`) is the
-  only one so far, locked by a hand-traced golden Scout. The Academic grid column uses `AwardMajor`
+  (`career.go`) is career-agnostic with pluggable seams (`CCMode` Rotate/Fixed — under FixedCC the
+  policy picks one CC that serves the whole career, `AdvanceRule` RollLow/RollHigh, `Qualification`
+  char-set, `ContinueRule` fixed/char/UseCC, `MusterBenefitDMT` for a +Terms Benefit-column DM); a
+  `Policy` (with `DefaultPolicy`) supplies every player choice so generation is deterministic and
+  testable. Careers are data, each a file + hand-traced golden: `ScoutCareer` (`scout.go`, p. 79)
+  and `RogueCareer` (`rogue.go`, p. 84 — the FixedCC career). The Academic grid column uses `AwardMajor`
   / `AwardMinor` cells that raise the character's College Major/Minor (lost if uneducated, per the
   page footnote); `DefaultPolicy.ChooseSkillColumn` is character-aware, so a graduate specializes
   in the Academic column while an uneducated Scout falls through to Courier. Deferred: the rest of
-  the education institutions (Trade School, higher/military), the other 12 careers (armed-forces
-  rank machinery is not yet built), and the Scout's Courier/Explorer duty, R&R reward, and Fame.
+  the education institutions (Trade School, higher/military), the other 11 careers (armed-forces
+  rank machinery is not yet built), the Scout's Courier/Explorer duty and R&R reward, the Rogue's
+  Scheme mechanic (payoff/prison/infamy, its Scheme-driven eligibility, +Terms on R&R/Continue,
+  the "12 is always failure" rule), and Fame.
 - `internal/calendar/` — the Imperial Calendar (Book 1 Appendix 02, p. 262): a 365-day `Date` (day 1 is
   Holiday, then 52 weeks Wonday..Senday), with `Weekday`, `Add` (year rollover), and `String`
   (`001-1105`). Pure date math, no dice.

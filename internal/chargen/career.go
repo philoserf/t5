@@ -21,6 +21,7 @@ type CareerID int
 
 const (
 	Scout CareerID = iota // the first implemented career
+	Rogue                 // a fixed-CC career (Book 1 p. 84)
 )
 
 // CCMode controls how a career's Controlling Characteristic is chosen each term:
@@ -64,16 +65,20 @@ func (q Qualification) target(c Character) int {
 	return best + q.Mod
 }
 
-// A ContinueRule gives the target of a career's Continue roll — either a fixed
-// number or a characteristic value — plus a modifier.
+// A ContinueRule gives the target of a career's Continue roll — a fixed number,
+// a named characteristic, or the career's Controlling Characteristic (UseCC, for
+// a fixed-CC career like the Rogue) — plus a modifier.
 type ContinueRule struct {
 	UseChar bool
+	UseCC   bool // target is the term's Controlling Characteristic (resolved in continues)
 	Char    Characteristic
 	Fixed   int
 	Mod     int
 }
 
-// target resolves the Continue target for a character.
+// target resolves the Continue target for a character. UseCC is resolved by the
+// caller (it needs the term's Controlling Characteristic), so this treats it
+// like a fixed rule of value Mod.
 func (rule ContinueRule) target(c Character) int {
 	if rule.UseChar {
 		return c.Score(rule.Char) + rule.Mod
@@ -91,7 +96,8 @@ type Career struct {
 	ControllingChars []Characteristic
 	Continue         ContinueRule
 	Advance          AdvanceRule
-	EligPerTerm      int // number of skill rolls a surviving term grants
+	EligPerTerm      int  // number of skill rolls a surviving term grants
+	MusterBenefitDMT bool // muster Benefit column adds +Terms (else +Fame/2, currently 0)
 	Skills           SkillGrid
 	MusterOut        MusterTable
 }
@@ -134,7 +140,9 @@ type CareerRecord struct {
 // careerRun is the transient bookkeeping for one career, live only during
 // generation (kept out of Character, like systemgen's orbit bookkeeping).
 type careerRun struct {
-	ccPool []Characteristic // Controlling Characteristics not yet used this cycle
+	ccPool      []Characteristic // Controlling Characteristics not yet used this cycle
+	fixed       Characteristic   // the chosen Controlling Characteristic under FixedCC
+	fixedChosen bool             // whether fixed has been selected yet
 }
 
 // GenerateCareered generates a character on the given homeworld and runs one
@@ -182,7 +190,7 @@ func RunCareer(r *dice.Roller, p Policy, c *Character, career Career) {
 			rec.Outcome = Disabled
 			break
 		}
-		if !continues(r, p, *c, career, rec) {
+		if !continues(r, p, *c, career, rec, &run) {
 			rec.Outcome = MusteredOut
 			break
 		}
@@ -344,8 +352,9 @@ type MusterTable [13]MusterRow // index 1-12 used
 
 // MusterOut resolves a character's mustering-out benefits (Book 1 pp. 67-70).
 // The character rolls once per term served (doubled when disabled); each roll is
-// 1D plus the column DM — the Money column adds +Terms, the Benefit column
-// +Fame/2 (Fame is not yet tracked, so 0) — and the policy chooses the column.
+// 1D plus the column DM. The Money column adds +Terms; the Benefit column adds
+// +Terms when the career's MusterBenefitDMT is set (e.g. the Rogue), otherwise
+// +Fame/2 (Fame is not yet tracked, so 0). The policy chooses the column.
 func MusterOut(r *dice.Roller, p Policy, c *Character, rec CareerRecord, career Career) {
 	rolls := rec.Terms
 	if rec.Outcome == Disabled {
@@ -354,8 +363,8 @@ func MusterOut(r *dice.Roller, p Policy, c *Character, rec CareerRecord, career 
 	for range rolls {
 		col := p.MusterColumn(*c, rec)
 		dm := 0
-		if col == MoneyColumn {
-			dm = rec.Terms // Money DM = + Terms
+		if col == MoneyColumn || career.MusterBenefitDMT {
+			dm = rec.Terms
 		}
 		row := min(max(r.Die()+dm, 1), 12)
 		award := career.MusterOut[row].Money
@@ -408,10 +417,15 @@ func classifyInjury(original, negMods, flux int) (Injury, int) {
 
 // selectCC picks the term's Controlling Characteristic. Under RotateCC a
 // characteristic cannot be reused until the whole set has been used; under
-// FixedCC the same characteristic serves the entire career.
+// FixedCC the policy chooses one characteristic on the first term and it serves
+// the entire career.
 func selectCC(p Policy, c Character, run *careerRun, career Career) Characteristic {
 	if career.CCMode == FixedCC {
-		return career.ControllingChars[0]
+		if !run.fixedChosen {
+			run.fixed = p.ChooseCC(c, career.ControllingChars)
+			run.fixedChosen = true
+		}
+		return run.fixed
 	}
 	if len(run.ccPool) == 0 {
 		run.ccPool = append(run.ccPool, career.ControllingChars...)
@@ -423,9 +437,14 @@ func selectCC(p Policy, c Character, run *careerRun, career Career) Characterist
 
 // continues resolves the end-of-term Continue decision: a natural 2 forces
 // another term (Mandatory Continue); otherwise the character continues only if
-// the policy wishes to and the 2D Continue roll succeeds.
-func continues(r *dice.Roller, p Policy, c Character, career Career, rec CareerRecord) bool {
-	res := r.Resolve(dice.Check{Dice: 2, Target: career.Continue.target(c)})
+// the policy wishes to and the 2D Continue roll succeeds. A UseCC rule targets
+// the career's fixed Controlling Characteristic (Book 1 p. 84, the Rogue).
+func continues(r *dice.Roller, p Policy, c Character, career Career, rec CareerRecord, run *careerRun) bool {
+	target := career.Continue.target(c)
+	if career.Continue.UseCC {
+		target = c.Score(run.fixed) + career.Continue.Mod
+	}
+	res := r.Resolve(dice.Check{Dice: 2, Target: target})
 	if res.Roll == 2 {
 		return true // Mandatory Continue
 	}
