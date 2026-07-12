@@ -34,7 +34,7 @@ B160113-B  De Lo
 $ go run ./cmd/systemgen -n 1 -seed 7
 Primary: K5 V
 Primary Companion: M0 VI
-Gas Giants: 1  Belts: 0  Worlds: 6  PBG: 901
+Worlds: 6  PBG: 901
 Mainworld: E643231-6 Lo Po {-3}(810-3)[1164] B - -
 ```
 
