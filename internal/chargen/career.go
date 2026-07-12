@@ -265,6 +265,14 @@ func applyCell(p Policy, c *Character, cell Cell) {
 		} else {
 			c.Skills.Raise(chosen, 1)
 		}
+	case AwardMajor:
+		if c.Major != "" { // lost if the character has no Major (never went to college)
+			c.Skills.Raise(c.Major, 1)
+		}
+	case AwardMinor:
+		if c.Minor != "" {
+			c.Skills.Raise(c.Minor, 1)
+		}
 	}
 }
 
@@ -279,6 +287,8 @@ const (
 	AwardSkill                  // raise Skill (with Knowledge for a cascade skill)
 	AwardBump                   // raise the characteristic Char
 	AwardChoice                 // grant one skill the policy picks from Options
+	AwardMajor                  // raise the character's College Major (lost if none)
+	AwardMinor                  // raise the character's College Minor (lost if none)
 )
 
 // A Cell is one entry in a career's skill grid.

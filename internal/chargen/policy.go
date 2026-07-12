@@ -50,26 +50,45 @@ func (DefaultPolicy) ChooseCC(c Character, available []Characteristic) Character
 func (DefaultPolicy) RiskMod(Character, int) int { return 0 }
 
 // ChooseSkillColumn favours the first specialty column (skipping the Personal
-// column 0) whose cells all award something, so a default character gains a
-// varied spread of skills rather than characteristic bumps or empty cells (for
-// the Scout, this skips the mostly-empty Academic column for Courier).
-func (DefaultPolicy) ChooseSkillColumn(_ Character, grid SkillGrid) int {
+// column 0) whose cells all award this character something, so a default
+// character gains a varied spread rather than empty cells. The check is
+// character-aware: a College graduate finds the Academic column (Major/Minor)
+// productive and specializes there, while an uneducated Scout — for whom those
+// cells are lost — falls through to Courier.
+func (DefaultPolicy) ChooseSkillColumn(c Character, grid SkillGrid) int {
 	for col := 1; col < len(grid); col++ {
-		if !hasEmptyCell(grid[col]) {
+		if productiveColumn(c, grid[col]) {
 			return col
 		}
 	}
 	return 1
 }
 
-// hasEmptyCell reports whether a skill-grid column has any non-awarding cell.
-func hasEmptyCell(column [6]Cell) bool {
+// productiveColumn reports whether every cell in a column awards this character
+// something.
+func productiveColumn(c Character, column [6]Cell) bool {
 	for _, cell := range column {
-		if cell.Kind == NoAward {
-			return true
+		if !cellAwards(c, cell) {
+			return false
 		}
 	}
-	return false
+	return true
+}
+
+// cellAwards reports whether a cell grants this character something: an empty
+// cell never does, and a Major/Minor cell only does once college has declared
+// one.
+func cellAwards(c Character, cell Cell) bool {
+	switch cell.Kind {
+	case NoAward:
+		return false
+	case AwardMajor:
+		return c.Major != ""
+	case AwardMinor:
+		return c.Minor != ""
+	default:
+		return true
+	}
 }
 
 // ChooseSkill takes the first option.
