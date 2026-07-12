@@ -99,18 +99,19 @@ Tooling (go, go-task, poppler's `pdftotext`) is pinned in `Brewfile`.
   officer track] and Publication-boosted promotion/continue [`PromotionRule.PubsMod`,
   `ContinueRule.PubsMod`]), `FunctionaryCareer` (`functionary.go`, p. 87 — an `OfficePolitics`
   career whose `runPoliticsTerm` is two unmodified rolls: a failed Risk ends the career as a job
-  loss [`MusteredOut` from the term, handled in `RunCareer`], a Reward success is a promotion), and
-  `NobleCareer` (`noble.go`, p. 85 — a `ReturnIntrigue` career whose `runIntrigueTerm` risks Exile
+  loss [`MusteredOut` from the term, handled in `RunCareer`], a Reward success is a promotion), `NobleCareer` (`noble.go`, p. 85 — a `ReturnIntrigue` career whose `runIntrigueTerm` risks Exile
   and offers Elevation [a roll-high check vs Soc that raises Soc and awards a Land Grant]; the
-  Noble's rank is their Social Standing via `NobleTitle`). The Academic grid column uses `AwardMajor`
+  Noble's rank is their Social Standing via `NobleTitle`), and `MerchantCareer` (`merchant.go`,
+  p. 80 — standard Risk & Reward where a Reward is escalating Ship Shares [`RewardShipShares`, the
+  Nth reward = N shares], with a dual Rating/Officer rank track). All 13 careers are now
+  implemented. The Academic grid column uses `AwardMajor`
   / `AwardMinor` cells that raise the character's College Major/Minor (lost if uneducated, per the
   page footnote); `DefaultPolicy.ChooseSkillColumn` is character-aware, so a graduate specializes
   in the Academic column while an uneducated Scout falls through to Courier. Deferred: the rest of
-  the education institutions (Trade School, higher/military), the last career (Merchant), the Scout's
-  Courier/Explorer duty and R&R reward, the Rogue's Scheme mechanic (payoff/prison/infamy, its
-  Scheme-driven eligibility, +Terms on R&R/Continue, the "12 is always failure" rule), the
-  armed-forces Branch/Operations R&R mods and commission/promotion skill eligibility (Soldier and
-  Marine), and Fame.
+  the education institutions (Trade School, higher/military), the Scout's Courier/Explorer duty and
+  R&R reward, the Rogue's Scheme mechanic, the armed-forces Branch/Operations R&R mods and
+  commission/promotion skill eligibility, and each career's documented flavor deferrals (in its own
+  file header). See the per-career `.go` files for the exact deferred pieces.
 - `internal/calendar/` — the Imperial Calendar (Book 1 Appendix 02, p. 262): a 365-day `Date` (day 1 is
   Holiday, then 52 weeks Wonday..Senday), with `Weekday`, `Add` (year rollover), and `String`
   (`001-1105`). Pure date math, no dice.
