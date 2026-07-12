@@ -28,6 +28,7 @@ const (
 	Agent                       // a rankless career (Book 1 p. 83)
 	Citizen                     // an auto-begin career using Citizen Life (Book 1 p. 78)
 	Entertainer                 // a Fame/Talent career (Book 1 p. 77)
+	Craftsman                   // a Masterpiece career (Book 1 p. 75)
 )
 
 // CCMode controls how a career's Controlling Characteristic is chosen each term:
@@ -75,13 +76,15 @@ func (q Qualification) target(c Character) int {
 // a named characteristic, or the career's Controlling Characteristic (UseCC, for
 // a fixed-CC career like the Rogue) — plus a modifier.
 type ContinueRule struct {
-	UseChar  bool
-	UseCC    bool // target is the term's Controlling Characteristic (resolved in continues)
-	UseFame  bool // target is the character's Fame (the Entertainer)
-	TermsMod bool // add the number of terms served to the target (Book 1: "Mod +Terms")
-	Char     Characteristic
-	Fixed    int
-	Mod      int
+	UseChar   bool
+	UseCC     bool   // target is the term's Controlling Characteristic (resolved in continues)
+	UseFame   bool   // target is the character's Fame (the Entertainer)
+	UseSkill  string // target is SkillMult times this skill's level (the Craftsman: Craftsman x2)
+	SkillMult int
+	TermsMod  bool // add the number of terms served to the target (Book 1: "Mod +Terms")
+	Char      Characteristic
+	Fixed     int
+	Mod       int
 }
 
 // target resolves the Continue target for a character. UseCC is resolved by the
@@ -124,6 +127,7 @@ type Career struct {
 	AutoBegin        bool // the career is entered automatically, with no qualify roll (Citizen)
 	CitizenLife      bool // the term uses benign Citizen Life instead of Risk & Reward (Citizen)
 	FameCareer       bool // the term resolves Fame/Talent instead of Risk & Reward (Entertainer)
+	Masterpiece      bool // the term attempts a Masterpiece instead of Risk & Reward (Craftsman)
 	Skills           SkillGrid
 	MusterOut        MusterTable
 
@@ -265,6 +269,9 @@ func runTerm(r *dice.Roller, p Policy, c *Character, run *careerRun, career Care
 	if career.CitizenLife {
 		return runCitizenTerm(r, p, c, run, career, cc)
 	}
+	if career.Masterpiece {
+		return runCraftsmanTerm(r, p, c, career, cc)
+	}
 	ccVal := c.Score(cc)
 	mod := p.RiskMod(*c, ccVal) // caution (+), bravery (-), or 0
 
@@ -329,6 +336,31 @@ func runFameTerm(r *dice.Roller, p Policy, c *Character, career Career) TermOutc
 		c.Talent++
 		elig += 2 // "If Fame Increases: 2 [skills] and Talent+1"
 	}
+	awardSkillsN(r, p, c, career, elig)
+	return Ongoing
+}
+
+// masterpieceMinimum is the fewest Master Points that allow a Masterpiece
+// attempt (Book 1 p. 75).
+const masterpieceMinimum = 40
+
+// runCraftsmanTerm resolves a Craftsman's term (Book 1 p. 75). The Craftsman
+// attempts a Masterpiece instead of Risk & Reward: Master Points total the
+// Controlling Characteristic, the Craftsman skill, and up to five other skills
+// at level 6+. With at least 40 points a 9D roll at or under the total creates a
+// Masterpiece; otherwise the attempt fails. Either way the Craftsman skill rises
+// +1 (learning); success grants three extra skill rolls, failure one. There is
+// no injury.
+func runCraftsmanTerm(r *dice.Roller, p Policy, c *Character, career Career, cc Characteristic) TermOutcome {
+	points := c.Score(cc) + c.Skills.Level("Craftsman") + c.Skills.TopLevels(5, 6, "Craftsman", "Language")
+	elig := career.EligPerTerm
+	if points >= masterpieceMinimum && r.Dice(9) <= points {
+		c.Masterpieces++
+		elig += 3
+	} else {
+		elig++
+	}
+	c.Skills.Raise("Craftsman", 1) // learning from the work, success or failure
 	awardSkillsN(r, p, c, career, elig)
 	return Ongoing
 }
@@ -615,6 +647,9 @@ func continues(r *dice.Roller, p Policy, c Character, career Career, rec CareerR
 	}
 	if career.Continue.UseFame {
 		target = c.Fame + career.Continue.Mod
+	}
+	if career.Continue.UseSkill != "" {
+		target = c.Skills.Level(career.Continue.UseSkill)*career.Continue.SkillMult + career.Continue.Mod
 	}
 	if career.Continue.TermsMod {
 		target += rec.Terms // more experience makes staying in easier (Book 1 p. 83, Agent)

@@ -50,6 +50,30 @@ func (s Set) TaskLevel(parent, knowledge string) int {
 	return s.Level(parent) + s.KnowledgeLevel(parent, knowledge)
 }
 
+// TopLevels returns the summed levels of the highest n skills at or above min,
+// skipping any skill named in exclude. Used for Craftsman Master Points (Book 1
+// p. 75: the Craftsman skill and up to five other skills at level 6+, not
+// languages).
+func (s Set) TopLevels(n, min int, exclude ...string) int {
+	skip := make(map[string]bool, len(exclude))
+	for _, name := range exclude {
+		skip[name] = true
+	}
+	levels := make([]int, 0, len(s.skills))
+	for name, lvl := range s.skills {
+		if lvl >= min && !skip[name] {
+			levels = append(levels, lvl)
+		}
+	}
+	slices.Sort(levels)
+	slices.Reverse(levels)
+	sum := 0
+	for i := 0; i < n && i < len(levels); i++ {
+		sum += levels[i]
+	}
+	return sum
+}
+
 // Raise changes a plain skill by n levels, clamped to 0..Max (n is normally
 // positive; a negative n cannot drive the level below 0).
 func (s *Set) Raise(skill string, n int) {
