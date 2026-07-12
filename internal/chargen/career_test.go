@@ -246,6 +246,31 @@ func TestRunTermNoSkillsWhenDisabled(t *testing.T) {
 	}
 }
 
+func TestApplyCellChoiceEmptyPanics(t *testing.T) {
+	defer func() {
+		if recover() == nil {
+			t.Error("AwardChoice with no options did not panic")
+		}
+	}()
+	var c Character
+	applyCell(stopAfter{}, &c, Cell{Kind: AwardChoice})
+}
+
+// badColumn is a policy that returns an out-of-range skill column.
+type badColumn struct{ stopAfter }
+
+func (badColumn) ChooseSkillColumn(Character, SkillGrid) int { return 99 }
+
+func TestAwardSkillsBadColumnPanics(t *testing.T) {
+	defer func() {
+		if recover() == nil {
+			t.Error("out-of-range skill column did not panic")
+		}
+	}()
+	c := Character{}
+	awardSkills(dice.NewScripted(3), badColumn{}, &c, Career{EligPerTerm: 1, Skills: commsGrid()})
+}
+
 func TestGenerateCareeredQualify(t *testing.T) {
 	// UPP rolls (12 dice), then a qualify roll of 2 (<= Int) succeeds, so the
 	// character runs the career; the policy stops immediately.

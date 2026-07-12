@@ -1,6 +1,10 @@
 package chargen
 
-import "github.com/philoserf/t5/internal/dice"
+import (
+	"fmt"
+
+	"github.com/philoserf/t5/internal/dice"
+)
 
 // Career resolution (Book 1 pp. 63-74). A character serves a career in four-year
 // Terms; each term selects a Controlling Characteristic, resolves Risk & Reward,
@@ -185,6 +189,9 @@ func runTerm(r *dice.Roller, p Policy, c *Character, run *careerRun, career Care
 func awardSkills(r *dice.Roller, p Policy, c *Character, career Career) {
 	for range career.EligPerTerm {
 		col := p.ChooseSkillColumn(*c, career.Skills)
+		if col < 0 || col >= len(career.Skills) {
+			panic(fmt.Sprintf("chargen: skill column %d out of range 0-%d", col, len(career.Skills)-1))
+		}
 		applyCell(p, c, career.Skills[col][r.Die()-1])
 	}
 }
@@ -203,6 +210,9 @@ func applyCell(p Policy, c *Character, cell Cell) {
 	case AwardBump:
 		c.scores[cell.Char] = min(c.scores[cell.Char]+1, maxCharacteristic)
 	case AwardChoice:
+		if len(cell.Options) == 0 {
+			panic("chargen: AwardChoice cell has no options")
+		}
 		c.Skills.Raise(p.ChooseSkill(*c, cell.Options), 1)
 	}
 }
