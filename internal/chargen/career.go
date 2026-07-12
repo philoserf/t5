@@ -149,6 +149,34 @@ func benefitDM(dm MusterDM, c Character, rec CareerRecord) int {
 	}
 }
 
+// A Branch is one armed-forces branch of service: its officer Risk & Reward
+// modifier and the DM it adds to Operations rolls (Book 1 pp. 81-86).
+type Branch struct {
+	Name  string
+	Mod   int
+	OpsDM int
+}
+
+// A BranchOps holds an armed-forces career's Branch and Operations tables. The
+// Branch is rolled once at career start (1D, +2 if Edu 10+); Operations are
+// rolled four times per term (1D + the branch's OpsDM, +2 if Edu 10+), taking
+// the highest mod. The combined mod (branch + best operations) makes Risk &
+// Reward riskier and more rewarding — negative on the Risk roll, positive on the
+// Reward roll.
+type BranchOps struct {
+	Branches [9]Branch // indexed 1-8 by the branch roll (index 0 unused)
+	OpsMods  [10]int   // indexed 1-9 by the operations roll (index 0 unused)
+}
+
+// eduBonus is the +2 Branch/Operations die modifier for a well-educated
+// character (Book 1: "DM +2 if Edu 10+").
+func eduBonus(c Character) int {
+	if c.Score(Education) >= 10 {
+		return 2
+	}
+	return 0
+}
+
 // A RewardKind is the token a successful Reward roll earns for a career.
 type RewardKind int
 
@@ -188,6 +216,8 @@ type Career struct {
 	Commission      PromotionRule // enlisted -> officer track
 	EnlistedPromote PromotionRule
 	OfficerPromote  PromotionRule
+
+	BranchOps *BranchOps // armed-forces Branch/Operations R&R modifiers (nil for the rest)
 }
 
 // hasRanks reports whether a career runs the rank/promotion machinery.
@@ -241,6 +271,8 @@ type careerRun struct {
 	job, hobby  string           // the Citizen's Job and Hobby skills, set on the 1st/2nd success
 	exiled      bool             // the Noble is currently in Exile (Book 1 p. 85)
 	rewards     int              // Reward successes so far (the Merchant's escalating Ship Shares)
+	branchMod   int              // the chosen armed-forces Branch's R&R mod
+	branchOpsDM int              // the chosen Branch's DM on Operations rolls
 }
 
 // GenerateCareered generates a character on the given homeworld and runs one
@@ -283,6 +315,10 @@ func RunCareer(r *dice.Roller, p Policy, c *Character, career Career) {
 	if career.FameCareer {
 		c.Fame = r.Dice(2) // initial Fame and Talent are one 2D roll (Book 1 p. 77)
 		c.Talent = c.Fame
+	}
+	if career.BranchOps != nil {
+		b := career.BranchOps.Branches[min(r.Die()+eduBonus(*c), 8)] // Branch chosen once
+		run.branchMod, run.branchOpsDM = b.Mod, b.OpsDM
 	}
 
 	for {
@@ -336,10 +372,13 @@ func runTerm(r *dice.Roller, p Policy, c *Character, run *careerRun, career Care
 	}
 	ccVal := c.Score(cc)
 	mod := p.RiskMod(*c, ccVal) // caution (+), bravery (-), or 0
+	bo := branchOpsMod(r, c, run, career)
 
-	if r.Resolve(dice.Check{Dice: 2, Target: ccVal + mod}).Success {
+	// Branch & Operations mods are negative on Risk (riskier) and positive on
+	// Reward (Book 1 p. 82); Caution/Bravery keep their usual signs.
+	if r.Resolve(dice.Check{Dice: 2, Target: ccVal + mod - bo}).Success {
 		// Survived. Reward roll; success earns the career's reward token.
-		if r.Resolve(dice.Check{Dice: 2, Target: ccVal - mod}).Success {
+		if r.Resolve(dice.Check{Dice: 2, Target: ccVal - mod + bo}).Success {
 			switch career.RewardKind {
 			case RewardMedal:
 				c.Medals++
@@ -351,10 +390,11 @@ func runTerm(r *dice.Roller, p Policy, c *Character, run *careerRun, career Care
 			}
 		}
 	} else {
-		// Risk failed: the CC drops by any negative (bravery) mod, then Flux.
-		negMods := 0
+		// Risk failed: the CC drops by any negative (bravery) mod and the Branch/
+		// Operations mod, then Flux.
+		negMods := bo
 		if mod < 0 {
-			negMods = -mod
+			negMods += -mod
 		}
 		injury, newVal := classifyInjury(ccVal, negMods, r.Flux())
 		switch injury {
@@ -374,6 +414,20 @@ func runTerm(r *dice.Roller, p Policy, c *Character, run *careerRun, career Care
 	resolveRank(r, c, run, career) // promotion / commission for a surviving term
 	awardSkills(r, p, c, career)   // a surviving (even wounded) character gains skills
 	return Ongoing
+}
+
+// branchOpsMod returns an armed-forces term's combined Branch & Operations mod
+// (Book 1 p. 82): the chosen Branch's mod plus the highest of four Operations
+// rolls. It is 0 (and rolls nothing) for a career without Branch/Operations.
+func branchOpsMod(r *dice.Roller, c *Character, run *careerRun, career Career) int {
+	if career.BranchOps == nil {
+		return 0
+	}
+	best := 0
+	for range 4 {
+		best = max(best, career.BranchOps.OpsMods[min(max(r.Die()+run.branchOpsDM+eduBonus(*c), 1), 9)])
+	}
+	return run.branchMod + best
 }
 
 // citizenJobs is a representative list of Citizen Job/Hobby skills; the book's
