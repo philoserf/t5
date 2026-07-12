@@ -20,13 +20,14 @@ const termYears = 4
 type CareerID int
 
 const (
-	Scout   CareerID = iota // the first implemented career
-	Rogue                   // a fixed-CC career (Book 1 p. 84)
-	Soldier                 // the first armed-forces (ranked) career (Book 1 p. 82)
-	Marine                  // a second armed-forces career (Book 1 p. 86)
-	Spacer                  // the naval armed-forces career (Book 1 p. 81)
-	Agent                   // a rankless career (Book 1 p. 83)
-	Citizen                 // an auto-begin career using Citizen Life (Book 1 p. 78)
+	Scout       CareerID = iota // the first implemented career
+	Rogue                       // a fixed-CC career (Book 1 p. 84)
+	Soldier                     // the first armed-forces (ranked) career (Book 1 p. 82)
+	Marine                      // a second armed-forces career (Book 1 p. 86)
+	Spacer                      // the naval armed-forces career (Book 1 p. 81)
+	Agent                       // a rankless career (Book 1 p. 83)
+	Citizen                     // an auto-begin career using Citizen Life (Book 1 p. 78)
+	Entertainer                 // a Fame/Talent career (Book 1 p. 77)
 )
 
 // CCMode controls how a career's Controlling Characteristic is chosen each term:
@@ -76,6 +77,7 @@ func (q Qualification) target(c Character) int {
 type ContinueRule struct {
 	UseChar  bool
 	UseCC    bool // target is the term's Controlling Characteristic (resolved in continues)
+	UseFame  bool // target is the character's Fame (the Entertainer)
 	TermsMod bool // add the number of terms served to the target (Book 1: "Mod +Terms")
 	Char     Characteristic
 	Fixed    int
@@ -121,6 +123,7 @@ type Career struct {
 	MusterBenefitDMT bool // muster Benefit column adds +Terms (else +Fame/2, currently 0)
 	AutoBegin        bool // the career is entered automatically, with no qualify roll (Citizen)
 	CitizenLife      bool // the term uses benign Citizen Life instead of Risk & Reward (Citizen)
+	FameCareer       bool // the term resolves Fame/Talent instead of Risk & Reward (Entertainer)
 	Skills           SkillGrid
 	MusterOut        MusterTable
 
@@ -212,7 +215,7 @@ func GenerateCareered(r *dice.Roller, p Policy, homeworld worldgen.World, career
 // RunCareer runs the term loop of one career on a character, appending a
 // CareerRecord.
 func RunCareer(r *dice.Roller, p Policy, c *Character, career Career) {
-	if len(career.ControllingChars) == 0 {
+	if len(career.ControllingChars) == 0 && !career.FameCareer {
 		panic("chargen: career " + career.Name + " has no controlling characteristics")
 	}
 	run := careerRun{ccPool: append([]Characteristic(nil), career.ControllingChars...)}
@@ -220,6 +223,10 @@ func RunCareer(r *dice.Roller, p Policy, c *Character, career Career) {
 	if career.hasRanks() {
 		run.rank = 1 // armed forces begin at enlisted rank 1 (Book 1 p. 64)
 		grantRankSkill(c, career.EnlistedRanks, 1)
+	}
+	if career.FameCareer {
+		c.Fame = r.Dice(2) // initial Fame and Talent are one 2D roll (Book 1 p. 77)
+		c.Talent = c.Fame
 	}
 
 	for {
@@ -251,6 +258,9 @@ func RunCareer(r *dice.Roller, p Policy, c *Character, career Career) {
 // surviving armed-forces character then resolves rank. It returns Ongoing,
 // Disabled, or Died.
 func runTerm(r *dice.Roller, p Policy, c *Character, run *careerRun, career Career) TermOutcome {
+	if career.FameCareer {
+		return runFameTerm(r, p, c, career) // no CC — the Entertainer resolves Fame/Talent
+	}
 	cc := selectCC(p, *c, run, career)
 	if career.CitizenLife {
 		return runCitizenTerm(r, p, c, run, career, cc)
@@ -304,6 +314,22 @@ func runCitizenTerm(r *dice.Roller, p Policy, c *Character, run *careerRun, care
 		awardCitizenLife(p, c, run)
 	}
 	awardSkills(r, p, c, career)
+	return Ongoing
+}
+
+// runFameTerm resolves an Entertainer's term (Book 1 p. 77). At the start of the
+// term, events shift Fame by a Flux roll; if Fame increases the character gains
+// Talent +1 and two extra skill rolls. There is no injury; only aging can end
+// the career. (The optional second and third Flux rolls are deferred.)
+func runFameTerm(r *dice.Roller, p Policy, c *Character, career Career) TermOutcome {
+	before := c.Fame
+	c.Fame = max(c.Fame+r.Flux(), 0)
+	elig := career.EligPerTerm
+	if c.Fame > before {
+		c.Talent++
+		elig += 2 // "If Fame Increases: 2 [skills] and Talent+1"
+	}
+	awardSkillsN(r, p, c, career, elig)
 	return Ongoing
 }
 
@@ -374,10 +400,15 @@ func grantRankSkill(c *Character, ranks []Rank, rank int) {
 	}
 }
 
-// awardSkills grants the term's skill eligibility: for each roll the policy picks
-// a column of the career's skill grid and 1D selects the row (Book 1 p. 65).
+// awardSkills grants the term's skill eligibility (Book 1 p. 65).
 func awardSkills(r *dice.Roller, p Policy, c *Character, career Career) {
-	for range career.EligPerTerm {
+	awardSkillsN(r, p, c, career, career.EligPerTerm)
+}
+
+// awardSkillsN grants n skill rolls: for each the policy picks a column of the
+// career's skill grid and 1D selects the row.
+func awardSkillsN(r *dice.Roller, p Policy, c *Character, career Career, n int) {
+	for range n {
 		col := p.ChooseSkillColumn(*c, career.Skills)
 		if col < 0 || col >= len(career.Skills) {
 			panic(fmt.Sprintf("chargen: skill column %d out of range 0-%d", col, len(career.Skills)-1))
@@ -581,6 +612,9 @@ func continues(r *dice.Roller, p Policy, c Character, career Career, rec CareerR
 	target := career.Continue.target(c)
 	if career.Continue.UseCC {
 		target = c.Score(run.fixed) + career.Continue.Mod
+	}
+	if career.Continue.UseFame {
+		target = c.Fame + career.Continue.Mod
 	}
 	if career.Continue.TermsMod {
 		target += rec.Terms // more experience makes staying in easier (Book 1 p. 83, Agent)
