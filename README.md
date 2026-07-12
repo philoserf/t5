@@ -38,14 +38,15 @@ Primary Companion: M0 VI
 Worlds: 6  PBG: 901
 Mainworld: E643231-6 Lo Po {-3}(810-3)[1164] B - -
 
-$ go run ./cmd/chargen -career scout -n 2 -seed 42
-547948  age 30  homeworld D665656-7  Scout: 3 terms, MusteredOut  [Actor-1 Animals-1 Comms-2 Computer-6 Driver-1 Gunner-3 JOT-2 Language-5 Language/Galanglic-2 Pilot-4 Trader-1]  benefits: Forbidden Knowledge
-659378  age 22  homeworld C6439BB-A  Scout: 1 terms, MusteredOut  [Biologics-1 Computer-1 Gunner-3 JOT-2 Language-0 Language/Galanglic-1 Pilot-1 Steward-1 Streetwise-1]
+$ go run ./cmd/chargen -career scout -n 2 -seed 7
+785389  age 22  homeworld B6667B8-9  BA (Psychology/Robotics)  Scout: 1 terms, MusteredOut  [Actor-1 Animals-1 Comms-1 Computer-1 Gunner-2 JOT-2 Language-0 Language/Galanglic-1 Pilot-1 Psychology-4 Robotics-2 Trader-1]  benefits: Ship Share
+5764A3  age 18  homeworld B87A663-8  BA (Psychology/Robotics)  did not qualify for Scout  [Driver-1 Psychology-4 Robotics-2 Seafarer-1]
 ```
 
-Homeworld skills come from the character's homeworld (a generated world): one
-skill per Trade Classification (Book 1 p. 56), so the worldgen and chargen
-engines feed each other.
+A character's homeworld (a generated world) grants one skill per Trade
+Classification (Book 1 p. 56), and college — when they qualify — grants a Major
+and Minor and raises Edu (Book 1 p. 60), so the worldgen and chargen engines
+feed each other before a career even begins.
 
 The mainworld line is the full world record — UWP, trade classifications, the
 `{Ix}(Ex)[Cx]` Extensions, nobility, bases, and travel zone.
@@ -53,10 +54,11 @@ The mainworld line is the full world record — UWP, trade classifications, the
 The engine is faithful to the rules and validated against the books' own worked
 examples — e.g. worldgen reproduces the canonical Regina profile `A788899-C` and
 its full record `A788899-C Ph Pa Ri {+4}(D7E+4)[9C6D] BcCeF NS -`.
-Chargen runs the character lifecycle (homeworld skills, then qualification,
-four-year terms with Risk & Reward and aging, skill eligibility, and mustering
-out) for the Scout; education, the other careers, and per-world orbital detail
-(systemgen) are the next stages.
+Chargen runs the character lifecycle (homeworld skills, college with a Major and
+Minor, then career qualification, four-year terms with Risk & Reward and aging,
+skill eligibility, and mustering out) for the Scout; the remaining education
+institutions, the other careers, and per-world orbital detail (systemgen) are
+the next stages.
 
 ## Development
 

@@ -28,6 +28,8 @@ func (stopAfter) ChooseSkillColumn(Character, SkillGrid) int        { return 0 }
 func (stopAfter) ChooseSkill(_ Character, options []string) string  { return options[0] }
 func (s stopAfter) Continue(_ Character, rec CareerRecord) bool     { return rec.Terms < s.terms }
 func (stopAfter) MusterColumn(Character, CareerRecord) MusterColumn { return BenefitColumn }
+func (stopAfter) PursueEducation(Character) bool                    { return false }
+func (stopAfter) TakeWaiver(Character, int) bool                    { return true }
 
 func TestContinueTarget(t *testing.T) {
 	c := Character{scores: [count]int{7, 7, 7, 10, 8, 6}}

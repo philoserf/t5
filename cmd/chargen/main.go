@@ -59,6 +59,12 @@ func careerByName(name string) (chargen.Career, error) {
 func render(c chargen.Character, career chargen.Career) string {
 	var b strings.Builder
 	fmt.Fprintf(&b, "%s  age %d  homeworld %s", c.UPP(), c.Age, c.Homeworld.Profile)
+	if len(c.Degrees) > 0 {
+		fmt.Fprintf(&b, "  %s", strings.Join(c.Degrees, " "))
+		if c.Major != "" {
+			fmt.Fprintf(&b, " (%s)", strings.Join(subjects(c), "/"))
+		}
+	}
 	if len(c.Careers) == 0 {
 		fmt.Fprintf(&b, "  did not qualify for %s", career.Name)
 		renderTail(&b, c)
@@ -71,6 +77,15 @@ func render(c chargen.Character, career chargen.Career) string {
 	}
 	renderTail(&b, c)
 	return b.String()
+}
+
+// subjects lists a graduate's Major and, if declared, Minor.
+func subjects(c chargen.Character) []string {
+	s := []string{c.Major}
+	if c.Minor != "" {
+		s = append(s, c.Minor)
+	}
+	return s
 }
 
 // renderTail appends the skills, credits, benefits, and deceased marker common
