@@ -72,6 +72,10 @@ Tooling (go, go-task, poppler's `pdftotext`) is pinned in `Brewfile`.
   1D … Beyond Impossible 8D, with `Hasty`/`Cautious` pace) over the dice engine's roll-low
   `Resolve`: `task.Resolve(r, difficulty, target, mods...)`, target being characteristic+skill.
   The play systems (senses, combat, personals) build on this.
+- `internal/skill/` — a character's skills and knowledges (Book 1 pp. 132-171), a pure
+  inventory (no dice). Cascade skills (Pilot/Gunner/Engineer/…) hold Knowledges; `GrantCascade`
+  applies the Knowledge-Knowledge-Skill career progression; `TaskLevel` stacks parent+knowledge.
+  Levels cap at 15, knowledges at 6. Used by chargen careers.
 - `cmd/worldgen/`, `cmd/systemgen/`, `cmd/chargen/` — CLIs, each taking `-n` and `-seed`, e.g.
   `go run ./cmd/systemgen -n 10 -seed 42`.
 
