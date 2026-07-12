@@ -1,6 +1,10 @@
 package chargen
 
-import "github.com/philoserf/t5/internal/dice"
+import (
+	"fmt"
+
+	"github.com/philoserf/t5/internal/dice"
+)
 
 // Career resolution (Book 1 pp. 63-74). A character serves a career in four-year
 // Terms; each term selects a Controlling Characteristic, resolves Risk & Reward,
@@ -71,6 +75,8 @@ type Career struct {
 	ControllingChars []Characteristic
 	Continue         ContinueRule
 	Advance          AdvanceRule
+	EligPerTerm      int // number of skill rolls a surviving term grants
+	Skills           SkillGrid
 }
 
 // A TermOutcome is the result of a term or of a whole career. Ongoing marks a
@@ -153,29 +159,89 @@ func runTerm(r *dice.Roller, p Policy, c *Character, run *careerRun, career Care
 	if r.Resolve(dice.Check{Dice: 2, Target: ccVal + mod}).Success {
 		// Survived. Reward roll (its benefit is applied where career data lands).
 		r.Resolve(dice.Check{Dice: 2, Target: ccVal - mod})
-		return Ongoing
+	} else {
+		// Risk failed: the CC drops by any negative (bravery) mod, then Flux.
+		negMods := 0
+		if mod < 0 {
+			negMods = -mod
+		}
+		injury, newVal := classifyInjury(ccVal, negMods, r.Flux())
+		switch injury {
+		case Fatal:
+			c.scores[cc] = max(newVal, 0)
+			c.Dead = true
+			return Died
+		case Disabling:
+			c.scores[cc] = newVal
+			return Disabled
+		case Wounded:
+			c.scores[cc] = newVal
+			c.WoundBadges++
+		}
 	}
 
-	// Risk failed: the CC drops by any negative (bravery) mod, then Flux.
-	negMods := 0
-	if mod < 0 {
-		negMods = -mod
-	}
-	injury, newVal := classifyInjury(ccVal, negMods, r.Flux())
-	switch injury {
-	case Fatal:
-		c.scores[cc] = max(newVal, 0)
-		c.Dead = true
-		return Died
-	case Disabling:
-		c.scores[cc] = newVal
-		return Disabled
-	case Wounded:
-		c.scores[cc] = newVal
-		c.WoundBadges++
-	}
+	awardSkills(r, p, c, career) // a surviving (even wounded) character gains skills
 	return Ongoing
 }
+
+// awardSkills grants the term's skill eligibility: for each roll the policy picks
+// a column of the career's skill grid and 1D selects the row (Book 1 p. 65).
+func awardSkills(r *dice.Roller, p Policy, c *Character, career Career) {
+	for range career.EligPerTerm {
+		col := p.ChooseSkillColumn(*c, career.Skills)
+		if col < 0 || col >= len(career.Skills) {
+			panic(fmt.Sprintf("chargen: skill column %d out of range 0-%d", col, len(career.Skills)-1))
+		}
+		applyCell(p, c, career.Skills[col][r.Die()-1])
+	}
+}
+
+// applyCell applies one skill-grid cell: raise a skill (cascade skills grant a
+// knowledge via the K-K-S progression), bump a characteristic (capped at the
+// human maximum), or resolve a player choice among options.
+func applyCell(p Policy, c *Character, cell Cell) {
+	switch cell.Kind {
+	case AwardSkill:
+		if cell.Knowledge != "" {
+			c.Skills.GrantCascade(cell.Skill, cell.Knowledge)
+		} else {
+			c.Skills.Raise(cell.Skill, 1)
+		}
+	case AwardBump:
+		c.scores[cell.Char] = min(c.scores[cell.Char]+1, maxCharacteristic)
+	case AwardChoice:
+		if len(cell.Options) == 0 {
+			panic("chargen: AwardChoice cell has no options")
+		}
+		c.Skills.Raise(p.ChooseSkill(*c, cell.Options), 1)
+	}
+}
+
+// maxCharacteristic is the human cap on a characteristic raised in play (eHex F).
+const maxCharacteristic = 15
+
+// A CellKind identifies what a skill-grid cell awards.
+type CellKind int
+
+const (
+	NoAward     CellKind = iota // an empty cell
+	AwardSkill                  // raise Skill (with Knowledge for a cascade skill)
+	AwardBump                   // raise the characteristic Char
+	AwardChoice                 // raise one skill the policy picks from Options
+)
+
+// A Cell is one entry in a career's skill grid.
+type Cell struct {
+	Kind      CellKind
+	Skill     string         // AwardSkill: the skill (a cascade parent, if cascade)
+	Knowledge string         // AwardSkill: the knowledge, for a cascade skill
+	Char      Characteristic // AwardBump
+	Options   []string       // AwardChoice: the skills to pick among
+}
+
+// A SkillGrid is a career's skill table: seven columns of six rows. The column
+// is chosen (see Policy.ChooseSkillColumn); the row is a 1D roll.
+type SkillGrid [7][6]Cell
 
 // An Injury classifies the result of a failed Risk roll.
 type Injury int
