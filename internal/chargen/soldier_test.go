@@ -13,17 +13,23 @@ import (
 // noted. Scores: Str 8, Dex 7, End 8, Int 7, Edu 7, Soc 8 ("878778").
 func TestGoldenSoldier(t *testing.T) {
 	seq := []int{
-		// UPP: Str 8(4,4), Dex 7(3,4), End 8(4,4), Int 7(3,4), Edu 7(3,4), Soc 8(4,4).
-		4, 4, 3, 4, 4, 4, 3, 4, 3, 4, 4, 4,
+		// UPP: Str 8(4,4), Dex 7(3,4), End 8(4,4), Int 7(3,4), Edu 10(5,5), Soc 8(4,4).
+		// Edu 10 gives the +2 Branch/Operations bonus, which is used below to reach
+		// the Technical branch and Base operations so the net Branch/Ops mod is 0
+		// and Risk & Reward are unchanged.
+		4, 4, 3, 4, 4, 4, 3, 4, 5, 5, 4, 4,
 		3, 4, // qualify vs Str 8: 7 <= 8, enters (begins Private, Fighter-1)
-		// Term 1: CC = Str (7... value 8). Risk 7 survive; Reward 7 -> Medal (1).
-		3, 4, // risk
+		5, // Branch: 5 + Edu bonus 2 = 7 -> Technical (mod 0, Ops DM 6)
+		// Term 1: 4 Operations rolls, each 1 + 6 + 2 = 9 -> Base (mod 0); net mod 0.
+		1, 1, 1, 1,
+		3, 4, // risk 7 survive; net mod 0
 		3, 4, // reward -> Medal 1
 		5, 5, // Commission vs End 8: 10 > 8, fails
 		4, 4, // Enlisted Promotion vs End 8 + Medal 1 = 9: 8 <= 9, promote to Corporal
 		1, 1, 1, 1, // 4 skill rolls, Peacekeeper col row 1 = Admin
 		3, 4, // continue vs End 8: 7, policy wants term 2
-		// Term 2: CC = End. Risk 7 survive; Reward 7 -> Medal (2).
+		// Term 2: Operations again (net mod 0). Risk 7 survive; Reward 7 -> Medal (2).
+		1, 1, 1, 1,
 		3, 4, // risk
 		3, 4, // reward -> Medal 2
 		3, 4, // Commission vs End 8: 7 <= 8, commissioned -> 2nd Lieutenant (Leader-1)
@@ -38,8 +44,8 @@ func TestGoldenSoldier(t *testing.T) {
 	// that column is Peacekeeper (Admin at row 1), not the Scout's Exploration.
 	c := GenerateCareered(dice.NewScripted(seq...), goldenPolicy{}, worldgen.World{}, SoldierCareer)
 
-	if got := c.UPP(); got != "978778" {
-		t.Errorf("UPP = %q, want %q (Str 8 +1 muster benefit)", got, "978778")
+	if got := c.UPP(); got != "9787A8" {
+		t.Errorf("UPP = %q, want %q (Str 8 +1 muster benefit, Edu 10)", got, "9787A8")
 	}
 	if c.Medals != 2 {
 		t.Errorf("Medals = %d, want 2 (a Reward success each term)", c.Medals)
@@ -86,5 +92,22 @@ func TestResolveRankCommission(t *testing.T) {
 	}
 	if c.Skills.Level("Leader") != 1 {
 		t.Errorf("2nd Lieutenant auto-skill Leader = %d, want 1", c.Skills.Level("Leader"))
+	}
+}
+
+// TestBranchOpsMod checks the combined Branch & Operations mod: a high-danger
+// branch (Infantry: mod 1, low Ops DM) yields high Operations mods, while a
+// Technical branch (mod 0, Ops DM 6) yields Base operations (mod 0).
+func TestBranchOpsMod(t *testing.T) {
+	c := Character{scores: [count]int{7, 7, 7, 7, 7, 7}} // Edu 7, no +2 bonus
+	// Infantry branch (mod 1, Ops DM 1): four ops rolls of 1 -> index 2 -> Combat (2).
+	run := careerRun{branchMod: 1, branchOpsDM: 1}
+	if got := branchOpsMod(dice.NewScripted(1), &c, &run, SoldierCareer); got != 3 {
+		t.Errorf("Infantry Branch/Ops mod = %d, want 3 (branch 1 + Combat 2)", got)
+	}
+	// Technical branch (mod 0, Ops DM 6): ops rolls of 3 -> index 9 -> Base (0).
+	tech := careerRun{branchMod: 0, branchOpsDM: 6}
+	if got := branchOpsMod(dice.NewScripted(3), &c, &tech, SoldierCareer); got != 0 {
+		t.Errorf("Technical Branch/Ops mod = %d, want 0 (branch 0 + Base 0)", got)
 	}
 }

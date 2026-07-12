@@ -6,13 +6,28 @@ package chargen
 // officer ladder — promotion rolls sweetened by Medals (from Reward successes)
 // and Wound Badges.
 //
-// Slice scope: the Branch and Operations modifiers to Risk & Reward (p. 82,
-// "Determine Branch and Mod" / "Operations") are deferred — the Soldier here
-// runs Risk & Reward on the bare Controlling Characteristic plus Caution/Bravery.
-// Also deferred: the +1 skill for a Commission or Promotion, the branch-specific
-// automatic skills (Medic / Trade), the muster "Retire x2" pay (recorded as a
-// named benefit) and its +Officer-Rank Benefit-column DM (treated as 0), and the
-// Command College at O4.
+// The Branch and Operations modifiers to Risk & Reward (p. 82) are wired via
+// soldierBranchOps and the engine's branchOpsMod. Deferred: the +1 skill for a
+// Commission or Promotion, the branch-specific automatic skills (Medic / Trade),
+// the muster "Retire x2" pay (recorded as a named benefit), and the Command
+// College at O4.
+
+// soldierBranchOps is the Soldier's Branch and Operations tables (Book 1 p. 82).
+var soldierBranchOps = BranchOps{
+	Branches: [9]Branch{
+		1: {"Infantry", 1, 1},
+		2: {"Infantry", 1, 1},
+		3: {"Artillery", 1, 5},
+		4: {"Cavalry", 1, 3},
+		5: {"Protected", 2, 0},
+		6: {"Protected", 2, 0},
+		7: {"Technical", 0, 6},
+		8: {"Medical", 0, 4},
+	},
+	// Operations (1D + Branch OpsDM): Combat, Combat, Peace Keeper, Mission, ANM
+	// School, Combat, Peace Keeper, Mission, Base.
+	OpsMods: [10]int{1: 2, 2: 2, 3: 1, 4: 2, 5: 0, 6: 3, 7: 1, 8: 2, 9: 0},
+}
 
 // SoldierCareer is the Soldier (Book 1 p. 82): an armed-forces career with
 // enlisted and officer rank ladders.
@@ -27,6 +42,7 @@ var SoldierCareer = Career{
 	EligPerTerm:      4,
 	BenefitDM:        DMOfficerRank,
 	RewardKind:       RewardMedal,
+	BranchOps:        &soldierBranchOps,
 	Commission:       PromotionRule{Char: Endurance},                        // C3
 	EnlistedPromote:  PromotionRule{Char: Endurance, MedalsAndWounds: true}, // C3*
 	OfficerPromote:   PromotionRule{Char: Social, MedalsAndWounds: true},    // Soc*
