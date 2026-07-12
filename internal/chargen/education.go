@@ -70,7 +70,7 @@ func waiverGranted(r *dice.Roller, p Policy, c *Character, priorWaivers *int) bo
 		return false
 	}
 	res := r.Resolve(dice.Check{Dice: 2, Target: c.Score(Social), Mod: -*priorWaivers})
-	*priorWaivers++
+	(*priorWaivers)++
 	return res.Success
 }
 
@@ -112,7 +112,7 @@ func bestChar(c Character, chars ...Characteristic) Characteristic {
 	return best
 }
 
-// without returns list with the first occurrence of x removed.
+// without returns list with every occurrence of x removed.
 func without(list []string, x string) []string {
 	out := make([]string, 0, len(list))
 	for _, s := range list {
