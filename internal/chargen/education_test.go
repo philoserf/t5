@@ -38,7 +38,7 @@ func TestGoldenCollege(t *testing.T) {
 		3, 3, // Waiver Soc(10) mod -2 = 8: 6, continue
 		1, 1, // year 4: 2, pass -> Psychology-2, Robotics-1 (2nd pass)
 	}
-	AttendCollege(dice.NewScripted(seq...), p, &c)
+	attendAcademic(dice.NewScripted(seq...), p, &c, college)
 
 	if got := c.UPP(); got != "9AB58A" {
 		t.Errorf("UPP = %q, want %q (Edu 6 -> 8 on graduation)", got, "9AB58A")
@@ -57,16 +57,49 @@ func TestGoldenCollege(t *testing.T) {
 func TestCollegePrerequisite(t *testing.T) {
 	// Edu 4 is below the College prerequisite of 5: no attendance, no dice.
 	c := Character{scores: [count]int{7, 7, 7, 7, 4, 7}}
-	AttendCollege(dice.NewScripted(1, 1), DefaultPolicy{}, &c)
+	attendAcademic(dice.NewScripted(1, 1), DefaultPolicy{}, &c, college)
 	if len(c.Degrees) != 0 || c.Major != "" || c.Score(Education) != 4 {
 		t.Errorf("under-prereq character was educated: %+v", c)
+	}
+}
+
+func TestED5RaisesLowEdu(t *testing.T) {
+	// Edu 3, Check Int(8) passes -> Edu raised to 5.
+	c := Character{scores: [count]int{7, 7, 7, 8, 3, 7}}
+	attemptED5(dice.NewScripted(3, 4), &c) // roll 7 <= Int 8, pass
+	if c.Score(Education) != 5 {
+		t.Errorf("ED5 pass: Edu = %d, want 5", c.Score(Education))
+	}
+	// A failed Int Check leaves Edu unchanged.
+	c2 := Character{scores: [count]int{7, 7, 7, 4, 3, 7}}
+	attemptED5(dice.NewScripted(6, 6), &c2) // roll 12 > Int 4, fail
+	if c2.Score(Education) != 3 {
+		t.Errorf("ED5 fail: Edu = %d, want 3", c2.Score(Education))
+	}
+	// Edu already above the ED5 ceiling is a no-op: the Check is never made, so
+	// Edu stays 6 rather than being pulled down to the ED5 target of 5 (a passing
+	// roll of 7 is scripted, which would set Edu 5 if the Check were rolled).
+	c3 := Character{scores: [count]int{7, 7, 7, 8, 6, 7}}
+	attemptED5(dice.NewScripted(3, 4), &c3)
+	if c3.Score(Education) != 6 {
+		t.Errorf("ED5 no-op: Edu = %d, want 6", c3.Score(Education))
+	}
+}
+
+func TestEducateSelectsUniversity(t *testing.T) {
+	// Edu 7 qualifies for University (grad Edu 9); all rolls at 7 pass.
+	c := Character{scores: [count]int{7, 7, 7, 7, 7, 7}}
+	seq := []int{3, 4, 3, 4, 3, 4, 3, 4, 3, 4} // apply + four passes, each 7 <= Edu 7
+	educate(dice.NewScripted(seq...), &eduPolicy{picks: []string{"Physics", "History"}}, &c)
+	if c.Score(Education) != 9 || len(c.Degrees) != 1 {
+		t.Errorf("University graduation: Edu = %d degrees %v, want 9 / [BA]", c.Score(Education), c.Degrees)
 	}
 }
 
 func TestCollegeRejectedNoWaiver(t *testing.T) {
 	// Admission fails and the policy declines a waiver: nothing gained.
 	c := Character{scores: [count]int{7, 7, 7, 6, 6, 6}}
-	AttendCollege(dice.NewScripted(6, 6 /*apply 12, fail*/), noWaiver{}, &c)
+	attendAcademic(dice.NewScripted(6, 6 /*apply 12, fail*/), noWaiver{}, &c, college)
 	if len(c.Degrees) != 0 || c.Major != "" {
 		t.Errorf("rejected applicant was educated: %+v", c)
 	}
@@ -81,7 +114,7 @@ func TestCollegeFailsOut(t *testing.T) {
 		1, 1, // year 1: pass -> Major +1
 		6, 6, // year 2: fail, no waiver -> wash out
 	}
-	AttendCollege(dice.NewScripted(seq...), noWaiver{}, &c)
+	attendAcademic(dice.NewScripted(seq...), noWaiver{}, &c, college)
 	if len(c.Degrees) != 0 {
 		t.Errorf("washed-out student graduated: degrees %v", c.Degrees)
 	}
