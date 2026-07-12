@@ -2,11 +2,10 @@ package chargen
 
 // Scout career data, transcribed from Book 1 p. 79 (the Scout career page).
 //
-// Slice scope (the rest of the career page is deferred): a Scout each term
-// chooses a Duty — Courier (avoid Risk & Reward, 4 skill rolls) or Explorer
-// (run Risk & Reward, 8 skill rolls). This slice fixes the iconic Explorer
-// duty, so every term runs Risk & Reward and grants 8 skill rolls. Also
-// deferred: the R&R reward (Discovery, Land Grant, Fame) and the Major/Minor
+// Each term a Scout chooses a Duty (Policy.ChooseExplorerDuty): Courier (avoid
+// Risk & Reward, 4 skill rolls) or Explorer (run Risk & Reward, EligPerTerm = 8
+// skill rolls). Deferred: the R&R reward (Discovery, Land Grant, Fame) and the
+// Major/Minor
 // academic awards, which require the education stage this generator does not yet
 // model — those grid cells are transcribed as NoAward ("lost" per the page's
 // footnote when the character has no Major/Minor). The Personal Soc bump carries
@@ -62,7 +61,8 @@ var ScoutCareer = Career{
 	ControllingChars: []Characteristic{Strength, Dexterity, Endurance},
 	Continue:         ContinueRule{UseChar: true, Char: Intelligence},
 	Advance:          RollLow,
-	EligPerTerm:      8, // Explorer duty (Courier duty's 4 is deferred)
+	EligPerTerm:      8, // Explorer duty
+	ScoutDuty:        true,
 	BenefitDM:        DMFameHalf,
 	Skills: SkillGrid{
 		// Col 0 — Personal.
