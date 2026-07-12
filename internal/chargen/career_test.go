@@ -22,6 +22,7 @@ type stopAfter struct{ terms int }
 func (stopAfter) ChooseCC(_ Character, available []Characteristic) Characteristic {
 	return available[0]
 }
+func (stopAfter) RiskMod(Character, int) int                    { return 0 }
 func (s stopAfter) Continue(_ Character, rec CareerRecord) bool { return rec.Terms < s.terms }
 
 func TestContinueTarget(t *testing.T) {
@@ -93,14 +94,82 @@ func TestRunCareerMandatoryContinue(t *testing.T) {
 }
 
 func TestRunCareerStopsAtAging(t *testing.T) {
-	// DefaultPolicy serves until aging begins (age 34) — four terms from 18.
+	// Every roll is 7: Risk, Reward, and Continue all succeed, and the age-34
+	// aging check (2D=7 < stage 5 is false) inflicts nothing. DefaultPolicy then
+	// serves until aging begins — four terms from 18 to 34.
 	c := Character{scores: [count]int{7, 7, 7, 10, 8, 6}, Age: 18}
-	// Three Continue rolls of 7, then at term four an aging check (high rolls,
-	// no aging) and a final Continue roll.
-	rolls := []int{3, 4, 3, 4, 3, 4, 6, 6, 6, 6, 6, 6, 3, 4}
-	RunCareer(dice.NewScripted(rolls...), DefaultPolicy{}, &c, testCareer)
+	RunCareer(dice.NewScripted(3, 4), DefaultPolicy{}, &c, testCareer)
 	if c.Careers[0].Terms != 4 || c.Age != 34 {
 		t.Fatalf("default policy: %d terms age %d, want 4 terms age 34", c.Careers[0].Terms, c.Age)
+	}
+}
+
+func TestClassifyInjury(t *testing.T) {
+	cases := []struct {
+		original, negMods, flux int
+		wantInjury              Injury
+		wantValue               int
+	}{
+		{7, 0, 0, Unharmed, 7},   // no reduction
+		{7, 0, 2, Unharmed, 7},   // Flux healed above original -> restored
+		{7, 0, -1, Wounded, 6},   // reduced by 1
+		{7, 0, -3, Wounded, 4},   // reduced by 3 (still a wound)
+		{7, 0, -4, Disabling, 3}, // reduced by 4
+		{7, 3, -1, Disabling, 3}, // bravery -3 plus Flux -1 = reduced by 4
+		{3, 0, -3, Fatal, 0},     // reduced to exactly 0
+		{4, 0, -5, Fatal, -1},    // reduced below 0 (worst Flux)
+	}
+	for _, c := range cases {
+		gotInjury, gotVal := classifyInjury(c.original, c.negMods, c.flux)
+		if gotInjury != c.wantInjury || gotVal != c.wantValue {
+			t.Errorf("classifyInjury(%d,%d,%d) = (%v,%d), want (%v,%d)",
+				c.original, c.negMods, c.flux, gotInjury, gotVal, c.wantInjury, c.wantValue)
+		}
+	}
+}
+
+// runOneTerm is a helper: build a single-CC run and resolve one term.
+func runOneTerm(r *dice.Roller, c *Character, cc Characteristic) TermOutcome {
+	career := Career{Name: "T", ControllingChars: []Characteristic{cc}}
+	run := careerRun{ccPool: []Characteristic{cc}}
+	return runTerm(r, stopAfter{}, c, &run, career)
+}
+
+func TestRunTermRiskSuccess(t *testing.T) {
+	// Strength 7, Risk target 7: a roll of 7 survives and the CC is untouched.
+	c := Character{scores: [count]int{7, 7, 7, 8, 8, 8}}
+	if got := runOneTerm(dice.NewScripted(3, 4), &c, Strength); got != Ongoing {
+		t.Fatalf("outcome = %v, want Ongoing", got)
+	}
+	if c.scores[Strength] != 7 || c.WoundBadges != 0 {
+		t.Fatalf("survived term changed state: Str %d badges %d", c.scores[Strength], c.WoundBadges)
+	}
+}
+
+func TestRunTermWounded(t *testing.T) {
+	// Strength 7, Risk fails (roll 8 > 7), Flux -1 -> reduced to 6: a wound.
+	c := Character{scores: [count]int{7, 7, 7, 8, 8, 8}}
+	got := runOneTerm(dice.NewScripted(4, 4 /*risk 8, fail*/, 2, 3 /*flux -1*/), &c, Strength)
+	if got != Ongoing || c.scores[Strength] != 6 || c.WoundBadges != 1 {
+		t.Fatalf("wound: outcome %v Str %d badges %d, want Ongoing/6/1", got, c.scores[Strength], c.WoundBadges)
+	}
+}
+
+func TestRunTermDisabled(t *testing.T) {
+	// Risk fails, Flux -4 reduces Strength 7 -> 3 (reduced by 4): Disabled.
+	c := Character{scores: [count]int{7, 7, 7, 8, 8, 8}}
+	got := runOneTerm(dice.NewScripted(4, 4 /*risk 8*/, 1, 5 /*flux -4*/), &c, Strength)
+	if got != Disabled || c.scores[Strength] != 3 {
+		t.Fatalf("disabled: outcome %v Str %d, want Disabled/3", got, c.scores[Strength])
+	}
+}
+
+func TestRunTermFatal(t *testing.T) {
+	// Strength 3, Risk fails (roll 4 > 3), Flux -3 -> 0: fatal.
+	c := Character{scores: [count]int{3, 7, 7, 8, 8, 8}}
+	got := runOneTerm(dice.NewScripted(2, 2 /*risk 4*/, 1, 4 /*flux -3*/), &c, Strength)
+	if got != Died || !c.Dead {
+		t.Fatalf("fatal: outcome %v dead %v, want Died/true", got, c.Dead)
 	}
 }
 

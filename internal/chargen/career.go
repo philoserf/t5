@@ -73,11 +73,13 @@ type Career struct {
 	Advance          AdvanceRule
 }
 
-// A TermOutcome is how a character left a career.
+// A TermOutcome is the result of a term or of a whole career. Ongoing marks a
+// term the character survived; the others are how a character left a career.
 type TermOutcome int
 
 const (
-	MusteredOut TermOutcome = iota // left the career (voluntary or failed to continue)
+	Ongoing     TermOutcome = iota // survived the term; the career continues
+	MusteredOut                    // left the career (voluntary or failed to continue)
 	Disabled                       // a career injury forced early muster-out
 	Died                           // killed by a mishap or by aging
 )
@@ -118,12 +120,16 @@ func RunCareer(r *dice.Roller, p Policy, c *Character, career Career) {
 	rec := CareerRecord{Career: career.ID}
 
 	for {
-		runTerm(p, c, &run, career)
+		outcome := runTerm(r, p, c, &run, career)
 		rec.Terms++
 		c.Age += termYears
-		AgingCheck(r, c) // no-op before age 34
-		if c.Dead {
+		AgingCheck(r, c) // no-op before age 34; may set c.Dead
+		if outcome == Died || c.Dead {
 			rec.Outcome = Died
+			break
+		}
+		if outcome == Disabled {
+			rec.Outcome = Disabled
 			break
 		}
 		if !continues(r, p, *c, career, rec) {
@@ -134,10 +140,69 @@ func RunCareer(r *dice.Roller, p Policy, c *Character, career Career) {
 	c.Careers = append(c.Careers, rec)
 }
 
-// runTerm resolves one term. For now it only advances the Controlling
-// Characteristic rotation; Risk & Reward and skills arrive in later slices.
-func runTerm(p Policy, c *Character, run *careerRun, career Career) {
-	_ = selectCC(p, *c, run, career)
+// runTerm resolves one term (Book 1 p. 64). It selects the Controlling
+// Characteristic, rolls Risk (2D <= CC + mod) and, on survival, Reward
+// (2D <= CC - mod, mods flipped). A failed Risk injures the character. It
+// returns Ongoing, Disabled, or Died. (Skills and the per-career reward benefit
+// arrive in later slices.)
+func runTerm(r *dice.Roller, p Policy, c *Character, run *careerRun, career Career) TermOutcome {
+	cc := selectCC(p, *c, run, career)
+	ccVal := c.Score(cc)
+	mod := p.RiskMod(*c, ccVal) // caution (+), bravery (-), or 0
+
+	if r.Resolve(dice.Check{Dice: 2, Target: ccVal + mod}).Success {
+		// Survived. Reward roll (its benefit is applied where career data lands).
+		r.Resolve(dice.Check{Dice: 2, Target: ccVal - mod})
+		return Ongoing
+	}
+
+	// Risk failed: the CC drops by any negative (bravery) mod, then Flux.
+	negMods := 0
+	if mod < 0 {
+		negMods = -mod
+	}
+	injury, newVal := classifyInjury(ccVal, negMods, r.Flux())
+	switch injury {
+	case Fatal:
+		c.scores[cc] = max(newVal, 0)
+		c.Dead = true
+		return Died
+	case Disabling:
+		c.scores[cc] = newVal
+		return Disabled
+	case Wounded:
+		c.scores[cc] = newVal
+		c.WoundBadges++
+	}
+	return Ongoing
+}
+
+// An Injury classifies the result of a failed Risk roll.
+type Injury int
+
+const (
+	Unharmed  Injury = iota // the characteristic ends at or above its original value
+	Wounded                 // reduced by 1-3 (a Wound Badge)
+	Disabling               // reduced by 4+ (forced muster-out with double benefits)
+	Fatal                   // reduced to 0 or below (the character dies)
+)
+
+// classifyInjury applies a failed Risk roll: the Controlling Characteristic,
+// reduced by negMods (from negative mods) and shifted by Flux, is compared to
+// its original value. It returns the injury and the characteristic's new value
+// (unchanged when unharmed).
+func classifyInjury(original, negMods, flux int) (Injury, int) {
+	injured := original - negMods + flux
+	switch reduction := original - injured; {
+	case injured <= 0:
+		return Fatal, injured
+	case reduction >= 4:
+		return Disabling, injured
+	case reduction >= 1:
+		return Wounded, injured
+	default:
+		return Unharmed, original
+	}
 }
 
 // selectCC picks the term's Controlling Characteristic. Under RotateCC a
