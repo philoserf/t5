@@ -41,11 +41,20 @@ const (
 	RollHigh
 )
 
-// A Qualification is a career's entry gate: roll 2D at or under a characteristic
-// (plus a modifier).
+// A Qualification is a career's entry gate: roll 2D at or under the best of the
+// listed characteristics (plus a modifier).
 type Qualification struct {
-	Char Characteristic
-	Mod  int
+	Chars []Characteristic
+	Mod   int
+}
+
+// target returns the qualification target: the highest of the characteristics.
+func (q Qualification) target(c Character) int {
+	best := 0
+	for _, ch := range q.Chars {
+		best = max(best, c.Score(ch))
+	}
+	return best + q.Mod
 }
 
 // A ContinueRule gives the target of a career's Continue roll — either a fixed
@@ -77,6 +86,7 @@ type Career struct {
 	Advance          AdvanceRule
 	EligPerTerm      int // number of skill rolls a surviving term grants
 	Skills           SkillGrid
+	MusterOut        MusterTable
 }
 
 // A TermOutcome is the result of a term or of a whole career. Ongoing marks a
@@ -89,6 +99,22 @@ const (
 	Disabled                       // a career injury forced early muster-out
 	Died                           // killed by a mishap or by aging
 )
+
+// String names the outcome for display.
+func (o TermOutcome) String() string {
+	switch o {
+	case Ongoing:
+		return "Ongoing"
+	case MusteredOut:
+		return "MusteredOut"
+	case Disabled:
+		return "Disabled"
+	case Died:
+		return "Died"
+	default:
+		return "Unknown"
+	}
+}
 
 // A CareerRecord is the durable history of one career served.
 type CareerRecord struct {
@@ -109,9 +135,11 @@ type careerRun struct {
 // they enter no career and remain a fresh 18-year-old.
 func GenerateCareered(r *dice.Roller, p Policy, career Career) Character {
 	c := Generate(r)
-	q := career.Qualify
-	if r.Resolve(dice.Check{Dice: 2, Target: c.Score(q.Char), Mod: q.Mod}).Success {
+	if r.Resolve(dice.Check{Dice: 2, Target: career.Qualify.target(c)}).Success {
 		RunCareer(r, p, &c, career)
+		if rec := c.Careers[len(c.Careers)-1]; rec.Outcome != Died {
+			MusterOut(r, p, &c, rec, career)
+		}
 	}
 	return c
 }
@@ -242,6 +270,78 @@ type Cell struct {
 // A SkillGrid is a career's skill table: seven columns of six rows. The column
 // is chosen (see Policy.ChooseSkillColumn); the row is a 1D roll.
 type SkillGrid [7][6]Cell
+
+// A MusterColumn selects which column of a muster-out row a benefit comes from.
+type MusterColumn int
+
+const (
+	MoneyColumn MusterColumn = iota
+	BenefitColumn
+)
+
+// A BenefitKind identifies a mustering-out award.
+type BenefitKind int
+
+const (
+	Cash     BenefitKind = iota // Value credits
+	CharBump                    // +Value to characteristic Char
+	Named                       // a named benefit (Ship Share, TAS Fellowship, …)
+)
+
+// A Benefit is one mustering-out award.
+type Benefit struct {
+	Kind  BenefitKind
+	Value int
+	Char  Characteristic
+	Name  string
+}
+
+// A MusterRow is one row of a muster-out table: a Money award and a Benefit
+// award; the character takes one per roll.
+type MusterRow struct {
+	Money   Benefit
+	Benefit Benefit
+}
+
+// A MusterTable is a career's mustering-out table, indexed 1-12 by the muster
+// roll (1D plus a column DM — see MusterOut).
+type MusterTable [13]MusterRow // index 1-12 used
+
+// MusterOut resolves a character's mustering-out benefits (Book 1 pp. 67-70).
+// The character rolls once per term served (doubled when disabled); each roll is
+// 1D plus the column DM — the Money column adds +Terms, the Benefit column
+// +Fame/2 (Fame is not yet tracked, so 0) — and the policy chooses the column.
+func MusterOut(r *dice.Roller, p Policy, c *Character, rec CareerRecord, career Career) {
+	rolls := rec.Terms
+	if rec.Outcome == Disabled {
+		rolls *= 2 // double the number of benefit rolls
+	}
+	for range rolls {
+		col := p.MusterColumn(*c, rec)
+		dm := 0
+		if col == MoneyColumn {
+			dm = rec.Terms // Money DM = + Terms
+		}
+		row := min(max(r.Die()+dm, 1), 12)
+		award := career.MusterOut[row].Money
+		if col == BenefitColumn {
+			award = career.MusterOut[row].Benefit
+		}
+		applyBenefit(c, award)
+	}
+}
+
+// applyBenefit applies one mustering-out award.
+func applyBenefit(c *Character, b Benefit) {
+	switch b.Kind {
+	case Cash:
+		c.Credits += b.Value
+	case CharBump:
+		c.scores[b.Char] = min(c.scores[b.Char]+b.Value, maxCharacteristic)
+	case Named:
+		c.Benefits = append(c.Benefits, b.Name)
+	}
+}
 
 // An Injury classifies the result of a failed Risk roll.
 type Injury int

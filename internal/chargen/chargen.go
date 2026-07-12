@@ -53,6 +53,7 @@ type Character struct {
 	Skills      skill.Set      // skills and knowledges gained in careers
 	Careers     []CareerRecord // one record per career served
 	Credits     int            // cash mustered out
+	Benefits    []string       // named mustering-out benefits (Ship Share, TAS, …)
 	WoundBadges int            // career injuries survived
 
 	extremeAgings int // aging checks that zeroed 3+ characteristics; the 2nd is fatal

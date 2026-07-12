@@ -18,9 +18,10 @@ All generators share a single seedable dice engine (`internal/dice`), so any run
 is reproducible with `-seed`. Each command takes `-n` (count) and `-seed`.
 
 ```sh
-go run ./cmd/worldgen  -n 5 -seed 42   # mainworld Universal World Profiles
-go run ./cmd/systemgen -n 5 -seed 42   # star systems (stars, gas giants, belts, mainworld)
-go run ./cmd/chargen   -n 5 -seed 42   # character UPPs
+go run ./cmd/worldgen  -n 5 -seed 42            # mainworld Universal World Profiles
+go run ./cmd/systemgen -n 5 -seed 42            # star systems (stars, gas giants, belts, mainworld)
+go run ./cmd/chargen   -n 5 -seed 42            # character UPPs
+go run ./cmd/chargen   -career scout -n 5 -seed 42  # careered characters (qualify, terms, skills, muster-out)
 ```
 
 Example output:
@@ -36,6 +37,10 @@ Primary: K5 V
 Primary Companion: M0 VI
 Worlds: 6  PBG: 901
 Mainworld: E643231-6 Lo Po {-3}(810-3)[1164] B - -
+
+$ go run ./cmd/chargen -career scout -n 2 -seed 42
+98C589  age 22  Scout: 1 terms, MusteredOut  [Comms-2 Galanglic-2 Gunner-2 JOT-1 Pilot-1]  benefits: Wafer Jack
+648566  age 22  Scout: 1 terms, MusteredOut  [Comms-1 Computer-1 Galanglic-1 Gunner-1 JOT-3 Pilot-1]  benefits: Forbidden Knowledge
 ```
 
 The mainworld line is the full world record — UWP, trade classifications, the
@@ -44,7 +49,9 @@ The mainworld line is the full world record — UWP, trade classifications, the
 The engine is faithful to the rules and validated against the books' own worked
 examples — e.g. worldgen reproduces the canonical Regina profile `A788899-C` and
 its full record `A788899-C Ph Pa Ri {+4}(D7E+4)[9C6D] BcCeF NS -`.
-Careers (chargen) and per-world orbital detail (systemgen) are the next stages.
+Chargen runs the full career lifecycle (qualification, four-year terms with Risk
+& Reward and aging, skill eligibility, and mustering out) for the Scout; the
+other careers and per-world orbital detail (systemgen) are the next stages.
 
 ## Development
 
