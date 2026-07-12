@@ -111,6 +111,9 @@ func GenerateCareered(r *dice.Roller, p Policy, career Career) Character {
 // RunCareer runs the term loop of one career on a character, appending a
 // CareerRecord.
 func RunCareer(r *dice.Roller, p Policy, c *Character, career Career) {
+	if len(career.ControllingChars) == 0 {
+		panic("chargen: career " + career.Name + " has no controlling characteristics")
+	}
 	run := careerRun{ccPool: append([]Characteristic(nil), career.ControllingChars...)}
 	rec := CareerRecord{Career: career.ID}
 

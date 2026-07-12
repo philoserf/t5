@@ -6,6 +6,8 @@ package chargen
 // as the slices that need them land.
 type Policy interface {
 	// ChooseCC picks the term's Controlling Characteristic from those available.
+	// The engine only ever passes a non-empty slice (RunCareer rejects a career
+	// with no controlling characteristics).
 	ChooseCC(c Character, available []Characteristic) Characteristic
 	// Continue reports whether the character wishes to serve another term.
 	Continue(c Character, rec CareerRecord) bool

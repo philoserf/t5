@@ -60,6 +60,16 @@ func TestSelectCCFixed(t *testing.T) {
 	}
 }
 
+func TestRunCareerRejectsEmptyCC(t *testing.T) {
+	defer func() {
+		if recover() == nil {
+			t.Error("RunCareer did not panic on a career with no controlling characteristics")
+		}
+	}()
+	c := Character{Age: 18}
+	RunCareer(dice.NewScripted(3, 4), stopAfter{1}, &c, Career{Name: "Broken"})
+}
+
 func TestRunCareerTermCount(t *testing.T) {
 	// Policy stops after 2 terms; Int 10 makes both Continue rolls (7) succeed.
 	c := Character{scores: [count]int{7, 7, 7, 10, 8, 6}, Age: 18}
