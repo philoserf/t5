@@ -44,7 +44,7 @@ var NobleCareer = Career{
 	Continue:         ContinueRule{Fixed: 7},                                          // Continue 7
 	Advance:          RollHigh,                                                        // Elevation is a roll-high check
 	EligPerTerm:      4,
-	MusterBenefitDMT: true,
+	BenefitDM:        DMTerms,
 	Skills: SkillGrid{
 		// Col 0 — Personal.
 		{bump(Strength), bump(Dexterity), bump(Endurance), bump(Intelligence), bump(Education), bump(Social)},

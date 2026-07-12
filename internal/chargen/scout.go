@@ -63,6 +63,7 @@ var ScoutCareer = Career{
 	Continue:         ContinueRule{UseChar: true, Char: Intelligence},
 	Advance:          RollLow,
 	EligPerTerm:      8, // Explorer duty (Courier duty's 4 is deferred)
+	BenefitDM:        DMFameHalf,
 	Skills: SkillGrid{
 		// Col 0 — Personal.
 		{bump(Strength), bump(Dexterity), bump(Endurance), bump(Intelligence), bump(Education), bump(Social)},

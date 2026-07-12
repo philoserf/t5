@@ -23,7 +23,7 @@ var CraftsmanCareer = Career{
 	Continue:         ContinueRule{UseSkill: "Craftsman", SkillMult: 2},              // Craftsman x2
 	Advance:          RollLow,
 	EligPerTerm:      4,
-	MusterBenefitDMT: true, // Benefits column DM is +Terms
+	BenefitDM:        DMTerms,
 	Skills: SkillGrid{
 		// Col 0 — Personal.
 		{bump(Strength), bump(Dexterity), bump(Endurance), bump(Intelligence), bump(Education), bump(Social)},

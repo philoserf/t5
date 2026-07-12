@@ -22,7 +22,7 @@ var CitizenCareer = Career{
 	Continue:         ContinueRule{Fixed: 10},                                        // 10-
 	Advance:          RollLow,
 	EligPerTerm:      4,
-	MusterBenefitDMT: true, // Benefits column DM is +Terms
+	BenefitDM:        DMTerms,
 	Skills: SkillGrid{
 		// Col 0 — Personal.
 		{bump(Strength), bump(Dexterity), bump(Endurance), bump(Intelligence), bump(Education), bump(Social)},

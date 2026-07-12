@@ -29,9 +29,9 @@ func TestGoldenMerchant(t *testing.T) {
 		3, 4, // Commission vs Int 8: 7 <= 8, commissioned -> Fourth Officer (Steward-1)
 		1, 1, 1, 1, // Broker x4 (now 8)
 		3, 4, // continue: policy stops after term 2
-		// Muster out: 2 rolls, Benefit column, DM +Terms (=2).
-		3, // 3 + 2 = row 5 -> End +1 (7 -> 8)
-		1, // 1 + 2 = row 3 -> Wafer Jack
+		// Muster out: 2 rolls, Benefit column, DM +Officer Rank (=1, Fourth Officer).
+		4, // 4 + 1 = row 5 -> End +1 (7 -> 8)
+		2, // 2 + 1 = row 3 -> Wafer Jack
 	}
 
 	// goldenPolicy (scout_test.go) picks skill column 3; for the Merchant grid

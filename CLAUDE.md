@@ -76,7 +76,8 @@ Tooling (go, go-task, poppler's `pdftotext`) is pinned in `Brewfile`.
   no-education policy leaves any dice trace (e.g. the golden Scout's) untouched. The term engine
   (`career.go`) is career-agnostic with pluggable seams (`CCMode` Rotate/Fixed — under FixedCC the
   policy picks one CC that serves the whole career, `AdvanceRule` RollLow/RollHigh, `Qualification`
-  char-set, `ContinueRule` fixed/char/UseCC/TermsMod, `MusterBenefitDMT` for a +Terms Benefit-column DM, and
+  char-set, `ContinueRule` fixed/char/UseCC/TermsMod, `BenefitDM` selecting the muster Benefit-column
+  die modifier (`MusterDM`: Terms/OfficerRank/Rank/FameHalf), and
   the rank ladders `EnlistedRanks`/`OfficerRanks` + `Commission`/`EnlistedPromote`/`OfficerPromote`
   rules for armed-forces careers); a `Policy` (with `DefaultPolicy`) supplies every player choice so
   generation is deterministic and testable. The rank step (`resolveRank`) runs after Risk & Reward

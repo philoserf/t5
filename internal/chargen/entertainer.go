@@ -18,14 +18,14 @@ package chargen
 // EntertainerCareer is the Entertainer (Book 1 p. 77), modelled as the Actor
 // specialty.
 var EntertainerCareer = Career{
-	ID:               Entertainer,
-	Name:             "Entertainer",
-	Qualify:          Qualification{Chars: []Characteristic{Dexterity, Endurance}}, // Begin Actor: C2 or C3
-	FameCareer:       true,
-	Continue:         ContinueRule{UseFame: true}, // Continue vs Fame
-	Advance:          RollLow,
-	EligPerTerm:      4,
-	MusterBenefitDMT: true, // Benefits column DM is +Terms
+	ID:          Entertainer,
+	Name:        "Entertainer",
+	Qualify:     Qualification{Chars: []Characteristic{Dexterity, Endurance}}, // Begin Actor: C2 or C3
+	FameCareer:  true,
+	Continue:    ContinueRule{UseFame: true}, // Continue vs Fame
+	Advance:     RollLow,
+	EligPerTerm: 4,
+	BenefitDM:   DMTerms,
 	Skills: SkillGrid{
 		// Col 0 — Personal.
 		{bump(Strength), bump(Dexterity), bump(Endurance), bump(Intelligence), bump(Education), bump(Social)},
