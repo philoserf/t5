@@ -60,6 +60,7 @@ type Character struct {
 	Credits     int            // cash mustered out
 	Benefits    []string       // named mustering-out benefits (Ship Share, TAS, …)
 	WoundBadges int            // career injuries survived
+	Medals      int            // awards earned on successful Reward rolls (armed forces)
 
 	extremeAgings int // aging checks that zeroed 3+ characteristics; the 2nd is fatal
 }

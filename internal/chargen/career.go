@@ -20,8 +20,9 @@ const termYears = 4
 type CareerID int
 
 const (
-	Scout CareerID = iota // the first implemented career
-	Rogue                 // a fixed-CC career (Book 1 p. 84)
+	Scout   CareerID = iota // the first implemented career
+	Rogue                   // a fixed-CC career (Book 1 p. 84)
+	Soldier                 // the first armed-forces (ranked) career (Book 1 p. 82)
 )
 
 // CCMode controls how a career's Controlling Characteristic is chosen each term:
@@ -86,6 +87,21 @@ func (rule ContinueRule) target(c Character) int {
 	return rule.Fixed + rule.Mod
 }
 
+// A Rank is one rung of a career's rank ladder: a title and an optional skill
+// granted automatically on reaching it (Book 1 p. 82, "Automatic Skills by
+// Rank").
+type Rank struct {
+	Title string
+	Skill string // "" when the rank grants no automatic skill
+}
+
+// A PromotionRule is a rank-advancement roll: 2D at or under a characteristic,
+// optionally raised by the character's Medals and Wound Badges.
+type PromotionRule struct {
+	Char            Characteristic
+	MedalsAndWounds bool
+}
+
 // A Career is the data for one career. It grows as later slices add the skill
 // grid, ranks, and mustering-out table.
 type Career struct {
@@ -100,7 +116,18 @@ type Career struct {
 	MusterBenefitDMT bool // muster Benefit column adds +Terms (else +Fame/2, currently 0)
 	Skills           SkillGrid
 	MusterOut        MusterTable
+
+	// Rank ladders and promotion rules — set only for the armed-forces careers.
+	// EnlistedRanks empty means the career has no rank (Book 1 p. 64).
+	EnlistedRanks   []Rank
+	OfficerRanks    []Rank
+	Commission      PromotionRule // enlisted -> officer track
+	EnlistedPromote PromotionRule
+	OfficerPromote  PromotionRule
 }
+
+// hasRanks reports whether a career runs the rank/promotion machinery.
+func (c Career) hasRanks() bool { return len(c.EnlistedRanks) > 0 }
 
 // A TermOutcome is the result of a term or of a whole career. Ongoing marks a
 // term the character survived; the others are how a character left a career.
@@ -133,7 +160,8 @@ func (o TermOutcome) String() string {
 type CareerRecord struct {
 	Career  CareerID
 	Terms   int
-	Rank    int
+	Rank    int  // rank number within the current track (0 for a rankless career)
+	Officer bool // whether Rank is on the officer track
 	Outcome TermOutcome
 }
 
@@ -143,6 +171,8 @@ type careerRun struct {
 	ccPool      []Characteristic // Controlling Characteristics not yet used this cycle
 	fixed       Characteristic   // the chosen Controlling Characteristic under FixedCC
 	fixedChosen bool             // whether fixed has been selected yet
+	rank        int              // current rank number (1-based) for a rank career
+	officer     bool             // whether rank is on the officer track
 }
 
 // GenerateCareered generates a character on the given homeworld and runs one
@@ -176,6 +206,10 @@ func RunCareer(r *dice.Roller, p Policy, c *Character, career Career) {
 	}
 	run := careerRun{ccPool: append([]Characteristic(nil), career.ControllingChars...)}
 	rec := CareerRecord{Career: career.ID}
+	if career.hasRanks() {
+		run.rank = 1 // armed forces begin at enlisted rank 1 (Book 1 p. 64)
+		grantRankSkill(c, career.EnlistedRanks, 1)
+	}
 
 	for {
 		outcome := runTerm(r, p, c, &run, career)
@@ -195,22 +229,26 @@ func RunCareer(r *dice.Roller, p Policy, c *Character, career Career) {
 			break
 		}
 	}
+	rec.Rank = run.rank
+	rec.Officer = run.officer
 	c.Careers = append(c.Careers, rec)
 }
 
 // runTerm resolves one term (Book 1 p. 64). It selects the Controlling
 // Characteristic, rolls Risk (2D <= CC + mod) and, on survival, Reward
-// (2D <= CC - mod, mods flipped). A failed Risk injures the character. It
-// returns Ongoing, Disabled, or Died. (Skills and the per-career reward benefit
-// arrive in later slices.)
+// (2D <= CC - mod, mods flipped). A failed Risk injures the character; a
+// surviving armed-forces character then resolves rank. It returns Ongoing,
+// Disabled, or Died.
 func runTerm(r *dice.Roller, p Policy, c *Character, run *careerRun, career Career) TermOutcome {
 	cc := selectCC(p, *c, run, career)
 	ccVal := c.Score(cc)
 	mod := p.RiskMod(*c, ccVal) // caution (+), bravery (-), or 0
 
 	if r.Resolve(dice.Check{Dice: 2, Target: ccVal + mod}).Success {
-		// Survived. Reward roll (its benefit is applied where career data lands).
-		r.Resolve(dice.Check{Dice: 2, Target: ccVal - mod})
+		// Survived. Reward roll; for an armed-forces career a success is a Medal.
+		if r.Resolve(dice.Check{Dice: 2, Target: ccVal - mod}).Success && career.hasRanks() {
+			c.Medals++
+		}
 	} else {
 		// Risk failed: the CC drops by any negative (bravery) mod, then Flux.
 		negMods := 0
@@ -232,8 +270,56 @@ func runTerm(r *dice.Roller, p Policy, c *Character, run *careerRun, career Care
 		}
 	}
 
-	awardSkills(r, p, c, career) // a surviving (even wounded) character gains skills
+	resolveRank(r, c, run, career) // promotion / commission for a surviving term
+	awardSkills(r, p, c, career)   // a surviving (even wounded) character gains skills
 	return Ongoing
+}
+
+// resolveRank runs a surviving armed-forces character's rank step (Book 1 p. 64
+// for the mechanic, p. 82 for the Soldier's targets and ladders). An enlisted
+// character first rolls for Commission (success moves them to
+// the officer track at Officer 1); failing that, they roll Enlisted Promotion.
+// An officer rolls Officer Promotion. Promotion (not Commission) targets are
+// raised by Medals and Wound Badges. Reaching a rank grants its automatic skill.
+func resolveRank(r *dice.Roller, c *Character, run *careerRun, career Career) {
+	if !career.hasRanks() {
+		return
+	}
+	if run.officer {
+		if run.rank < len(career.OfficerRanks) && promoted(r, *c, career.OfficerPromote) {
+			run.rank++
+			grantRankSkill(c, career.OfficerRanks, run.rank)
+		}
+		return
+	}
+	if promoted(r, *c, career.Commission) {
+		run.officer = true
+		run.rank = 1
+		grantRankSkill(c, career.OfficerRanks, 1)
+		return
+	}
+	if run.rank < len(career.EnlistedRanks) && promoted(r, *c, career.EnlistedPromote) {
+		run.rank++
+		grantRankSkill(c, career.EnlistedRanks, run.rank)
+	}
+}
+
+// promoted resolves one promotion roll: 2D at or under the rule's characteristic,
+// raised by Medals and Wound Badges when the rule allows.
+func promoted(r *dice.Roller, c Character, rule PromotionRule) bool {
+	target := c.Score(rule.Char)
+	if rule.MedalsAndWounds {
+		target += c.Medals + c.WoundBadges
+	}
+	return r.Resolve(dice.Check{Dice: 2, Target: target}).Success
+}
+
+// grantRankSkill grants the automatic skill of a rank (Book 1 p. 82), if any.
+// rank is 1-based; a rank past the top of the ladder grants nothing.
+func grantRankSkill(c *Character, ranks []Rank, rank int) {
+	if rank >= 1 && rank <= len(ranks) && ranks[rank-1].Skill != "" {
+		c.Skills.Raise(ranks[rank-1].Skill, 1)
+	}
 }
 
 // awardSkills grants the term's skill eligibility: for each roll the policy picks
