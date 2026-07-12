@@ -29,6 +29,9 @@ type Policy interface {
 	// Trade School (Major +2) rather than the academic College/University path
 	// (Book 1 p. 60).
 	ChooseTradeSchool(c Character) bool
+	// PursueGraduateSchool reports whether a degree-holding character goes on to a
+	// post-graduate program (the Masters) after their Bachelor's (Book 1 p. 60).
+	PursueGraduateSchool(c Character) bool
 	// TakeWaiver reports whether the character attempts an Educational Waiver
 	// after an adverse roll, given the number of waivers already attempted.
 	TakeWaiver(c Character, priorWaivers int) bool
@@ -132,6 +135,10 @@ func (DefaultPolicy) TakeWaiver(Character, int) bool { return true }
 // Edu and grants a Major and Minor, generally worth more than a Trade School's
 // single vocational Major.
 func (DefaultPolicy) ChooseTradeSchool(Character) bool { return false }
+
+// PursueGraduateSchool stops at the Bachelor's — a character enters their career
+// rather than spending more years in a post-graduate program.
+func (DefaultPolicy) PursueGraduateSchool(Character) bool { return false }
 
 // NextCareer stops after one career; a policy that wants a multi-career
 // character (e.g. the CLI's -careers sequence) overrides this.
