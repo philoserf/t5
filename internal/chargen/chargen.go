@@ -42,18 +42,34 @@ func (c Characteristic) String() string {
 	return abbrev[c]
 }
 
-// A Character is, for now, a UPP: the six human characteristic scores.
+// A Character is a Traveller character: the six human characteristic scores
+// plus age. Careers and aging will extend it further.
 type Character struct {
 	scores [count]int
+	Age    int  // years; a freshly generated character starts at 18
+	Dead   bool // set when aging (or, later, a career mishap) kills the character
+
+	extremeAgings int // aging checks that zeroed 3+ characteristics; the 2nd is fatal
 }
 
-// Generate rolls a character's six characteristics, each 2D, in UPP order.
+// startingAge is the age of a freshly generated character — Young Adult (Life
+// Stage 3), where adventuring traditionally begins.
+const startingAge = 18
+
+// Generate rolls a character's six characteristics, each 2D, in UPP order, at
+// the starting age.
 func Generate(r *dice.Roller) Character {
-	var c Character
+	c := Character{Age: startingAge}
 	for i := range c.scores {
 		c.scores[i] = r.Dice(2)
 	}
 	return c
+}
+
+// LifeStage returns the character's current life stage (Book 1 p. 89): 0 Infant,
+// 3 Young Adult (18), 5 Peak (34), 9 Retirement (66).
+func (c Character) LifeStage() int {
+	return lifeStage(c.Age)
 }
 
 // Score returns the value of one characteristic. It panics on a Characteristic
