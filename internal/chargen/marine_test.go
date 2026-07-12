@@ -27,14 +27,14 @@ func TestGoldenMarine(t *testing.T) {
 		3, 4, // reward -> Medal 1
 		5, 5, // Commission vs End 8: 10 > 8, fails
 		4, 4, // Enlisted Promotion vs Str 8 + Medal 1 = 9: 8 <= 9, promote to Lance Corporal
-		1, 1, 1, 1, // 4 skill rolls, Peacekeeper col row 1 = Vacc Suit
+		1, 1, 1, 1, 1, // 4 + 1 (promotion) skill rolls, Peacekeeper col row 1 = Vacc Suit
 		3, 4, // continue vs Str 8: 7, policy wants term 2
 		// Term 2: Operations again (net 0). Risk survive; Reward -> Medal (2).
 		1, 1, 1, 1,
 		3, 4, // risk
 		3, 4, // reward -> Medal 2
 		3, 4, // Commission vs End 8: 7 <= 8, commissioned -> 2nd Lieutenant (Leader-1)
-		1, 1, 1, 1, // Vacc Suit x4 again
+		1, 1, 1, 1, 1, // Vacc Suit x5 (4 + 1 commission)
 		3, 4, // continue: policy stops after term 2
 		// Muster out: 2 rolls, Benefit column, DM +Officer Rank (=1, 2nd Lieutenant).
 		1, // 1 + 1 = row 2 -> Str +1 (8 -> 9)
@@ -51,8 +51,8 @@ func TestGoldenMarine(t *testing.T) {
 	if c.Medals != 2 {
 		t.Errorf("Medals = %d, want 2", c.Medals)
 	}
-	if c.Skills.Level("Fighter") != 1 || c.Skills.Level("Leader") != 1 || c.Skills.Level("Vacc Suit") != 8 {
-		t.Errorf("skills: Fighter=%d Leader=%d Vacc Suit=%d, want 1/1/8",
+	if c.Skills.Level("Fighter") != 1 || c.Skills.Level("Leader") != 1 || c.Skills.Level("Vacc Suit") != 10 {
+		t.Errorf("skills: Fighter=%d Leader=%d Vacc Suit=%d, want 1/1/10",
 			c.Skills.Level("Fighter"), c.Skills.Level("Leader"), c.Skills.Level("Vacc Suit"))
 	}
 	rec := c.Careers[0]

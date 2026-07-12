@@ -20,13 +20,13 @@ func TestGoldenScholar(t *testing.T) {
 		3, 4, // risk (research)
 		3, 4, // reward (publication) -> Publications 1
 		4, 4, // Promotion vs Int 8 + Pubs 1 = 9: 8 <= 9, promote to Instructor (rank 2)
-		1, 1, 1, 1, // 4 skill rolls, General col row 1 = Survey
+		1, 1, 1, 1, 1, // 4 + 1 (promotion) skill rolls, General col row 1 = Survey
 		3, 4, // continue vs Edu 8 + Pubs 1 = 9: 7, policy wants term 2
 		// Term 2: CC = Dex (7).
 		3, 4, // research
 		3, 4, // publication -> Publications 2
 		4, 4, // Promotion vs Int 8 + Pubs 2 = 10: 8 <= 10, promote to Assistant Professor (rank 3)
-		1, 1, 1, 1, // Survey x4 (now 8)
+		1, 1, 1, 1, 1, // Survey x5 (4 + 1 promotion), now 10
 		3, 4, // continue: policy stops after term 2
 		// Muster out: 2 rolls, Benefit column, DM +Terms (=2).
 		3, // 3 + 2 = row 5 -> Str +1 (7 -> 8)
@@ -43,8 +43,8 @@ func TestGoldenScholar(t *testing.T) {
 	if c.Publications != 2 {
 		t.Errorf("Publications = %d, want 2 (a Publication each term)", c.Publications)
 	}
-	if c.Skills.Level("Survey") != 8 {
-		t.Errorf("Survey = %d, want 8", c.Skills.Level("Survey"))
+	if c.Skills.Level("Survey") != 10 {
+		t.Errorf("Survey = %d, want 10", c.Skills.Level("Survey"))
 	}
 	rec := c.Careers[0]
 	if rec.Career != Scholar || rec.Terms != 2 || rec.Outcome != MusteredOut {

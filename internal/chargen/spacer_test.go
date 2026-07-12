@@ -26,14 +26,14 @@ func TestGoldenSpacer(t *testing.T) {
 		3, 4, // reward -> Medal 1
 		5, 5, // Commission vs Dex 8: 10 > 8, fails
 		4, 4, // Rating Promotion vs Dex 8 + Medal 1 = 9: 8 <= 9, promote to Able Spacer
-		1, 1, 1, 1, // 4 skill rolls, Patrol/Strike col row 1 = Astrogation
+		1, 1, 1, 1, 1, // 4 + 1 (promotion) skill rolls, Patrol/Strike col row 1 = Astrogation
 		3, 4, // continue vs Str 8: 7, policy wants term 2
 		// Term 2: Operations again (net 0). Risk survive; Reward -> Medal (2).
 		1, 1, 1, 1,
 		3, 4, // risk
 		3, 4, // reward -> Medal 2
 		3, 4, // Commission vs Dex 8: 7 <= 8, commissioned -> Ensign (Astrogation-1)
-		1, 1, 1, 1, // Astrogation x4 again
+		1, 1, 1, 1, 1, // Astrogation x5 (4 + 1 commission)
 		3, 4, // continue: policy stops after term 2
 		// Muster out: 2 rolls, Benefit column, DM +Officer Rank (=1, Ensign).
 		1, // 1 + 1 = row 2 -> Str +1 (8 -> 9)
@@ -50,9 +50,10 @@ func TestGoldenSpacer(t *testing.T) {
 	if c.Medals != 2 {
 		t.Errorf("Medals = %d, want 2", c.Medals)
 	}
-	// Astrogation: 4 (term 1 grid) + 1 (Ensign auto-skill) + 4 (term 2 grid) = 9.
-	if c.Skills.Level("Fighter") != 1 || c.Skills.Level("Astrogation") != 9 {
-		t.Errorf("skills: Fighter=%d Astrogation=%d, want 1/9",
+	// Astrogation: 5 (term 1 grid, 4 + 1 promotion) + 1 (Ensign auto-skill) +
+	// 5 (term 2 grid, 4 + 1 commission) = 11.
+	if c.Skills.Level("Fighter") != 1 || c.Skills.Level("Astrogation") != 11 {
+		t.Errorf("skills: Fighter=%d Astrogation=%d, want 1/11",
 			c.Skills.Level("Fighter"), c.Skills.Level("Astrogation"))
 	}
 	rec := c.Careers[0]

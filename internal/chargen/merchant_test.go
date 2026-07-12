@@ -21,13 +21,13 @@ func TestGoldenMerchant(t *testing.T) {
 		3, 4, // reward -> Ship Shares 1
 		5, 5, // Commission vs Int 8: 10 > 8, fails
 		4, 4, // Rating Promotion vs Dex 8: 8 <= 8, promote to Spacehand (rank 2)
-		1, 1, 1, 1, // 4 skill rolls, Trade col row 1 = Broker
+		1, 1, 1, 1, 1, // 4 + 1 (promotion) skill rolls, Trade col row 1 = Broker
 		3, 4, // continue vs Str 8: 7, policy wants term 2
 		// Term 2: CC = Dex (8). Reward 7 -> 2 more Ship Shares (total 3).
 		3, 4, // risk
 		3, 4, // reward -> Ship Shares +2 = 3
 		3, 4, // Commission vs Int 8: 7 <= 8, commissioned -> Fourth Officer (Steward-1)
-		1, 1, 1, 1, // Broker x4 (now 8)
+		1, 1, 1, 1, 1, // Broker x5 (4 + 1 commission), now 10
 		3, 4, // continue: policy stops after term 2
 		// Muster out: 2 rolls, Benefit column, DM +Officer Rank (=1, Fourth Officer).
 		4, // 4 + 1 = row 5 -> End +1 (7 -> 8)
@@ -44,8 +44,8 @@ func TestGoldenMerchant(t *testing.T) {
 	if c.ShipShares != 3 {
 		t.Errorf("ShipShares = %d, want 3 (escalating: 1 + 2)", c.ShipShares)
 	}
-	if c.Skills.Level("Broker") != 8 || c.Skills.Level("Steward") != 1 {
-		t.Errorf("skills: Broker=%d Steward=%d, want 8/1", c.Skills.Level("Broker"), c.Skills.Level("Steward"))
+	if c.Skills.Level("Broker") != 10 || c.Skills.Level("Steward") != 1 {
+		t.Errorf("skills: Broker=%d Steward=%d, want 10/1", c.Skills.Level("Broker"), c.Skills.Level("Steward"))
 	}
 	rec := c.Careers[0]
 	if rec.Career != Merchant || rec.Terms != 2 || rec.Outcome != MusteredOut {

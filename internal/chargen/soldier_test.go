@@ -26,14 +26,14 @@ func TestGoldenSoldier(t *testing.T) {
 		3, 4, // reward -> Medal 1
 		5, 5, // Commission vs End 8: 10 > 8, fails
 		4, 4, // Enlisted Promotion vs End 8 + Medal 1 = 9: 8 <= 9, promote to Corporal
-		1, 1, 1, 1, // 4 skill rolls, Peacekeeper col row 1 = Admin
+		1, 1, 1, 1, 1, // 4 + 1 (promotion) skill rolls, Peacekeeper col row 1 = Admin
 		3, 4, // continue vs End 8: 7, policy wants term 2
 		// Term 2: Operations again (net mod 0). Risk 7 survive; Reward 7 -> Medal (2).
 		1, 1, 1, 1,
 		3, 4, // risk
 		3, 4, // reward -> Medal 2
 		3, 4, // Commission vs End 8: 7 <= 8, commissioned -> 2nd Lieutenant (Leader-1)
-		1, 1, 1, 1, // Admin x4 again
+		1, 1, 1, 1, 1, // Admin x5 (4 + 1 commission)
 		3, 4, // continue: policy stops after term 2
 		// Muster out: 2 rolls, Benefit column, DM +Officer Rank (=1, 2nd Lieutenant).
 		1, // 1 + 1 = row 2 -> Str +1 (8 -> 9)
@@ -50,8 +50,8 @@ func TestGoldenSoldier(t *testing.T) {
 	if c.Medals != 2 {
 		t.Errorf("Medals = %d, want 2 (a Reward success each term)", c.Medals)
 	}
-	if c.Skills.Level("Fighter") != 1 || c.Skills.Level("Leader") != 1 || c.Skills.Level("Admin") != 8 {
-		t.Errorf("skills: Fighter=%d Leader=%d Admin=%d, want 1/1/8",
+	if c.Skills.Level("Fighter") != 1 || c.Skills.Level("Leader") != 1 || c.Skills.Level("Admin") != 10 {
+		t.Errorf("skills: Fighter=%d Leader=%d Admin=%d, want 1/1/10",
 			c.Skills.Level("Fighter"), c.Skills.Level("Leader"), c.Skills.Level("Admin"))
 	}
 	if len(c.Careers) != 1 {
@@ -86,12 +86,21 @@ func TestResolveRankCommission(t *testing.T) {
 	// track at rank 1, gaining that rank's automatic skill.
 	c := Character{scores: [count]int{7, 7, 8, 7, 7, 7}}
 	run := careerRun{rank: 2}
-	resolveRank(dice.NewScripted(3, 4), &c, &run, SoldierCareer) // Commission vs End 8: 7 <= 8
+	// Commission vs End 8: 7 <= 8. resolveRank reports the promotion (which earns
+	// the term's extra skill).
+	if !resolveRank(dice.NewScripted(3, 4), &c, &run, SoldierCareer) {
+		t.Error("resolveRank should report true on a successful commission")
+	}
 	if !run.officer || run.rank != 1 {
 		t.Fatalf("after commission: officer %v rank %d, want officer rank 1", run.officer, run.rank)
 	}
 	if c.Skills.Level("Leader") != 1 {
 		t.Errorf("2nd Lieutenant auto-skill Leader = %d, want 1", c.Skills.Level("Leader"))
+	}
+	// A failed commission and enlisted promotion report false (no extra skill).
+	stuck := careerRun{rank: 2}
+	if resolveRank(dice.NewScripted(6, 6), &c, &stuck, SoldierCareer) {
+		t.Error("resolveRank should report false when neither commission nor promotion succeeds")
 	}
 }
 

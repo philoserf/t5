@@ -19,12 +19,12 @@ func TestGoldenFunctionary(t *testing.T) {
 		// Term 1: CC = Dex (8). Risk 7 keeps the job; Reward 7 -> promote to Supervisor.
 		3, 4, // risk
 		3, 4, // reward -> promote (rank 2)
-		1, 1, 1, 1, // 4 skill rolls, General col row 1 = One Trade -> Biologics
+		1, 1, 1, 1, 1, // 4 + 1 (promotion) skill rolls, General col row 1 = One Trade -> Biologics
 		3, 4, // continue (Office Politics kept the job; policy wants term 2)
 		// Term 2: CC = End (7). Risk 7 keeps; Reward 7 -> promote to Senior Supervisor (Admin-1).
 		3, 4, // risk
 		3, 4, // reward -> promote (rank 3)
-		1, 1, 1, 1, // Biologics x4 (now 8)
+		1, 1, 1, 1, 1, // Biologics x5 (4 + 1 promotion), now 10
 		3, 4, // continue: policy stops after term 2
 		// Muster out: 2 rolls, Benefit column, DM +Rank (=3, Senior Supervisor).
 		2, // 2 + 3 = row 5 -> Dex +1 (8 -> 9)
@@ -38,8 +38,8 @@ func TestGoldenFunctionary(t *testing.T) {
 	if got := c.UPP(); got != "797887" {
 		t.Errorf("UPP = %q, want %q (Dex 8 +1 muster benefit)", got, "797887")
 	}
-	if c.Skills.Level("Bureaucrat") != 1 || c.Skills.Level("Admin") != 1 || c.Skills.Level("Biologics") != 8 {
-		t.Errorf("skills: Bureaucrat=%d Admin=%d Biologics=%d, want 1/1/8",
+	if c.Skills.Level("Bureaucrat") != 1 || c.Skills.Level("Admin") != 1 || c.Skills.Level("Biologics") != 10 {
+		t.Errorf("skills: Bureaucrat=%d Admin=%d Biologics=%d, want 1/1/10",
 			c.Skills.Level("Bureaucrat"), c.Skills.Level("Admin"), c.Skills.Level("Biologics"))
 	}
 	rec := c.Careers[0]
