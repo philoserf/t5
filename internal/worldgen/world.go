@@ -61,6 +61,17 @@ func GenerateWorld(r *dice.Roller, gasGiants, belts int, isCapital bool) World {
 	}
 }
 
+// SetCapital marks the world a capital carrying the given capital trade code —
+// Cs (subsector), Cx (sector), or Cp (Imperial) — and recomputes its nobility as
+// a capital (Book 3 Chart D p.26). Which world is the capital is a whole-region
+// decision the caller makes; this only encodes the result on the world.
+func (w *World) SetCapital(code string) {
+	if !slices.Contains(w.TradeCodes, code) {
+		w.TradeCodes = append(w.TradeCodes, code)
+	}
+	w.Nobility = Nobility(w.TradeCodes, w.Importance, true)
+}
+
 // SecondSurvey renders the world portion of the Second Survey record:
 //
 //	UWP  TCs  {Ix}(Ex)[Cx]  Nobility  Bases  Zone
