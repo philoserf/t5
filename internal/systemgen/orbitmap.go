@@ -12,10 +12,11 @@ import (
 // number around the primary, what occupies it, and — for a gas-giant or a
 // detailed secondary-world orbit — the giant or world placed there.
 type PlacedOrbit struct {
-	Orbit int
-	Kind  string // "Mainworld", "Gas Giant", "Belt", or "World"
-	Giant *GasGiant
-	World *OtherWorld
+	Orbit      int
+	Kind       string // "Mainworld", "Gas Giant", "Belt", or "World"
+	Giant      *GasGiant
+	World      *OtherWorld
+	Satellites []Satellite
 }
 
 // placeOrbits builds the primary star's orbit map (Book 3 p.29 P1/P2). It places
