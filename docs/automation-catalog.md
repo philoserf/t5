@@ -18,6 +18,13 @@ orbit/climate/satellite, detailed "other" worlds, per-world satellites, and a co
 multi-star orbit map placing every world/GG/belt round-robin across all hosting stars) ·
 `chargen` (six-characteristic UPP + Check Characteristic + the 13 careers).
 
+## Status legend
+
+Each item is tagged ✅ **done**, 🟡 **partial** (core built, noted gaps remain), or ⬜ **not
+started**. Tier 1 (the world/character/system census) is complete. Everything in Tiers 4–6
+(starships, sophonts, play systems, content makers) is ⬜ **not started** unless tagged
+otherwise below.
+
 ## How this is ranked
 
 Rank is a composite of **leverage** (does it complete or unblock the project's core
@@ -28,10 +35,12 @@ they unblock whole tiers below them. Within each tier, items are ordered by that
 
 ## Critical path (build order at a glance)
 
-`finish trade classifications → PBG + Ix/Ex/Cx → world census line` completes worldgen.
-In parallel, `RangeBand + Difficulty/UTF task layer` unlocks the entire play side (tasks,
-senses, personals, combat). `chargen careers` is the single highest-value large piece.
-Everything in Tiers 5–6 is independent content-generation that can follow in any order.
+The worldgen/systemgen/chargen census is **done**: trade classifications, PBG, Ix/Ex/Cx,
+the world census line, chargen's 13 careers, and the full multi-star system map all ship.
+The remaining critical primitive is the **RangeBand ladder** (#9), which — with the
+already-built Difficulty/UTF task layer (#10) — unlocks the entire play side (senses,
+personals, combat). `Starship design` (#16) is the largest open piece. Everything in
+Tiers 5–6 is independent content-generation that can follow in any order.
 
 ---
 
@@ -51,40 +60,41 @@ is generated; only the referee-assigned Politicals/Specials (Cp/Cs/Cx/Cy/Mr/Fo/P
 remain, and those are intentionally out of scope (Chart D: "assigned by Referee").
 
 **2. Population multiplier digit / PBG** — _B3 pp. 24–25 (Chart C, PBG)_ · extends worldgen +
-systemgen · **S**
+systemgen · **S** · ✅ **done**
 Pop significant digit = Even-distribution 1–9 (if Pop>0) concatenated with the belt and
 gas-giant counts systemgen already produces → the three-digit PBG. `EvenDist1to9` is already
 in the engine; this is a roll plus string assembly. It's the literal next worldgen step.
 
-**3. Importance Extension {Ix}** — _B3 pp. 18, 27 (Chart E)_ · extends worldgen · **S**
+**3. Importance Extension {Ix}** — _B3 pp. 18, 27 (Chart E)_ · extends worldgen · **S** · ✅ **done**
 Signed integer = additive DM table over starport, TL, trade classes (Pa/Ag/Hi/In/Ri), Pop,
 and bases; "Important" at +4. Deterministic, no dice. Its trade-code inputs are already built.
 Feeds Nobility, capitals, trade routes, and Book 2 mail contracts. **(Implemented — PR #10.)**
 
-**4. Economic Extension (Ex) + Resource Units** — _B3 pp. 18, 27_ · extends worldgen · **M**
+**4. Economic Extension (Ex) + Resource Units** — _B3 pp. 18, 27_ · extends worldgen · **M** · ✅ **done**
 `(R L I ±E)` + RU. Resources = 2D (+GG+Belts if TL≥8, both from systemgen); Labor = Pop−1;
 Infrastructure branches on Pop band using Ix; Efficiency = Flux; RU = R·L·I·E straight (the
 printed rule has no "0→1" substitution). R/L/I floor at 0; Efficiency may be negative.
 **(Implemented — PR #10.)**
 
-**5. Cultural Extension [Cx]** — _B3 pp. 18, 27_ · extends worldgen · **S**
+**5. Cultural Extension [Cx]** — _B3 pp. 18, 27_ · extends worldgen · **S** · ✅ **done**
 `[HASS]` — four independent Flux formulas over Pop/Ix/TL with a clamp-to-1 rule, ehex-encoded.
 Watch the book's Heterogeneity-vs-Homogeneity naming slip and the Strangeness = "Flux+5"
 (chart) vs "2D−2" (example) discrepancy — trust the chart.
 
 **6. Bases · Nobility · Travel Zones · Native Status · Allegiance** — _B3 pp. 19, 24, 28
-(Chart F/G)_ · extends worldgen · **S each**
+(Chart F/G)_ · extends worldgen · **S each** · ✅ **done** (Allegiance is referee-supplied, default Im)
 A cluster of small per-world attributes: Bases (2D vs starport-class thresholds), Nobility
 (trade-class/Ix → noble-code string), Travel Zone (Gov+Law and Pop thresholds → G/A/R),
 Native Status (Pop×Atm×TL → status label), Allegiance (enumerated code, referee-supplied,
 default Im). Each is a lookup or a threshold predicate over data already in hand.
 
-**7. Starport / spaceport facilities & fuel** — _B2 p. 24; B3 p. 24_ · extends worldgen · **S**
-Starport letter → yards/repair/downport/highport/fuel-type + refuel time (2D/4D); non-MW
-spaceports (1D, roll = Pop−1D → F/G/H/Y); highport presence predicate. Pure lookups off the
-existing starport field.
+**7. Starport / spaceport facilities & fuel** — _B2 p. 24; B3 p. 24_ · extends worldgen · **S** · 🟡 **partial**
+The starport/spaceport **letters** are generated — mainworld A–E/X and, for other worlds, the
+non-MW spaceports (1D, roll = Pop−1D → F/G/H/Y, `worldgen.spaceport`). **Not built:** the
+facilities detail (yards/repair/downport/highport/fuel-type + refuel time 2D/4D, highport
+presence) — pure lookups off the existing starport field.
 
-**8. Second Survey line formatter** — _B3 pp. 16, 23_ · extends worldgen · **S**
+**8. Second Survey line formatter** — _B3 pp. 16, 23_ · extends worldgen · **S** · ✅ **done**
 Serialize everything above into the canonical `Hex Name UWP TC {Ix}(Ex)[Cx] N B Z PBG W A
 Stellar` line (e.g. Regina's full record). Pure string assembly; a golden test against the
 book's Regina line validates the whole Tier-1 stack.
@@ -93,17 +103,17 @@ book's Regina line validates the whole Tier-1 stack.
 
 ## Tier 2 — Foundational play engines (high leverage, unblock Tiers 4–5)
 
-**9. RangeBand ladder** — _B1 pp. 24–29 (+ 43, 186, 200)_ · new shared primitive · **M**
+**9. RangeBand ladder** — _B1 pp. 24–29 (+ 43, 186, 200)_ · new shared primitive · **M** · ⬜ **not started**
 Two-way Range↔distance↔descriptor lookup on both the R= (world, 0–9) and S= (space, 0–13)
 scales plus lettered special bands, with the S = R−5 conversion and sub-band interpolation.
 The single most-reused new utility in B1 — Senses, Combat, Personals, Size, and travel-time
 all sit on it. Build first among the play primitives.
 
-**10. Difficulty / Universal Task Format layer** — _B1 pp. 120–131_ · extends dice · **S–M**
-Generalizes the existing Check/Resolve: a Difficulty ladder (Easy 1D … Beyond Impossible 8D,
-with Hasty/Cautious ±1 column) computes the dice pool and a Target Number = Char+Skill+ΣMods,
-then delegates to the roll-low resolver. Adds Cooperative/Opposed/Uncertain/Spectacular
-task modes. Everything in Tiers 4 (combat, senses, personals) is expressed in these terms.
+**10. Difficulty / Universal Task Format layer** — _B1 pp. 120–131_ · extends dice · **S–M** · 🟡 **partial**
+Built (`internal/task`): the Difficulty ladder (Easy 1D … Beyond Impossible 8D) with
+Hasty/Cautious pace over `task.Resolve`/`ResolveDice` (Target = Char+Skill+ΣMods → roll-low),
+and Spectacular via the dice engine. **Not built:** the Cooperative/Opposed/Uncertain task
+modes. Everything in Tier 4 (combat, senses, personals) is expressed in these terms.
 
 **11. Expose individual die faces + Many-Dice / Good-Bad Flux** — _B1 pp. 259–261_ · extends
 dice · **S** · ✅ **done** (PR #75)
@@ -112,12 +122,12 @@ classify three-1s/6s results; the four Many-Dice fast methods for 11D+ (reuse-10
 2D-subsample, ×3.5, 3.5-Flux) are implemented and golden-tested. Good/Bad Flux already
 existed in the engine.
 
-**12. Money · Value · Cost scales** — _B1 pp. 20, 36–37, 44–45_ · new primitive · **S**
+**12. Money · Value · Cost scales** — _B1 pp. 20, 36–37, 44–45_ · new primitive · **S** · ⬜ **not started**
 An integer credit type (avoid float), the Value tier↔credits log scale, production-cost
 divisors, and Flux-driven supply/demand & quality multipliers. Foundational for every economy
 system (land grants, trade, ship costs, muster-out).
 
-**13. Imperial Calendar date type** — _B1 pp. 262–263_ · new primitive · **S**
+**13. Imperial Calendar date type** — _B1 pp. 262–263_ · new primitive · **S** · ✅ **done**
 365-day year, named weeks + Holiday, day-of-year↔weekday, birthdate/age arithmetic. Small
 `calendar` package that chargen birthdates, aging ticks, and time-degradation effects all use.
 
@@ -125,7 +135,7 @@ system (land grants, trade, ship costs, muster-out).
 
 ## Tier 3 — The big generators (highest value, large effort)
 
-**14. Chargen careers** — _B1 pp. 63–99_ · extends chargen · **L** (the flagship piece)
+**14. Chargen careers** — _B1 pp. 63–99_ · extends chargen · **L** (the flagship piece) · ✅ **done**
 The full career life-cycle: 2D career selection, per-term Controlling-Characteristic rotation,
 the Risk & Reward roll, injury/wound/disabled/dead consequences, branch/operations/medals,
 promotion/commission (incl. the roll-high Noble Elevation), skill-eligibility rolls into the
@@ -270,9 +280,10 @@ events — B1 pp. 92–97) and the career/muster-out tables. The engine is small
 A fixed 4-act/5-scene/climax template plus a 1D×1D themes roller; naturally an aggregator that
 stitches together outputs of every other generator ("there's more…" hooks).
 
-**34. Travel-time / kinematics / orbital distances** — _B1 pp. 31–35_ · extends systemgen · **M**
-Orbit→AU/km/light-time, constant-accel travel time, and light-delay. Closed-form kinematics;
-verify overlap with systemgen's orbital data before rebuilding.
+**34. Travel-time / kinematics / orbital distances** — _B1 pp. 31–35_ · extends systemgen · **M** · 🟡 **partial**
+The orbit→AU table (`systemgen.OrbitAU`, Book 1 p.31) is built as part of #15. **Not built:**
+orbit→km/light-time conversions, constant-accel travel time, and light-delay — closed-form
+kinematics on top of the existing orbital data.
 
 **35. Weapon / armor / equipment / ship static catalogs** — _B1 pp. 234–249; B2 worked ships;
 B3 equipment catalog_ · reference data · **S–M**
