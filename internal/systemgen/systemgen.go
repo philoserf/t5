@@ -123,8 +123,9 @@ func Generate(r *dice.Roller) System {
 	}
 
 	// With every count and the mainworld orbit known, lay out the primary's
-	// concrete orbit map.
+	// concrete orbit map, then give its worlds their moons.
 	s.placeOrbits(r)
+	s.rollSatellites(r)
 	return s
 }
 
@@ -184,6 +185,17 @@ func (s System) String() string {
 				if len(o.World.TradeCodes) > 0 {
 					label += " " + strings.Join(o.World.TradeCodes, " ")
 				}
+			}
+			if n := len(o.Satellites); n > 0 {
+				moons := make([]string, n)
+				for j, sat := range o.Satellites {
+					moons[j] = sat.OrbitLetter
+				}
+				suffix := ""
+				if n > 1 {
+					suffix = "s"
+				}
+				label += fmt.Sprintf(" (%d moon%s: %s)", n, suffix, strings.Join(moons, " "))
 			}
 			orbits[i] = fmt.Sprintf("%d: %s", o.Orbit, label)
 		}
