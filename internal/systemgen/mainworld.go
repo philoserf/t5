@@ -54,17 +54,12 @@ var (
 func rollMainworldSatellite(r *dice.Roller) MainworldSatellite {
 	switch r.Flux() {
 	case -5, -4:
-		return MainworldSatellite{IsSatellite: true, Far: true, OrbitLetter: farOrbitLetters[fluxIndex(r.Flux())]}
+		return MainworldSatellite{IsSatellite: true, Far: true, OrbitLetter: farOrbitLetters[dice.FluxIndex(r.Flux())]}
 	case -3:
-		return MainworldSatellite{IsSatellite: true, OrbitLetter: closeOrbitLetters[fluxIndex(r.Flux())]}
+		return MainworldSatellite{IsSatellite: true, OrbitLetter: closeOrbitLetters[dice.FluxIndex(r.Flux())]}
 	default:
 		return MainworldSatellite{}
 	}
-}
-
-// fluxIndex maps a Flux value (−6..+6) to a 0..12 table index, clamping.
-func fluxIndex(flux int) int {
-	return min(max(flux+6, 0), 12)
 }
 
 // hzVarFromFlux maps the HZ-variance Flux to an orbit offset (Book 3 p.24 Chart

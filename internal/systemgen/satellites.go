@@ -23,7 +23,7 @@ func (s *System) rollSatellites(r *dice.Roller) {
 		n := satelliteCount(r, o.Kind, o.Orbit, hz, hasHZ)
 		for range n {
 			far := r.Dice(2) >= 8
-			idx := fluxIndex(r.Flux())
+			idx := dice.FluxIndex(r.Flux())
 			letter := closeOrbitLetters[idx]
 			if far {
 				letter = farOrbitLetters[idx]
@@ -51,11 +51,11 @@ func (s *System) hostStar(label string) Star {
 // satelliteCount rolls a body's satellite count by kind and orbital zone (Book 3
 // p.29): a gas giant 1D-1, and a world 1D-5 inner / 1D-4 hospitable / 1D-3
 // outer. Belts carry none; a negative roll means none.
-func satelliteCount(r *dice.Roller, kind string, orbit, hz int, hasHZ bool) int {
-	if kind == "Belt" {
+func satelliteCount(r *dice.Roller, kind OrbitKind, orbit, hz int, hasHZ bool) int {
+	if kind == KindBelt {
 		return 0
 	}
-	if kind == "Gas Giant" {
+	if kind == KindGasGiant {
 		return max(r.Die()-1, 0)
 	}
 	dm := -4 // hospitable

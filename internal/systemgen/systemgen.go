@@ -149,9 +149,9 @@ func belts(r *dice.Roller) int {
 // size/class or a world's type/UWP/trade-codes, plus any moons. A mainworld with
 // a giant is a satellite riding it.
 func orbitLabel(o PlacedOrbit) string {
-	label := o.Kind
+	label := o.Kind.String()
 	switch {
-	case o.Kind == "Mainworld" && o.Giant != nil:
+	case o.Kind == KindMainworld && o.Giant != nil:
 		label = fmt.Sprintf("Mainworld (moon of Gas Giant %s)", o.Giant)
 	case o.Giant != nil:
 		label = fmt.Sprintf("%s %s", o.Kind, o.Giant)

@@ -109,6 +109,12 @@ func (r *Roller) BadFlux() int {
 	return -r.GoodFlux()
 }
 
+// FluxIndex maps a Flux value (-6..+6) to a 0..12 table index, clamping
+// out-of-range inputs. Tables indexed by Flux (13 entries, Flux -6 first) use it.
+func FluxIndex(flux int) int {
+	return min(max(flux+6, 0), 12)
+}
+
 // HalfDie rolls D/2, rounding up (always in the rolling player's favor), and
 // so returns 1..3.
 func (r *Roller) HalfDie() int {
