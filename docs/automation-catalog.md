@@ -30,7 +30,7 @@ and **inverse effort/risk** (small, unambiguous, image-verifiable transcription 
 large dense grids). Foundational shared primitives rank high even when unglamorous because
 they unblock whole tiers below them. Within each tier, items are ordered by that composite.
 
-**Status legend** (as of 2026-07-12): ✅ complete · 🟡 begun/partial · ⬜ remaining. Marked at the head of each item below.
+**Status legend** (as of 2026-07-13): ✅ complete · 🟡 begun/partial · ⬜ remaining. Marked at the head of each item below. A book-fidelity audit of the built generators (worldgen/systemgen/chargen) resolved eight issues (#62–69) via PRs #71–74; systemgen came through clean.
 
 ## Critical path (build order at a glance)
 
@@ -64,7 +64,7 @@ gas-giant counts systemgen already produces → the three-digit PBG. `EvenDist1t
 in the engine; this is a roll plus string assembly. It's the literal next worldgen step.
 
 ✅ **3. Importance Extension {Ix}** — _B3 pp. 18, 27 (Chart E)_ · extends worldgen · **S**
-Signed integer = additive DM table over starport, TL, trade classes (Pa/Ag/Hi/In/Ri), Pop,
+Signed integer = additive DM table over starport, TL, trade classes (Ag/Hi/In/Ri), Pop,
 and bases; "Important" at +4. Deterministic, no dice. Its trade-code inputs are already built.
 Feeds Nobility, capitals, trade routes, and Book 2 mail contracts. **(Implemented — PR #10.)**
 
@@ -72,7 +72,8 @@ Feeds Nobility, capitals, trade routes, and Book 2 mail contracts. **(Implemente
 `(R L I ±E)` + RU. Resources = 2D (+GG+Belts if TL≥8, both from systemgen); Labor = Pop−1;
 Infrastructure branches on Pop band using Ix; Efficiency = Flux; RU = R·L·I·E, substituting 1
 for any factor that is 0 (B3 p.27, "If any value = 0, use 1"). R/L/I floor at 0; Efficiency may
-be negative (so RU may be negative). Note the current `RU()` omits the 0→1 substitution — [#63].
+be negative (so RU may be negative). The 0→1 substitution (and dropping the spurious Pa from
+Importance) landed in PR #71, closing the audit issues #62/#63.
 **(Implemented — PR #10.)**
 
 ✅ **5. Cultural Extension [Cx]** — _B3 pp. 18, 27_ · extends worldgen · **S**
