@@ -15,8 +15,9 @@ notation parser, individual die faces + Spectacular + Many-Dice) · `ehex` · `u
 `worldgen` (mainworld UWP + all UWP/context-determinable trade classifications + secondary
 "other" worlds) · `systemgen` (full star family, gas-giant detail, belts, mainworld with
 orbit/climate/satellite, detailed "other" worlds, per-world satellites, and a concrete
-multi-star orbit map placing every world/GG/belt round-robin across all hosting stars) ·
-`chargen` (six-characteristic UPP + Check Characteristic + the 13 careers).
+multi-star orbit map placing every world/GG/belt round-robin across all hosting stars, plus
+port facilities/fuel) · `chargen` (six-characteristic UPP + Check Characteristic + the 13
+careers) · `task` (Difficulty/UTF resolve) · `calendar` · `rangeband` (world/space range ladder).
 
 ## Status legend
 
@@ -36,11 +37,11 @@ they unblock whole tiers below them. Within each tier, items are ordered by that
 ## Critical path (build order at a glance)
 
 The worldgen/systemgen/chargen census is **done**: trade classifications, PBG, Ix/Ex/Cx,
-the world census line, chargen's 13 careers, and the full multi-star system map all ship.
-The remaining critical primitive is the **RangeBand ladder** (#9), which — with the
-already-built Difficulty/UTF task layer (#10) — unlocks the entire play side (senses,
-personals, combat). `Starship design` (#16) is the largest open piece. Everything in
-Tiers 5–6 is independent content-generation that can follow in any order.
+the world census line, port facilities, chargen's 13 careers, and the full multi-star system
+map all ship. The shared play primitives are now in place too — the **RangeBand ladder** (#9)
+and the Difficulty/UTF task layer (#10) — so the play side (senses, personals, combat) is
+unblocked. `Starship design` (#16) is the largest open piece. Everything in Tiers 5–6 is
+independent content-generation that can follow in any order.
 
 ---
 
@@ -88,11 +89,12 @@ A cluster of small per-world attributes: Bases (2D vs starport-class thresholds)
 Native Status (Pop×Atm×TL → status label), Allegiance (enumerated code, referee-supplied,
 default Im). Each is a lookup or a threshold predicate over data already in hand.
 
-**7. Starport / spaceport facilities & fuel** — _B2 p. 24; B3 p. 24_ · extends worldgen · **S** · 🟡 **partial**
-The starport/spaceport **letters** are generated — mainworld A–E/X and, for other worlds, the
-non-MW spaceports (1D, roll = Pop−1D → F/G/H/Y, `worldgen.spaceport`). **Not built:** the
-facilities detail (yards/repair/downport/highport/fuel-type + refuel time 2D/4D, highport
-presence) — pure lookups off the existing starport field.
+**7. Starport / spaceport facilities & fuel** — _B2 p. 24; B3 p. 24_ · extends worldgen · **S** · ✅ **done**
+The starport/spaceport letters are generated (mainworld A–E/X and non-MW spaceports F/G/H/Y),
+and `worldgen.PortFacilities` maps each class to its services (Book 2 p.24): shipyard tier,
+heaviest repair, hydrogen fuel-type, downport (full/beacon), refuel time (2D/4D hours), and the
+population-gated A/B/C highport. Golden-tested against every class. _Deferred:_ the TL-gated
+exotic fuels (radioactives/anti-matter/collector, B3 p.24), outside this item's fuel-type scope.
 
 **8. Second Survey line formatter** — _B3 pp. 16, 23_ · extends worldgen · **S** · ✅ **done**
 Serialize everything above into the canonical `Hex Name UWP TC {Ix}(Ex)[Cx] N B Z PBG W A
@@ -103,11 +105,12 @@ book's Regina line validates the whole Tier-1 stack.
 
 ## Tier 2 — Foundational play engines (high leverage, unblock Tiers 4–5)
 
-**9. RangeBand ladder** — _B1 pp. 24–29 (+ 43, 186, 200)_ · new shared primitive · **M** · ⬜ **not started**
-Two-way Range↔distance↔descriptor lookup on both the R= (world, 0–9) and S= (space, 0–13)
-scales plus lettered special bands, with the S = R−5 conversion and sub-band interpolation.
-The single most-reused new utility in B1 — Senses, Combat, Personals, Size, and travel-time
-all sit on it. Build first among the play primitives.
+**9. RangeBand ladder** — _B1 pp. 24–29 (+ 43, 186, 200)_ · new shared primitive · **M** · ✅ **done**
+`internal/rangeband`: two-way Range↔distance↔descriptor lookup on both the R= (world, 0–9) and
+S= (space, 0–13) scales plus the lettered bands (Contact/Reading/Talking, Boarding) and the
+space-combat band letters (F1/F2/SR/AR/LR/DS), with the S = R−5 conversion and log sub-band
+interpolation. The most-reused new utility in B1 — Senses, Combat, Personals, and travel-time
+will sit on it. Tables golden-locked to the p.24/p.29 charts.
 
 **10. Difficulty / Universal Task Format layer** — _B1 pp. 120–131_ · extends dice · **S–M** · 🟡 **partial**
 Built (`internal/task`): the Difficulty ladder (Easy 1D … Beyond Impossible 8D) with
