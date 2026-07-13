@@ -200,10 +200,13 @@ Built (`internal/senses`): the generic sense Action — the six senses with huma
 **Not built:** the fixed-format sense-ID codecs (V-16-RGB spectrum, H-16 octaves, smell UOP
 matching) and per-sense detail systems, and the special-sound timed status-effect.
 
-**20. The Personals (social interaction)** — _B1 pp. 180–185_ · new `personals` package · **M–L**
-Purpose (1D–4D) + Strategy×Tactic matrix + the five Laws + camaraderie counters → Target
-Number, roll-low. Deterministic over a large, detail-sensitive Strategy×Tactic compatibility
-matrix; quick-NPC generator included. Violence-fail hooks into combat.
+**20. The Personals (social interaction)** — _B1 pp. 180–185_ · new `personals` package · **M–L** · 🟡 **partial**
+Built (`internal/personals`): the roll-low Personal — Purpose→dice (Carouse 1D … Command 4D),
+per-purpose Strategy base values (`StrategyValue`), the Five Laws mod table (`LawMod`), `Resolve`
+(Target = Strategy×Tactic + Law + Mods), the Camaraderie counter, and the Brazen/Urgent/Repeat
+mods. Golden-locked to the p.184 example. **Not built:** the full Strategy×Tactic compatibility
+matrix (which tactics apply per strategy and their ×2/×3 multipliers — dense p.183 grid), the
+quick-NPC generator, and the Violence-fail→combat hook.
 
 **21. Trade & commerce** — _B2 pp. 204–221_ · new `trade` package · **M–L**
 Cargo IDs, random trade goods (two 1D rolls into ~19 TC-keyed columns with imbalance recursion),
