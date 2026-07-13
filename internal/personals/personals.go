@@ -80,20 +80,32 @@ const (
 	Violence
 )
 
-// lawMods[law] is the Law's Mod per Purpose (Carouse, Query, Persuade, Command);
-// 0 means the Law does not apply to that Purpose (Book 1 p.183). Inferiority's
-// Persuade +2 applies only with Begging, Flattery, or Politeness.
+// lawMods[law] is the Law's unconditional Mod per Purpose (Carouse, Query,
+// Persuade, Command); 0 means the Law contributes nothing there (Book 1 p.183).
+// Inferiority grants only Query +1 unconditionally — its Persuade +2 is
+// conditional (see InferiorityAppeal) and so is not in this table.
 var lawMods = map[Law][4]int{
 	Similarity:  {1, 1, 1, 0},
 	Superiority: {0, 1, 2, 3},
-	Inferiority: {0, 1, 2, 0},
+	Inferiority: {0, 1, 0, 0},
 	Comfort:     {2, 1, 1, 0},
 	Violence:    {0, 1, 2, 3},
 }
 
+// InferiorityAppeal is the extra Persuade Mod the Inferiority Law grants only
+// when the Actor supports it with Begging, Flattery, or Politeness (Book 1 p.183,
+// the "+2*" entry). Apply it as a situational Mod when that condition holds;
+// LawMod cannot, as it does not see the Tactic.
+const InferiorityAppeal = 2
+
 // LawMod returns the Mod the Law contributes for the given Purpose (0 if it does
-// not apply).
-func LawMod(l Law, p Purpose) int { return lawMods[l][p] }
+// not apply, or if the Purpose is out of range).
+func LawMod(l Law, p Purpose) int {
+	if p < Carouse || p > Command {
+		return 0
+	}
+	return lawMods[l][p]
+}
 
 // Situational Mods (Book 1 p.185). Repeat is applied per repeated Strategy or
 // Tactic after its first use (required); Brazen is Query/Persuade only; Urgent

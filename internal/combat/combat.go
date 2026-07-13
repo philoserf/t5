@@ -33,7 +33,12 @@ const (
 // stanceSizeMods is each stance's adjustment to a target's apparent Size.
 var stanceSizeMods = [...]int{Standing: 0, Crouching: -1, Prone: -2, Evading: -1}
 
-func (s Stance) sizeMod() int { return stanceSizeMods[s] }
+func (s Stance) sizeMod() int {
+	if s < Standing || s > Evading {
+		return 0
+	}
+	return stanceSizeMods[s]
+}
 
 // TargetSize is a target's apparent size for an attack: object Size minus Range,
 // reduced by the target's stance (Book 1 p.203). A value below zero means the
@@ -45,8 +50,12 @@ func TargetSize(size, rng int, stance Stance) int {
 // Ranged resolves a Ranged Attack (Book 1 p.204): it rolls R=Range dice (a Range
 // below 1 counts as 1D; a Range greater than the weapon skill adds +1D for the
 // "This Is Hard!" rule) at or under the Shooting Number + target size + mods.
-// Success is a hit.
+// Success is a hit. A target size below zero (Size minus Range) means the target
+// cannot be attacked, and the attack automatically fails (Book 1 p.203).
 func Ranged(r *dice.Roller, shootingNumber, weaponSkill, targetSize, rng int, mods ...int) dice.CheckResult {
+	if targetSize < 0 {
+		return dice.CheckResult{} // Size - Range below zero: the target cannot be attacked
+	}
 	nd := max(rng, 1)
 	if rng > weaponSkill {
 		nd++ // This Is Hard!: Range exceeds skill

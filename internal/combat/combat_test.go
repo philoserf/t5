@@ -63,6 +63,18 @@ func TestRangedThisIsHard(t *testing.T) {
 	}
 }
 
+func TestRangedUnhittableTarget(t *testing.T) {
+	// A prone Size-1 target at Range 1 has target size 1-1-2 = -2 and cannot be
+	// attacked: the attack automatically fails regardless of the roll.
+	ts := TargetSize(1, 1, Prone)
+	if ts >= 0 {
+		t.Fatalf("target size = %d, want negative", ts)
+	}
+	if res := Ranged(dice.NewScripted(1), 10, 3, ts, 1); res.Success {
+		t.Errorf("attack on unhittable target should fail: %+v", res)
+	}
+}
+
 func TestAbsorbAndWound(t *testing.T) {
 	// BA-11 armor (Ar=32) absorbs 32 hits; 40 hits leave 8.
 	if Absorb(40, 32) != 8 || Absorb(20, 32) != 0 {
