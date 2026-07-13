@@ -111,14 +111,15 @@ func careerByName(name string) (chargen.Career, error) {
 	}
 }
 
-// labelWidth aligns the field labels of the character sheet.
-const labelWidth = 15
+// labelWidth aligns the field labels of the character sheet (the widest is
+// "Commendations").
+const labelWidth = 13
 
 // render formats a careered character as a labeled, multi-line sheet.
 func render(c chargen.Character) string {
 	var b strings.Builder
 	b.WriteString(summaryLine(c))
-	field(&b, "Characteristics", characteristics(c))
+	field(&b, "UPP", c.UPP())
 	if hw := homeworldField(c); hw != "" {
 		field(&b, "Homeworld", hw)
 	}
@@ -225,19 +226,6 @@ func field(b *strings.Builder, label, value string) {
 	for _, line := range lines[1:] {
 		fmt.Fprintf(b, "%s%s\n", pad, line)
 	}
-}
-
-// characteristics spells out the six scores and appends the raw UPP.
-func characteristics(c chargen.Character) string {
-	order := []chargen.Characteristic{
-		chargen.Strength, chargen.Dexterity, chargen.Endurance,
-		chargen.Intelligence, chargen.Education, chargen.Social,
-	}
-	var parts []string
-	for _, ch := range order {
-		parts = append(parts, fmt.Sprintf("%s %d", ch, c.Score(ch)))
-	}
-	return strings.Join(parts, "  ") + "   (" + c.UPP() + ")"
 }
 
 // homeworldField is the homeworld's UWP and any trade classifications.
