@@ -279,8 +279,11 @@ func careerNames(c chargen.Character) string {
 	return strings.Join(names[:last], ", ") + ", then " + names[last]
 }
 
-// rankOf returns a career record's final rank title (the Noble's is their Social
-// Standing), or "" for a rankless career.
+// rankOf returns a rank title worth reporting: the Noble's Social-Standing
+// title, an officer's rank, or an enlisted rank the character was promoted into.
+// It returns "" for a rankless career and for the entry enlisted rank (rank 1) a
+// character never rose above — "mustered out as Temp/Private" is just noise, as
+// "after 1 term" already implies no promotion.
 func rankOf(c chargen.Character, rec chargen.CareerRecord) string {
 	career := chargen.CareerByID(rec.Career)
 	if career.ReturnIntrigue {
@@ -289,6 +292,8 @@ func rankOf(c chargen.Character, rec chargen.CareerRecord) string {
 	ranks := career.EnlistedRanks
 	if rec.Officer {
 		ranks = career.OfficerRanks
+	} else if rec.Rank <= 1 {
+		return "" // never promoted above the entry rank
 	}
 	if rec.Rank >= 1 && rec.Rank <= len(ranks) {
 		return ranks[rec.Rank-1].Title
