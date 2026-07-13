@@ -29,7 +29,7 @@ var CitizenCareer = Career{
 		// Col 1 — Academic (Major/Minor lost without the education stage).
 		{major, major, minor, minor, choose(theTrades...), choose(theTrades...)},
 		// Col 2 — Travel.
-		{sk("Seafarer"), sk("Navigator"), sk("Hostile Environ"), sk("Flyer"), sk("Driver"), sk("Vacc Suit")},
+		{sk("Seafarer"), sk("Navigation"), sk("Hostile Environ"), sk("Flyer"), sk("Driver"), sk("Vacc Suit")},
 		// Col 3 — General.
 		{sk("Admin"), sk("Broker"), sk("Computer"), sk("Animals"), sk("Bureaucrat"), sk("Trader")},
 		// Col 4 — Business.

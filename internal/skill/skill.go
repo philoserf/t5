@@ -119,7 +119,11 @@ func (s *Set) GrantCascade(parent, knowledge string) {
 
 // String renders the inventory as space-separated "Skill-level" entries in a
 // stable order, with knowledges shown as "Parent/Knowledge-level".
-func (s Set) String() string {
+// List returns the skills and knowledges as sorted "Name-Level" entries (a
+// cascade knowledge as "Parent/Knowledge-Level"). Callers that render skills —
+// which can contain spaces, e.g. "Vacc Suit" — should join this slice rather
+// than split String() on spaces.
+func (s Set) List() []string {
 	var entries []string
 	for _, name := range slices.Sorted(maps.Keys(s.skills)) {
 		entries = append(entries, name+"-"+strconv.Itoa(s.skills[name]))
@@ -127,5 +131,9 @@ func (s Set) String() string {
 			entries = append(entries, name+"/"+k+"-"+strconv.Itoa(s.knowledges[name][k]))
 		}
 	}
-	return strings.Join(entries, " ")
+	return entries
+}
+
+func (s Set) String() string {
+	return strings.Join(s.List(), " ")
 }
