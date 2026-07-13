@@ -36,6 +36,13 @@ type CheckResult struct {
 	Target  int // Check.Target + Mod, the number to roll at or under
 	Success bool
 	Effect  int
+	Faces   []int // the individual dice, for Spectacular detection
+}
+
+// Spectacular classifies the check's raw dice (Book 1 p. 127): three or more
+// ones or sixes make a roll spectacular regardless of the pass/fail outcome.
+func (c CheckResult) Spectacular() Spectacular {
+	return Classify(c.Faces)
 }
 
 // Resolve rolls the check and reports the result.
@@ -44,7 +51,11 @@ func (r *Roller) Resolve(c Check) CheckResult {
 	if n <= 0 {
 		n = Average
 	}
-	roll := r.Dice(n)
+	faces := r.DiceFaces(n)
+	roll := 0
+	for _, f := range faces {
+		roll += f
+	}
 	total := roll + c.DM
 	target := c.Target + c.Mod
 	return CheckResult{
@@ -53,5 +64,6 @@ func (r *Roller) Resolve(c Check) CheckResult {
 		Target:  target,
 		Success: total <= target,
 		Effect:  target - total,
+		Faces:   faces,
 	}
 }
