@@ -19,12 +19,12 @@ func TestGoldenNoble(t *testing.T) {
 		// Term 1: CC = Dex (8). Intrigue 7 <= 8 succeeds; Elevation 2D >= Soc 10.
 		3, 4, // intrigue
 		5, 5, // elevation: 10 >= 10 -> Soc 10 -> 11, Land Grant
-		1, 1, 1, 1, // 4 skill rolls, General col row 1 = Advocate
+		1, 1, 1, 1, 1, 1, // 4 + 2 (When Elevated) skill rolls, General col row 1 = Advocate
 		3, 4, // continue vs 7: 7, policy wants term 2
 		// Term 2: CC = End (7). Intrigue 7 <= 7 succeeds; Elevation 2D >= Soc 11 fails.
 		3, 4, // intrigue
-		3, 4, // elevation: 7 < 11 -> no elevation
-		1, 1, 1, 1, // Advocate x4 (now 8)
+		3, 4, // elevation: 7 < 11 -> no elevation (no bonus skills)
+		1, 1, 1, 1, // Advocate x4 (now 10)
 		3, 4, // continue: policy stops after term 2
 		// Muster out: 2 rolls, Benefit column, DM +Terms (=2).
 		4, // 4 + 2 = row 6 -> Dex +1 (8 -> 9)
@@ -41,8 +41,8 @@ func TestGoldenNoble(t *testing.T) {
 	if c.Score(Social) != 11 || c.LandGrants != 1 {
 		t.Errorf("Soc = %d, LandGrants = %d, want 11 / 1 (one Elevation)", c.Score(Social), c.LandGrants)
 	}
-	if c.Skills.Level("Advocate") != 8 {
-		t.Errorf("Advocate = %d, want 8", c.Skills.Level("Advocate"))
+	if c.Skills.Level("Advocate") != 10 {
+		t.Errorf("Advocate = %d, want 10 (6 elevated term 1 + 4 term 2)", c.Skills.Level("Advocate"))
 	}
 	rec := c.Careers[0]
 	if rec.Career != Noble || rec.Terms != 2 || rec.Outcome != MusteredOut {

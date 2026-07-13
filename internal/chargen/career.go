@@ -407,7 +407,7 @@ func RunCareer(r *dice.Roller, p Policy, c *Character, career Career) {
 // Disabled, or Died.
 func runTerm(r *dice.Roller, p Policy, c *Character, run *careerRun, career Career) TermOutcome {
 	if career.FameCareer {
-		return runFameTerm(r, p, c, career) // no CC — the Entertainer resolves Fame/Talent
+		return runFameTerm(r, p, c, run, career) // no CC — the Entertainer resolves Fame/Talent
 	}
 	cc := selectCC(p, *c, run, career)
 	if career.CitizenLife {
@@ -529,13 +529,17 @@ func runCitizenTerm(r *dice.Roller, p Policy, c *Character, run *careerRun, care
 // term, events shift Fame by a Flux roll; if Fame increases the character gains
 // Talent +1 and two extra skill rolls. There is no injury; only aging can end
 // the career. (The optional second and third Flux rolls are deferred.)
-func runFameTerm(r *dice.Roller, p Policy, c *Character, career Career) TermOutcome {
-	before := c.Fame
-	c.Fame = max(c.Fame+r.Flux(), 0)
+func runFameTerm(r *dice.Roller, p Policy, c *Character, run *careerRun, career Career) TermOutcome {
 	elig := career.EligPerTerm
-	if c.Fame > before {
-		c.Talent++
-		elig += 2 // "If Fame Increases: 2 [skills] and Talent+1"
+	// Term 1 keeps the initial 2D Fame/Talent; the "+F" Flux begins at Term 2
+	// (Book 1 p.77). run.terms is 0 on the first served term.
+	if run.terms > 0 {
+		before := c.Fame
+		c.Fame = max(c.Fame+r.Flux(), 0)
+		if c.Fame > before {
+			c.Talent++
+			elig += 2 // "If Fame Increases: 2 [skills] and Talent+1"
+		}
 	}
 	awardSkillsN(r, p, c, career, elig)
 	return Ongoing
@@ -607,6 +611,7 @@ func runPoliticsTerm(r *dice.Roller, p Policy, c *Character, run *careerRun, car
 // success offers an Elevation — a roll-high check of 2D at or over Social
 // Standing that, on success, raises Soc by 1 and awards a Land Grant).
 func runIntrigueTerm(r *dice.Roller, p Policy, c *Character, run *careerRun, career Career, cc Characteristic) TermOutcome {
+	elevated := false
 	if run.exiled {
 		if r.Resolve(dice.Check{Dice: 2, Target: c.Score(cc)}).Success {
 			run.exiled = false // Return from Exile
@@ -615,11 +620,16 @@ func runIntrigueTerm(r *dice.Roller, p Policy, c *Character, run *careerRun, car
 		if r.Dice(2) >= c.Score(Social) && c.scores[Social] < maxCharacteristic {
 			c.scores[Social]++ // Elevation to the next Noble rank
 			c.LandGrants++
+			elevated = true
 		}
 	} else {
 		run.exiled = true // Exile
 	}
-	awardSkills(r, p, c, career)
+	elig := career.EligPerTerm
+	if elevated {
+		elig += 2 // "When Elevated 2" (Book 1 p.85)
+	}
+	awardSkillsN(r, p, c, career, elig)
 	return Ongoing
 }
 
