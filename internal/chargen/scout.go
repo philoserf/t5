@@ -30,6 +30,8 @@ func cash(credits int) Benefit            { return Benefit{Kind: Cash, Value: cr
 func charAward(ch Characteristic) Benefit { return Benefit{Kind: CharBump, Value: 1, Char: ch} }
 func fameAward() Benefit                  { return Benefit{Kind: FameBump, Value: 1} }
 func named(name string) Benefit           { return Benefit{Kind: Named, Name: name} }
+func knighthood() Benefit                 { return Benefit{Kind: Knighted, Name: "Knighthood"} }
+func fameAwardN(n int) Benefit            { return Benefit{Kind: FameBump, Value: n} }
 
 // major and minor award the character's College Major/Minor (Book 1 p. 79
 // Academic column). The page's footnote — "lost if the character has no
@@ -94,7 +96,7 @@ var ScoutCareer = Career{
 		8:  {Money: cash(60_000), Benefit: named("Ship Share")},
 		9:  {Money: cash(60_000), Benefit: named("Life Insurance")},
 		10: {Money: cash(60_000), Benefit: named("TAS Fellowship")},
-		11: {Money: cash(70_000), Benefit: named("Fame +2")},
-		12: {Money: cash(80_000), Benefit: named("Knighthood")},
+		11: {Money: cash(70_000), Benefit: fameAwardN(2)},
+		12: {Money: cash(80_000), Benefit: knighthood()},
 	},
 }

@@ -55,7 +55,7 @@ var AgentCareer = Career{
 		8:  {Money: cash(30_000), Benefit: named("Ship Share")},
 		9:  {Money: cash(35_000), Benefit: named("Life Insurance")},
 		10: {Money: cash(40_000), Benefit: named("TAS Fellowship")},
-		11: {Money: cash(80_000), Benefit: named("Fame +2")},
-		12: {Money: cash(90_000), Benefit: named("Knighthood")},
+		11: {Money: cash(80_000), Benefit: fameAwardN(2)},
+		12: {Money: cash(90_000), Benefit: knighthood()},
 	},
 }

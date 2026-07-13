@@ -92,8 +92,8 @@ var SoldierCareer = Career{
 		7:  {Money: cash(50_000), Benefit: charAward(Endurance)},
 		8:  {Money: named("Retirement Pay"), Benefit: named("Life Insurance")},
 		9:  {Money: named("Retirement Pay"), Benefit: named("TAS Fellowship")},
-		10: {Money: cash(60_000), Benefit: named("Knighthood")},
-		11: {Money: cash(60_000), Benefit: named("Knighthood")},
-		12: {Money: cash(60_000), Benefit: named("Knighthood")},
+		10: {Money: cash(60_000), Benefit: knighthood()},
+		11: {Money: cash(60_000), Benefit: knighthood()},
+		12: {Money: cash(60_000), Benefit: knighthood()},
 	},
 }

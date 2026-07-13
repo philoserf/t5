@@ -90,8 +90,8 @@ var MarineCareer = Career{
 		7:  {Money: cash(50_000), Benefit: named("Life Insurance")},
 		8:  {Money: named("Retirement Pay"), Benefit: named("Ship Share")},
 		9:  {Money: named("Retirement Pay"), Benefit: named("Directorate")},
-		10: {Money: cash(60_000), Benefit: named("Knighthood")},
-		11: {Money: cash(60_000), Benefit: named("Knighthood")},
-		12: {Money: cash(60_000), Benefit: named("Knighthood")},
+		10: {Money: cash(60_000), Benefit: knighthood()},
+		11: {Money: cash(60_000), Benefit: knighthood()},
+		12: {Money: cash(60_000), Benefit: knighthood()},
 	},
 }

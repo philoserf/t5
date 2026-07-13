@@ -962,6 +962,7 @@ const (
 	CharBump                    // +Value to characteristic Char
 	FameBump                    // +Value to Fame (the Entertainer's "Fame +1")
 	Named                       // a named benefit (Ship Share, TAS Fellowship, …)
+	Knighted                    // a Knighthood: raises Soc (Book 1 p.68); Name is still shown
 )
 
 // A Benefit is one mustering-out award.
@@ -988,10 +989,7 @@ type MusterTable [13]MusterRow // index 1-12 used
 // 1D plus the column DM. The Money column adds +Terms; the Benefit column adds
 // the career's BenefitDM. The policy chooses the column.
 func MusterOut(r *dice.Roller, p Policy, c *Character, rec CareerRecord, career Career) {
-	rolls := rec.Terms
-	if rec.Outcome == Disabled {
-		rolls *= 2 // double the number of benefit rolls
-	}
+	rolls := musterRollCount(*c, rec)
 	for range rolls {
 		col := p.MusterColumn(*c, rec)
 		dm := rec.Terms // Money column DM
@@ -1003,12 +1001,29 @@ func MusterOut(r *dice.Roller, p Policy, c *Character, rec CareerRecord, career 
 		if col == BenefitColumn {
 			award = career.MusterOut[row].Benefit
 		}
-		applyBenefit(c, award)
+		applyBenefit(c, award, career, rec)
 	}
 }
 
-// applyBenefit applies one mustering-out award.
-func applyBenefit(c *Character, b Benefit) {
+// musterRollCount is the number of mustering-out rolls (Book 1 p.67): one per
+// term served, doubled when disabled, plus one per Commendation and one if Fame
+// is 19+. The book's "per MCG/SEH medal" extra rolls are deferred — the engine
+// tracks a flat Medal count, not the specific top-tier medals the rule keys on.
+func musterRollCount(c Character, rec CareerRecord) int {
+	rolls := rec.Terms
+	if rec.Outcome == Disabled {
+		rolls *= 2
+	}
+	rolls += c.Commendations
+	if c.Fame >= 19 {
+		rolls++
+	}
+	return rolls
+}
+
+// applyBenefit applies one mustering-out award. career and rec supply the
+// context a Knighthood needs (armed-forces careers knight only officers).
+func applyBenefit(c *Character, b Benefit, career Career, rec CareerRecord) {
 	switch b.Kind {
 	case Cash:
 		c.Credits += b.Value
@@ -1018,6 +1033,25 @@ func applyBenefit(c *Character, b Benefit) {
 		c.Fame += b.Value
 	case Named:
 		c.Benefits = append(c.Benefits, b.Name)
+	case Knighted:
+		applyKnighthood(c, career, rec)
+		c.Benefits = append(c.Benefits, b.Name) // the title still shows on the sheet
+	}
+}
+
+// applyKnighthood raises Social Standing per Book 1 p.68: a Knighthood raises
+// any Soc to B (11), or +1 if already 11+. In the armed forces (the Branch/Ops
+// careers Spacer/Soldier/Marine) Knighthood is officer-only; a non-officer
+// receives Soc +1 instead.
+func applyKnighthood(c *Character, career Career, rec CareerRecord) {
+	if career.BranchOps != nil && !rec.Officer {
+		c.scores[Social] = min(c.scores[Social]+1, maxCharacteristic)
+		return
+	}
+	if c.scores[Social] < 11 {
+		c.scores[Social] = 11
+	} else {
+		c.scores[Social] = min(c.scores[Social]+1, maxCharacteristic)
 	}
 }
 
