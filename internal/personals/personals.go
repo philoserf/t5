@@ -4,7 +4,10 @@
 // applicable Law + up to two situational Mods.
 package personals
 
-import "github.com/philoserf/t5/internal/dice"
+import (
+	"github.com/philoserf/t5/internal/dice"
+	"github.com/philoserf/t5/internal/task"
+)
 
 // Purpose is the objective of a Personal (Book 1 p.182); its difficulty sets the
 // dice rolled — Carouse 1D, Query 2D, Persuade 3D, Command 4D.
@@ -105,11 +108,7 @@ const (
 // × tacticMult + lawMod + the situational mods; the Purpose's dice are rolled at
 // or under the Target. A tacticMult of 1 means no Tactic multiplier is applied.
 func Resolve(r *dice.Roller, purpose Purpose, strategyValue, tacticMult, lawMod int, mods ...int) dice.CheckResult {
-	target := strategyValue*tacticMult + lawMod
-	for _, m := range mods {
-		target += m
-	}
-	return r.Resolve(dice.Check{Dice: purpose.Dice(), Target: target})
+	return task.ResolveDice(r, purpose.Dice(), strategyValue*tacticMult+lawMod, mods...)
 }
 
 // Camaraderie counts an Actor's successful Carouses with a Target; each adds +1

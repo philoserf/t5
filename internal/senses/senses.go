@@ -10,6 +10,7 @@ import (
 
 	"github.com/philoserf/t5/internal/dice"
 	"github.com/philoserf/t5/internal/rangeband"
+	"github.com/philoserf/t5/internal/task"
 )
 
 // A Sense is one of the six senses (Book 1 p. 186): its ID letter, name, the
@@ -45,43 +46,22 @@ func (s Sense) String() string {
 // Benchmark (objectSize - Range) plus any situational mods (Master Mods; higher
 // is better). A Benchmark that drives the target to zero or less can't be sensed.
 func NoticeAtRange(r *dice.Roller, s Sense, objectSize, rng int, mods ...int) dice.CheckResult {
-	return r.Resolve(dice.Check{
-		Dice:   max(rng, 1),
-		Target: s.Constant,
-		Mod:    (objectSize - rng) + sum(mods),
-	})
+	return task.ResolveDice(r, rng, s.Constant+(objectSize-rng), mods...)
 }
 
 // NoticeInContact resolves an in-contact sense Action (Touch, and Smell by scent
 // intensity; Book 1 p. 187): 2D at or under Constant + benchmark + mods.
 func NoticeInContact(r *dice.Roller, s Sense, benchmark int, mods ...int) dice.CheckResult {
-	return r.Resolve(dice.Check{
-		Dice:   dice.Average,
-		Target: s.Constant,
-		Mod:    benchmark + sum(mods),
-	})
+	return task.ResolveDice(r, dice.Average, s.Constant+benchmark, mods...)
 }
 
 // RangeBand returns the sense Range band (0-9) for a distance in meters, using
 // the shared world-range ladder (Book 1 pp. 24, 188). The R and T reading/talking
 // sub-bands both count as Range 1, per the sense rules.
 func RangeBand(meters float64) int {
-	switch code := rangeband.WorldForDistance(meters).Code; code {
-	case "0":
-		return 0
-	case "R", "T":
-		return 1
-	default:
-		n := 0
-		fmt.Sscan(code, &n)
-		return n
+	n, ok := rangeband.WorldForDistance(meters).Number()
+	if !ok {
+		return 1 // the R and T reading/talking sub-bands both count as Range 1
 	}
-}
-
-func sum(xs []int) int {
-	total := 0
-	for _, x := range xs {
-		total += x
-	}
-	return total
+	return n
 }

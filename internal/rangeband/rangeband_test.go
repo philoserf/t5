@@ -43,6 +43,23 @@ func TestForDistance(t *testing.T) {
 	}
 }
 
+func TestBandNumber(t *testing.T) {
+	b3, _ := WorldBand("3")
+	if n, ok := b3.Number(); n != 3 || !ok {
+		t.Errorf("WorldBand(3).Number() = %d,%v, want 3,true", n, ok)
+	}
+	s13, _ := SpaceBand("13")
+	if n, ok := s13.Number(); n != 13 || !ok {
+		t.Errorf("SpaceBand(13).Number() = %d,%v, want 13,true", n, ok)
+	}
+	// The lettered Contact/Boarding sub-bands have no number.
+	for _, b := range []Band{{Code: "R"}, {Code: "T"}, {Code: "B"}} {
+		if _, ok := b.Number(); ok {
+			t.Errorf("Band(%q).Number() should report false", b.Code)
+		}
+	}
+}
+
 func TestConversion(t *testing.T) {
 	world := map[string]string{"3": "0", "4": "0", "5": "B", "6": "1", "9": "4"}
 	for r, wantS := range world {

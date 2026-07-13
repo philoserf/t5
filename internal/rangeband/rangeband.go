@@ -18,6 +18,17 @@ type Band struct {
 	Meters     float64 // representative distance from the zero point
 }
 
+// Number returns the band's numeric index on its scale and whether it has one.
+// The lettered Contact sub-bands (R, T) and the Space Boarding band (B) have no
+// number and return ok false.
+func (b Band) Number() (int, bool) {
+	n, err := strconv.Atoi(b.Code)
+	if err != nil {
+		return 0, false
+	}
+	return n, true
+}
+
 // worldBands is the World-surface range ladder R= (Book 1 p.24). Contact,
 // Reading, and Talking are the lettered bands inside R=0.
 var worldBands = []Band{
