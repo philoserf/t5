@@ -43,14 +43,14 @@ Scout — age 22, mustered out after 1 term
   UPP            785399
   Homeworld      B6667B8-9   Ga Ag Ri
   Education      BA — Psychology (major), Robotics (minor)
-  Skills         Actor-1, Animals-1, Biologics-3, Psychology-6, Robotics-5, Trader-1
+  Skills         Actor-1, Animals-1, Athlete-1, Biologist-1, Comms-2, Fighter-1, Hostile Environ-1, JOT-1, Medic-1, Psychology-4, Robotics-2, Trader-1
   Benefits       Ship Share
 
 Citizen — age 34, mustered out after 4 terms
   UPP            5767A3
   Homeworld      B87A663-8   Wa Ni
   Education      BA — Psychology (major), Robotics (minor)
-  Skills         Admin-5, Biologics-5, Broker-3, Driver-1, Psychology-11, Robotics-6, Seafarer-1
+  Skills         Actor-1, Admin-5, Advocate-1, Artist-1, Athlete-1, Author-1, Biologics-1, Biologist-1, Broker-3, Bureaucrat-2, Chemist-1, Craftsman-1, Driver-2, Hostile Environ-1, Medic-2, Physicist-1, Psychology-4, Robotics-2, Seafarer-1
 ```
 
 The second character failed to qualify for the Scout service (even on the

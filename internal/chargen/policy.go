@@ -63,19 +63,27 @@ func (DefaultPolicy) ChooseCC(c Character, available []Characteristic) Character
 // RiskMod takes no modifier — the neutral choice.
 func (DefaultPolicy) RiskMod(Character, int) int { return 0 }
 
-// ChooseSkillColumn favours the first specialty column (skipping the Personal
-// column 0) whose cells all award this character something, so a default
-// character gains a varied spread rather than empty cells. The check is
-// character-aware: a College graduate finds the Academic column (Major/Minor)
-// productive and specializes there, while an uneducated Scout — for whom those
-// cells are lost — falls through to Courier.
+// ChooseSkillColumn spreads a character's training: among the columns (skipping
+// the Personal column 0) whose cells all award this character something, it
+// picks the one currently least developed, so eligibility rotates across
+// specialties rather than piling onto a single column and driving one skill
+// toward the cap. The productivity check is character-aware: a College graduate
+// finds the Academic column (Major/Minor) productive, while an uneducated Scout —
+// for whom those cells are lost — does not.
 func (DefaultPolicy) ChooseSkillColumn(c Character, grid SkillGrid) int {
+	best, bestLevel := -1, 0
 	for col := 1; col < len(grid); col++ {
-		if productiveColumn(c, grid[col]) {
-			return col
+		if !productiveColumn(c, grid[col]) {
+			continue
+		}
+		if level := columnLevel(c, grid[col]); best < 0 || level < bestLevel {
+			best, bestLevel = col, level
 		}
 	}
-	return 1
+	if best < 0 {
+		return 1
+	}
+	return best
 }
 
 // productiveColumn reports whether every cell in a column awards this character
@@ -87,6 +95,41 @@ func productiveColumn(c Character, column [6]Cell) bool {
 		}
 	}
 	return true
+}
+
+// columnLevel sums the current levels of the skills a column would raise — a
+// proxy for how developed the column already is, used to spread training toward
+// the least-developed column.
+func columnLevel(c Character, column [6]Cell) int {
+	total := 0
+	for _, cell := range column {
+		total += cellLevel(c, cell)
+	}
+	return total
+}
+
+// cellLevel is the character's current level in the skill a cell would raise (a
+// choice cell counts the least-held option, matching ChooseSkill; a Major/Minor
+// cell the declared subject).
+func cellLevel(c Character, cell Cell) int {
+	switch cell.Kind {
+	case AwardSkill:
+		return c.Skills.Level(cell.Skill)
+	case AwardChoice:
+		best := 0
+		for i, o := range cell.Options {
+			if level := c.Skills.Level(o); i == 0 || level < best {
+				best = level
+			}
+		}
+		return best
+	case AwardMajor:
+		return c.Skills.Level(c.Major)
+	case AwardMinor:
+		return c.Skills.Level(c.Minor)
+	default:
+		return 0
+	}
 }
 
 // cellAwards reports whether a cell grants this character something: an empty
@@ -105,8 +148,18 @@ func cellAwards(c Character, cell Cell) bool {
 	}
 }
 
-// ChooseSkill takes the first option.
-func (DefaultPolicy) ChooseSkill(_ Character, options []string) string { return options[0] }
+// ChooseSkill takes the offered skill the character has least of, so repeated
+// choices — "One Trade", "One Art", a Starship Skill — spread across the options
+// instead of piling onto the first one.
+func (DefaultPolicy) ChooseSkill(c Character, options []string) string {
+	best := options[0]
+	for _, o := range options[1:] {
+		if c.Skills.Level(o) < c.Skills.Level(best) {
+			best = o
+		}
+	}
+	return best
+}
 
 // Continue keeps serving until aging begins (age 34), a simple heuristic that
 // yields a typical few-term character.
