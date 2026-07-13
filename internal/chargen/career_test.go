@@ -326,19 +326,29 @@ func TestQualificationTargetRejectsEmpty(t *testing.T) {
 }
 
 func TestGenerateCareeredQualify(t *testing.T) {
-	// UPP rolls (12 dice), then a qualify roll of 2 (<= Int) succeeds, so the
-	// character runs the career; the policy stops immediately.
-	upp := []int{4, 4, 4, 4, 4, 4, 4, 4, 5, 5, 3, 3} // six 2D rolls; Int = 8
+	// UPP rolls (12 dice) giving Int = 8; the qualify/retry rolls follow.
+	upp := []int{4, 4, 4, 4, 4, 4, 4, 4, 5, 5, 3, 3}
+
+	// A qualify roll of 2 (<= Int) succeeds, so the character runs the career.
 	seq := append(append([]int{}, upp...), 1, 1 /*qualify 2*/, 3, 4 /*continue*/)
 	c := GenerateCareered(dice.NewScripted(seq...), stopAfter{1}, worldgen.World{}, testCareer)
-	if len(c.Careers) != 1 {
+	if len(c.Careers) != 1 || c.Careers[0].Career != testCareer.ID {
 		t.Fatalf("qualified but no career recorded: %+v", c.Careers)
 	}
-	// A failed qualify (roll 12 > Int) yields no career.
-	seq2 := append(append([]int{}, upp...), 6, 6 /*qualify 12*/)
-	c2 := GenerateCareered(dice.NewScripted(seq2...), stopAfter{1}, worldgen.World{}, testCareer)
-	if len(c2.Careers) != 0 {
-		t.Fatalf("failed qualify but career recorded: %+v", c2.Careers)
+
+	// A failed first qualify (12) retries; a successful retry (2) still enters it.
+	seqRetry := append(append([]int{}, upp...), 6, 6 /*qualify 12*/, 1, 1 /*retry 2*/)
+	cRetry := GenerateCareered(dice.NewScripted(seqRetry...), stopAfter{1}, worldgen.World{}, testCareer)
+	if len(cRetry.Careers) != 1 || cRetry.Careers[0].Career != testCareer.ID {
+		t.Fatalf("a successful retry should enter the career: %+v", cRetry.Careers)
+	}
+
+	// A failed qualify and failed retry fall back to the auto-begin Citizen life,
+	// rather than leaving the character careerless.
+	seqDraft := append(append([]int{}, upp...), 6, 6 /*qualify 12*/, 6, 6 /*retry 12*/)
+	cDraft := GenerateCareered(dice.NewScripted(seqDraft...), stopAfter{1}, worldgen.World{}, testCareer)
+	if len(cDraft.Careers) != 1 || cDraft.Careers[0].Career != Citizen {
+		t.Fatalf("a failed Begin should fall back to Citizen: %+v", cDraft.Careers)
 	}
 }
 

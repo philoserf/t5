@@ -77,8 +77,10 @@ Tooling (go, go-task, poppler's `pdftotext`) is pinned in `Brewfile`.
   `awardsMinor`, Edu-or-degree prereq, grad-Edu, degree) through the shared apply/pass-fail/waiver
   `attendAcademic`: undergraduates get Major+1 per pass and Minor+1 per 2 passes with a BA + Edu bump,
   the Masters raises only the Minor (MA, Edu 9), Professors neither (Edu 12); golden-locked to the
-  book's Eneri Dinsha College example `9AB58A`) → qualify → term loop →
-  muster-out. Education is gated on `Policy.PursueEducation`, so a
+  book's Eneri Dinsha College example `9AB58A`) → Begin → term loop →
+  muster-out. Begin (`beginCareer`, Book 1 p. 63) rolls to qualify; the first career Retries a failed
+  Begin once, later careers do not, and a character refused by every chosen career falls back to the
+  auto-begin Citizen life (T5 has no draft — no one ends up careerless). Education is gated on `Policy.PursueEducation`, so a
   no-education policy leaves any dice trace (e.g. the golden Scout's) untouched. The term engine
   (`career.go`) is career-agnostic with pluggable seams (`CCMode` Rotate/Fixed — under FixedCC the
   policy picks one CC that serves the whole career, `AdvanceRule` RollLow/RollHigh, `Qualification`
