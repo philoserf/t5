@@ -26,7 +26,7 @@ var (
 var homeworldSkill = map[string][]string{
 	"Ag": {"Animals"},             // Agricultural
 	"As": {"Zero-G"},              // Asteroid
-	"Co": {"Hostile Env"},         // Cold
+	"Co": {"Hostile Environ"},     // Cold
 	"Cp": {"Admin"},               // Subsector Capital
 	"Cs": {"Bureaucrat"},          // Sector Capital
 	"Cx": {"Language"},            // Capital
@@ -34,12 +34,12 @@ var homeworldSkill = map[string][]string{
 	"De": {"Survival"},            // Desert
 	"Ds": {"Vacc Suit", "Zero-G"}, // Deep Space
 	"Fa": {"Animals"},             // Farming
-	"Fl": {"Hostile Env"},         // Fluid
-	"Fr": {"Hostile Env"},         // Frozen
+	"Fl": {"Hostile Environ"},     // Fluid
+	"Fr": {"Hostile Environ"},     // Frozen
 	"Ga": {"Trader"},              // Garden World
-	"He": {"Hostile Env"},         // Hellworld
+	"He": {"Hostile Environ"},     // Hellworld
 	"Hi": {"Streetwise"},          // High Population
-	"Ho": {"Hostile Env"},         // Hot
+	"Ho": {"Hostile Environ"},     // Hot
 	"Ic": {"Vacc Suit"},           // Ice-Capped
 	"Lo": {"Flyer"},               // Low Population
 	"Mi": {"Survey"},              // Mining

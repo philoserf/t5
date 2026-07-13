@@ -14,6 +14,7 @@ import (
 	"flag"
 	"fmt"
 	"os"
+	"strconv"
 	"strings"
 
 	"github.com/philoserf/t5/internal/chargen"
@@ -110,62 +111,181 @@ func careerByName(name string) (chargen.Career, error) {
 	}
 }
 
-// render formats a careered character as a one-line sheet.
+// labelWidth aligns the field labels of the character sheet.
+const labelWidth = 15
+
+// render formats a careered character as a labeled, multi-line sheet.
 func render(c chargen.Character) string {
 	var b strings.Builder
-	fmt.Fprintf(&b, "%s  age %d  homeworld %s", c.UPP(), c.Age, c.Homeworld.Profile)
-	if len(c.Degrees) > 0 {
-		fmt.Fprintf(&b, "  %s", strings.Join(c.Degrees, " "))
-		if c.Major != "" {
-			fmt.Fprintf(&b, " (%s)", strings.Join(subjects(c), "/"))
-		}
+	b.WriteString(summaryLine(c))
+	field(&b, "Characteristics", characteristics(c))
+	if hw := homeworldField(c); hw != "" {
+		field(&b, "Homeworld", hw)
 	}
-	if len(c.Careers) == 0 {
-		b.WriteString("  did not qualify")
-		renderTail(&b, c)
-		return b.String()
+	if ed := educationField(c); ed != "" {
+		field(&b, "Education", ed)
 	}
-	for _, rec := range c.Careers {
-		career := chargen.CareerByID(rec.Career)
-		fmt.Fprintf(&b, "  %s: %d terms, %s", career.Name, rec.Terms, rec.Outcome)
-		title := rankTitle(career, rec)
-		if career.ReturnIntrigue {
-			title = chargen.NobleTitle(c.Score(chargen.Social)) // the Noble's rank is their Social Standing
-		}
-		if title != "" {
-			fmt.Fprintf(&b, " (%s)", title)
-		}
+	if len(c.Careers) > 1 { // one career is summarized in the header line
+		field(&b, "Service", serviceField(c))
 	}
-	if c.WoundBadges > 0 {
-		fmt.Fprintf(&b, ", %d wound badges", c.WoundBadges)
+	if skills := c.Skills.List(); len(skills) > 0 {
+		field(&b, "Skills", strings.Join(skills, ", "))
 	}
-	if c.Fame > 0 || c.Talent > 0 {
-		fmt.Fprintf(&b, ", Fame %d Talent %d", c.Fame, c.Talent)
+	renderAchievements(&b, c)
+	if c.Credits > 0 {
+		field(&b, "Wealth", "Cr"+commas(c.Credits))
 	}
-	if c.Masterpieces > 0 {
-		fmt.Fprintf(&b, ", %d masterpieces (Cr%d)", c.Masterpieces, c.MasterpieceValue)
+	if len(c.Benefits) > 0 {
+		field(&b, "Benefits", strings.Join(c.Benefits, ", "))
 	}
-	if c.Publications > 0 {
-		fmt.Fprintf(&b, ", %d publications", c.Publications)
-	}
-	if c.Commendations > 0 {
-		fmt.Fprintf(&b, ", %d commendations", c.Commendations)
-	}
-	if c.Discoveries > 0 {
-		fmt.Fprintf(&b, ", %d discoveries", c.Discoveries)
-	}
-	if c.LandGrants > 0 {
-		fmt.Fprintf(&b, ", %d land grants", c.LandGrants)
-	}
-	if c.ShipShares > 0 {
-		fmt.Fprintf(&b, ", %d ship shares", c.ShipShares)
-	}
-	renderTail(&b, c)
 	return b.String()
 }
 
-// rankTitle returns the character's final rank title, or "" for a rankless career.
-func rankTitle(career chargen.Career, rec chargen.CareerRecord) string {
+// summaryLine is the sheet's headline: the career(s), age, and — for a single
+// career — how and after how long it ended.
+func summaryLine(c chargen.Character) string {
+	deceased := ""
+	if c.Dead {
+		deceased = ", deceased"
+	}
+	switch len(c.Careers) {
+	case 0:
+		return fmt.Sprintf("Age %d — did not qualify for a career%s\n", c.Age, deceased)
+	case 1:
+		rec := c.Careers[0]
+		detail := fmt.Sprintf("%s after %s", outcomePhrase(rec.Outcome), plural(rec.Terms, "term"))
+		if rank := rankOf(c, rec); rank != "" {
+			detail += " as " + rank
+		}
+		if rec.Outcome == chargen.Died {
+			deceased = "" // "died" already conveys it
+		}
+		return fmt.Sprintf("%s — age %d, %s%s\n", chargen.CareerByID(rec.Career).Name, c.Age, detail, deceased)
+	default:
+		return fmt.Sprintf("%s — age %d%s\n", careerNames(c), c.Age, deceased)
+	}
+}
+
+// serviceField lists each career of a multi-career life on its own line.
+func serviceField(c chargen.Character) string {
+	var lines []string
+	for _, rec := range c.Careers {
+		s := fmt.Sprintf("%s: %s, %s", chargen.CareerByID(rec.Career).Name, plural(rec.Terms, "term"), outcomePhrase(rec.Outcome))
+		if rank := rankOf(c, rec); rank != "" {
+			s += " as " + rank
+		}
+		lines = append(lines, s)
+	}
+	return strings.Join(lines, "\n")
+}
+
+// renderAchievements appends a labeled line for each career token the character
+// accumulated.
+func renderAchievements(b *strings.Builder, c chargen.Character) {
+	if c.Fame > 0 || c.Talent > 0 {
+		var parts []string
+		if c.Fame > 0 {
+			parts = append(parts, fmt.Sprintf("Fame %d", c.Fame))
+		}
+		if c.Talent > 0 {
+			parts = append(parts, fmt.Sprintf("Talent %d", c.Talent))
+		}
+		field(b, "Reputation", strings.Join(parts, ", "))
+	}
+	if c.Masterpieces > 0 {
+		field(b, "Masterpieces", fmt.Sprintf("%d (Cr%s)", c.Masterpieces, commas(c.MasterpieceValue)))
+	}
+	if c.Publications > 0 {
+		field(b, "Publications", strconv.Itoa(c.Publications))
+	}
+	if c.Commendations > 0 {
+		field(b, "Commendations", strconv.Itoa(c.Commendations))
+	}
+	if c.Discoveries > 0 {
+		field(b, "Discoveries", strconv.Itoa(c.Discoveries))
+	}
+	if c.LandGrants > 0 {
+		field(b, "Land grants", strconv.Itoa(c.LandGrants))
+	}
+	if c.ShipShares > 0 {
+		field(b, "Ship shares", strconv.Itoa(c.ShipShares))
+	}
+	if c.WoundBadges > 0 {
+		field(b, "Wound badges", strconv.Itoa(c.WoundBadges))
+	}
+}
+
+// field writes one "  Label   value" row; a value with embedded newlines has its
+// continuation lines aligned under the first.
+func field(b *strings.Builder, label, value string) {
+	lines := strings.Split(value, "\n")
+	fmt.Fprintf(b, "  %-*s  %s\n", labelWidth, label, lines[0])
+	pad := strings.Repeat(" ", 2+labelWidth+2)
+	for _, line := range lines[1:] {
+		fmt.Fprintf(b, "%s%s\n", pad, line)
+	}
+}
+
+// characteristics spells out the six scores and appends the raw UPP.
+func characteristics(c chargen.Character) string {
+	order := []chargen.Characteristic{
+		chargen.Strength, chargen.Dexterity, chargen.Endurance,
+		chargen.Intelligence, chargen.Education, chargen.Social,
+	}
+	var parts []string
+	for _, ch := range order {
+		parts = append(parts, fmt.Sprintf("%s %d", ch, c.Score(ch)))
+	}
+	return strings.Join(parts, "  ") + "   (" + c.UPP() + ")"
+}
+
+// homeworldField is the homeworld's UWP and any trade classifications.
+func homeworldField(c chargen.Character) string {
+	uwp := c.Homeworld.Profile.String()
+	if uwp == "" {
+		return ""
+	}
+	if len(c.Homeworld.TradeCodes) > 0 {
+		uwp += "   " + strings.Join(c.Homeworld.TradeCodes, " ")
+	}
+	return uwp
+}
+
+// educationField renders the character's degrees and, if declared, their Major
+// and Minor subjects.
+func educationField(c chargen.Character) string {
+	if len(c.Degrees) == 0 {
+		return ""
+	}
+	s := strings.Join(c.Degrees, ", ")
+	if c.Major != "" {
+		subjects := c.Major + " (major)"
+		if c.Minor != "" {
+			subjects += ", " + c.Minor + " (minor)"
+		}
+		s += " — " + subjects
+	}
+	return s
+}
+
+// careerNames joins a multi-career life's career names, e.g. "Citizen, then
+// Merchant".
+func careerNames(c chargen.Character) string {
+	names := make([]string, len(c.Careers))
+	for i, rec := range c.Careers {
+		names[i] = chargen.CareerByID(rec.Career).Name
+	}
+	last := len(names) - 1
+	return strings.Join(names[:last], ", ") + ", then " + names[last]
+}
+
+// rankOf returns a career record's final rank title (the Noble's is their Social
+// Standing), or "" for a rankless career.
+func rankOf(c chargen.Character, rec chargen.CareerRecord) string {
+	career := chargen.CareerByID(rec.Career)
+	if career.ReturnIntrigue {
+		return chargen.NobleTitle(c.Score(chargen.Social))
+	}
 	ranks := career.EnlistedRanks
 	if rec.Officer {
 		ranks = career.OfficerRanks
@@ -176,28 +296,48 @@ func rankTitle(career chargen.Career, rec chargen.CareerRecord) string {
 	return ""
 }
 
-// subjects lists a graduate's Major and, if declared, Minor.
-func subjects(c chargen.Character) []string {
-	s := []string{c.Major}
-	if c.Minor != "" {
-		s = append(s, c.Minor)
+// outcomePhrase renders a term outcome in plain words.
+func outcomePhrase(o chargen.TermOutcome) string {
+	switch o {
+	case chargen.MusteredOut:
+		return "mustered out"
+	case chargen.Disabled:
+		return "disabled"
+	case chargen.Died:
+		return "died"
+	default:
+		return "still serving"
 	}
-	return s
 }
 
-// renderTail appends the skills, credits, benefits, and deceased marker common
-// to careered and non-qualified characters (both carry homeworld skills).
-func renderTail(b *strings.Builder, c chargen.Character) {
-	if s := c.Skills.String(); s != "" {
-		fmt.Fprintf(b, "  [%s]", s)
+// plural renders a count with its noun, pluralized for counts other than one.
+func plural(n int, noun string) string {
+	if n == 1 {
+		return "1 " + noun
 	}
-	if c.Credits > 0 {
-		fmt.Fprintf(b, "  Cr%d", c.Credits)
+	return strconv.Itoa(n) + " " + pluralize(noun)
+}
+
+// pluralize forms the plural of a noun (handling a trailing consonant + "y").
+func pluralize(noun string) string {
+	if strings.HasSuffix(noun, "y") && !strings.ContainsRune("aeiou", rune(noun[len(noun)-2])) {
+		return noun[:len(noun)-1] + "ies"
 	}
-	if len(c.Benefits) > 0 {
-		fmt.Fprintf(b, "  benefits: %s", strings.Join(c.Benefits, ", "))
+	return noun + "s"
+}
+
+// commas groups an integer with thousands separators, e.g. 2000000 -> "2,000,000".
+func commas(n int) string {
+	if n < 0 {
+		return "-" + commas(-n)
 	}
-	if c.Dead {
-		b.WriteString("  DECEASED")
+	s := strconv.Itoa(n)
+	var out strings.Builder
+	for i := range len(s) {
+		if i > 0 && (len(s)-i)%3 == 0 {
+			out.WriteByte(',')
+		}
+		out.WriteByte(s[i])
 	}
+	return out.String()
 }

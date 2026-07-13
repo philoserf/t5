@@ -39,8 +39,18 @@ Worlds: 6  PBG: 901
 Mainworld: E643231-6 Lo Po {-3}(810-3)[1164] B - -
 
 $ go run ./cmd/chargen -career scout -n 2 -seed 7
-785389  age 22  homeworld B6667B8-9  BA (Psychology/Robotics)  Scout: 1 terms, MusteredOut  [Actor-1 Animals-1 Comms-1 Computer-1 Gunner-2 JOT-2 Language-0 Language/Galanglic-1 Pilot-1 Psychology-4 Robotics-2 Trader-1]  benefits: Ship Share
-5764A3  age 18  homeworld B87A663-8  BA (Psychology/Robotics)  did not qualify for Scout  [Driver-1 Psychology-4 Robotics-2 Seafarer-1]
+Scout — age 22, mustered out after 1 term
+  Characteristics  Str 7  Dex 8  End 5  Int 3  Edu 9  Soc 9   (785399)
+  Homeworld        B6667B8-9   Ga Ag Ri
+  Education        BA — Psychology (major), Robotics (minor)
+  Skills           Actor-1, Animals-1, Biologics-3, Psychology-6, Robotics-5, Trader-1
+  Benefits         Ship Share
+
+Age 18 — did not qualify for a career
+  Characteristics  Str 5  Dex 7  End 6  Int 4  Edu 10  Soc 3   (5764A3)
+  Homeworld        B87A663-8   Wa Ni
+  Education        BA — Psychology (major), Robotics (minor)
+  Skills           Driver-1, Psychology-4, Robotics-2, Seafarer-1
 ```
 
 A character's homeworld (a generated world) grants one skill per Trade

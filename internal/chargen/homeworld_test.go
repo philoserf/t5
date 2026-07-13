@@ -34,7 +34,7 @@ func TestApplyHomeworldSkills(t *testing.T) {
 		t.Error("Ba/unknown codes granted a skill, want none")
 	}
 	// Two codes mapping to the same skill stack (one grant per classification).
-	if got := grant("Fl", "He").level("Hostile Env"); got != 2 {
+	if got := grant("Fl", "He").level("Hostile Environ"); got != 2 {
 		t.Errorf("Fl+He -> Hostile Env = %d, want 2", got)
 	}
 }
