@@ -14,8 +14,9 @@ Page numbers are the printed page markers (e.g. "p. 28"); B1/B2/B3 = Core Rules 
 notation parser, individual die faces + Spectacular + Many-Dice) · `ehex` · `uwp` ·
 `worldgen` (mainworld UWP + all UWP/context-determinable trade classifications + secondary
 "other" worlds) · `systemgen` (full star family, gas-giant detail, belts, mainworld with
-orbit/climate/satellite, and a concrete orbit map placing every world/GG/belt around the
-primary) · `chargen` (six-characteristic UPP + Check Characteristic + the 13 careers).
+orbit/climate/satellite, detailed "other" worlds, per-world satellites, and a concrete
+multi-star orbit map placing every world/GG/belt round-robin across all hosting stars) ·
+`chargen` (six-characteristic UPP + Check Characteristic + the 13 careers).
 
 ## How this is ranked
 
@@ -136,17 +137,20 @@ worldgen→chargen), education engine (B1 pp. 58–62), aging (B1 pp. 88–89), 
 data model (B1 pp. 132–171).
 
 **15. Systemgen per-world detailing & placement** — _B3 pp. 20–29 (Chart G)_ · extends systemgen
-· **L** · 🟡 **mostly done**
-Built: HZ orbit by spectral type/size + orbital distances (`HZOrbit`/`OrbitAU`, PR #77);
+· **L** · ✅ **done**
+Complete. HZ orbit by spectral type/size + orbital distances (`HZOrbit`/`OrbitAU`, PR #77);
 mainworld orbit + climate (PR #78, unblocked #1's climate codes); mainworld satellite
 (PR #79); gas-giant detail — size/diameter/skim-gravity/class + every-second-SGG→IG
-(PR #80); the P2 chart + Book 1 p.31 sub-orbit floors (PR #81); the primary-star placement
-engine that assigns the mainworld, gas giants, belts, and other worlds to concrete orbits
-with duplicate/precluded collision resolution (PR #82); and secondary/"other" world detailing
-— per-type partial-UWP generation + zone-based type selection + context trade codes
-(PRs #83, #84). **Remaining:** placement across secondary stars ("Rotate Placement Per Star")
-with their exclusion zones, per-world satellites (Book 3 p.29 S-table), and a dedicated CLI
-render pass. Everything hangs on the primary — exactly correct for single-star systems.
+(PR #80); the P2 chart + Book 1 p.31 sub-orbit floors (PR #81); the placement engine that
+assigns the mainworld, gas giants, belts, and other worlds to concrete orbits with
+duplicate/precluded collision resolution (PR #82); secondary/"other" world detailing —
+per-type partial-UWP generation + zone-based type selection + context trade codes
+(PRs #83, #84); corrected HZ zone boundaries (PR #87); per-world satellites (PR #86); and
+**"Rotate Placement Per Star"** — round-robin placement across the Primary/Close/Near/Far
+hosts, each with its own habitable zone, sub-orbit floor, and Orbit N-3 range, with overflow
+drop (PR #88). `System.String` and `cmd/systemgen` render the full multi-star orbit map.
+_Minor documented deferral:_ a non-mainworld world landing on a gas-giant orbit is nudged to
+a free orbit rather than becoming that giant's moon.
 
 **16. Starship design generator** — _B2 pp. 30–95, 101–135, 188–192_ · new `shipgen` package · **L**
 The largest self-contained system in the set: hull tons/cost/config, structure & armor layers,
