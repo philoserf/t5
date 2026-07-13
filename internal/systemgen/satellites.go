@@ -34,20 +34,21 @@ func (s *System) rollSatellites(r *dice.Roller) {
 }
 
 // satelliteCount rolls a body's satellite count by kind and orbital zone (Book 3
-// p.29). Belts carry none; a negative roll means none.
+// p.29): a gas giant 1D-1, and a world 1D-5 inner / 1D-4 hospitable / 1D-3
+// outer. Belts carry none; a negative roll means none.
 func satelliteCount(r *dice.Roller, kind string, orbit, hz int, hasHZ bool) int {
-	var dm int
-	switch {
-	case kind == "Belt":
+	if kind == "Belt" {
 		return 0
-	case kind == "Gas Giant":
-		dm = -1
-	case !hasHZ || orbit > hz:
-		dm = -3 // outer
-	case orbit < hz:
-		dm = -5 // inner
-	default:
-		dm = -4 // in the habitable zone
+	}
+	if kind == "Gas Giant" {
+		return max(r.Die()-1, 0)
+	}
+	dm := -4 // hospitable
+	switch zoneOf(orbit, hz, hasHZ) {
+	case innerZone:
+		dm = -5
+	case outerZone:
+		dm = -3
 	}
 	return max(r.Die()+dm, 0)
 }

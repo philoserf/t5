@@ -13,12 +13,33 @@ type OtherWorld struct {
 	TradeCodes []string
 }
 
+// orbitZone classifies an orbit relative to a star's habitable zone (Book 3
+// p.21): inner (HZ-2 or less), hospitable (HZ-1 to HZ+1), or outer (HZ+2 or
+// greater). A star with no habitable zone treats every orbit as outer.
+type orbitZone int
+
+const (
+	innerZone orbitZone = iota
+	hospitableZone
+	outerZone
+)
+
+func zoneOf(orbit, hz int, hasHZ bool) orbitZone {
+	switch {
+	case !hasHZ || orbit >= hz+2:
+		return outerZone
+	case orbit <= hz-2:
+		return innerZone
+	default:
+		return hospitableZone
+	}
+}
+
 // otherWorldType picks a secondary world's type from a 1D roll and where its
-// orbit sits relative to the habitable zone (Book 3 p.29). Worlds beyond HZ+1
-// use the cold outer table; those inside (including the HZ band) use the inner
-// table. A primary with no habitable zone (hasHZ false) uses the outer table.
+// orbit sits relative to the habitable zone (Book 3 p.29). Outer-zone worlds use
+// the cold outer table; inner- and hospitable-zone worlds share the inner table.
 func otherWorldType(orbit, hz int, hasHZ bool, oneD int) worldgen.OtherWorldType {
-	if !hasHZ || orbit > hz+1 {
+	if zoneOf(orbit, hz, hasHZ) == outerZone {
 		switch oneD {
 		case 1:
 			return worldgen.Worldlet
