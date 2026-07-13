@@ -47,8 +47,12 @@ type System struct {
 	Mainworld worldgen.World
 
 	// Giants details each gas giant's size and class (Book 3 p.29); len equals
-	// GasGiants. Their orbit placement is deferred to the rotate scheduler.
+	// GasGiants.
 	Giants []GasGiant
+
+	// Orbits is the primary star's orbit map: the mainworld, gas giants, belts,
+	// and other worlds placed in concrete orbits (Book 3 p.29), sorted by orbit.
+	Orbits []PlacedOrbit
 
 	// MainworldOrbit is the mainworld's orbit around the Primary (Book 3 p.24),
 	// its habitable-zone orbit shifted by the rolled HZ variance. -1 when the
@@ -117,6 +121,10 @@ func Generate(r *dice.Roller) System {
 	if s.Far != nil {
 		s.FarOrbit = farOrbit(r)
 	}
+
+	// With every count and the mainworld orbit known, lay out the primary's
+	// concrete orbit map.
+	s.placeOrbits(r)
 	return s
 }
 
@@ -163,7 +171,18 @@ func (s System) String() string {
 			fmt.Fprintf(&b, "%s: %s\n", e.label, *e.star)
 		}
 	}
-	if len(s.Giants) > 0 {
+	switch {
+	case len(s.Orbits) > 0:
+		orbits := make([]string, len(s.Orbits))
+		for i, o := range s.Orbits {
+			label := o.Kind
+			if o.Giant != nil {
+				label = fmt.Sprintf("%s %s", o.Kind, o.Giant)
+			}
+			orbits[i] = fmt.Sprintf("%d: %s", o.Orbit, label)
+		}
+		fmt.Fprintf(&b, "Orbits: %s\n", strings.Join(orbits, "  "))
+	case len(s.Giants) > 0:
 		giants := make([]string, len(s.Giants))
 		for i, g := range s.Giants {
 			giants[i] = g.String()
