@@ -99,6 +99,22 @@ func TestGoldenScout(t *testing.T) {
 	}
 }
 
+// TestScoutRetryVsEducation confirms the Scout's failed Begin retries against
+// Education (Book 1 p.79 "Retry vs C5"), not the Str/Dex/End qualify set.
+func TestScoutRetryVsEducation(t *testing.T) {
+	c := Character{scores: [count]int{5, 5, 5, 7, 12, 7}} // Str/Dex/End 5, Edu 12
+	// First Begin 2D=8 > qualify 5 fails; the Retry rolls vs Education (8 <= 12).
+	if !beginCareer(dice.NewScripted(6, 2, 6, 2), &c, ScoutCareer, true) {
+		t.Error("Scout retry should roll against Education (8 <= 12) and enter the career")
+	}
+	// A career with no declared Retry re-rolls the qualify target instead (8 > 5).
+	plain := ScoutCareer
+	plain.Retry = Qualification{}
+	if beginCareer(dice.NewScripted(6, 2, 6, 2), &c, plain, true) {
+		t.Error("with no Retry characteristic, the retry re-rolls the qualify target (8 > 5, fails)")
+	}
+}
+
 // courierPolicy is goldenPolicy but takes Courier duty (no Risk & Reward).
 type courierPolicy struct{ goldenPolicy }
 

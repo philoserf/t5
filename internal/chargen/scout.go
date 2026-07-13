@@ -59,6 +59,7 @@ var ScoutCareer = Career{
 	ID:               Scout,
 	Name:             "Scout",
 	Qualify:          Qualification{Chars: []Characteristic{Strength, Dexterity, Endurance}},
+	Retry:            Qualification{Chars: []Characteristic{Education}}, // "Retry vs C5" (Book 1 p.79)
 	CCMode:           RotateCC,
 	ControllingChars: []Characteristic{Strength, Dexterity, Endurance},
 	Continue:         ContinueRule{UseChar: true, Char: Intelligence},
