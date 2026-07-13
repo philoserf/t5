@@ -18,7 +18,8 @@ orbit/climate/satellite, detailed "other" worlds, per-world satellites, and a co
 multi-star orbit map placing every world/GG/belt round-robin across all hosting stars, plus
 port facilities/fuel) · `chargen` (six-characteristic UPP + Check Characteristic + the 13
 careers) · `task` (Difficulty/UTF resolve) · `calendar` · `rangeband` (world/space range ladder) ·
-`senses` · `personals` · `combat` (the play tier, core mechanics).
+`senses` · `personals` · `combat` (the play tier, core mechanics) · `sectorgen` (hex map +
+system presence).
 
 ## Status legend
 
@@ -255,11 +256,14 @@ weapons and 8-stat armor that personal combat consumes; a static catalog of pre-
 the data alternative.
 
 **28. Sector / subsector generation + hex addressing** — _B3 pp. 12–15_ · new `sectorgen` package
-· **S–M**
-System-presence rolls by stellar density, per-hex gas-giant/belt flags, and the fixed
-32×40 / 8×10 hex geometry with CCRR coordinates and A–P subsector partition. Feeds systemgen and
-provides the multi-world context that capitals/trade-routes/Cy-classifications need.
-
+· **S–M** · ✅ **done**
+Built (`internal/sectorgen` + `cmd/sectorgen`): the 32×40 / 8×10 hex geometry with CCRR
+coordinates and the A–P subsector partition (`Hex.String`/`Hex.Subsector`), the eight stellar
+densities with their system-presence rolls (Book 3 p.13), and per-hex contents (gas giant on
+2D≤8, asteroid-belt mainworld on a natural 2). `GenerateSector`/`GenerateSubsector` populate a
+region; the CLI prints a subsector map. Golden-locked to the geometry and the density/contents
+rolls. _Follow-on:_ wiring each stellar hex to a full `systemgen.System` (world names,
+capitals, allegiance, trade routes, the Cy owned-world link, the T5SS `.sec` line).
 ---
 
 ## Tier 6 — Support primitives, niche generators, and reference data
