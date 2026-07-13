@@ -13,8 +13,9 @@ import (
 // {Ix}(Ex)[Cx] (Book 3 pp. 18, 27, Chart E). Importance feeds both the others,
 // so compute it first.
 
-// importanceTradeCodes each add +1 to Importance when present.
-var importanceTradeCodes = []string{"Pa", "Ag", "Hi", "In", "Ri"}
+// importanceTradeCodes each add +1 to Importance when present (Chart E, B3 p.27:
+// "Per Ag Hi In Ri +1" — Pre-Agricultural is not on the list).
+var importanceTradeCodes = []string{"Ag", "Hi", "In", "Ri"}
 
 // Importance returns the Importance Extension (Ix), a signed rank of a world
 // within its region. It is a pure additive sum over the UWP, trade codes, and
@@ -94,10 +95,20 @@ func RollEconomic(r *dice.Roller, p uwp.Profile, ix, gasGiants, belts int) Econo
 	}
 }
 
-// RU is the Resource Units, the product of the four factors. Because Efficiency
-// may be negative, RU may be negative.
+// RU is the Resource Units, the product of the four factors. Any factor of 0 is
+// treated as 1 ("If any value = 0, use 1 (to avoid multiplying by zero)", B3
+// p.27); Efficiency may be negative, so RU may be negative.
 func (e Economic) RU() int {
-	return e.Resources * e.Labor * e.Infrastructure * e.Efficiency
+	return nonZeroFactor(e.Resources) * nonZeroFactor(e.Labor) *
+		nonZeroFactor(e.Infrastructure) * nonZeroFactor(e.Efficiency)
+}
+
+// nonZeroFactor returns v, substituting 1 for 0 (the RU zero rule, B3 p.27).
+func nonZeroFactor(v int) int {
+	if v == 0 {
+		return 1
+	}
+	return v
 }
 
 // String renders the extension as "(RLI±E)", e.g. "(D7E+4)".
