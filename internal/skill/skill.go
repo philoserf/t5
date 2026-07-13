@@ -117,8 +117,6 @@ func (s *Set) GrantCascade(parent, knowledge string) {
 	}
 }
 
-// String renders the inventory as space-separated "Skill-level" entries in a
-// stable order, with knowledges shown as "Parent/Knowledge-level".
 // List returns the skills and knowledges as sorted "Name-Level" entries (a
 // cascade knowledge as "Parent/Knowledge-Level"). Callers that render skills —
 // which can contain spaces, e.g. "Vacc Suit" — should join this slice rather
@@ -134,6 +132,8 @@ func (s Set) List() []string {
 	return entries
 }
 
+// String renders the inventory as space-separated "Skill-level" entries in a
+// stable order, with knowledges shown as "Parent/Knowledge-level".
 func (s Set) String() string {
 	return strings.Join(s.List(), " ")
 }

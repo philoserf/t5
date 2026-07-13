@@ -79,36 +79,11 @@ func (p *sequencePolicy) NextCareer(chargen.Character) (chargen.Career, bool) {
 
 // careerByName resolves a -career flag value to its career data.
 func careerByName(name string) (chargen.Career, error) {
-	switch strings.ToLower(name) {
-	case "scout":
-		return chargen.ScoutCareer, nil
-	case "rogue":
-		return chargen.RogueCareer, nil
-	case "soldier":
-		return chargen.SoldierCareer, nil
-	case "marine":
-		return chargen.MarineCareer, nil
-	case "spacer":
-		return chargen.SpacerCareer, nil
-	case "agent":
-		return chargen.AgentCareer, nil
-	case "citizen":
-		return chargen.CitizenCareer, nil
-	case "entertainer":
-		return chargen.EntertainerCareer, nil
-	case "craftsman":
-		return chargen.CraftsmanCareer, nil
-	case "scholar":
-		return chargen.ScholarCareer, nil
-	case "functionary":
-		return chargen.FunctionaryCareer, nil
-	case "noble":
-		return chargen.NobleCareer, nil
-	case "merchant":
-		return chargen.MerchantCareer, nil
-	default:
-		return chargen.Career{}, fmt.Errorf("unknown career %q (known: scout, rogue, soldier, marine, spacer, agent, citizen, entertainer, craftsman, scholar, functionary, noble, merchant)", name)
+	if c, ok := chargen.CareerByName(name); ok {
+		return c, nil
 	}
+	known := strings.ToLower(strings.Join(chargen.CareerNames(), ", "))
+	return chargen.Career{}, fmt.Errorf("unknown career %q (known: %s)", name, known)
 }
 
 // labelWidth aligns the field labels of the character sheet (the widest is
@@ -197,23 +172,21 @@ func renderAchievements(b *strings.Builder, c chargen.Character) {
 	if c.Masterpieces > 0 {
 		field(b, "Masterpieces", fmt.Sprintf("%d (Cr%s)", c.Masterpieces, commas(c.MasterpieceValue)))
 	}
-	if c.Publications > 0 {
-		field(b, "Publications", strconv.Itoa(c.Publications))
-	}
-	if c.Commendations > 0 {
-		field(b, "Commendations", strconv.Itoa(c.Commendations))
-	}
-	if c.Discoveries > 0 {
-		field(b, "Discoveries", strconv.Itoa(c.Discoveries))
-	}
-	if c.LandGrants > 0 {
-		field(b, "Land grants", strconv.Itoa(c.LandGrants))
-	}
-	if c.ShipShares > 0 {
-		field(b, "Ship shares", strconv.Itoa(c.ShipShares))
-	}
-	if c.WoundBadges > 0 {
-		field(b, "Wound badges", strconv.Itoa(c.WoundBadges))
+	// Plain counted awards, each a labeled line only when non-zero.
+	for _, a := range []struct {
+		n     int
+		label string
+	}{
+		{c.Publications, "Publications"},
+		{c.Commendations, "Commendations"},
+		{c.Discoveries, "Discoveries"},
+		{c.LandGrants, "Land grants"},
+		{c.ShipShares, "Ship shares"},
+		{c.WoundBadges, "Wound badges"},
+	} {
+		if a.n > 0 {
+			field(b, a.label, strconv.Itoa(a.n))
+		}
 	}
 }
 

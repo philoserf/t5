@@ -51,13 +51,7 @@ type DefaultPolicy struct{}
 // ChooseCC picks the highest-scoring available characteristic — the best odds on
 // the Risk & Reward roll.
 func (DefaultPolicy) ChooseCC(c Character, available []Characteristic) Characteristic {
-	best := available[0]
-	for _, ch := range available[1:] {
-		if c.Score(ch) > c.Score(best) {
-			best = ch
-		}
-	}
-	return best
+	return bestChar(c, available...)
 }
 
 // RiskMod takes no modifier — the neutral choice.
@@ -73,10 +67,7 @@ func (DefaultPolicy) RiskMod(Character, int) int { return 0 }
 func (DefaultPolicy) ChooseSkillColumn(c Character, grid SkillGrid) int {
 	best, bestLevel := -1, 0
 	for col := 1; col < len(grid); col++ {
-		if !productiveColumn(c, grid[col]) {
-			continue
-		}
-		if level := columnLevel(c, grid[col]); best < 0 || level < bestLevel {
+		if productive, level := columnScore(c, grid[col]); productive && (best < 0 || level < bestLevel) {
 			best, bestLevel = col, level
 		}
 	}
@@ -86,26 +77,19 @@ func (DefaultPolicy) ChooseSkillColumn(c Character, grid SkillGrid) int {
 	return best
 }
 
-// productiveColumn reports whether every cell in a column awards this character
-// something.
-func productiveColumn(c Character, column [6]Cell) bool {
+// columnScore reports, in one pass, whether every cell in a column awards this
+// character something and the sum of the current levels of the skills it would
+// raise — a proxy for how developed the column already is, used to spread
+// training toward the least-developed productive column.
+func columnScore(c Character, column [6]Cell) (productive bool, level int) {
+	productive = true
 	for _, cell := range column {
 		if !cellAwards(c, cell) {
-			return false
+			productive = false
 		}
+		level += cellLevel(c, cell)
 	}
-	return true
-}
-
-// columnLevel sums the current levels of the skills a column would raise — a
-// proxy for how developed the column already is, used to spread training toward
-// the least-developed column.
-func columnLevel(c Character, column [6]Cell) int {
-	total := 0
-	for _, cell := range column {
-		total += cellLevel(c, cell)
-	}
-	return total
+	return productive, level
 }
 
 // cellLevel is the character's current level in the skill a cell would raise (a
@@ -116,13 +100,13 @@ func cellLevel(c Character, cell Cell) int {
 	case AwardSkill:
 		return c.Skills.Level(cell.Skill)
 	case AwardChoice:
-		best := 0
+		lowest := 0
 		for i, o := range cell.Options {
-			if level := c.Skills.Level(o); i == 0 || level < best {
-				best = level
+			if level := c.Skills.Level(o); i == 0 || level < lowest {
+				lowest = level
 			}
 		}
-		return best
+		return lowest
 	case AwardMajor:
 		return c.Skills.Level(c.Major)
 	case AwardMinor:
