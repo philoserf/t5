@@ -176,12 +176,18 @@ func (s System) String() string {
 		orbits := make([]string, len(s.Orbits))
 		for i, o := range s.Orbits {
 			label := o.Kind
-			if o.Giant != nil {
+			switch {
+			case o.Giant != nil:
 				label = fmt.Sprintf("%s %s", o.Kind, o.Giant)
+			case o.World != nil:
+				label = fmt.Sprintf("%s %s", o.World.Type, o.World.Profile)
+				if len(o.World.TradeCodes) > 0 {
+					label += " " + strings.Join(o.World.TradeCodes, " ")
+				}
 			}
 			orbits[i] = fmt.Sprintf("%d: %s", o.Orbit, label)
 		}
-		fmt.Fprintf(&b, "Orbits: %s\n", strings.Join(orbits, "  "))
+		fmt.Fprintf(&b, "Orbits: %s\n", strings.Join(orbits, "\n        "))
 	case len(s.Giants) > 0:
 		giants := make([]string, len(s.Giants))
 		for i, g := range s.Giants {

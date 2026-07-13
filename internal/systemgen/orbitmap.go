@@ -1,18 +1,21 @@
 package systemgen
 
 import (
+	"slices"
 	"sort"
 
 	"github.com/philoserf/t5/internal/dice"
+	"github.com/philoserf/t5/internal/worldgen"
 )
 
 // A PlacedOrbit is one occupied orbit in the system's orbit map: its orbit
-// number around the primary, what occupies it, and — for a gas-giant orbit —
-// the giant placed there.
+// number around the primary, what occupies it, and — for a gas-giant or a
+// detailed secondary-world orbit — the giant or world placed there.
 type PlacedOrbit struct {
 	Orbit int
 	Kind  string // "Mainworld", "Gas Giant", "Belt", or "World"
 	Giant *GasGiant
+	World *OtherWorld
 }
 
 // placeOrbits builds the primary star's orbit map (Book 3 p.29 P1/P2). It places
@@ -29,38 +32,49 @@ func (s *System) placeOrbits(r *dice.Roller) {
 	occupied := map[int]bool{}
 	var placed []PlacedOrbit
 
-	place := func(want int, kind string, g *GasGiant) {
+	claim := func(want int) int {
 		o := resolveOrbit(want, floor, occupied)
 		occupied[o] = true
-		placed = append(placed, PlacedOrbit{Orbit: o, Kind: kind, Giant: g})
+		return o
 	}
 
 	if s.MainworldOrbit >= 0 {
-		place(s.MainworldOrbit, "Mainworld", nil)
+		placed = append(placed, PlacedOrbit{Orbit: claim(s.MainworldOrbit), Kind: "Mainworld"})
 	}
 
 	// Gas giants and belts are placed relative to the habitable zone, so they
 	// need one (a primary with no HZ has no place to hang them).
-	if hz, ok := HZOrbit(s.Primary); ok {
+	hz, hasHZ := HZOrbit(s.Primary)
+	if hasHZ {
 		for i := range s.Giants {
 			g := &s.Giants[i]
-			place(hz+p2(r.Dice(2)).ggOffset(g.Class), "Gas Giant", g)
+			placed = append(placed, PlacedOrbit{Orbit: claim(hz + p2(r.Dice(2)).ggOffset(g.Class)), Kind: "Gas Giant", Giant: g})
 		}
 		for range s.Belts {
-			place(hz+p2(r.Dice(2)).belt, "Belt", nil)
+			placed = append(placed, PlacedOrbit{Orbit: claim(hz + p2(r.Dice(2)).belt), Kind: "Belt"})
 		}
 	}
 
 	// Other worlds fill the remaining world count (mainworld, giants, and belts
-	// already account for the rest). Their orbits are absolute.
+	// already account for the rest). Their orbits are absolute; each is then
+	// detailed with a type, UWP, and trade codes given its zone and the system.
+	mwPop := s.Mainworld.Profile.Population
+	mwIndustrial := slices.Contains(s.Mainworld.TradeCodes, "In")
 	others := max(s.Worlds-1-s.GasGiants-s.Belts, 0)
 	for i := range others {
 		row := p2(r.Dice(2))
-		orbit := row.world1
+		want := row.world1
 		if i == others-1 {
-			orbit = row.world2
+			want = row.world2
 		}
-		place(orbit, "World", nil)
+		o := claim(want)
+		wt := otherWorldType(o, hz, hasHZ, r.Die())
+		prof := worldgen.GenerateOtherWorld(r, wt, mwPop)
+		tcs := worldgen.TradeClassificationsWithContext(prof, worldgen.WorldContext{
+			InHZ:                hasHZ && o == hz,
+			MainworldIndustrial: mwIndustrial,
+		})
+		placed = append(placed, PlacedOrbit{Orbit: o, Kind: "World", World: &OtherWorld{Type: wt, Profile: prof, TradeCodes: tcs}})
 	}
 
 	sort.Slice(placed, func(i, j int) bool { return placed[i].Orbit < placed[j].Orbit })
