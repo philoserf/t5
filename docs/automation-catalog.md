@@ -192,11 +192,13 @@ mapping each effect to which of 8 protection channels it checks, armor subtracti
 and hit cascade across characteristics. Plus explosion/WMD/nuclear/environmental proximity
 tables and the battle-damage aftermath chain. All lookups + formulas over the effect vocabulary.
 
-**19. The Senses** — _B1 pp. 186–199; B3 senses_ · new `senses` package · **M**
-Generic sense-check (nD = Range, roll-low vs Constant + Benchmark + Mods) plus fixed-format
-sense-ID codecs (V-16-RGB, H-16-…) and per-sense systems (vision spectrum, hearing octaves,
-smell UOP matching, touch, perception, awareness). Mostly string codecs + static tables on the
-RangeBand primitive; introduces the first timed status-effect (special sounds).
+**19. The Senses** — _B1 pp. 186–199; B3 senses_ · new `senses` package · **M** · 🟡 **partial**
+Built (`internal/senses`): the generic sense Action — the six senses with human Constants
+(Vision/Hearing 16, Smell 10, Touch 6; Awareness/Perception non-human), `NoticeAtRange`
+(nD = Range, roll-low vs Constant + (Size−Range) + Mods) and `NoticeInContact` (2D), plus
+`RangeBand(meters)` off the rangeband primitive. Golden-locked to the p.190 cargo-mover example.
+**Not built:** the fixed-format sense-ID codecs (V-16-RGB spectrum, H-16 octaves, smell UOP
+matching) and per-sense detail systems, and the special-sound timed status-effect.
 
 **20. The Personals (social interaction)** — _B1 pp. 180–185_ · new `personals` package · **M–L**
 Purpose (1D–4D) + Strategy×Tactic matrix + the five Laws + camaraderie counters → Target
