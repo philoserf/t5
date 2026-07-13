@@ -364,8 +364,11 @@ func RunCareer(r *dice.Roller, p Policy, c *Character, career Career) {
 		grantRankSkill(c, career.EnlistedRanks, 1)
 	}
 	if career.FameCareer {
-		c.Fame = r.Dice(2) // initial Fame and Talent are one 2D roll (Book 1 p. 77)
-		c.Talent = c.Fame
+		talent := r.Dice(2) // initial Talent (and starting Fame) are one 2D roll (Book 1 p. 77)
+		c.Talent = talent
+		if c.Fame == 0 {
+			c.Fame = talent // don't overwrite Fame carried in from a prior career
+		}
 	}
 	if career.BranchOps != nil {
 		b := career.BranchOps.Branches[min(r.Die()+eduBonus(*c), 8)] // Branch chosen once
