@@ -2,6 +2,7 @@ package worldgen
 
 import (
 	"reflect"
+	"slices"
 	"testing"
 
 	"github.com/philoserf/t5/internal/uwp"
@@ -64,5 +65,50 @@ func TestTradeClassifications(t *testing.T) {
 		if got := TradeClassifications(c.p); !reflect.DeepEqual(got, c.want) {
 			t.Errorf("%s: TradeClassifications = %v, want %v", c.name, got, c.want)
 		}
+	}
+}
+
+// TestTradeClassificationsUWPCodes covers the Gov/Law/Starport-gated codes added
+// beyond the original 21 (Book 3 Chart D, p.26): Dieback, Barren, Prison/Exile,
+// and Reserve.
+func TestTradeClassificationsUWPCodes(t *testing.T) {
+	has := func(codes []string, code string) bool { return slices.Contains(codes, code) }
+
+	// Di Dieback: Pop0/Gov0/Law0 with a working starport (A-D).
+	di := uwp.Profile{Starport: 'C', Size: 5, Atmosphere: 4, Hydrographics: 3, Population: 0, Government: 0, Law: 0}
+	if got := TradeClassifications(di); !has(got, "Di") || has(got, "Ba") {
+		t.Errorf("Dieback = %v, want Di and not Ba", got)
+	}
+	// Ba Barren: the same core with Starport E or X.
+	for _, sp := range []byte{'E', 'X'} {
+		ba := uwp.Profile{Starport: sp, Size: 5, Atmosphere: 4, Hydrographics: 3, Population: 0, Government: 0, Law: 0}
+		if got := TradeClassifications(ba); !has(got, "Ba") || has(got, "Di") {
+			t.Errorf("Barren (starport %c) = %v, want Ba and not Di", sp, got)
+		}
+	}
+	// Di/Ba are mutually exclusive across every starport (and the belt's 0x00).
+	for _, sp := range []byte{'A', 'B', 'C', 'D', 'E', 'X', 0} {
+		got := TradeClassifications(uwp.Profile{Starport: sp, Population: 0, Government: 0, Law: 0})
+		if has(got, "Di") && has(got, "Ba") {
+			t.Errorf("starport %q emitted both Di and Ba: %v", sp, got)
+		}
+	}
+
+	// Px Prison/Exile: Atm 2/3/A/B, Hyd 1-5, Pop 3-6, Law 6-9.
+	px := uwp.Profile{Starport: 'B', Atmosphere: 10, Hydrographics: 3, Population: 4, Government: 5, Law: 7}
+	if got := TradeClassifications(px); !has(got, "Px") {
+		t.Errorf("Prison = %v, want Px", got)
+	}
+	if got := TradeClassifications(uwp.Profile{Starport: 'B', Atmosphere: 10, Hydrographics: 3, Population: 4, Government: 5, Law: 5}); has(got, "Px") {
+		t.Errorf("Law-5 world should not be Px: %v", got)
+	}
+
+	// Re Reserve: Pop 0-4, Gov 6, Law 0/4/5.
+	re := uwp.Profile{Starport: 'C', Population: 2, Government: 6, Law: 4}
+	if got := TradeClassifications(re); !has(got, "Re") {
+		t.Errorf("Reserve = %v, want Re", got)
+	}
+	if got := TradeClassifications(uwp.Profile{Starport: 'C', Population: 2, Government: 5, Law: 4}); has(got, "Re") {
+		t.Errorf("Gov-5 world should not be Re: %v", got)
 	}
 }
