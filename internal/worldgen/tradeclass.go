@@ -21,10 +21,11 @@ type tcRule struct {
 // UWP alone (Book 3, Chart D, p. 26), in table order.
 //
 // Deliberately excluded are classifications that need information beyond the
-// UWP: climate / habitable-zone (Frozen, Hot, Cold, Tropic, Tundra, Twilight
-// Zone, Farming) and non-mainworld / orbit status (Satellite, Locked, Mining,
-// Penal), which await systemgen per-world placement (catalog #15), and the
-// referee-assigned political and special codes.
+// UWP. The climate / habitable-zone codes (Tropic, Tundra, Frozen, Twilight
+// Zone) are supplied by ClimateCodes once systemgen places the mainworld in an
+// orbit; non-mainworld / orbit status (Satellite, Locked, Mining, Penal,
+// Farming) awaits the rest of systemgen per-world placement (catalog #15); and
+// the political and special codes are referee-assigned.
 var tcRules = []tcRule{
 	// Planetary.
 	{code: "As", siz: "0", atm: "0", hyd: "0"},
