@@ -6,8 +6,8 @@
 //
 //	sectorgen [-density name] [-subsector A] [-seed value]
 //
-// density is one of extragalactic, rift, sparse, scattered, standard, dense,
-// cluster, core (default standard). With -seed, output is reproducible.
+// density is one of the names sectorgen.DensityNames reports (default standard);
+// with -seed, output is reproducible.
 package main
 
 import (
@@ -15,30 +15,18 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/philoserf/t5/internal/dice"
+	"github.com/philoserf/t5/internal/cli"
 	"github.com/philoserf/t5/internal/sectorgen"
 )
-
-var densities = map[string]sectorgen.Density{
-	"extragalactic": sectorgen.ExtraGalactic,
-	"rift":          sectorgen.Rift,
-	"sparse":        sectorgen.Sparse,
-	"scattered":     sectorgen.Scattered,
-	"standard":      sectorgen.Standard,
-	"dense":         sectorgen.Dense,
-	"cluster":       sectorgen.Cluster,
-	"core":          sectorgen.Core,
-}
 
 func main() {
 	densityName := flag.String("density", "standard", "stellar density (extragalactic…core)")
 	subsector := flag.String("subsector", "A", "subsector letter A-P")
-	seed := flag.Uint64("seed", 0, "random seed; if omitted, a fresh random seed is used")
-	flag.Parse()
+	r := cli.Roller()
 
-	d, ok := densities[strings.ToLower(*densityName)]
+	d, ok := sectorgen.DensityByName(*densityName)
 	if !ok {
-		fmt.Printf("unknown density %q\n", *densityName)
+		fmt.Printf("unknown density %q (known: %s)\n", *densityName, strings.Join(sectorgen.DensityNames(), ", "))
 		return
 	}
 	letter := byte('A')
@@ -46,21 +34,10 @@ func main() {
 		letter = strings.ToUpper(*subsector)[0]
 	}
 
-	r := dice.New()
-	seeded := false
-	flag.Visit(func(f *flag.Flag) {
-		if f.Name == "seed" {
-			seeded = true
-		}
-	})
-	if seeded {
-		r = dice.NewWithSeed(*seed)
-	}
-
 	systems := sectorgen.GenerateSubsector(r, d, letter)
 	fmt.Printf("Subsector %c — %s density — %d systems\n", letter, d, len(systems))
 	for _, s := range systems {
-		flags := []string{}
+		var flags []string
 		if s.GasGiant {
 			flags = append(flags, "GG")
 		}

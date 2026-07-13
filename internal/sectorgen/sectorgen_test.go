@@ -39,6 +39,22 @@ func TestSubsector(t *testing.T) {
 	}
 }
 
+func TestDensityByName(t *testing.T) {
+	// Case- and space-insensitive.
+	cases := map[string]Density{"standard": Standard, "Core": Core, "extragalactic": ExtraGalactic, "Extra Galactic": ExtraGalactic}
+	for name, want := range cases {
+		if d, ok := DensityByName(name); !ok || d != want {
+			t.Errorf("DensityByName(%q) = %v,%v, want %v", name, d, ok, want)
+		}
+	}
+	if _, ok := DensityByName("bogus"); ok {
+		t.Errorf("DensityByName(bogus) should not be found")
+	}
+	if names := DensityNames(); len(names) != 8 || names[0] != "Extra Galactic" || names[7] != "Core" {
+		t.Errorf("DensityNames() = %v", names)
+	}
+}
+
 func TestSystemPresent(t *testing.T) {
 	// Standard = 1D <= 3.
 	if !SystemPresent(dice.NewScripted(3), Standard) {

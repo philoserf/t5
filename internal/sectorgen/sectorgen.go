@@ -6,17 +6,19 @@ package sectorgen
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/philoserf/t5/internal/dice"
 )
 
 // Sector dimensions (Book 3 p.12): 32 columns of 40 rows = 1280 hexes; each
-// subsector is 8 columns of 10 rows.
+// subsector is 8 columns of 10 rows, so subsectorCols subsectors span a row band.
 const (
-	Columns      = 32
-	Rows         = 40
-	subsectorCol = 8
-	subsectorRow = 10
+	Columns       = 32
+	Rows          = 40
+	subsectorCol  = 8
+	subsectorRow  = 10
+	subsectorCols = Columns / subsectorCol // 4 subsectors across a row band
 )
 
 // A Hex is a location on a sector map: column 1-32, row 1-40 (Book 3 p.12). The
@@ -35,7 +37,7 @@ func (h Hex) String() string {
 func (h Hex) Subsector() byte {
 	colBand := (h.Col - 1) / subsectorCol
 	rowBand := (h.Row - 1) / subsectorRow
-	return byte('A' + rowBand*4 + colBand)
+	return byte('A' + rowBand*subsectorCols + colBand)
 }
 
 // Density is a region's stellar density (Book 3 p.13 Extended System Contents),
@@ -53,37 +55,61 @@ const (
 	Core                         // 2D <= 11
 )
 
-var densityNames = [...]string{
-	"Extra Galactic", "Rift", "Sparse", "Scattered",
-	"Standard", "Dense", "Cluster", "Core",
+// densityInfo is the single table of each density's display name and its
+// system-presence check: roll `dice` D6 and a system is present at or under
+// `threshold` (Book 3 p.13). Core is transcribed as the printed "11 or less on
+// 2D" (its ~91% note is approximate).
+var densityInfo = [...]struct {
+	name            string
+	dice, threshold int
+}{
+	ExtraGalactic: {"Extra Galactic", 3, 3},
+	Rift:          {"Rift", 2, 2},
+	Sparse:        {"Sparse", 1, 1},
+	Scattered:     {"Scattered", 1, 2},
+	Standard:      {"Standard", 1, 3},
+	Dense:         {"Dense", 1, 4},
+	Cluster:       {"Cluster", 1, 5},
+	Core:          {"Core", 2, 11},
 }
 
 func (d Density) String() string {
 	if d < ExtraGalactic || d > Core {
 		return "?"
 	}
-	return densityNames[d]
+	return densityInfo[d].name
 }
 
-// presenceRoll is each density's system-presence check: roll `dice` D6 and a
-// system is present at or under `threshold` (Book 3 p.13). Core is transcribed
-// as the printed "11 or less on 2D" (its ~91% note is approximate).
-var presenceRoll = [...]struct{ dice, threshold int }{
-	ExtraGalactic: {3, 3},
-	Rift:          {2, 2},
-	Sparse:        {1, 1},
-	Scattered:     {1, 2},
-	Standard:      {1, 3},
-	Dense:         {1, 4},
-	Cluster:       {1, 5},
-	Core:          {2, 11},
+// DensityNames returns the eight density names in order (Extra Galactic … Core).
+func DensityNames() []string {
+	names := make([]string, len(densityInfo))
+	for i, info := range densityInfo {
+		names[i] = info.name
+	}
+	return names
+}
+
+// DensityByName returns the Density matching a name case- and space-
+// insensitively (e.g. "core", "extragalactic"), and whether it was found.
+func DensityByName(name string) (Density, bool) {
+	norm := normalizeName(name)
+	for i, info := range densityInfo {
+		if normalizeName(info.name) == norm {
+			return Density(i), true
+		}
+	}
+	return 0, false
+}
+
+func normalizeName(s string) string {
+	return strings.ToLower(strings.ReplaceAll(s, " ", ""))
 }
 
 // SystemPresent rolls whether a hex holds a star system at the given density
 // (Book 3 p.13).
 func SystemPresent(r *dice.Roller, d Density) bool {
-	roll := presenceRoll[d]
-	return r.Dice(roll.dice) <= roll.threshold
+	info := densityInfo[d]
+	return r.Dice(info.dice) <= info.threshold
 }
 
 // A StellarHex is a populated hex: its location and the coarse system contents a
@@ -107,7 +133,7 @@ func rollContents(r *dice.Roller, h Hex) StellarHex {
 // GenerateSector rolls all 1280 hexes of a sector at the given density and
 // returns the populated ones in column-major CCRR order (Book 3 pp.12-13).
 func GenerateSector(r *dice.Roller, d Density) []StellarHex {
-	return generate(r, d, 1, Columns, 1, Rows)
+	return generate(r, d, Hex{1, 1}, Hex{Columns, Rows})
 }
 
 // GenerateSubsector rolls the 80 hexes of one subsector — letter 'A'-'P' — at
@@ -117,18 +143,17 @@ func GenerateSubsector(r *dice.Roller, d Density, letter byte) []StellarHex {
 		return nil
 	}
 	i := int(letter - 'A')
-	colBand, rowBand := i%4, i/4
-	c0 := colBand*subsectorCol + 1
-	r0 := rowBand*subsectorRow + 1
-	return generate(r, d, c0, c0+subsectorCol-1, r0, r0+subsectorRow-1)
+	col := (i%subsectorCols)*subsectorCol + 1
+	row := (i/subsectorCols)*subsectorRow + 1
+	return generate(r, d, Hex{col, row}, Hex{col + subsectorCol - 1, row + subsectorRow - 1})
 }
 
-// generate rolls every hex in the inclusive column/row range and returns the
-// populated ones in column-major CCRR order.
-func generate(r *dice.Roller, d Density, colLo, colHi, rowLo, rowHi int) []StellarHex {
+// generate rolls every hex in the inclusive rectangle from lo to hi and returns
+// the populated ones in column-major CCRR order.
+func generate(r *dice.Roller, d Density, lo, hi Hex) []StellarHex {
 	var systems []StellarHex
-	for col := colLo; col <= colHi; col++ {
-		for row := rowLo; row <= rowHi; row++ {
+	for col := lo.Col; col <= hi.Col; col++ {
+		for row := lo.Row; row <= hi.Row; row++ {
 			if SystemPresent(r, d) {
 				systems = append(systems, rollContents(r, Hex{col, row}))
 			}
