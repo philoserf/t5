@@ -1,6 +1,10 @@
 package chargen
 
-import "github.com/philoserf/t5/internal/dice"
+import (
+	"slices"
+
+	"github.com/philoserf/t5/internal/dice"
+)
 
 // Pre-career education (Book 1, "Pre-Career Education", pp. 59-60). Before a
 // career, a character may attend an educational institution: they Apply (a
@@ -87,12 +91,7 @@ func educate(r *dice.Roller, p Policy, c *Character) {
 
 // hasDegree reports whether the character has earned a given degree.
 func (c Character) hasDegree(degree string) bool {
-	for _, d := range c.Degrees {
-		if d == degree {
-			return true
-		}
-	}
-	return false
+	return slices.Contains(c.Degrees, degree)
 }
 
 // attendTradeSchool runs a one-year Trade School (Book 1 p. 60): apply with a
@@ -142,12 +141,11 @@ func attendAcademic(r *dice.Roller, p Policy, c *Character, prog academicProgram
 		return
 	}
 	priorWaivers := 0
-	// Apply for admission: Check the better of Int or Edu, Waiver on failure.
-	if !admitted(r, p, c, bestChar(*c, Intelligence, Education), &priorWaivers) {
+	// Admission and each yearly Pass/Fail Check use the better of Int or Edu.
+	passCh := bestChar(*c, Intelligence, Education)
+	if !admitted(r, p, c, passCh, &priorWaivers) {
 		return
 	}
-	// One Pass/Fail Check per year; a failure ends attendance unless Waived.
-	passCh := bestChar(*c, Intelligence, Education)
 	passes := 0
 	for range prog.years {
 		if r.Resolve(dice.Check{Dice: 2, Target: c.Score(passCh)}).Success {
@@ -223,13 +221,7 @@ func bestChar(c Character, chars ...Characteristic) Characteristic {
 	return best
 }
 
-// without returns list with every occurrence of x removed.
+// without returns a copy of list with every occurrence of x removed.
 func without(list []string, x string) []string {
-	out := make([]string, 0, len(list))
-	for _, s := range list {
-		if s != x {
-			out = append(out, s)
-		}
-	}
-	return out
+	return slices.DeleteFunc(slices.Clone(list), func(s string) bool { return s == x })
 }

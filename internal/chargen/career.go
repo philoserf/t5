@@ -2,6 +2,7 @@ package chargen
 
 import (
 	"fmt"
+	"slices"
 
 	"github.com/philoserf/t5/internal/dice"
 	"github.com/philoserf/t5/internal/worldgen"
@@ -69,11 +70,7 @@ func (q Qualification) target(c Character) int {
 	if len(q.Chars) == 0 {
 		panic("chargen: qualification has no characteristics")
 	}
-	best := c.Score(q.Chars[0])
-	for _, ch := range q.Chars[1:] {
-		best = max(best, c.Score(ch))
-	}
-	return best + q.Mod
+	return c.Score(bestChar(c, q.Chars...)) + q.Mod
 }
 
 // A ContinueRule gives the target of a career's Continue roll — a fixed number,
@@ -594,8 +591,7 @@ func runPoliticsTerm(r *dice.Roller, p Policy, c *Character, run *careerRun, car
 	riskKept := r.Resolve(dice.Check{Dice: 2, Target: c.Score(cc)}).Success
 	elig := career.EligPerTerm
 	if r.Resolve(dice.Check{Dice: 2, Target: c.Score(cc)}).Success && run.rank < len(career.EnlistedRanks) {
-		run.rank++
-		grantRankSkill(c, career.EnlistedRanks, run.rank)
+		promoteRank(c, run, career.EnlistedRanks)
 		elig++ // one extra skill on promotion (Book 1 p. 82)
 	}
 	awardSkillsN(r, p, c, career, elig)
@@ -814,8 +810,7 @@ func resolveRank(r *dice.Roller, c *Character, run *careerRun, career Career) bo
 	}
 	if run.officer {
 		if run.rank < len(career.OfficerRanks) && promoted(r, *c, career.OfficerPromote) {
-			run.rank++
-			grantRankSkill(c, career.OfficerRanks, run.rank)
+			promoteRank(c, run, career.OfficerRanks)
 			return true
 		}
 		return false
@@ -828,8 +823,7 @@ func resolveRank(r *dice.Roller, c *Character, run *careerRun, career Career) bo
 		return true
 	}
 	if run.rank < len(career.EnlistedRanks) && promoted(r, *c, career.EnlistedPromote) {
-		run.rank++
-		grantRankSkill(c, career.EnlistedRanks, run.rank)
+		promoteRank(c, run, career.EnlistedRanks)
 		return true
 	}
 	return false
@@ -854,6 +848,13 @@ func grantRankSkill(c *Character, ranks []Rank, rank int) {
 	if rank >= 1 && rank <= len(ranks) && ranks[rank-1].Skill != "" {
 		c.Skills.Raise(ranks[rank-1].Skill, 1)
 	}
+}
+
+// promoteRank advances the character one rung up a rank ladder and grants that
+// rung's automatic skill. The caller has already confirmed a rung remains.
+func promoteRank(c *Character, run *careerRun, ranks []Rank) {
+	run.rank++
+	grantRankSkill(c, ranks, run.rank)
 }
 
 // awardSkills grants the term's skill eligibility (Book 1 p. 65).
@@ -1092,10 +1093,8 @@ func continues(r *dice.Roller, p Policy, c Character, career Career, rec CareerR
 
 // removeChar returns chars without the first occurrence of ch.
 func removeChar(chars []Characteristic, ch Characteristic) []Characteristic {
-	for i, x := range chars {
-		if x == ch {
-			return append(chars[:i], chars[i+1:]...)
-		}
+	if i := slices.Index(chars, ch); i >= 0 {
+		return slices.Delete(chars, i, i+1)
 	}
 	return chars
 }
