@@ -128,6 +128,10 @@ func ordinalLetter(n int) byte {
 // HullTons is the nominal tonnage of a hull size ordinal: ordinal * 100 tons.
 func HullTons(ordinal int) int { return ordinal * 100 }
 
+// LetterOrdinal maps a hull/drive letter (A-Z omitting I/O) to its ordinal
+// 1..24, or 0 for a non-letter — the reverse of a hull/drive size code.
+func LetterOrdinal(c byte) int { return letterOrdinal(c) }
+
 // A DriveSpec is a requested drive: its size letter (as an ordinal 1..24, or an
 // even 26..48 for an extended "letter2" size) and its TL stage (Standard is the
 // zero value / baseline).
