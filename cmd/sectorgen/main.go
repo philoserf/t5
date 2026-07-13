@@ -35,6 +35,10 @@ func main() {
 	if len(*subsector) > 0 {
 		letter = strings.ToUpper(*subsector)[0]
 	}
+	if letter < 'A' || letter > 'P' {
+		fmt.Printf("invalid subsector %q (want a letter A-P)\n", *subsector)
+		return
+	}
 
 	if *detail {
 		for _, rec := range survey.Subsector(r, d, letter) {

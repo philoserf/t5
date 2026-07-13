@@ -75,20 +75,10 @@ var (
 // worldName builds a two- or three-syllable pronounceable name.
 func worldName(r *dice.Roller) string {
 	var b strings.Builder
-	for range 2 + index(r, 2) { // 2 or 3 syllables
-		b.WriteString(nameConsonants[index(r, len(nameConsonants))])
-		b.WriteString(nameVowels[index(r, len(nameVowels))])
+	for range 2 + r.Index(2) { // 2 or 3 syllables
+		b.WriteString(nameConsonants[r.Index(len(nameConsonants))])
+		b.WriteString(nameVowels[r.Index(len(nameVowels))])
 	}
 	name := b.String()
 	return strings.ToUpper(name[:1]) + name[1:]
-}
-
-// index returns a roughly uniform value in [0, n) by assembling enough base-6
-// die rolls to cover n.
-func index(r *dice.Roller, n int) int {
-	x := 0
-	for pow := 1; pow < n; pow *= 6 {
-		x = x*6 + r.Die() - 1
-	}
-	return x % n
 }

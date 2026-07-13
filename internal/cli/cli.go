@@ -34,5 +34,6 @@ func Roller() *dice.Roller {
 // for the seeding contract).
 func SeededRoller(item string) (n int, r *dice.Roller) {
 	count := flag.Int("n", 1, fmt.Sprintf("number of %s to generate", item))
-	return *count, Roller()
+	r = Roller() // parses the command line before we read *count
+	return *count, r
 }

@@ -42,3 +42,27 @@ func (r *Roller) EvenDist1to10() int {
 	}
 	return 10
 }
+
+// Index returns a uniformly distributed value in [0, n) for a generic n > 0 (it
+// panics otherwise). It assembles enough base-6 digits to cover n and rejection-
+// samples the biased tail, so every value is equally likely — unlike a plain
+// modulo, which favours the low indices when n does not divide the die range.
+func (r *Roller) Index(n int) int {
+	if n <= 0 {
+		panic("dice: Index requires n > 0")
+	}
+	limit := 1
+	for limit < n {
+		limit *= 6
+	}
+	accept := limit - limit%n // the largest multiple of n at or below limit
+	for {
+		x := 0
+		for d := limit; d > 1; d /= 6 {
+			x = x*6 + r.d6() - 1
+		}
+		if x < accept {
+			return x % n
+		}
+	}
+}

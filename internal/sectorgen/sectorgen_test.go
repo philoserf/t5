@@ -74,6 +74,13 @@ func TestSystemPresent(t *testing.T) {
 	if !SystemPresent(dice.NewScripted(1, 1), Rift) || SystemPresent(dice.NewScripted(1, 2), Rift) {
 		t.Errorf("Rift should require a natural 2")
 	}
+	// An out-of-range density yields no system rather than panicking.
+	if SystemPresent(dice.NewScripted(1), Density(99)) {
+		t.Errorf("out-of-range density should report no system")
+	}
+	if GenerateSector(dice.NewScripted(1), Density(-1)) != nil {
+		t.Errorf("out-of-range density should generate no systems")
+	}
 }
 
 func TestRollContents(t *testing.T) {
