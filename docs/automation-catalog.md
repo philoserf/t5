@@ -17,7 +17,8 @@ notation parser, individual die faces + Spectacular + Many-Dice) · `ehex` · `u
 orbit/climate/satellite, detailed "other" worlds, per-world satellites, and a concrete
 multi-star orbit map placing every world/GG/belt round-robin across all hosting stars, plus
 port facilities/fuel) · `chargen` (six-characteristic UPP + Check Characteristic + the 13
-careers) · `task` (Difficulty/UTF resolve) · `calendar` · `rangeband` (world/space range ladder).
+careers) · `task` (Difficulty/UTF resolve) · `calendar` · `rangeband` (world/space range ladder) ·
+`senses` · `personals` · `combat` (the play tier, core mechanics).
 
 ## Status legend
 
@@ -185,12 +186,14 @@ and the `geom` size machinery. This is what makes chargen work for aliens.
 
 ## Tier 4 — Play/simulation subsystems (build on Tier 2)
 
-**18. Personal combat** — _B1 pp. 200–227_ · new `combat` package · **M–L**
-Round state machine (initiative, move/attack/damage phases, range-band movement), ranged/melee/
-impact attack resolution, and the damage system: type×select multiplier, the 26-effect table
-mapping each effect to which of 8 protection channels it checks, armor subtraction, knockdown,
-and hit cascade across characteristics. Plus explosion/WMD/nuclear/environmental proximity
-tables and the battle-damage aftermath chain. All lookups + formulas over the effect vocabulary.
+**18. Personal combat** — _B1 pp. 200–227_ · new `combat` package · **M–L** · 🟡 **partial**
+Built (`internal/combat`): the Move-Attack-Damage round as roll-low Tasks — the three Combat
+Numbers (Shooting/Melee/Impact), `TargetSize` (Size−Range + stance), the Ranged (R=Range dice,
+This-Is-Hard +1D), Melee (2D vs AMN−DMN), and Impact (2D vs C2−Speed, Speed² damage) attacks,
+and damage resolution (`Absorb` vs armor, `Wound` cascading Str/Dex/End). Golden-locked to the
+p.202/203 Roberto-Landor and Cayne-Corbett examples. **Not built:** attack modes
+(Aimed/Standard/SnapFire), the weapon effect codes + Pen/Protection nuances, Knockdown/KO/Quick
+Kill, and the after-battle recovery pass.
 
 **19. The Senses** — _B1 pp. 186–199; B3 senses_ · new `senses` package · **M** · 🟡 **partial**
 Built (`internal/senses`): the generic sense Action — the six senses with human Constants
