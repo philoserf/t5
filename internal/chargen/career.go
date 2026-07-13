@@ -654,10 +654,9 @@ var rogueSchemes = [13]schemeValue{
 // Successful Scheme (Risk held) or 1 for a Failed Scheme (Risk lost); a term
 // served in prison instead grants 2 In-Prison skills and nothing else.
 const (
-	rogueSuccessElig   = 6 // Per Term 2 + Successful Scheme 4
-	rogueFailElig      = 3 // Per Term 2 + Failed Scheme 1
-	roguePrisonElig    = 2 // In Prison 2 (columns 1-2 only, no Term or Scheme skills)
-	prisonMaxSkillsCol = 1 // In Prison draws from Personal (0) or Academic (1) only
+	rogueSuccessElig = 6 // Per Term 2 + Successful Scheme 4
+	rogueFailElig    = 3 // Per Term 2 + Failed Scheme 1
+	roguePrisonElig  = 2 // In Prison 2 (Personal or Academic column only, no Term or Scheme skills)
 )
 
 // runRogueTerm resolves a Rogue's term (Book 1 p. 84). The Rogue masterminds a
@@ -730,10 +729,17 @@ func payScheme(c *Character, s schemeValue, rewardTarget, rewardRoll int, riskOK
 // only from the Personal and Academic columns (grid columns 0-1); the policy's
 // column choice is clamped into that range.
 func awardPrisonSkills(r *dice.Roller, p Policy, c *Character, career Career, n int) {
-	prison := SkillGrid{career.Skills[0], career.Skills[1]}
+	// In-Prison skills come from Personal (col 0) or Academic (col 1) only (Book 1
+	// p. 84). Prefer Academic when the character has a Major/Minor there worth
+	// raising; otherwise the always-productive Personal column (characteristic
+	// bumps), so every prison roll lands on a real award.
+	const personal, academic = 0, 1
+	col := personal
+	if productive, _ := columnScore(*c, career.Skills[academic]); productive {
+		col = academic
+	}
 	for range n {
-		col := min(max(p.ChooseSkillColumn(*c, prison), 0), prisonMaxSkillsCol)
-		applyCell(p, c, prison[col][r.Die()-1])
+		applyCell(p, c, career.Skills[col][r.Die()-1])
 	}
 }
 

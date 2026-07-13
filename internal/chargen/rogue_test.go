@@ -96,16 +96,17 @@ func TestRogueSchemeInfamy(t *testing.T) {
 		t.Errorf("Pilot = %d, want 3 (Failed Scheme eligibility)", got)
 	}
 
-	// Prison term: only 2 In-Prison skills, clamped to Academic (col 1), row 6 =
-	// Gambler; no Scheme payoff, and the prison flag clears.
+	// Prison term: only 2 In-Prison skills. This Rogue is uneducated, so Academic
+	// (col 1) is unproductive and prison draws from Personal (col 0): row 6 = Soc
+	// bump, twice, Soc 7 -> 9. No Scheme payoff, and the prison flag clears.
 	if out := runRogueTerm(dice.NewScripted(6, 6), goldenPolicy{}, &c, &run, RogueCareer, Strength); out != Ongoing {
 		t.Fatalf("prison term outcome = %v, want Ongoing", out)
 	}
 	if run.inPrison {
 		t.Errorf("inPrison = true, want false (the sentence is served)")
 	}
-	if got := c.Skills.Level("Gambler"); got != 2 {
-		t.Errorf("Gambler = %d, want 2 (In-Prison skills from Academic)", got)
+	if got := c.Score(Social); got != 9 {
+		t.Errorf("Soc = %d, want 9 (two In-Prison Personal bumps for an uneducated Rogue)", got)
 	}
 	if c.Credits != 250_000 {
 		t.Errorf("Credits = %d, want 250000 unchanged (no Scheme in prison)", c.Credits)
