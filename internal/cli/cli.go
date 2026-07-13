@@ -8,12 +8,12 @@ import (
 	"github.com/philoserf/t5/internal/dice"
 )
 
-// SeededRoller defines the shared -n and -seed flags (naming the item in the
-// -n help text), parses the command line, and returns the requested count and
-// a roller. When -seed is given the roller is seeded — so any value, including
-// 0, is reproducible — and otherwise it is freshly random.
-func SeededRoller(item string) (n int, r *dice.Roller) {
-	count := flag.Int("n", 1, fmt.Sprintf("number of %s to generate", item))
+// Roller defines the shared -seed flag, parses the command line, and returns a
+// roller. When -seed is given the roller is seeded — so any value, including 0,
+// is reproducible — and otherwise it is freshly random. A command that needs
+// extra flags defines them (via the flag package) before calling Roller, which
+// parses the command line.
+func Roller() *dice.Roller {
 	seed := flag.Uint64("seed", 0, "random seed; if omitted, a fresh random seed is used")
 	flag.Parse()
 
@@ -24,7 +24,15 @@ func SeededRoller(item string) (n int, r *dice.Roller) {
 		}
 	})
 	if seeded {
-		return *count, dice.NewWithSeed(*seed)
+		return dice.NewWithSeed(*seed)
 	}
-	return *count, dice.New()
+	return dice.New()
+}
+
+// SeededRoller defines the shared -n and -seed flags (naming the item in the -n
+// help text), parses, and returns the requested count and a roller (see Roller
+// for the seeding contract).
+func SeededRoller(item string) (n int, r *dice.Roller) {
+	count := flag.Int("n", 1, fmt.Sprintf("number of %s to generate", item))
+	return *count, Roller()
 }
