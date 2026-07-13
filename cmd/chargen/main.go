@@ -153,10 +153,11 @@ func summaryLine(c chargen.Character) string {
 		return fmt.Sprintf("Age %d — did not qualify for a career%s\n", c.Age, deceased)
 	case 1:
 		rec := c.Careers[0]
-		detail := fmt.Sprintf("%s after %s", outcomePhrase(rec.Outcome), plural(rec.Terms, "term"))
+		detail := outcomePhrase(rec.Outcome)
 		if rank := rankOf(c, rec); rank != "" {
-			detail += " as " + rank
+			detail += " as " + rank // rank binds to the muster-out, not the term count
 		}
+		detail += " after " + plural(rec.Terms, "term")
 		if rec.Outcome == chargen.Died {
 			deceased = "" // "died" already conveys it
 		}
