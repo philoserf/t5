@@ -66,3 +66,35 @@ func TestEvenDist1to10(t *testing.T) {
 		}
 	}
 }
+
+func TestIndex(t *testing.T) {
+	r := NewWithSeed(42)
+	// Every result is in range, and over many draws every value appears roughly
+	// evenly (the rejection sampling removes the base-6 modulo bias).
+	const draws = 12000
+	for _, n := range []int{2, 8, 17} {
+		counts := make([]int, n)
+		for range draws {
+			v := r.Index(n)
+			if v < 0 || v >= n {
+				t.Fatalf("Index(%d) = %d, out of [0,%d)", n, v, n)
+			}
+			counts[v]++
+		}
+		expected := draws / n
+		for v, c := range counts {
+			if c < expected*3/4 || c > expected*5/4 {
+				t.Errorf("Index(%d) value %d appeared %d times, want ~%d (uneven)", n, v, c, expected)
+			}
+		}
+	}
+}
+
+func TestIndexPanicsOnNonPositive(t *testing.T) {
+	defer func() {
+		if recover() == nil {
+			t.Errorf("Index(0) should panic")
+		}
+	}()
+	NewWithSeed(1).Index(0)
+}
