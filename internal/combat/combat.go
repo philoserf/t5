@@ -4,7 +4,10 @@
 // Impact), and damage resolution against armor and characteristics.
 package combat
 
-import "github.com/philoserf/t5/internal/dice"
+import (
+	"github.com/philoserf/t5/internal/dice"
+	"github.com/philoserf/t5/internal/task"
+)
 
 // ShootingNumber is the pre-calculated Ranged-attack asset: Dexterity plus the
 // weapon skill and its knowledge (Book 1 p.201).
@@ -27,16 +30,10 @@ const (
 	Evading                 // Size -1
 )
 
-func (s Stance) sizeMod() int {
-	switch s {
-	case Crouching, Evading:
-		return -1
-	case Prone:
-		return -2
-	default:
-		return 0
-	}
-}
+// stanceSizeMods is each stance's adjustment to a target's apparent Size.
+var stanceSizeMods = [...]int{Standing: 0, Crouching: -1, Prone: -2, Evading: -1}
+
+func (s Stance) sizeMod() int { return stanceSizeMods[s] }
 
 // TargetSize is a target's apparent size for an attack: object Size minus Range,
 // reduced by the target's stance (Book 1 p.203). A value below zero means the
@@ -54,14 +51,14 @@ func Ranged(r *dice.Roller, shootingNumber, weaponSkill, targetSize, rng int, mo
 	if rng > weaponSkill {
 		nd++ // This Is Hard!: Range exceeds skill
 	}
-	return r.Resolve(dice.Check{Dice: nd, Target: shootingNumber + targetSize + sum(mods)})
+	return task.ResolveDice(r, nd, shootingNumber+targetSize, mods...)
 }
 
 // Melee resolves a Melee Attack (Book 1 p.203): 2D at or under the Attacker
 // Melee Number minus the Defender Melee Number, plus mods (spent Dexterity
 // points, Evasion -1). Success is a hit; the roles then reverse for the reply.
 func Melee(r *dice.Roller, attackerMN, defenderMN int, mods ...int) dice.CheckResult {
-	return r.Resolve(dice.Check{Dice: dice.Average, Target: attackerMN - defenderMN + sum(mods)})
+	return task.ResolveDice(r, dice.Average, attackerMN-defenderMN, mods...)
 }
 
 // Impact resolves an Impact Attack — a collision, ram, or fall (Book 1 p.202).
@@ -71,7 +68,7 @@ func Melee(r *dice.Roller, attackerMN, defenderMN int, mods ...int) dice.CheckRe
 // (The book's prose says "success is a hit", but its own worked example rolls
 // low to dodge — the example governs.)
 func Impact(r *dice.Roller, defenderC2, attackerSpeed int) dice.CheckResult {
-	return r.Resolve(dice.Check{Dice: dice.Average, Target: defenderC2 - attackerSpeed})
+	return task.ResolveDice(r, dice.Average, defenderC2-attackerSpeed)
 }
 
 // ImpactDamageDice is the number of damage dice an Impact inflicts: Speed
@@ -99,12 +96,4 @@ func Wound(physicals [3]int, hits int) [3]int {
 		}
 	}
 	return physicals
-}
-
-func sum(xs []int) int {
-	total := 0
-	for _, x := range xs {
-		total += x
-	}
-	return total
 }
