@@ -136,8 +136,25 @@ Tooling (go, go-task, poppler's `pdftotext`) is pinned in `Brewfile`.
   inventory (no dice). Cascade skills (Pilot/Gunner/Engineer/…) hold Knowledges; `GrantCascade`
   applies the Knowledge-Knowledge-Skill career progression; `TaskLevel` stacks parent+knowledge.
   Levels cap at 15, knowledges at 6. Used by chargen careers.
-- `cmd/worldgen/`, `cmd/systemgen/`, `cmd/chargen/` — CLIs, each taking `-n` and `-seed`, e.g.
-  `go run ./cmd/systemgen -n 10 -seed 42`.
+- `internal/shipgen/` — Adventure Class Ship design (Book 2 pp. 30-95). Ship design is
+  **deterministic**, not rolled: the designer chooses tonnage/TL/config/structure/armor/drives
+  and `Design(spec) ShipSpec` computes the derived performance. `Design` is total — never an
+  error; infeasibility (over-budget, underpowered plant, TL-capped drive) is reported in
+  `Ship.Problems`. The core insight: the p.78 Z1 Drive Potential grid is a clean formula,
+  `drivePotential = min(2*driveOrd/hullOrd, 9)` (`DriveForPotential` is the Z2 inverse). Hull/
+  drive letters are the eHex letters (A-Z, no I/O) as an ordinal 1..24 (Hull A=100t … Z=2400t),
+  distinct from an eHex value. `Ship.QSP()` renders the compact profile (`S-AL22`, the ship's
+  UWP analog); golden-locked to the Murphy Scout and Beowulf. Costs are plain int Cr. Deferred:
+  weapons/sensors/defenses, crew/accommodations, Quality, compartment layout.
+- `internal/sectorgen/` + `internal/survey/` — interstellar mapping (Book 3 pp. 12-15): the
+  32×40/8×10 hex grid with CCRR/A-P coordinates and density system-presence rolls; `survey`
+  composes it with `systemgen` into detailed Second Survey records with subsector capitals.
+- `internal/senses/`, `internal/personals/`, `internal/combat/` — the play tier (Book 1): sense
+  Actions, social Personals, and personal combat, all roll-low via `task.ResolveDice`.
+- `internal/rangeband/` — the world/space range ladder (Book 1 pp. 24-29), shared by the play tier.
+- `cmd/worldgen/`, `cmd/systemgen/`, `cmd/chargen/`, `cmd/sectorgen/`, `cmd/shipgen/` — CLIs
+  (most take `-n` and `-seed`; sectorgen/shipgen take their own design flags), e.g.
+  `go run ./cmd/shipgen -hull A -tl 12 -config L -structure shell -maneuver A -jump A`.
 
 When adding a generator, transcribe the rule tables/formulas from `docs/reference/` and lock
 them with a golden test built from a worked example in the books.

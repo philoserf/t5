@@ -19,7 +19,8 @@ multi-star orbit map placing every world/GG/belt round-robin across all hosting 
 port facilities/fuel) · `chargen` (six-characteristic UPP + Check Characteristic + the 13
 careers) · `task` (Difficulty/UTF resolve) · `calendar` · `rangeband` (world/space range ladder) ·
 `senses` · `personals` · `combat` (the play tier, core mechanics) · `sectorgen` (hex map +
-system presence).
+system presence) · `survey` (detailed sector → full systems + capitals) · `shipgen` (ACS ship
+design: hull/drives/Drive-Potential/fuel/armor + QSP).
 
 ## Status legend
 
@@ -167,14 +168,17 @@ drop (PR #88). `System.String` and `cmd/systemgen` render the full multi-star or
 _Minor documented deferral:_ a non-mainworld world landing on a gas-giant orbit is nudged to
 a free orbit rather than becoming that giant's moon.
 
-**16. Starship design generator** — _B2 pp. 30–95, 101–135, 188–192_ · new `shipgen` package · **L**
-The largest self-contained system in the set: hull tons/cost/config, structure & armor layers,
-drives (TL availability, stage effects, tonnage/EP/cost, the Potential formula, nexi, fuel),
-the shared four-table mount/stage/range build pipeline for sensors/weapons/defenses, power-plant
-matching, consoles/computers/crew, quality (Demand/Comfort/Ergonomics), payload as the
-tonnage-budget residual, QSP encode/decode, and the ShipCard compartment layout. Mostly
-closed-form formulas + lookups + a budget-closure constraint; the worked-example ships (Murphy
-Scout, Beowulf, Kinunir) are ready-made golden fixtures.
+**16. Starship design generator** — _B2 pp. 30–95, 101–135, 188–192_ · new `shipgen` package · **L** · 🟡 **core done**
+Built (`internal/shipgen` + `cmd/shipgen`): the deterministic ACS design engine — `Design(spec)
+Ship` (never errors; infeasibility is reported in `Ship.Problems`) composing hull (tons/cost/
+config/structure/armor/hardpoints/over-tonnage), drives (the **Drive Potential** formula — the
+p.78 Z1 grid is exactly `min(⌊2·drive/hull⌋, 9)`, with the Z2 inverse, TL availability, and the
+11 stage effects), fuel (`P·hull/10` jump, `P·hull/100` ops), and armor. Renders the QSP
+(`S-AL22`) and a ship card; a thin `Generate(r)` rolls a random feasible ship. Golden-locked to
+the Murphy Scout (S-AL22 end to end) and Beowulf (overtonnage). **Deferred:** weapons/sensors/
+defenses (the mount/stage/range grids, B2 pp.153–192), consoles/computers/crew/accommodations,
+Quality (Demand/Comfort/Ergonomics), the ShipCard compartment layout, QSP decode, and the
+non-jump interstellar drives (Hop/Skip/NAFAL). Kinunir (stage-effect-heavy) awaits verification.
 
 **17. Sophont (species) creation** — _B3 pp. 215–246_ · extends chargen · **L**
 A Flux-driven pipeline producing a non-human species template (homeworld, environment/niche,
