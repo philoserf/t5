@@ -17,11 +17,13 @@ import (
 
 	"github.com/philoserf/t5/internal/cli"
 	"github.com/philoserf/t5/internal/sectorgen"
+	"github.com/philoserf/t5/internal/survey"
 )
 
 func main() {
 	densityName := flag.String("density", "standard", "stellar density (extragalactic…core)")
 	subsector := flag.String("subsector", "A", "subsector letter A-P")
+	detail := flag.Bool("detail", false, "generate a full system per hex and print Second Survey lines")
 	r := cli.Roller()
 
 	d, ok := sectorgen.DensityByName(*densityName)
@@ -32,6 +34,13 @@ func main() {
 	letter := byte('A')
 	if len(*subsector) > 0 {
 		letter = strings.ToUpper(*subsector)[0]
+	}
+
+	if *detail {
+		for _, rec := range survey.Subsector(r, d, letter) {
+			fmt.Println(rec.SecondSurvey())
+		}
+		return
 	}
 
 	systems := sectorgen.GenerateSubsector(r, d, letter)
