@@ -8,19 +8,73 @@ import (
 	"github.com/philoserf/t5/internal/worldgen"
 )
 
-func TestResolveOrbit(t *testing.T) {
-	occupied := map[int]bool{4: true, 5: true}
+func TestHostClaim(t *testing.T) {
+	h := &orbitHost{floor: 0, maxOrbit: 19, occupied: map[int]bool{4: true, 5: true}}
 	// Free target stays put.
-	if got := resolveOrbit(6, 0, occupied); got != 6 {
-		t.Errorf("resolveOrbit(6) = %d, want 6", got)
+	if o, ok := h.claim(6); !ok || o != 6 {
+		t.Errorf("claim(6) = %d,%v, want 6,true", o, ok)
 	}
-	// Occupied target nudges inward first (closest free is 3).
-	if got := resolveOrbit(4, 0, occupied); got != 3 {
-		t.Errorf("resolveOrbit(4) = %d, want 3", got)
+	// 4 and 5 are taken (and 6 now too); claim(4) nudges inward to 3.
+	if o, ok := h.claim(4); !ok || o != 3 {
+		t.Errorf("claim(4) = %d,%v, want 3,true", o, ok)
 	}
-	// Below the floor clamps up, then spirals out past occupied.
-	if got := resolveOrbit(-2, 4, occupied); got != 6 {
-		t.Errorf("resolveOrbit(-2, floor 4) = %d, want 6", got)
+	// Below the floor clamps up to the first free orbit at/after the floor.
+	f := &orbitHost{floor: 4, maxOrbit: 19, occupied: map[int]bool{4: true, 5: true}}
+	if o, ok := f.claim(-2); !ok || o != 6 {
+		t.Errorf("claim(-2, floor 4) = %d,%v, want 6,true", o, ok)
+	}
+	// A star with no available orbits reports no room.
+	tiny := &orbitHost{floor: 0, maxOrbit: -1, occupied: map[int]bool{}}
+	if _, ok := tiny.claim(0); ok {
+		t.Errorf("tiny host should have no room")
+	}
+}
+
+func TestPlaceOrbitsMultiStar(t *testing.T) {
+	// Regina-style rotation: a satellite mainworld rides the first gas giant on
+	// the primary, and the remaining giants rotate Primary -> Far. Primary F8 V
+	// has HZ 4; the Far G0 V (HZ 3) sits at orbit 16, so it holds orbits 0..13.
+	far := Star{Type: "G", Decimal: 0, Size: "V"}
+	s := &System{
+		Primary:            Star{Type: "F", Decimal: 8, Size: "V"},
+		Far:                &far,
+		FarOrbit:           16,
+		GasGiants:          3,
+		Worlds:             4, // others = 4 - 1 - 3 - 0 = 0
+		MainworldOrbit:     4,
+		MainworldSatellite: MainworldSatellite{IsSatellite: true, Far: true},
+		Giants: []GasGiant{
+			{Size: 26, Class: LargeGasGiant}, // S — the mainworld rides this one
+			{Size: 21, Class: SmallGasGiant}, // M — rotates to the Primary
+			{Size: 24, Class: IceGiant},      // Q->IG — rotates to the Far star
+		},
+	}
+	s.Mainworld.Profile.Population = 8
+	// SGG on Primary: 2D=2 -> p2(2).sgg=-2 -> orbit 4-2=2.
+	// IG on Far (HZ 3):  2D=2 -> p2(2).ig=+1 -> orbit 3+1=4.
+	s.placeOrbits(dice.NewScripted(1, 1, 1, 1))
+
+	want := []struct {
+		host  string
+		orbit int
+		kind  string
+		size  int // gas-giant size, 0 if none
+	}{
+		{"Primary", 2, "Gas Giant", 21}, // M SGG
+		{"Primary", 4, "Mainworld", 26}, // rides the S LGG
+		{"Far", 4, "Gas Giant", 24},     // Q IG around the Far star
+	}
+	if len(s.Orbits) != len(want) {
+		t.Fatalf("placed %d orbits, want %d: %+v", len(s.Orbits), len(want), s.Orbits)
+	}
+	for i, w := range want {
+		o := s.Orbits[i]
+		if o.Host != w.host || o.Orbit != w.orbit || o.Kind != w.kind {
+			t.Errorf("orbit %d = {%s %d %q}, want {%s %d %q}", i, o.Host, o.Orbit, o.Kind, w.host, w.orbit, w.kind)
+		}
+		if o.Giant == nil || o.Giant.Size != w.size {
+			t.Errorf("orbit %d giant = %v, want size %d", i, o.Giant, w.size)
+		}
 	}
 }
 
