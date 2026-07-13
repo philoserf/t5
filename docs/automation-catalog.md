@@ -70,8 +70,9 @@ Feeds Nobility, capitals, trade routes, and Book 2 mail contracts. **(Implemente
 
 ✅ **4. Economic Extension (Ex) + Resource Units** — _B3 pp. 18, 27_ · extends worldgen · **M**
 `(R L I ±E)` + RU. Resources = 2D (+GG+Belts if TL≥8, both from systemgen); Labor = Pop−1;
-Infrastructure branches on Pop band using Ix; Efficiency = Flux; RU = R·L·I·E straight (the
-printed rule has no "0→1" substitution). R/L/I floor at 0; Efficiency may be negative.
+Infrastructure branches on Pop band using Ix; Efficiency = Flux; RU = R·L·I·E, substituting 1
+for any factor that is 0 (B3 p.27, "If any value = 0, use 1"). R/L/I floor at 0; Efficiency may
+be negative (so RU may be negative). Note the current `RU()` omits the 0→1 substitution — [#63].
 **(Implemented — PR #10.)**
 
 ✅ **5. Cultural Extension [Cx]** — _B3 pp. 18, 27_ · extends worldgen · **S**
