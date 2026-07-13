@@ -13,26 +13,25 @@ import (
 	"github.com/philoserf/t5/internal/task"
 )
 
-// A Sense is one of the six senses (Book 1 p. 186): its ID letter, name, the
-// human sense Constant, and whether it operates at range (rolling R=Range dice)
-// or in contact (2D). Awareness and Perception are not available to humans (a
-// human Constant of 0); a non-human sophont supplies its own Constant.
+// A Sense is one of the six senses (Book 1 p. 186): its ID letter and the sense
+// Constant. A Constant of 0 or less marks a sense the sophont does not have — for
+// humans, Awareness and Perception ("X") — and its Actions automatically fail; a
+// non-human sophont supplies its own positive Constant.
 type Sense struct {
 	ID       byte
-	Name     string
 	Constant int
-	AtRange  bool
 }
 
-// The six senses with their human Constants (Book 1 p. 187). Awareness and
-// Perception have no human value ("X"), modelled as Constant 0.
+// The six senses with their human Constants (Book 1 p. 187). Vision and Hearing
+// operate at range, Touch and Smell in contact; Awareness and Perception have no
+// human value ("X"), modelled as Constant 0.
 var (
-	Vision     = Sense{'V', "Vision", 16, true}
-	Hearing    = Sense{'H', "Hearing", 16, true}
-	Smell      = Sense{'S', "Smell", 10, false}
-	Touch      = Sense{'T', "Touch", 6, false}
-	Awareness  = Sense{'A', "Awareness", 0, true}
-	Perception = Sense{'P', "Perception", 0, true}
+	Vision     = Sense{'V', 16}
+	Hearing    = Sense{'H', 16}
+	Smell      = Sense{'S', 10}
+	Touch      = Sense{'T', 6}
+	Awareness  = Sense{'A', 0}
+	Perception = Sense{'P', 0}
 )
 
 // String renders the sense in the book's ID-Constant form, e.g. "V-16".
@@ -44,14 +43,21 @@ func (s Sense) String() string {
 // Perception; Book 1 p. 190). It rolls R=Range dice — Range 0 and the R/T
 // sub-bands count as 1 — and succeeds on a roll at or under Constant plus the
 // Benchmark (objectSize - Range) plus any situational mods (Master Mods; higher
-// is better). A Benchmark that drives the target to zero or less can't be sensed.
+// is better). A sense the sophont lacks (Constant 0 or less) automatically fails.
 func NoticeAtRange(r *dice.Roller, s Sense, objectSize, rng int, mods ...int) dice.CheckResult {
+	if s.Constant <= 0 {
+		return dice.CheckResult{} // an absent sense (e.g. human Awareness) never succeeds
+	}
 	return task.ResolveDice(r, rng, s.Constant+(objectSize-rng), mods...)
 }
 
 // NoticeInContact resolves an in-contact sense Action (Touch, and Smell by scent
-// intensity; Book 1 p. 187): 2D at or under Constant + benchmark + mods.
+// intensity; Book 1 p. 187): 2D at or under Constant + benchmark + mods. A sense
+// the sophont lacks (Constant 0 or less) automatically fails.
 func NoticeInContact(r *dice.Roller, s Sense, benchmark int, mods ...int) dice.CheckResult {
+	if s.Constant <= 0 {
+		return dice.CheckResult{}
+	}
 	return task.ResolveDice(r, dice.Average, s.Constant+benchmark, mods...)
 }
 

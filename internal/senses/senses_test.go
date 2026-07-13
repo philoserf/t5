@@ -54,6 +54,17 @@ func TestRangeBand(t *testing.T) {
 	}
 }
 
+func TestAbsentSenseAlwaysFails(t *testing.T) {
+	// Humans lack Awareness/Perception (Constant 0); their Actions can't succeed
+	// even at short range against a large object.
+	if res := NoticeAtRange(dice.NewScripted(1), Awareness, 5, 1); res.Success {
+		t.Errorf("human Awareness should not succeed: %+v", res)
+	}
+	if res := NoticeInContact(dice.NewScripted(1, 1), Perception, 5); res.Success {
+		t.Errorf("human Perception should not succeed: %+v", res)
+	}
+}
+
 func TestSenseString(t *testing.T) {
 	if Vision.String() != "V-16" || Touch.String() != "T-6" {
 		t.Errorf("Sense.String = %q/%q, want V-16/T-6", Vision.String(), Touch.String())

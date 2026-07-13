@@ -39,6 +39,15 @@ func TestLawMod(t *testing.T) {
 	if LawMod(Comfort, Carouse) != 2 || LawMod(Violence, Persuade) != 2 {
 		t.Errorf("Comfort/Violence mods wrong")
 	}
+	// Inferiority's Persuade +2 is conditional (Begging/Flattery/Politeness) and
+	// so is not in the unconditional table; only Query +1 is.
+	if LawMod(Inferiority, Persuade) != 0 || LawMod(Inferiority, Query) != 1 {
+		t.Errorf("Inferiority mods = %d/%d, want 0/1", LawMod(Inferiority, Persuade), LawMod(Inferiority, Query))
+	}
+	// An out-of-range Purpose returns 0 rather than panicking.
+	if LawMod(Similarity, Purpose(99)) != 0 {
+		t.Errorf("out-of-range Purpose should return 0")
+	}
 }
 
 func TestResolveWorkedExample(t *testing.T) {
