@@ -30,24 +30,40 @@ func TestHZVarDM(t *testing.T) {
 func TestPlaceMainworld(t *testing.T) {
 	primary := Star{Type: "F", Decimal: 7, Size: "V"} // HZ orbit 4 (Regina primary)
 
-	// Regina: HZ-variance Flux 0 -> Temperate, orbit 4, no climate code added.
+	// A temperate planet: HZ-variance Flux 0 -> orbit 4; type Flux +2 -> Planet
+	// (not a satellite), so no climate/satellite code beyond the given Ph.
 	mw := worldgen.World{Profile: uwp.Profile{Size: 7, Atmosphere: 8, Hydrographics: 8}, TradeCodes: []string{"Ph"}}
-	if orbit := placeMainworld(dice.NewScripted(4, 4), primary, &mw); orbit != 4 {
-		t.Errorf("Regina orbit = %d, want 4", orbit)
+	orbit, sat := placeMainworld(dice.NewScripted(4, 4 /*HZVar 0*/, 5, 3 /*type Flux +2 -> Planet*/), primary, &mw)
+	if orbit != 4 || sat.IsSatellite {
+		t.Errorf("Regina placement: orbit %d satellite %v, want orbit 4, planet", orbit, sat.IsSatellite)
 	}
 	if !slices.Equal(mw.TradeCodes, []string{"Ph"}) {
-		t.Errorf("temperate mainworld gained a climate code: %v", mw.TradeCodes)
+		t.Errorf("temperate planet gained an extra code: %v", mw.TradeCodes)
 	}
 
-	// Hot placement: Flux 1-5 = -4 -> HZVar -1 -> orbit 3; temperate-band UWP -> Tr.
+	// Hot placement: HZVar Flux -4 -> -1 -> orbit 3; type Flux +2 -> Planet;
+	// temperate-band UWP -> Tr.
 	mw2 := worldgen.World{Profile: uwp.Profile{Size: 7, Atmosphere: 6, Hydrographics: 5}}
-	if orbit := placeMainworld(dice.NewScripted(1, 5), primary, &mw2); orbit != 3 || !slices.Contains(mw2.TradeCodes, "Tr") {
-		t.Errorf("hot placement: orbit %d, codes %v, want orbit 3 + Tr", orbit, mw2.TradeCodes)
+	orbit2, _ := placeMainworld(dice.NewScripted(1, 5 /*-4*/, 5, 3 /*Planet*/), primary, &mw2)
+	if orbit2 != 3 || !slices.Contains(mw2.TradeCodes, "Tr") {
+		t.Errorf("hot placement: orbit %d, codes %v, want orbit 3 + Tr", orbit2, mw2.TradeCodes)
 	}
 
-	// A primary with no habitable zone (size-VI O star): orbit -1, no climate.
+	// Far-satellite mainworld: type Flux -4 -> Far Satellite, orbit Flux -2 ->
+	// "Arr"; the mainworld earns Sa.
+	mw4 := worldgen.World{Profile: uwp.Profile{Size: 7, Atmosphere: 8, Hydrographics: 8}}
+	_, sat4 := placeMainworld(dice.NewScripted(4, 4 /*HZVar 0*/, 1, 5 /*type -4*/, 4, 6 /*orbit -2*/), primary, &mw4)
+	if !sat4.IsSatellite || !sat4.Far || sat4.OrbitLetter != "Arr" {
+		t.Errorf("far satellite = %+v, want Far/Arr", sat4)
+	}
+	if !slices.Contains(mw4.TradeCodes, "Sa") {
+		t.Errorf("far-satellite mainworld should carry Sa: %v", mw4.TradeCodes)
+	}
+
+	// A primary with no habitable zone (size-VI O star): orbit -1.
 	var mw3 worldgen.World
-	if orbit := placeMainworld(dice.NewScripted(4, 4), Star{Type: "O", Size: "VI"}, &mw3); orbit != -1 {
-		t.Errorf("no-HZ orbit = %d, want -1", orbit)
+	orbit3, _ := placeMainworld(dice.NewScripted(4, 4, 5, 3), Star{Type: "O", Size: "VI"}, &mw3)
+	if orbit3 != -1 {
+		t.Errorf("no-HZ orbit = %d, want -1", orbit3)
 	}
 }

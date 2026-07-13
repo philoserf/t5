@@ -49,7 +49,8 @@ type System struct {
 	// MainworldOrbit is the mainworld's orbit around the Primary (Book 3 p.24),
 	// its habitable-zone orbit shifted by the rolled HZ variance. -1 when the
 	// primary has no habitable zone.
-	MainworldOrbit int
+	MainworldOrbit     int
+	MainworldSatellite MainworldSatellite // whether the mainworld is a moon of a gas giant
 }
 
 // Generate rolls a complete system: the gas-giant and belt counts, the
@@ -67,8 +68,8 @@ func Generate(r *dice.Roller) System {
 	s.Primary, primaryType, primarySize = rollStar(r, true, 0, 0)
 
 	// With the primary known, place the mainworld relative to its habitable zone
-	// and tag its climate trade codes (Book 3 p.24).
-	s.MainworldOrbit = placeMainworld(r, s.Primary, &s.Mainworld)
+	// and tag its climate / satellite trade codes (Book 3 p.24).
+	s.MainworldOrbit, s.MainworldSatellite = placeMainworld(r, s.Primary, &s.Mainworld)
 
 	// Every non-primary star — secondaries and companions alike — derives from
 	// the primary's Flux values (Book 3 p. 28). present rolls one optional star,
