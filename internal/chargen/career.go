@@ -285,13 +285,17 @@ type careerRun struct {
 	inPrison    bool             // the Rogue serves the coming term in prison (Book 1 p. 84)
 }
 
-// GenerateCareered generates a character on the given homeworld and runs one
-// career on them. It follows the checklist order (Book 1 p. 72): roll the UPP
-// (A), take homeworld skills (B), optionally run the education stage (C — ED5,
-// College, or University), then attempt the career (D) and muster out (E). The character qualifies on 2D at or under
-// the best of the career's qualifying characteristics; on success they serve
-// terms and muster out, and on failure they enter no career and remain a fresh
-// 18-year-old — but keep their homeworld skills and education either way.
+// GenerateCareered generates a character on the given homeworld and runs their
+// careers. It follows the checklist order (Book 1 p. 72): roll the UPP (A), take
+// homeworld skills (B), optionally run the education stage (C — ED5, Trade
+// School, or the College→Professors ladder), then attempt careers (D) and muster
+// out (E).
+//
+// The first career is attempted with a Retry (Book 1 p. 63): a failed Begin roll
+// is re-rolled once before the career is abandoned. Further careers (from
+// Policy.NextCareer) are attempted without Retry. A character refused by every
+// chosen career falls back to the Citizen life, whose Begin is automatic — T5's
+// replacement for the classic draft, so no one ends up careerless.
 func GenerateCareered(r *dice.Roller, p Policy, homeworld worldgen.World, career Career) Character {
 	c := Generate(r)
 	c.Homeworld = homeworld
@@ -299,29 +303,52 @@ func GenerateCareered(r *dice.Roller, p Policy, homeworld worldgen.World, career
 	if p.PursueEducation(c) {
 		educate(r, p, &c)
 	}
-	serveCareer(r, p, &c, career)
+
+	entered := serveCareer(r, p, &c, career, true) // the first career retries a failed Begin
 	// A character may serve more than one career (Book 1), so long as they live.
 	for !c.Dead {
 		next, ok := p.NextCareer(c)
 		if !ok {
 			break
 		}
-		serveCareer(r, p, &c, next)
+		if serveCareer(r, p, &c, next, false) {
+			entered = true
+		}
+	}
+	if !entered && !c.Dead {
+		serveCareer(r, p, &c, CitizenCareer, false) // fall back to the auto-begin Citizen life
 	}
 	return c
 }
 
 // serveCareer attempts one career on a character: on a successful (or automatic)
-// begin it runs the term loop and, unless the character died, musters out.
-func serveCareer(r *dice.Roller, p Policy, c *Character, career Career) {
-	// AutoBegin (the Citizen) enters with no qualify roll; the || short-circuits
-	// so Qualify.target is never evaluated for such a career.
-	if career.AutoBegin || r.Resolve(dice.Check{Dice: 2, Target: career.Qualify.target(*c)}).Success {
-		RunCareer(r, p, c, career)
-		if rec := c.Careers[len(c.Careers)-1]; rec.Outcome != Died {
-			MusterOut(r, p, c, rec, career)
-		}
+// begin it runs the term loop and, unless the character died, musters out. It
+// reports whether the character entered the career.
+func serveCareer(r *dice.Roller, p Policy, c *Character, career Career, retry bool) bool {
+	if !beginCareer(r, c, career, retry) {
+		return false
 	}
+	RunCareer(r, p, c, career)
+	if rec := c.Careers[len(c.Careers)-1]; rec.Outcome != Died {
+		MusterOut(r, p, c, rec, career)
+	}
+	return true
+}
+
+// beginCareer resolves a career's Begin (Book 1 p. 63): an AutoBegin career (the
+// Citizen) enters unconditionally; otherwise the character rolls 2D at or under
+// the best qualifying characteristic. When retry is set, a failed roll is
+// attempted once more before the career is abandoned. The one-year cost of each
+// failed attempt is not yet modelled.
+func beginCareer(r *dice.Roller, c *Character, career Career, retry bool) bool {
+	if career.AutoBegin {
+		return true
+	}
+	target := career.Qualify.target(*c)
+	if r.Resolve(dice.Check{Dice: 2, Target: target}).Success {
+		return true
+	}
+	return retry && r.Resolve(dice.Check{Dice: 2, Target: target}).Success
 }
 
 // RunCareer runs the term loop of one career on a character, appending a

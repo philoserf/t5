@@ -46,12 +46,16 @@ Scout — age 22, mustered out after 1 term
   Skills         Actor-1, Animals-1, Biologics-3, Psychology-6, Robotics-5, Trader-1
   Benefits       Ship Share
 
-Age 18 — did not qualify for a career
-  UPP            5764A3
+Citizen — age 34, mustered out after 4 terms
+  UPP            5767A3
   Homeworld      B87A663-8   Wa Ni
   Education      BA — Psychology (major), Robotics (minor)
-  Skills         Driver-1, Psychology-4, Robotics-2, Seafarer-1
+  Skills         Admin-5, Biologics-5, Broker-3, Driver-1, Psychology-11, Robotics-6, Seafarer-1
 ```
+
+The second character failed to qualify for the Scout service (even on the
+Retry the first career allows), so — as T5 has no draft — they fall back to the
+Citizen life, whose Begin is automatic (Book 1 p. 63).
 
 A character's homeworld (a generated world) grants one skill per Trade
 Classification (Book 1 p. 56), and college — when they qualify — grants a Major
