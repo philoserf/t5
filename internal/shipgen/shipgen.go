@@ -128,11 +128,12 @@ func ordinalLetter(n int) byte {
 // HullTons is the nominal tonnage of a hull size ordinal: ordinal * 100 tons.
 func HullTons(ordinal int) int { return ordinal * 100 }
 
-// A DriveSpec is a requested drive: its size letter (as an ordinal 1..24) and
-// the TL stage-effect row (0 = standard, the baseline TL).
+// A DriveSpec is a requested drive: its size letter (as an ordinal 1..24, or an
+// even 26..48 for an extended "letter2" size) and its TL stage (Standard is the
+// zero value / baseline).
 type DriveSpec struct {
 	Letter int
-	Stage  int
+	Stage  Stage
 }
 
 // A ShipSpec is the design input: the choices a naval architect makes. Tons of 0
@@ -175,7 +176,7 @@ type Drive struct {
 	Kind       DriveKind
 	Letter, EP int
 	Potential  int // thrust-G / jump-N / EP tier
-	Stage      int
+	Stage      Stage
 	Tons, Cost int // Cost in Cr
 	Fuel       int // tons of fuel this drive demands
 }
@@ -244,13 +245,13 @@ func (s Ship) String() string {
 
 	drives := make([]string, 0, 3)
 	if s.Maneuver != nil {
-		drives = append(drives, fmt.Sprintf("Maneuver-%c %dG", ordinalLetter(s.Maneuver.Letter), s.Maneuver.Potential))
+		drives = append(drives, fmt.Sprintf("Maneuver-%s %dG", driveLabel(s.Maneuver.Letter), s.Maneuver.Potential))
 	}
 	if s.Jump != nil {
-		drives = append(drives, fmt.Sprintf("Jump-%c J-%d", ordinalLetter(s.Jump.Letter), s.Jump.Potential))
+		drives = append(drives, fmt.Sprintf("Jump-%s J-%d", driveLabel(s.Jump.Letter), s.Jump.Potential))
 	}
 	if s.Power != nil {
-		drives = append(drives, fmt.Sprintf("Power-%c", ordinalLetter(s.Power.Letter)))
+		drives = append(drives, fmt.Sprintf("Power-%s", driveLabel(s.Power.Letter)))
 	}
 	if len(drives) > 0 {
 		fmt.Fprintf(&b, "Drives:  %s\n", strings.Join(drives, " · "))
