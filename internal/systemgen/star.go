@@ -68,7 +68,7 @@ var spectralTable = []spectralRow{
 
 // row returns the table row for a Flux value, clamped to the table's range.
 func row(flux int) spectralRow {
-	return spectralTable[min(max(flux, -6), 8)+6]
+	return spectralTable[clamp(flux, -6, 8)+6]
 }
 
 // classify builds a Star from already-rolled inputs: the Flux that selects the

@@ -700,7 +700,7 @@ func runRogueTerm(r *dice.Roller, p Policy, c *Character, run *careerRun, career
 		return Ongoing
 	}
 
-	scheme := rogueSchemes[min(max(r.Flux()+6, 0), 12)]
+	scheme := rogueSchemes[dice.FluxIndex(r.Flux())]
 	ccVal := c.Score(cc)
 	riskMod := p.RiskMod(*c, ccVal) // caution (+), bravery (-), or 0
 

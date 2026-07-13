@@ -8,6 +8,30 @@ import (
 	"github.com/philoserf/t5/internal/worldgen"
 )
 
+// OrbitKind is what occupies a placed orbit.
+type OrbitKind int
+
+const (
+	KindMainworld OrbitKind = iota
+	KindGasGiant
+	KindBelt
+	KindWorld
+)
+
+// String names the orbit kind for display.
+func (k OrbitKind) String() string {
+	switch k {
+	case KindGasGiant:
+		return "Gas Giant"
+	case KindBelt:
+		return "Belt"
+	case KindWorld:
+		return "World"
+	default:
+		return "Mainworld"
+	}
+}
+
 // A PlacedOrbit is one occupied orbit in the system's orbit map: the star it
 // orbits (Host), its orbit number around that star, what occupies it, and — for
 // a gas-giant or a detailed secondary-world orbit — the giant or world there. A
@@ -15,7 +39,7 @@ import (
 type PlacedOrbit struct {
 	Host       string // "Primary", "Close", "Near", or "Far"
 	Orbit      int
-	Kind       string // "Mainworld", "Gas Giant", "Belt", or "World"
+	Kind       OrbitKind
 	Giant      *GasGiant
 	World      *OtherWorld
 	Satellites []Satellite
@@ -55,7 +79,7 @@ func (h *orbitHost) claim(want int) (int, bool) {
 	if h.maxOrbit < h.floor {
 		return 0, false
 	}
-	want = min(max(want, h.floor), h.maxOrbit)
+	want = clamp(want, h.floor, h.maxOrbit)
 	for d := 0; want-d >= h.floor || want+d <= h.maxOrbit; d++ {
 		if o := want - d; o >= h.floor && !h.occupied[o] {
 			h.occupied[o] = true
@@ -104,7 +128,7 @@ func (s *System) placeOrbits(r *dice.Roller) {
 	giants := s.Giants
 	if s.MainworldOrbit >= 0 {
 		o, _ := primary.claim(s.MainworldOrbit)
-		mw := PlacedOrbit{Host: "Primary", Orbit: o, Kind: "Mainworld"}
+		mw := PlacedOrbit{Host: "Primary", Orbit: o, Kind: KindMainworld}
 		// A satellite mainworld rides a gas giant placed in its orbit; that
 		// giant is the first of the system's giants and is not rotated again.
 		if s.MainworldSatellite.IsSatellite && len(giants) > 0 {
@@ -114,8 +138,8 @@ func (s *System) placeOrbits(r *dice.Roller) {
 		placed = append(placed, mw)
 	}
 
-	// rotate hands out the next host round-robin; each placement category starts
-	// its own rotation at the primary.
+	// rotate hands out the next host round-robin; each placement category resets
+	// next to 0 first so it starts its own rotation at the primary.
 	next := 0
 	rotate := func() *orbitHost {
 		h := hosts[next%len(hosts)]
@@ -123,7 +147,6 @@ func (s *System) placeOrbits(r *dice.Roller) {
 		return h
 	}
 
-	next = 0
 	for i := range giants {
 		g := &giants[i]
 		h := rotate()
@@ -131,7 +154,7 @@ func (s *System) placeOrbits(r *dice.Roller) {
 			continue // no habitable zone to hang an HZ-relative giant on
 		}
 		if o, ok := h.claim(h.hz + p2(r.Dice(2)).ggOffset(g.Class)); ok {
-			placed = append(placed, PlacedOrbit{Host: h.label, Orbit: o, Kind: "Gas Giant", Giant: g})
+			placed = append(placed, PlacedOrbit{Host: h.label, Orbit: o, Kind: KindGasGiant, Giant: g})
 		}
 	}
 
@@ -142,7 +165,7 @@ func (s *System) placeOrbits(r *dice.Roller) {
 			continue
 		}
 		if o, ok := h.claim(h.hz + p2(r.Dice(2)).belt); ok {
-			placed = append(placed, PlacedOrbit{Host: h.label, Orbit: o, Kind: "Belt"})
+			placed = append(placed, PlacedOrbit{Host: h.label, Orbit: o, Kind: KindBelt})
 		}
 	}
 
@@ -169,7 +192,7 @@ func (s *System) placeOrbits(r *dice.Roller) {
 			InHZ:                h.hasHZ && o == h.hz,
 			MainworldIndustrial: mwIndustrial,
 		})
-		placed = append(placed, PlacedOrbit{Host: h.label, Orbit: o, Kind: "World", World: &OtherWorld{Type: wt, Profile: prof, TradeCodes: tcs}})
+		placed = append(placed, PlacedOrbit{Host: h.label, Orbit: o, Kind: KindWorld, World: &OtherWorld{Type: wt, Profile: prof, TradeCodes: tcs}})
 	}
 
 	sort.Slice(placed, func(i, j int) bool {

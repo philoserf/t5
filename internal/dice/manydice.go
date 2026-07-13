@@ -16,12 +16,7 @@ func (r *Roller) ManyDice10(n int) int {
 	if n <= 0 {
 		return 0
 	}
-	faces := r.DiceFaces(10)
-	sum := 0
-	for i := range n {
-		sum += faces[i%10]
-	}
-	return sum
+	return cycleSum(r.DiceFaces(10), n)
 }
 
 // ManyDice2D sums nD by rolling k = 2D dice as a subsample and reusing those k
@@ -30,11 +25,14 @@ func (r *Roller) ManyDice2D(n int) int {
 	if n <= 0 {
 		return 0
 	}
-	k := r.Dice(2)
-	faces := r.DiceFaces(k)
+	return cycleSum(r.DiceFaces(r.Dice(2)), n)
+}
+
+// cycleSum totals n dice by reusing the given faces cyclically (face i%len).
+func cycleSum(faces []int, n int) int {
 	sum := 0
 	for i := range n {
-		sum += faces[i%k]
+		sum += faces[i%len(faces)]
 	}
 	return sum
 }

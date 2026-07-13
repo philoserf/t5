@@ -11,18 +11,18 @@ func TestSatelliteCount(t *testing.T) {
 	// 1D roll of 6 with each zone's DM: GG 1D-1=5, inner 1D-5=1, HZ 1D-4=2,
 	// outer 1D-3=3; belts always 0.
 	cases := []struct {
-		kind  string
+		kind  OrbitKind
 		orbit int
 		want  int
 	}{
-		{"Gas Giant", 2, 5},
-		{"World", 2, 1},     // inner (HZ-2)
-		{"World", 3, 2},     // hospitable (HZ-1), not inner
-		{"Mainworld", 4, 2}, // hospitable (HZ)
-		{"World", 5, 2},     // hospitable (HZ+1), not outer
-		{"World", 6, 3},     // outer (HZ+2)
-		{"World", 9, 3},     // outer
-		{"Belt", 4, 0},
+		{KindGasGiant, 2, 5},
+		{KindWorld, 2, 1},     // inner (HZ-2)
+		{KindWorld, 3, 2},     // hospitable (HZ-1), not inner
+		{KindMainworld, 4, 2}, // hospitable (HZ)
+		{KindWorld, 5, 2},     // hospitable (HZ+1), not outer
+		{KindWorld, 6, 3},     // outer (HZ+2)
+		{KindWorld, 9, 3},     // outer
+		{KindBelt, 4, 0},
 	}
 	for _, c := range cases {
 		if got := satelliteCount(dice.NewScripted(6), c.kind, c.orbit, hz, true); got != c.want {
@@ -30,11 +30,11 @@ func TestSatelliteCount(t *testing.T) {
 		}
 	}
 	// A low roll floors at zero (inner 1D-5 with 1D=1 -> -4 -> 0).
-	if got := satelliteCount(dice.NewScripted(1), "World", 2, hz, true); got != 0 {
+	if got := satelliteCount(dice.NewScripted(1), KindWorld, 2, hz, true); got != 0 {
 		t.Errorf("satelliteCount(inner, 1D=1) = %d, want 0", got)
 	}
 	// No habitable zone treats every world as outer.
-	if got := satelliteCount(dice.NewScripted(6), "World", 2, hz, false); got != 3 {
+	if got := satelliteCount(dice.NewScripted(6), KindWorld, 2, hz, false); got != 3 {
 		t.Errorf("satelliteCount(no HZ) = %d, want 3 (outer)", got)
 	}
 }
@@ -45,7 +45,7 @@ func TestRollSatellites(t *testing.T) {
 	// moon0 Close (2D=5), moon1 Far (2D=9), moon2 Close (2D=7).
 	s := &System{
 		Primary: Star{Type: "F", Decimal: 8, Size: "V"}, // HZ 4
-		Orbits:  []PlacedOrbit{{Orbit: 2, Kind: "Gas Giant"}},
+		Orbits:  []PlacedOrbit{{Orbit: 2, Kind: KindGasGiant}},
 	}
 	s.rollSatellites(dice.NewScripted(4 /*count*/, 2, 3 /*Close*/, 3, 3 /*Flux 0*/, 4, 5 /*Far*/, 3, 3, 3, 4 /*Close*/, 3, 3))
 	moons := s.Orbits[0].Satellites

@@ -57,12 +57,12 @@ func TestPlaceOrbitsMultiStar(t *testing.T) {
 	want := []struct {
 		host  string
 		orbit int
-		kind  string
+		kind  OrbitKind
 		size  int // gas-giant size, 0 if none
 	}{
-		{"Primary", 2, "Gas Giant", 21}, // M SGG
-		{"Primary", 4, "Mainworld", 26}, // rides the S LGG
-		{"Far", 4, "Gas Giant", 24},     // Q IG around the Far star
+		{"Primary", 2, KindGasGiant, 21},  // M SGG
+		{"Primary", 4, KindMainworld, 26}, // rides the S LGG
+		{"Far", 4, KindGasGiant, 24},      // Q IG around the Far star
 	}
 	if len(s.Orbits) != len(want) {
 		t.Fatalf("placed %d orbits, want %d: %+v", len(s.Orbits), len(want), s.Orbits)
@@ -70,7 +70,7 @@ func TestPlaceOrbitsMultiStar(t *testing.T) {
 	for i, w := range want {
 		o := s.Orbits[i]
 		if o.Host != w.host || o.Orbit != w.orbit || o.Kind != w.kind {
-			t.Errorf("orbit %d = {%s %d %q}, want {%s %d %q}", i, o.Host, o.Orbit, o.Kind, w.host, w.orbit, w.kind)
+			t.Errorf("orbit %d = {%s %d %s}, want {%s %d %s}", i, o.Host, o.Orbit, o.Kind, w.host, w.orbit, w.kind)
 		}
 		if o.Giant == nil || o.Giant.Size != w.size {
 			t.Errorf("orbit %d giant = %v, want size %d", i, o.Giant, w.size)
@@ -126,20 +126,20 @@ func TestPlaceOrbits(t *testing.T) {
 
 	want := []struct {
 		orbit int
-		kind  string
+		kind  OrbitKind
 	}{
-		{4, "Mainworld"},
-		{5, "Belt"},
-		{6, "Gas Giant"},
-		{7, "Gas Giant"},
-		{9, "World"},
+		{4, KindMainworld},
+		{5, KindBelt},
+		{6, KindGasGiant},
+		{7, KindGasGiant},
+		{9, KindWorld},
 	}
 	if len(s.Orbits) != len(want) {
 		t.Fatalf("placed %d orbits, want %d: %+v", len(s.Orbits), len(want), s.Orbits)
 	}
 	for i, w := range want {
 		if s.Orbits[i].Orbit != w.orbit || s.Orbits[i].Kind != w.kind {
-			t.Errorf("orbit %d = {%d %q}, want {%d %q}",
+			t.Errorf("orbit %d = {%d %s}, want {%d %s}",
 				i, s.Orbits[i].Orbit, s.Orbits[i].Kind, w.orbit, w.kind)
 		}
 	}

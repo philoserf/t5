@@ -82,9 +82,14 @@ var p2Chart = [13]p2Row{
 	12: {7, 8, 11, 9, 9, 7},
 }
 
+// clamp constrains v to the inclusive range [lo, hi].
+func clamp(v, lo, hi int) int {
+	return min(max(v, lo), hi)
+}
+
 // p2 returns the placement row for a 2D roll, clamped to the chart's 1..12 range.
 func p2(roll int) p2Row {
-	return p2Chart[min(max(roll, 1), 12)]
+	return p2Chart[clamp(roll, 1, 12)]
 }
 
 // ggOffset is the HZ-relative orbit offset for a gas giant of the given class
