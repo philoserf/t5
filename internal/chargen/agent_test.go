@@ -29,8 +29,11 @@ func TestGoldenAgent(t *testing.T) {
 		1, 1, // Undercover -> Soldier again; Admin
 		1, 1, 1, 1, 1, 1, // Survey x6 again -> 12
 		3, 4, // continue vs Str 8 + Terms 2 = 10: 7, policy stops after term 2
-		// Muster out: 2 rolls, Benefit column, DM +Commendations (=2).
+		// Muster out: 4 rolls (2 terms + 2 Commendations, Book 1 p.67), Benefit
+		// column, DM +Commendations (=2).
 		3, // 3 + 2 = row 5 -> Str +1 (8 -> 9)
+		1, // 1 + 2 = row 3 -> Wafer Jack
+		6, // 6 + 2 = row 8 -> Ship Share
 		6, // 6 + 2 = row 8 -> Ship Share
 	}
 
@@ -61,8 +64,8 @@ func TestGoldenAgent(t *testing.T) {
 	if rec.Rank != 0 || rec.Officer {
 		t.Errorf("rank = %d officer %v, want rankless (0, false)", rec.Rank, rec.Officer)
 	}
-	if len(c.Benefits) != 1 || c.Benefits[0] != "Ship Share" {
-		t.Errorf("Benefits = %v, want [Ship Share]", c.Benefits)
+	if got := c.Benefits; len(got) != 3 || got[0] != "Wafer Jack" || got[1] != "Ship Share" || got[2] != "Ship Share" {
+		t.Errorf("Benefits = %v, want [Wafer Jack, Ship Share, Ship Share]", c.Benefits)
 	}
 }
 

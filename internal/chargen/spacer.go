@@ -94,7 +94,7 @@ var SpacerCareer = Career{
 		8:  {Money: named("Retirement Pay"), Benefit: charAward(Intelligence)},
 		9:  {Money: named("Retirement Pay"), Benefit: named("Ship Share")},
 		10: {Money: cash(60_000), Benefit: named("Life Insurance")},
-		11: {Money: cash(70_000), Benefit: named("Knighthood")},
-		12: {Money: cash(70_000), Benefit: named("Knighthood")},
+		11: {Money: cash(70_000), Benefit: knighthood()},
+		12: {Money: cash(70_000), Benefit: knighthood()},
 	},
 }

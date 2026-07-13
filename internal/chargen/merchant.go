@@ -69,10 +69,10 @@ var MerchantCareer = Career{
 		5:  {Money: cash(10_000), Benefit: charAward(Endurance)},     // High Passage
 		6:  {Money: cash(250_000), Benefit: named("Life Insurance")}, // StarPass
 		7:  {Money: cash(25_000), Benefit: named("Ship Share")},
-		8:  {Money: cash(30_000), Benefit: named("Knighthood")},
+		8:  {Money: cash(30_000), Benefit: knighthood()},
 		9:  {Money: cash(35_000), Benefit: named("Ship Share")},
 		10: {Money: cash(40_000), Benefit: named("Ship Share")},
 		11: {Money: cash(50_000), Benefit: named("Ship Share")},
-		12: {Money: cash(90_000), Benefit: named("Knighthood")},
+		12: {Money: cash(90_000), Benefit: knighthood()},
 	},
 }

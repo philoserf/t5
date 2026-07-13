@@ -57,6 +57,6 @@ var EntertainerCareer = Career{
 		9:  {Money: cash(35_000), Benefit: fameAward()},
 		10: {Money: cash(40_000), Benefit: named("Ship Share")},
 		11: {Money: cash(50_000), Benefit: named("TAS Fellowship")},
-		12: {Money: cash(400_000), Benefit: named("Knighthood")},
+		12: {Money: cash(400_000), Benefit: knighthood()},
 	},
 }

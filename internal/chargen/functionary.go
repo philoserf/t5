@@ -64,8 +64,8 @@ var FunctionaryCareer = Career{
 		7:  {Money: cash(25_000), Benefit: charAward(Intelligence)},
 		8:  {Money: cash(30_000), Benefit: named("Life Insurance")},
 		9:  {Money: cash(35_000), Benefit: named("TAS Fellowship")},
-		10: {Money: named("Pension"), Benefit: named("Knighthood")},
+		10: {Money: named("Pension"), Benefit: knighthood()},
 		11: {Money: named("Pension"), Benefit: named("Directorship")},
-		12: {Money: named("Pension"), Benefit: named("Knighthood")},
+		12: {Money: named("Pension"), Benefit: knighthood()},
 	},
 }
