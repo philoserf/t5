@@ -73,6 +73,22 @@ func (r *Roller) Dice(n int) int {
 	return sum
 }
 
+// DiceFaces rolls nD and returns the individual faces in roll order (nil for
+// n <= 0). The sum of DiceFaces(n) equals Dice(n); DiceFaces additionally
+// preserves each face, which Spectacular detection (Book 1 p. 127) and the
+// Genetics gene (the first face, Book 1 p. 102) need. Dice stays allocation-free
+// for the hot paths that only want the sum.
+func (r *Roller) DiceFaces(n int) []int {
+	if n <= 0 {
+		return nil
+	}
+	faces := make([]int, n)
+	for i := range faces {
+		faces[i] = r.d6()
+	}
+	return faces
+}
+
 // Flux rolls the Flux die: one die minus a second, ranging -5..+5. It is
 // identical in output to 2D-7 and to D-D. By convention the first (light) die
 // is positive and the second (dark) die is subtracted.
