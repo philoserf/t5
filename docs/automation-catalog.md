@@ -11,10 +11,11 @@ Page numbers are the printed page markers (e.g. "p. 28"); B1/B2/B3 = Core Rules 
 ## Already built
 
 `dice` (full engine: rolls, Flux/Good/Bad Flux, even distributions, roll-low Check/Resolve,
-notation parser) · `ehex` · `uwp` · `worldgen` (mainworld UWP + UWP-determinable trade
-classifications) · `systemgen` (stars with spectral type/decimal/size, orbital placement,
-gas giants, belts, world count, mainworld) · `chargen` (six-characteristic UPP + Check
-Characteristic).
+notation parser, individual die faces + Spectacular + Many-Dice) · `ehex` · `uwp` ·
+`worldgen` (mainworld UWP + all UWP/context-determinable trade classifications + secondary
+"other" worlds) · `systemgen` (full star family, gas-giant detail, belts, mainworld with
+orbit/climate/satellite, and a concrete orbit map placing every world/GG/belt around the
+primary) · `chargen` (six-characteristic UPP + Check Characteristic + the 13 careers).
 
 ## How this is ranked
 
@@ -39,13 +40,14 @@ These leverage what's already built, are mostly pure lookups/formulas over the e
 UWP/star data, and close out the "generate a canonical world/system line" goal.
 
 **1. Remaining trade classifications** — _B3 p. 26 (Chart D); B2 pp. 204–207_
-· extends worldgen · **S**
-The classifier already covers the 21 UWP-determinable codes, including the economic (Pi, In,
-Po, Pr, Ri, Ag, Na, Pa) and population (Lo, Ni, Ph, Hi) ones. Genuinely missing are the
-Gov=0/Law=0 pair **Di/Ba** (Ba also needs starport E/X) — pure digit-set membership, a couple
-more `tcRules` rows — and the climate/orbit/context codes (Fr, Ho, Co, Tr, Tu, Tz, Fa, Sa, Lk,
-Cy, Cp/Cs/Cx…) that need systemgen HZ-orbit or region context. The UWP-determinable core that
-Ix/Nobility/Ex depend on is done.
+· extends worldgen · **S** · ✅ **done**
+Complete. Beyond the original 21 UWP codes, the classifier now emits the Gov=0/Law=0 pair
+**Di/Ba** and **Px/Re** (do-now, PR #76); the HZ-orbit **climate** codes Tr/Tu/Fr/Tz
+(`ClimateCodes`, PR #78 — this edition's Chart B has no Ho/Co pair); the satellite codes
+**Sa/Lk** (PR #79); and the context-dependent Secondary codes **Fa/Mi/Pe** via
+`TradeClassificationsWithContext` (PR #84). Every UWP- and context-determinable Chart D code
+is generated; only the referee-assigned Politicals/Specials (Cp/Cs/Cx/Cy/Mr/Fo/Pz/Da/Ab/An)
+remain, and those are intentionally out of scope (Chart D: "assigned by Referee").
 
 **2. Population multiplier digit / PBG** — _B3 pp. 24–25 (Chart C, PBG)_ · extends worldgen +
 systemgen · **S**
@@ -103,11 +105,11 @@ then delegates to the roll-low resolver. Adds Cooperative/Opposed/Uncertain/Spec
 task modes. Everything in Tiers 4 (combat, senses, personals) is expressed in these terms.
 
 **11. Expose individual die faces + Many-Dice / Good-Bad Flux** — _B1 pp. 259–261_ · extends
-dice · **S**
-Spectacular results (three 1s/6s), Genetics (first die = gene), and Uncertain tasks all need
-the roller to surface individual dice, not just the sum. Many-Dice fast methods for 11D+
-(reuse-10, 2D-subsample, ×3.5, 3.5-Flux) matter for nuclear/WMD damage. Good/Bad Flux already
-exist in the engine — just confirm and wire in.
+dice · **S** · ✅ **done** (PR #75)
+Complete. `DiceFaces(n)` surfaces individual dice; `CheckResult.Faces` + `Spectacular()`
+classify three-1s/6s results; the four Many-Dice fast methods for 11D+ (reuse-10,
+2D-subsample, ×3.5, 3.5-Flux) are implemented and golden-tested. Good/Bad Flux already
+existed in the engine.
 
 **12. Money · Value · Cost scales** — _B1 pp. 20, 36–37, 44–45_ · new primitive · **S**
 An integer credit type (avoid float), the Value tier↔credits log scale, production-cost
@@ -134,13 +136,17 @@ worldgen→chargen), education engine (B1 pp. 58–62), aging (B1 pp. 88–89), 
 data model (B1 pp. 132–171).
 
 **15. Systemgen per-world detailing & placement** — _B3 pp. 20–29 (Chart G)_ · extends systemgen
-· **L**
-Habitable-zone orbit by spectral type/size, orbital distances & drive limits, mainworld orbit
-placement + climate (which unblocks the climate trade classifications), gas-giant detailing,
-satellites, secondary/"other" worlds (each a per-type partial-UWP formula), and the
-rotate-placement scheduler that assigns every world/GG/belt to a concrete orbit with
-collision/precluded-orbit resolution. The placement scheduler is the stateful hard part; the
-rest is lookups + per-type UWP formulas reusing worldgen.
+· **L** · 🟡 **mostly done**
+Built: HZ orbit by spectral type/size + orbital distances (`HZOrbit`/`OrbitAU`, PR #77);
+mainworld orbit + climate (PR #78, unblocked #1's climate codes); mainworld satellite
+(PR #79); gas-giant detail — size/diameter/skim-gravity/class + every-second-SGG→IG
+(PR #80); the P2 chart + Book 1 p.31 sub-orbit floors (PR #81); the primary-star placement
+engine that assigns the mainworld, gas giants, belts, and other worlds to concrete orbits
+with duplicate/precluded collision resolution (PR #82); and secondary/"other" world detailing
+— per-type partial-UWP generation + zone-based type selection + context trade codes
+(PRs #83, #84). **Remaining:** placement across secondary stars ("Rotate Placement Per Star")
+with their exclusion zones, per-world satellites (Book 3 p.29 S-table), and a dedicated CLI
+render pass. Everything hangs on the primary — exactly correct for single-star systems.
 
 **16. Starship design generator** — _B2 pp. 30–95, 101–135, 188–192_ · new `shipgen` package · **L**
 The largest self-contained system in the set: hull tons/cost/config, structure & armor layers,
