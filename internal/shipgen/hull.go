@@ -85,17 +85,12 @@ func hull(tl, ordinal, tons int, config Config, structure Structure) Hull {
 		agility++
 	}
 
-	baseAV := tl
-	if structure == Shell {
-		baseAV = tl / 2
-	}
-
 	return Hull{
 		Letter: ordinal, Tons: tons, Config: config, Structure: structure,
 		Friction: attr.friction, MaxG: attr.maxG,
 		Agility: agility, Stability: stability, LandCapable: attr.land,
 		Hardpoints: tons / 100,
-		BaseArmor:  baseAV,
+		BaseArmor:  structureAV(structure, tl),
 		Cost:       hullCost(ordinal, config, structure),
 	}
 }
