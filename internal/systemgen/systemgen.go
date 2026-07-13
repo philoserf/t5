@@ -145,6 +145,36 @@ func belts(r *dice.Roller) int {
 	return max(r.Die()-3, 0)
 }
 
+// orbitLabel renders one placed orbit's contents: the kind, plus a gas giant's
+// size/class or a world's type/UWP/trade-codes, plus any moons. A mainworld with
+// a giant is a satellite riding it.
+func orbitLabel(o PlacedOrbit) string {
+	label := o.Kind
+	switch {
+	case o.Kind == "Mainworld" && o.Giant != nil:
+		label = fmt.Sprintf("Mainworld (moon of Gas Giant %s)", o.Giant)
+	case o.Giant != nil:
+		label = fmt.Sprintf("%s %s", o.Kind, o.Giant)
+	case o.World != nil:
+		label = fmt.Sprintf("%s %s", o.World.Type, o.World.Profile)
+		if len(o.World.TradeCodes) > 0 {
+			label += " " + strings.Join(o.World.TradeCodes, " ")
+		}
+	}
+	if n := len(o.Satellites); n > 0 {
+		moons := make([]string, n)
+		for j, sat := range o.Satellites {
+			moons[j] = sat.OrbitLetter
+		}
+		suffix := ""
+		if n > 1 {
+			suffix = "s"
+		}
+		label += fmt.Sprintf(" (%d moon%s: %s)", n, suffix, strings.Join(moons, " "))
+	}
+	return label
+}
+
 // String renders a one-block summary of the system.
 func (s System) String() string {
 	var b strings.Builder
@@ -174,32 +204,19 @@ func (s System) String() string {
 	}
 	switch {
 	case len(s.Orbits) > 0:
-		orbits := make([]string, len(s.Orbits))
-		for i, o := range s.Orbits {
-			label := o.Kind
-			switch {
-			case o.Giant != nil:
-				label = fmt.Sprintf("%s %s", o.Kind, o.Giant)
-			case o.World != nil:
-				label = fmt.Sprintf("%s %s", o.World.Type, o.World.Profile)
-				if len(o.World.TradeCodes) > 0 {
-					label += " " + strings.Join(o.World.TradeCodes, " ")
-				}
+		// Group orbits under their host star; a header is shown only for
+		// secondary stars (the primary's orbits follow "Orbits:" directly).
+		multiHost := s.Orbits[len(s.Orbits)-1].Host != "Primary"
+		b.WriteString("Orbits:")
+		host := ""
+		for _, o := range s.Orbits {
+			if multiHost && o.Host != host {
+				host = o.Host
+				fmt.Fprintf(&b, "\n  %s:", host)
 			}
-			if n := len(o.Satellites); n > 0 {
-				moons := make([]string, n)
-				for j, sat := range o.Satellites {
-					moons[j] = sat.OrbitLetter
-				}
-				suffix := ""
-				if n > 1 {
-					suffix = "s"
-				}
-				label += fmt.Sprintf(" (%d moon%s: %s)", n, suffix, strings.Join(moons, " "))
-			}
-			orbits[i] = fmt.Sprintf("%d: %s", o.Orbit, label)
+			fmt.Fprintf(&b, "\n        %d: %s", o.Orbit, orbitLabel(o))
 		}
-		fmt.Fprintf(&b, "Orbits: %s\n", strings.Join(orbits, "\n        "))
+		b.WriteByte('\n')
 	case len(s.Giants) > 0:
 		giants := make([]string, len(s.Giants))
 		for i, g := range s.Giants {

@@ -17,9 +17,9 @@ type Satellite struct {
 // orbit letter. Run as its own pass after placement so it never perturbs the
 // orbit map's dice.
 func (s *System) rollSatellites(r *dice.Roller) {
-	hz, hasHZ := HZOrbit(s.Primary)
 	for i := range s.Orbits {
 		o := &s.Orbits[i]
+		hz, hasHZ := HZOrbit(s.hostStar(o.Host))
 		n := satelliteCount(r, o.Kind, o.Orbit, hz, hasHZ)
 		for range n {
 			far := r.Dice(2) >= 8
@@ -30,6 +30,21 @@ func (s *System) rollSatellites(r *dice.Roller) {
 			}
 			o.Satellites = append(o.Satellites, Satellite{Far: far, OrbitLetter: letter})
 		}
+	}
+}
+
+// hostStar returns the star an orbit's host label names; an unknown or empty
+// label (single-star maps) resolves to the primary.
+func (s *System) hostStar(label string) Star {
+	switch label {
+	case "Close":
+		return *s.Close
+	case "Near":
+		return *s.Near
+	case "Far":
+		return *s.Far
+	default:
+		return s.Primary
 	}
 }
 
