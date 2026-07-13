@@ -46,6 +46,10 @@ type System struct {
 	Worlds    int
 	Mainworld worldgen.World
 
+	// Giants details each gas giant's size and class (Book 3 p.29); len equals
+	// GasGiants. Their orbit placement is deferred to the rotate scheduler.
+	Giants []GasGiant
+
 	// MainworldOrbit is the mainworld's orbit around the Primary (Book 3 p.24),
 	// its habitable-zone orbit shifted by the rolled HZ variance. -1 when the
 	// primary has no habitable zone.
@@ -60,6 +64,7 @@ func Generate(r *dice.Roller) System {
 	// Gas giants and belts are needed to detail the mainworld (the Economic
 	// Extension and the PBG use them), so roll them before the mainworld.
 	s.GasGiants = gasGiants(r)
+	s.Giants = rollGasGiants(r, s.GasGiants)
 	s.Belts = belts(r)
 	// Capital status needs region context (sectorgen), so default to false.
 	s.Mainworld = worldgen.GenerateWorld(r, s.GasGiants, s.Belts, false)
@@ -157,6 +162,13 @@ func (s System) String() string {
 		} else {
 			fmt.Fprintf(&b, "%s: %s\n", e.label, *e.star)
 		}
+	}
+	if len(s.Giants) > 0 {
+		giants := make([]string, len(s.Giants))
+		for i, g := range s.Giants {
+			giants[i] = g.String()
+		}
+		fmt.Fprintf(&b, "Gas Giants: %s\n", strings.Join(giants, ", "))
 	}
 	// PBG already carries the belt and gas-giant counts (its 2nd and 3rd
 	// digits), so they are not labelled separately.
