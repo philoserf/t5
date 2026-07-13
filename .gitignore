@@ -10,3 +10,8 @@
 # Source rulebooks and their extracted text — copyrighted, not distributed (see README)
 /docs/pdf/*.pdf
 /docs/reference/
+
+# stray CLI build artifacts (go build ./cmd/foo drops the binary in cwd)
+/chargen
+/worldgen
+/systemgen

@@ -241,9 +241,10 @@ func homeworldField(c chargen.Character) string {
 }
 
 // educationField renders the character's degrees and, if declared, their Major
-// and Minor subjects.
+// and Minor subjects. A Trade School graduate has a Major but no degree, so the
+// subjects show on their own.
 func educationField(c chargen.Character) string {
-	if len(c.Degrees) == 0 {
+	if len(c.Degrees) == 0 && c.Major == "" {
 		return ""
 	}
 	s := strings.Join(c.Degrees, ", ")
@@ -252,7 +253,11 @@ func educationField(c chargen.Character) string {
 		if c.Minor != "" {
 			subjects += ", " + c.Minor + " (minor)"
 		}
-		s += " — " + subjects
+		if s == "" {
+			s = subjects
+		} else {
+			s += " — " + subjects
+		}
 	}
 	return s
 }
