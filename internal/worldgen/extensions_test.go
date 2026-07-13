@@ -11,19 +11,20 @@ import (
 var regina = uwp.Profile{Starport: 'A', Size: 7, Atmosphere: 8, Hydrographics: 8, Population: 8, Government: 9, Law: 9, TechLevel: 12}
 
 func TestImportanceRegina(t *testing.T) {
-	// Book 3's breakdown: Starport A +1, TL A +1, Rich +1, Pre-Ag +1 = +4.
-	if got := Importance(regina, []string{"Ph", "Pa", "Ri"}, false, false, false); got != 4 {
+	// Book 3: Starport A +1, TL +1, Rich +1, Naval & Scout bases +1 = +4.
+	// Pre-Agricultural is NOT in Chart E's +1 list (only Ag/Hi/In/Ri).
+	if got := Importance(regina, []string{"Ph", "Pa", "Ri"}, true, true, false); got != 4 {
 		t.Fatalf("Importance(Regina) = %d, want 4", got)
 	}
 }
 
 func TestImportanceModifiers(t *testing.T) {
-	// Naval and Scout together add +1 (both required).
-	if got := Importance(regina, []string{"Ph", "Pa", "Ri"}, true, true, false); got != 5 {
-		t.Errorf("with both bases = %d, want 5", got)
+	// Naval and Scout together add +1 (both required); with Ri +1, A +1, TL +1 = +4.
+	if got := Importance(regina, []string{"Ph", "Pa", "Ri"}, true, true, false); got != 4 {
+		t.Errorf("with both bases = %d, want 4", got)
 	}
-	if got := Importance(regina, []string{"Ph", "Pa", "Ri"}, true, false, false); got != 4 {
-		t.Errorf("with only naval base = %d, want 4 (needs both)", got)
+	if got := Importance(regina, []string{"Ph", "Pa", "Ri"}, true, false, false); got != 3 {
+		t.Errorf("with only naval base = %d, want 3 (needs both for the +1)", got)
 	}
 	// A poor backwater: Starport X (-1), TL 3 (<=8, -1), no trade codes, Pop 2 (-1).
 	poor := uwp.Profile{Starport: 'X', TechLevel: 3, Population: 2}
@@ -51,6 +52,19 @@ func TestRollEconomicRegina(t *testing.T) {
 	}
 	if got := ex.RU(); got != 13*7*14*4 {
 		t.Fatalf("RU() = %d, want %d", got, 13*7*14*4)
+	}
+}
+
+func TestRUZeroSubstitution(t *testing.T) {
+	// "If any value = 0, use 1" (B3 p.27): a zero factor becomes 1, not a zeroed product.
+	e := Economic{Resources: 13, Labor: 7, Infrastructure: 14, Efficiency: 0}
+	if got := e.RU(); got != 13*7*14 {
+		t.Errorf("RU with Efficiency 0 = %d, want %d", got, 13*7*14)
+	}
+	// Negative Efficiency stays negative — only zero is substituted.
+	neg := Economic{Resources: 5, Labor: 5, Infrastructure: 5, Efficiency: -2}
+	if got := neg.RU(); got != 5*5*5*-2 {
+		t.Errorf("RU with Efficiency -2 = %d, want %d", got, 5*5*5*-2)
 	}
 }
 
