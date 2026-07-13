@@ -195,6 +195,7 @@ type Career struct {
 	ID               CareerID
 	Name             string
 	Qualify          Qualification
+	Retry            Qualification // the first career's Retry rolls against this; empty re-rolls Qualify
 	CCMode           CCMode
 	ControllingChars []Characteristic
 	Continue         ContinueRule
@@ -335,17 +336,27 @@ func serveCareer(r *dice.Roller, p Policy, c *Character, career Career, retry bo
 // beginCareer resolves a career's Begin (Book 1 p. 63): an AutoBegin career (the
 // Citizen) enters unconditionally; otherwise the character rolls 2D at or under
 // the best qualifying characteristic. When retry is set, a failed roll is
-// attempted once more before the career is abandoned. The one-year cost of each
-// failed attempt is not yet modelled.
+// attempted once more (against the career's Retry characteristic, if it declares
+// one) before the career is abandoned. The one-year cost of each failed attempt,
+// and the fact that only some careers grant a Retry at all, are not yet modelled.
 func beginCareer(r *dice.Roller, c *Character, career Career, retry bool) bool {
 	if career.AutoBegin {
 		return true
 	}
-	target := career.Qualify.target(*c)
-	if r.Resolve(dice.Check{Dice: 2, Target: target}).Success {
+	if r.Resolve(dice.Check{Dice: 2, Target: career.Qualify.target(*c)}).Success {
 		return true
 	}
-	return retry && r.Resolve(dice.Check{Dice: 2, Target: target}).Success
+	if !retry {
+		return false
+	}
+	// The Retry rolls against the career's Retry characteristic when it declares
+	// one (Book 1 p.63; the Scout retries vs Education, p.79); otherwise it
+	// re-rolls the qualify target.
+	retryTarget := career.Qualify.target(*c)
+	if len(career.Retry.Chars) > 0 {
+		retryTarget = career.Retry.target(*c)
+	}
+	return r.Resolve(dice.Check{Dice: 2, Target: retryTarget}).Success
 }
 
 // RunCareer runs the term loop of one career on a character, appending a
