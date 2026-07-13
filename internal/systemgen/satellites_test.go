@@ -16,9 +16,12 @@ func TestSatelliteCount(t *testing.T) {
 		want  int
 	}{
 		{"Gas Giant", 2, 5},
-		{"World", 2, 1},     // inner (orbit < hz)
-		{"Mainworld", 4, 2}, // in the HZ
-		{"World", 9, 3},     // outer (orbit > hz)
+		{"World", 2, 1},     // inner (HZ-2)
+		{"World", 3, 2},     // hospitable (HZ-1), not inner
+		{"Mainworld", 4, 2}, // hospitable (HZ)
+		{"World", 5, 2},     // hospitable (HZ+1), not outer
+		{"World", 6, 3},     // outer (HZ+2)
+		{"World", 9, 3},     // outer
 		{"Belt", 4, 0},
 	}
 	for _, c := range cases {
