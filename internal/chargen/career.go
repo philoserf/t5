@@ -143,7 +143,7 @@ func benefitDM(dm MusterDM, c Character, rec CareerRecord) int {
 	case DMFameHalf:
 		return c.Fame / 2
 	case DMCommends:
-		return c.Commendations
+		return rec.Commendations
 	default:
 		return 0
 	}
@@ -258,11 +258,12 @@ func (o TermOutcome) String() string {
 
 // A CareerRecord is the durable history of one career served.
 type CareerRecord struct {
-	Career  CareerID
-	Terms   int
-	Rank    int  // rank number within the current track (0 for a rankless career)
-	Officer bool // whether Rank is on the officer track
-	Outcome TermOutcome
+	Career        CareerID
+	Terms         int
+	Rank          int  // rank number within the current track (0 for a rankless career)
+	Officer       bool // whether Rank is on the officer track
+	Commendations int  // Commendations earned in this career (drive its muster rolls/DM)
+	Outcome       TermOutcome
 }
 
 // careerRun is the transient bookkeeping for one career, live only during
@@ -277,6 +278,7 @@ type careerRun struct {
 	job, hobby  string           // the Citizen's Job and Hobby skills, set on the 1st/2nd success
 	exiled      bool             // the Noble is currently in Exile (Book 1 p. 85)
 	rewards     int              // Reward successes so far (the Merchant's escalating Ship Shares)
+	commends    int              // Commendations earned this career (per-career muster rolls/DM)
 	branchMod   int              // the chosen armed-forces Branch's R&R mod
 	branchOpsDM int              // the chosen Branch's DM on Operations rolls
 	terms       int              // terms served before the current one (the Rogue's "Mod +Terms")
@@ -408,6 +410,7 @@ func RunCareer(r *dice.Roller, p Policy, c *Character, career Career) {
 	}
 	rec.Rank = run.rank
 	rec.Officer = run.officer
+	rec.Commendations = run.commends
 	c.Careers = append(c.Careers, rec)
 }
 
@@ -464,6 +467,7 @@ func runTerm(r *dice.Roller, p Policy, c *Character, run *careerRun, career Care
 				c.Fame++
 			case RewardCommendation:
 				c.Commendations++
+				run.commends++
 			}
 		}
 	} else {
@@ -1035,7 +1039,7 @@ func musterRollCount(c Character, rec CareerRecord) int {
 	if rec.Outcome == Disabled {
 		rolls *= 2
 	}
-	rolls += c.Commendations
+	rolls += rec.Commendations
 	if c.Fame >= 19 {
 		rolls++
 	}

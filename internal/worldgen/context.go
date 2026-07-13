@@ -1,6 +1,10 @@
 package worldgen
 
-import "github.com/philoserf/t5/internal/uwp"
+import (
+	"slices"
+
+	"github.com/philoserf/t5/internal/uwp"
+)
 
 // WorldContext carries the system facts a world's context-dependent trade codes
 // need (Book 3 Chart D, p.26). These "Secondary" codes only attach to worlds
@@ -21,6 +25,10 @@ func TradeClassificationsWithContext(p uwp.Profile, ctx WorldContext) []string {
 	if ctx.IsMainworld {
 		return tcs
 	}
+	// Px (Prison/Exile Camp) is a mainworld-only code (Book 3 Chart D p.26, "MW");
+	// a non-mainworld with that same profile is a Pe (Penal Colony) instead, so
+	// strip any Px the base classifier emitted before considering Pe below.
+	tcs = slices.DeleteFunc(tcs, func(code string) bool { return code == "Px" })
 	// Fa Farming: in the habitable zone, Atm 4-9, Hyd 4-8, Pop 2-6.
 	if ctx.InHZ && allows("456789", p.Atmosphere) && allows("45678", p.Hydrographics) && allows("23456", p.Population) {
 		tcs = append(tcs, "Fa")

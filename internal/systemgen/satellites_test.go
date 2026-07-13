@@ -25,17 +25,22 @@ func TestSatelliteCount(t *testing.T) {
 		{KindBelt, 4, 0},
 	}
 	for _, c := range cases {
-		if got := satelliteCount(dice.NewScripted(6), c.kind, c.orbit, hz, true); got != c.want {
-			t.Errorf("satelliteCount(%s, orbit %d) = %d, want %d", c.kind, c.orbit, got, c.want)
+		if got, rings := satelliteCount(dice.NewScripted(6), c.kind, c.orbit, hz, true); got != c.want || rings != 0 {
+			t.Errorf("satelliteCount(%s, orbit %d) = %d moons, %d rings, want %d moons, 0 rings", c.kind, c.orbit, got, rings, c.want)
 		}
 	}
-	// A low roll floors at zero (inner 1D-5 with 1D=1 -> -4 -> 0).
-	if got := satelliteCount(dice.NewScripted(1), KindWorld, 2, hz, true); got != 0 {
-		t.Errorf("satelliteCount(inner, 1D=1) = %d, want 0", got)
+	// A negative roll is none (inner 1D-5 with 1D=1 -> -4 -> none).
+	if got, rings := satelliteCount(dice.NewScripted(1), KindWorld, 2, hz, true); got != 0 || rings != 0 {
+		t.Errorf("satelliteCount(inner, 1D=1) = %d moons, %d rings, want 0, 0", got, rings)
 	}
 	// No habitable zone treats every world as outer.
-	if got := satelliteCount(dice.NewScripted(6), KindWorld, 2, hz, false); got != 3 {
+	if got, _ := satelliteCount(dice.NewScripted(6), KindWorld, 2, hz, false); got != 3 {
 		t.Errorf("satelliteCount(no HZ) = %d, want 3 (outer)", got)
+	}
+	// A gas giant rolling exactly 0 (1D=1 -> 1D-1=0) yields a Ring, then re-rolls
+	// the count (1D=4 -> 3 moons).
+	if moons, rings := satelliteCount(dice.NewScripted(1, 4), KindGasGiant, 2, hz, true); moons != 3 || rings != 1 {
+		t.Errorf("satelliteCount(GG ring) = %d moons, %d rings, want 3, 1", moons, rings)
 	}
 }
 

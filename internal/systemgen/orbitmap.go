@@ -138,56 +138,75 @@ func (s *System) placeOrbits(r *dice.Roller) {
 		placed = append(placed, mw)
 	}
 
-	// rotate hands out the next host round-robin; each placement category resets
-	// next to 0 first so it starts its own rotation at the primary.
-	next := 0
-	rotate := func() *orbitHost {
-		h := hosts[next%len(hosts)]
-		next++
-		return h
+	// rotator hands out hosts round-robin from a pool; each placement category
+	// gets its own rotator so it starts fresh at the pool's first star.
+	rotator := func(pool []*orbitHost) func() *orbitHost {
+		i := 0
+		return func() *orbitHost {
+			h := pool[i%len(pool)]
+			i++
+			return h
+		}
 	}
 
+	// Gas giants and belts are placed relative to the habitable zone, so they
+	// rotate only over stars that have one — a no-HZ secondary hosts worlds but
+	// not giants/belts (which would otherwise be silently dropped). If no star
+	// has an HZ at all, fall back to the primary anchored at its floor.
+	hzHosts := make([]*orbitHost, 0, len(hosts))
+	for _, h := range hosts {
+		if h.hasHZ {
+			hzHosts = append(hzHosts, h)
+		}
+	}
+	if len(hzHosts) == 0 {
+		hzHosts = hosts[:1]
+	}
+	anchor := func(h *orbitHost) int {
+		if h.hasHZ {
+			return h.hz
+		}
+		return h.floor
+	}
+
+	ggRotate := rotator(hzHosts)
 	for i := range giants {
 		g := &giants[i]
-		h := rotate()
-		if !h.hasHZ {
-			continue // no habitable zone to hang an HZ-relative giant on
-		}
-		if o, ok := h.claim(h.hz + p2(r.Dice(2)).ggOffset(g.Class)); ok {
+		h := ggRotate()
+		if o, ok := h.claim(anchor(h) + p2(r.Dice(2)).ggOffset(g.Class)); ok {
 			placed = append(placed, PlacedOrbit{Host: h.label, Orbit: o, Kind: KindGasGiant, Giant: g})
 		}
 	}
 
-	next = 0
+	beltRotate := rotator(hzHosts)
 	for range s.Belts {
-		h := rotate()
-		if !h.hasHZ {
-			continue
-		}
-		if o, ok := h.claim(h.hz + p2(r.Dice(2)).belt); ok {
+		h := beltRotate()
+		if o, ok := h.claim(anchor(h) + p2(r.Dice(2)).belt); ok {
 			placed = append(placed, PlacedOrbit{Host: h.label, Orbit: o, Kind: KindBelt})
 		}
 	}
 
-	// Other worlds fill the remaining world count. Their orbits are absolute,
-	// and each is detailed with a type (by its zone), a UWP, and trade codes.
+	// Other worlds fill the remaining world count. Their orbits are absolute, and
+	// each is detailed with a type (by its zone), a UWP, and trade codes — but an
+	// unplaceable (overflow) world is dropped before it is rolled, so it does not
+	// advance the dice stream ("ignore excess worlds", Book 3 p.21).
 	mwPop := s.Mainworld.Profile.Population
 	mwIndustrial := slices.Contains(s.Mainworld.TradeCodes, "In")
-	next = 0
+	worldRotate := rotator(hosts)
 	others := max(s.Worlds-1-s.GasGiants-s.Belts, 0)
 	for i := range others {
-		h := rotate()
+		h := worldRotate()
 		row := p2(r.Dice(2))
 		want := row.world1
 		if i == others-1 {
 			want = row.world2
 		}
 		o, ok := h.claim(want)
+		if !ok {
+			continue // no room on this star: ignore the excess world
+		}
 		wt := otherWorldType(o, h.hz, h.hasHZ, r.Die())
 		prof := worldgen.GenerateOtherWorld(r, wt, mwPop)
-		if !ok {
-			continue // no room on this star: drop the excess world
-		}
 		tcs := worldgen.TradeClassificationsWithContext(prof, worldgen.WorldContext{
 			InHZ:                h.hasHZ && o == h.hz,
 			MainworldIndustrial: mwIndustrial,

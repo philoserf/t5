@@ -43,10 +43,12 @@ func TestMusterRollCount(t *testing.T) {
 		want int
 	}{
 		{"terms only", Character{}, base, 3},
-		{"plus commendations", Character{Commendations: 2}, base, 5},
+		// Commendations are per-career (from the CareerRecord), not the
+		// character's cumulative total across careers.
+		{"plus commendations", Character{}, CareerRecord{Terms: 3, Commendations: 2}, 5},
 		{"plus fame 19", Character{Fame: 19}, base, 4},
 		{"below fame 19", Character{Fame: 18}, base, 3},
-		{"disabled doubles terms only", Character{Commendations: 1}, CareerRecord{Terms: 2, Outcome: Disabled}, 5},
+		{"disabled doubles terms, plus this career's commendations", Character{}, CareerRecord{Terms: 2, Commendations: 1, Outcome: Disabled}, 5},
 	}
 	for _, tc := range cases {
 		if got := musterRollCount(tc.c, tc.rec); got != tc.want {

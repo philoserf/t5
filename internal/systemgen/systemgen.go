@@ -164,7 +164,11 @@ func orbitLabel(o PlacedOrbit) string {
 	if n := len(o.Satellites); n > 0 {
 		moons := make([]string, n)
 		for j, sat := range o.Satellites {
-			moons[j] = sat.OrbitLetter
+			if sat.Ring {
+				moons[j] = "Ring"
+			} else {
+				moons[j] = sat.OrbitLetter
+			}
 		}
 		suffix := ""
 		if n > 1 {
