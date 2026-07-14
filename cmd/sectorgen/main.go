@@ -4,10 +4,11 @@
 //
 // Usage:
 //
-//	sectorgen [-density name] [-subsector A] [-seed value]
+//	sectorgen [-density name] [-subsector A] [-detail] [-sector] [-seed value]
 //
 // density is one of the names sectorgen.DensityNames reports (default standard);
-// with -seed, output is reproducible.
+// with -seed, output is reproducible. -detail prints Second Survey lines for the
+// subsector; -sector surveys the full sector with trade routes and way stations.
 package main
 
 import (
@@ -24,6 +25,7 @@ func main() {
 	densityName := flag.String("density", "standard", "stellar density (extragalactic…core)")
 	subsector := flag.String("subsector", "A", "subsector letter A-P")
 	detail := flag.Bool("detail", false, "generate a full system per hex and print Second Survey lines")
+	sector := flag.Bool("sector", false, "survey the full sector with trade routes and way stations")
 	r := cli.Roller()
 
 	d, ok := sectorgen.DensityByName(*densityName)
@@ -31,6 +33,12 @@ func main() {
 		fmt.Printf("unknown density %q (known: %s)\n", *densityName, strings.Join(sectorgen.DensityNames(), ", "))
 		return
 	}
+
+	if *sector {
+		fmt.Println(survey.Sector(r, d))
+		return
+	}
+
 	letter := byte('A')
 	if len(*subsector) > 0 {
 		letter = strings.ToUpper(*subsector)[0]

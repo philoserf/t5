@@ -75,6 +75,15 @@ func TestBuildIntermediateHops(t *testing.T) {
 	}
 }
 
+func TestExpectedTraffic(t *testing.T) {
+	cases := map[int]int{7: 1000, 5: 1000, 4: 100, 3: 30, 2: 20, 1: 10, 0: 2, -1: 1, -2: 0, -5: 0}
+	for ix, want := range cases {
+		if got := ExpectedTraffic(ix); got != want {
+			t.Errorf("ExpectedTraffic(%d) = %d, want %d", ix, got, want)
+		}
+	}
+}
+
 func TestBuildStableOrder(t *testing.T) {
 	// Three mutually-close Important worlds -> three links in CCRR order,
 	// regardless of input order.

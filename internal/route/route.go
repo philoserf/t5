@@ -150,6 +150,30 @@ func orderedLink(a, b sectorgen.Hex) Link {
 	return Link{From: a, To: b, Jump: a.Distance(b)}
 }
 
+// ExpectedTraffic returns the representative weekly ship arrivals for a world of
+// the given Importance (Book 3 p.27 Expected Ship Traffic table), clamped to the
+// table's [-3, +5] range. Busy/Rural empire shifts (±1 row) are the caller's.
+func ExpectedTraffic(ix int) int {
+	switch {
+	case ix >= 5:
+		return 1000
+	case ix == 4:
+		return 100
+	case ix == 3:
+		return 30
+	case ix == 2:
+		return 20
+	case ix == 1:
+		return 10
+	case ix == 0:
+		return 2
+	case ix == -1:
+		return 1
+	default:
+		return 0
+	}
+}
+
 // before orders hexes in column-major (CCRR) order.
 func before(a, b sectorgen.Hex) bool {
 	if a.Col != b.Col {

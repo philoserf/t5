@@ -6,6 +6,7 @@
 package survey
 
 import (
+	"fmt"
 	"sort"
 	"strings"
 
@@ -82,6 +83,22 @@ func Sector(r *dice.Roller, d sectorgen.Density) Survey {
 	links := route.Build(worldsOf(records), route.DefaultJump)
 	placeWayStations(records, links)
 	return Survey{Records: records, Routes: links}
+}
+
+// String renders the survey: each hex's canonical Second Survey line annotated
+// with its expected weekly ship traffic, followed by a trade-route listing.
+func (s Survey) String() string {
+	var b strings.Builder
+	for _, rec := range s.Records {
+		fmt.Fprintf(&b, "%s  [~%d/wk]\n", rec.SecondSurvey(), route.ExpectedTraffic(rec.System.Mainworld.Importance))
+	}
+	if len(s.Routes) > 0 {
+		fmt.Fprintf(&b, "\nTrade Routes (%d):\n", len(s.Routes))
+		for _, l := range s.Routes {
+			fmt.Fprintf(&b, "  %s-%s J%d\n", l.From, l.To, l.Jump)
+		}
+	}
+	return strings.TrimRight(b.String(), "\n")
 }
 
 // worldsOf projects the survey records to the route package's world summaries.
