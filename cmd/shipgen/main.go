@@ -34,6 +34,8 @@ func main() {
 	mission := flag.String("mission", "X", "QSP mission code")
 	weapons := flag.String("weapon", "",
 		`weapon(s) to mount, comma-separated, each "name[:mount[:range]]" (e.g. "beamlaser:T1:orbit,sandcaster")`)
+	defenses := flag.String("defense", "",
+		`defense(s) to install, comma-separated, each "name[:mount[:range]]" (e.g. "blackglobe,nucleardamper")`)
 	n, r := cli.SeededRoller("ships")
 
 	if *hull == "" {
@@ -49,7 +51,7 @@ func main() {
 	spec, err := specFromFlags(flags{
 		hull: *hull, tl: *tl, config: *configLetter, structure: *structure,
 		armor: *armorLayers, maneuver: *maneuver, jump: *jump, power: *power, mission: *mission,
-		weapons: *weapons,
+		weapons: *weapons, defenses: *defenses,
 	})
 	if err != nil {
 		cli.Fatalf("%v", err)
@@ -68,7 +70,7 @@ type flags struct {
 	config, structure              string
 	armor                          int
 	maneuver, jump, power, mission string
-	weapons                        string
+	weapons, defenses              string
 }
 
 // specFromFlags builds a ShipSpec from the CLI flags, reporting an unknown hull,
@@ -92,6 +94,10 @@ func specFromFlags(f flags) (shipgen.ShipSpec, error) {
 	if err != nil {
 		return shipgen.ShipSpec{}, err
 	}
+	defenseList, err := defenseSpecs(f.defenses)
+	if err != nil {
+		return shipgen.ShipSpec{}, err
+	}
 	return shipgen.ShipSpec{
 		Mission: f.mission, TL: f.tl, HullLetter: hullOrd, Config: config,
 		Structure: structure, ArmorLayers: f.armor,
@@ -99,6 +105,7 @@ func specFromFlags(f flags) (shipgen.ShipSpec, error) {
 		Jump:      driveSpec(f.jump),
 		Power:     driveSpec(f.power),
 		Weapons:   weapons,
+		Defenses:  defenseList,
 		FuelScoop: true,
 	}, nil
 }
@@ -137,6 +144,42 @@ func weaponSpecs(list string) ([]shipgen.WeaponSpec, error) {
 		}
 		if len(parts) > 3 {
 			return nil, fmt.Errorf("weapon %q has too many fields (want name[:mount[:range]])", entry)
+		}
+		specs = append(specs, spec)
+	}
+	return specs, nil
+}
+
+// defenseSpecs parses the -defense flag, the same shape as -weapon: a
+// comma-separated list of "name[:mount[:range]]", defaulting to the Bolt-In mount
+// (which needs no hardpoint) at the standard range.
+func defenseSpecs(list string) ([]shipgen.DefenseSpec, error) {
+	if list == "" {
+		return nil, nil
+	}
+	var specs []shipgen.DefenseSpec
+	for _, entry := range strings.Split(list, ",") {
+		parts := strings.Split(strings.TrimSpace(entry), ":")
+		model, ok := shipgen.DefenseByName(parts[0])
+		if !ok {
+			return nil, fmt.Errorf("unknown defense %q (known: %s)",
+				parts[0], strings.Join(shipgen.DefenseNames(), ", "))
+		}
+		spec := shipgen.DefaultDefense(model)
+		if len(parts) > 1 && parts[1] != "" {
+			if spec.Mount, ok = shipgen.MountByCode(parts[1]); !ok {
+				return nil, fmt.Errorf("unknown mount %q (known: Bo, %s)",
+					parts[1], strings.Join(shipgen.MountCodes(), ", "))
+			}
+		}
+		if len(parts) > 2 && parts[2] != "" {
+			if spec.Range, ok = shipgen.RangeByName(parts[2]); !ok {
+				return nil, fmt.Errorf("unknown range %q (known: %s)",
+					parts[2], strings.Join(shipgen.RangeNames(), ", "))
+			}
+		}
+		if len(parts) > 3 {
+			return nil, fmt.Errorf("defense %q has too many fields (want name[:mount[:range]])", entry)
 		}
 		specs = append(specs, spec)
 	}

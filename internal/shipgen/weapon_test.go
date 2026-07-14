@@ -118,7 +118,8 @@ func TestWeaponRangeEffects(t *testing.T) {
 		wantTons Tonnage
 		wantCost int
 	}{
-		{Vlong, 8, 33, 500_000 + 200_000/3},    // -2 TL, tons /3, cost /3
+		// The book divides by three by multiplying by 0.33 (see rangeData).
+		{Vlong, 8, 33, 500_000 + 66_000},       // -2 TL, tons x0.33, cost x0.33
 		{Distant, 9, 50, 500_000 + 100_000},    // -1 TL, tons /2, cost /2
 		{VDistant, 10, 100, 500_000 + 200_000}, // standard: no change
 		{Orbit, 11, 200, 500_000 + 600_000},    // +1 TL, tons x2, cost x3

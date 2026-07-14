@@ -17,22 +17,37 @@ import "fmt"
 // allocated to them instead of to its single HardPoint (Book 2 p.156).
 const firmPointsPerBlock = 3
 
-// mountPoints reports whether a hull of the given tonnage can carry the weapons,
-// and the shortfall message if it cannot. Weapons of one ton or more need a
-// HardPoint each; sub-ton weapons ride FirmPoints, three to a block.
+// mountPoints reports whether a hull of the given tonnage can carry the weapons
+// and defenses, and the shortfall message if it cannot. Mounts of one ton or more
+// need a HardPoint each; sub-ton mounts ride FirmPoints, three to a block.
 //
-// The cheapest allocation gives every full mount its own HardPoint block and
-// packs the sub-ton mounts three to a block, so the hull needs
-// hardMounts + ceil(subTonMounts/3) blocks. Fewer blocks than that cannot be made
-// to work by any other split, and more are never required.
-func mountPoints(hullTons int, weapons []Weapon) string {
+// Bolt-In defenses are free of all this: a Bolt-In "can be placed anywhere within
+// a ship and does not require a HardPoint or FirmPoint, nor access to the exterior
+// of the hull" (Book 2 p.176). It still weighs three tons, but it competes for
+// nothing — which is exactly why it is the defenses' natural mount, and why a ship
+// can carry screens without giving up a single gun.
+//
+// The cheapest allocation gives every full mount its own HardPoint block and packs
+// the sub-ton mounts three to a block, so the hull needs
+// hardMounts + ceil(subTonMounts/3) blocks. Fewer blocks cannot be made to work by
+// any other split, and more are never required.
+func mountPoints(hullTons int, weapons []Weapon, defenses []Defense) string {
 	hard, firm := 0, 0
-	for _, w := range weapons {
-		if w.Tons.SubTon() {
+	count := func(t Tonnage) {
+		if t.SubTon() {
 			firm++
 		} else {
 			hard++
 		}
+	}
+	for _, w := range weapons {
+		count(w.Tons)
+	}
+	for _, d := range defenses {
+		if d.Spec.Mount == BoltIn {
+			continue // needs no mount point at all
+		}
+		count(d.Tons)
 	}
 	if hard == 0 && firm == 0 {
 		return ""
@@ -50,26 +65,32 @@ func mountPoints(hullTons int, weapons []Weapon) string {
 func mountPhrase(hard, firm int) string {
 	switch {
 	case firm == 0:
-		return fmt.Sprintf("%d weapons", hard)
+		return fmt.Sprintf("%d mounts", hard)
 	case hard == 0:
-		return fmt.Sprintf("%d sub-ton weapons", firm)
+		return fmt.Sprintf("%d sub-ton mounts", firm)
 	default:
-		return fmt.Sprintf("%d weapons and %d sub-ton weapons", hard, firm)
+		return fmt.Sprintf("%d mounts and %d sub-ton mounts", hard, firm)
 	}
 }
 
-// weaponTonnage is the whole tons the weapons occupy in the ship's budget. A
-// mount on a HardPoint "is at least 1 ton (round up)" (Book 2 p.83), so a full
-// mount is charged whole tons; the sub-ton mounts on FirmPoints keep their
+// armamentTonnage is the whole tons the weapons and defenses occupy in the ship's
+// budget. A mount on a HardPoint "is at least 1 ton (round up)" (Book 2 p.83), so
+// a full mount is charged whole tons; sub-ton mounts on FirmPoints keep their
 // fractions, and the total rounds up once at the end.
-func weaponTonnage(weapons []Weapon) int {
+func armamentTonnage(weapons []Weapon, defenses []Defense) int {
 	var total Tonnage
-	for _, w := range weapons {
-		if w.Tons.SubTon() {
-			total += w.Tons
-			continue
+	charge := func(t Tonnage) {
+		if t.SubTon() {
+			total += t
+			return
 		}
-		total += Tons(w.Tons.Ceil())
+		total += Tons(t.Ceil())
+	}
+	for _, w := range weapons {
+		charge(w.Tons)
+	}
+	for _, d := range defenses {
+		charge(d.Tons)
 	}
 	return total.Ceil()
 }

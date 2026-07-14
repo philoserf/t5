@@ -108,7 +108,7 @@ func DesignWeapon(spec WeaponSpec) Weapon {
 	w := weaponData[spec.Model]
 	m := mountData[spec.Mount]
 	rng := rangeData[spec.Range]
-	st := stageData[stageIndex(spec.Stage)]
+	st := weaponStageData[stageIndex(spec.Stage)]
 
 	var problems []string
 	// Each weapon has a minimum mount (p.155): a Meson Gun does not fit in a
@@ -128,15 +128,15 @@ func DesignWeapon(spec WeaponSpec) Weapon {
 	return Weapon{
 		Spec: spec,
 		// The stage and the range both shift the weapon's tech level.
-		TL: w.tl + rng.tlMod + st.tlDelta,
+		TL: w.tl + rng.tlMod + stageTL(spec.Stage),
 		// The mount supplies the Mod and the dice; the weapon and the stage adjust.
-		Mod:  m.mod + w.mod + weaponStageMod[stageIndex(spec.Stage)],
+		Mod:  m.mod + w.mod + st.mod,
 		Hits: m.hits + w.hitsDice,
 		// Range effects apply to the mount, not the weapon (p.156) — so tonnage
 		// is the mount's, scaled, and the weapon adds none of its own.
-		Tons: Tons(m.tons) * Tonnage(rng.tonsNum) / Tonnage(rng.tonsDen),
+		Tons: Tonnage(m.tons * rng.tons),
 		// The stage prices the weapon; the range prices the mount.
-		Cost: w.cost*st.costNum/st.costDen + m.cost*rng.costNum/rng.costDen,
+		Cost: w.cost*st.costNum/st.costDen + m.cost*rng.cost/100,
 
 		Band: rng.band,
 		// The range decides which ladder this installation reaches on, which is
@@ -213,10 +213,14 @@ func WeaponByName(s string) (WeaponID, bool) {
 	return 0, false
 }
 
-// MountByCode finds a mount by its code ("T1", "Bay") or its name ("single
-// turret"), case-insensitively.
+// MountByCode finds a mount by its code ("T1", "Bay", "Bo") or its name ("single
+// turret", "bolt-in"), case-insensitively. The Bolt-In is a defense mount only —
+// DesignWeapon rejects a weapon asked to sit in one.
 func MountByCode(s string) (Mount, bool) {
 	norm := squash(s)
+	if norm == "bo" || norm == "bolt-in" || norm == "boltin" {
+		return BoltIn, true
+	}
 	for m, d := range mountData {
 		if squash(d.code) == norm || squash(d.name) == norm {
 			return Mount(m), true
@@ -280,6 +284,11 @@ func upper(c byte) byte {
 func validWeapon(id WeaponID) bool { return id >= 0 && int(id) < len(weaponData) }
 func validMount(m Mount) bool      { return m >= 0 && int(m) < len(mountData) }
 func validRange(r Range) bool      { return r >= 0 && int(r) < len(rangeData) }
+
+// stageTL is the tech level a stage shifts a component by. Weapons, defenses, and
+// drives share it — it is the one column of the two stage tables that agrees
+// everywhere (see weaponStageData).
+func stageTL(s Stage) int { return stageData[stageIndex(s)].tlDelta }
 
 // stageIndex bounds a Stage to the tables, so an out-of-range one reads as
 // Standard rather than panicking.
