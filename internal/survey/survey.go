@@ -86,6 +86,17 @@ func Sector(r *dice.Roller, d sectorgen.Density) Survey {
 	return Survey{Records: records, Routes: links}
 }
 
+// At finds the record for a hex given as its four-digit CCRR location (e.g.
+// "0436"), reporting whether that hex holds a star system at all.
+func (s Survey) At(hex string) (Record, bool) {
+	for _, rec := range s.Records {
+		if rec.Hex.String() == hex {
+			return rec, true
+		}
+	}
+	return Record{}, false
+}
+
 // String renders the survey: each hex's canonical Second Survey line annotated
 // with its expected weekly ship traffic, followed by a trade-route listing.
 func (s Survey) String() string {
