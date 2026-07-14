@@ -148,8 +148,27 @@ Tooling (go, go-task, poppler's `pdftotext`) is pinned in `Brewfile`.
   `drivePotential = min(2*driveOrd/hullOrd, 9)` (`DriveForPotential` is the Z2 inverse). Hull/
   drive letters are the eHex letters (A-Z, no I/O) as an ordinal 1..24 (Hull A=100t … Z=2400t),
   distinct from an eHex value. `Ship.QSP()` renders the compact profile (`S-AL22`, the ship's
-  UWP analog); golden-locked to the Murphy Scout and Beowulf. Costs are plain int Cr. Deferred:
-  weapons/sensors/defenses, crew/accommodations, Quality, compartment layout.
+  UWP analog); golden-locked to the Murphy Scout and Beowulf. Costs are plain int Cr.
+  **Armament** (`weapon.go`/`weapon_data.go`, `defense.go`, `missile.go`, `mounts.go`) is the same
+  shape: Book 2 p.83 carries the whole weapon-design system as six tables (devices, TL stage
+  effects, mounts, space/world range effects), and p.174 prints the same six for defenses — so one
+  rule, `install`, scales both. The stage shifts the device's TL and prices it; the range shifts the
+  TL again and scales the **mount's** tonnage and cost ("Range Effects apply to the Mount but not
+  the Weapon" — a weapon's own tonnage is zero, so the mount is what takes up room). The mount also
+  supplies the damage dice and the attack Mod, and the two mount tables run **opposite ways**: a
+  Single Turret attacks at −2 (p.83) and defends at +1 (p.174) — a bigger mount aims worse but
+  defends better. `DesignWeapon` (23 models), `DesignDefense` (10 screens, plus the nine weapons
+  p.174 allows in the Anti-Missile Defensive Fire mode), and `DesignMissile` (size 1–7 × warhead ×
+  guidance, each constraining the others) render the book's `LongName` — a weapon's UWP analog.
+  `Design` mounts them against the hull: one HardPoint per 100t, or three FirmPoints instead
+  (sub-ton mounts only), with the Bolt-In needing neither — which is why `Tonnage` is fixed-point
+  hundredths. Golden-locked to the p.167 and p.176 catalogs, every row. Gotchas: the book divides by
+  three by multiplying by **0.33** (a 200t Main at Vlong is "66 tons"), so range multipliers are
+  hundredths — do not "fix" this to exact division; and the drive stage table (p.76) and the weapon
+  one (p.83) genuinely differ in one cell (**Modified** costs a drive ×1 but a weapon /2), so each
+  governs its own components. Four book conflicts are resolved against the design tables and
+  documented at the point of transcription. Deferred: sensors, crew/accommodations, Quality,
+  Batteries, world-surface defenses, and the pp.168–169 interference grid.
 - `internal/trade/` — the Trade & Commerce pricing engine (Book 2 pp. 209-221). Speculative cargo
   is bought at a source world for its `Cost` (Cr3,000 base + per-value-class cost mods + Cr100/TL)
   and sold at a market world for a fraction/multiple of its `Price` (Cr5,000 base + source→market
@@ -170,9 +189,14 @@ Tooling (go, go-task, poppler's `pdftotext`) is pinned in `Brewfile`.
   (`Agility`, `RammingHits`, the p.200 range-change grid). The ShipCard compartment model
   (`HullLocations`, p.86 Table H — compartments/span/subcompartments by hull ordinal) backs hit
   location and `SubCompartmentsKnockedOut` damage spread; the missile and weapons-task Massive
-  Explosion tables are both present. Pure primitives (TLs/mods/AV/compartment numbers) — golden-locked
-  to the Murphy/Gryphon, Vanguard/Antares, Joshua, and Vigilant worked examples. Out of scope (a
-  future shipgen weapons-design extension): the per-weapon/defense stat catalogs and interference.
+  Explosion tables are both present. The tasks still take primitives (TLs/mods/AV/compartment
+  numbers) because that is what the book's tables are — but nobody has to invent them: `ship.go`
+  bridges the two packages, so `Attack` takes a designed `shipgen.Weapon`, `Defend` a `Defense`,
+  `AttackWithMissile` a round, and `ArmorLayers`/`Card`/`ShipAgility` a `Ship`. **A generated ship
+  can fight.** Golden-locked to the Murphy/Gryphon, Vanguard/Antares, Joshua, and Vigilant worked
+  examples. Note `Armor.AV` is the **per-layer** value, not a total (`ArmorLayers` repeats it, and
+  must not divide by the layer count), and `ShipAgility` is capped by `Hull.MaxG`, not just the
+  drive. Out of scope: the p.201 interference/clustering tactical options.
 - `internal/sectorgen/` + `internal/survey/` + `internal/route/` — interstellar mapping (Book 3
   pp. 12-15, 21, 27-28): the 32×40/8×10 hex grid with CCRR/A-P coordinates, `Hex.Distance` (parsec
   jump distance via even-q offset→cube), and density system-presence rolls. `survey.Sector` is the
@@ -195,15 +219,21 @@ Tooling (go, go-task, poppler's `pdftotext`) is pinned in `Brewfile`.
 - `internal/rangeband/` — the world/space range ladder (Book 1 pp. 24-29), shared by the play tier.
 - `cmd/worldgen/`, `cmd/systemgen/`, `cmd/chargen/`, `cmd/sectorgen/`, `cmd/shipgen/` — CLIs
   (most take `-n` and `-seed`; sectorgen/shipgen take their own design flags), e.g.
-  `go run ./cmd/shipgen -hull A -tl 12 -config L -structure shell -maneuver A -jump A`.
+  `go run ./cmd/shipgen -hull A -tl 12 -config L -structure shell -maneuver A -jump A
+  -weapon beamlaser:T1:orbit -defense blackglobe`.
+  They follow one convention, owned by `internal/cli`: **generated records go to stdout, everything
+  else to stderr**. Bad input is `cli.Fatalf` (exit 2, the code `flag` itself uses); a true-but-empty
+  result is `cli.Note` (exit 0, still off stdout, so a piped record stream stays clean).
 
 When adding a generator, transcribe the rule tables/formulas from `docs/reference/` and lock
 them with a golden test built from a worked example in the books.
 
 ## Current state
 
-Early. Beyond the engine (dice + worldgen + systemgen + chargen) the repo contains only the source PDFs (`docs/pdf/`), a
-README, and `.gitignore`.
+The world/system/character census is complete, and so is the starship tier: a sector can be
+surveyed, its worlds and systems detailed, characters generated to crew a ship, the ship designed
+and armed, and the ship flown into a fight. See `docs/automation-catalog.md` for what is built and
+what is next (`Sophont creation` (#17) is the largest open piece).
 
 - **Source of truth** for rules is `docs/pdf/` (T5 Core Rules Books 1–3 + Read Me). These PDFs
   are **git-ignored and not distributed** (copyrighted Far Future Enterprises material) — each
