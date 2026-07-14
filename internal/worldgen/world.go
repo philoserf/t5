@@ -110,18 +110,25 @@ func hasCapitalCode(tcs []string) bool {
 //	UWP  TCs  {Ix}(Ex)[Cx]  Nobility  Bases  Zone
 //
 // e.g. "A788899-C Ph Pa Ri {+4}(D7E+4)[9C6D] BcCeF NS -". A dash marks an empty
-// bases or (Green) zone field. The system-level fields (hex, PBG belts/giants,
-// world count, stellar data) are appended by the caller.
+// trade-code, bases, or (Green) zone field. The system-level fields (hex, PBG
+// belts/giants, world count, stellar data) are appended by the caller.
+//
+// Every field is dashed rather than dropped, because this is a POSITIONAL record: a
+// world matching no trade code at all (C539700-8 is one — its atmosphere, hydro-
+// graphics, and population between them exclude every rule) used to render with the
+// TC column simply gone, silently shifting the extensions, nobility, bases, and
+// zone one column to the left. A reader, or a parser, would have read its
+// extensions as its trade codes.
 func (w World) SecondSurvey() string {
 	fields := []string{
 		w.Profile.String(),
-		strings.Join(w.TradeCodes, " "),
+		dashIfEmpty(strings.Join(w.TradeCodes, " ")),
 		w.Extensions(),
 		w.Nobility,
 		dashIfEmpty(w.bases()),
 		dashIfEmpty(w.zone()),
 	}
-	return strings.Join(slices.DeleteFunc(fields, isEmpty), " ")
+	return strings.Join(fields, " ")
 }
 
 // Extensions renders the world's three extensions as they appear in the Second

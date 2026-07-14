@@ -2,9 +2,11 @@ package worldgen
 
 import (
 	"slices"
+	"strings"
 	"testing"
 
 	"github.com/philoserf/t5/internal/dice"
+	"github.com/philoserf/t5/internal/uwp"
 )
 
 func TestGenerateBeltWorld(t *testing.T) {
@@ -47,14 +49,15 @@ func TestSecondSurveyRegina(t *testing.T) {
 }
 
 func TestSecondSurveyFieldEdges(t *testing.T) {
-	// A world with no trade codes and no bases: the TC slot collapses, and the
-	// bases slot shows a dash. Zero Extensions render as "{0}(000+0)[0000]".
+	// A world with no trade codes and no bases. Every empty field is DASHED, not
+	// dropped: this is a positional record, and a collapsed TC column silently
+	// shifted the extensions, nobility, bases, and zone one place to the left.
 	w := World{
 		Profile:  regina,
 		Zone:     'R',
 		Nobility: "B",
 	}
-	want := "A788899-C {0}(000+0)[0000] B - R"
+	want := "A788899-C - {0}(000+0)[0000] B - R"
 	if got := w.SecondSurvey(); got != want {
 		t.Fatalf("SecondSurvey() edges =\n%q\nwant\n%q", got, want)
 	}
@@ -64,7 +67,7 @@ func TestSecondSurveyZeroImportance(t *testing.T) {
 	// Ix of zero renders as "{0}", not "{+0}" (the book's Importance table
 	// shows a bare 0).
 	w := World{Profile: regina, Importance: 0, Nobility: "B"}
-	want := "A788899-C {0}(000+0)[0000] B - -"
+	want := "A788899-C - {0}(000+0)[0000] B - -"
 	if got := w.SecondSurvey(); got != want {
 		t.Fatalf("SecondSurvey() zero Ix =\n%q\nwant\n%q", got, want)
 	}
@@ -118,5 +121,30 @@ func TestGenerateWorld(t *testing.T) {
 		if a.Profile.Population == 0 && a.PopulationDigit != 0 {
 			t.Fatalf("seed %d: pop-0 world has pop digit %d", seed, a.PopulationDigit)
 		}
+	}
+}
+
+// TestSecondSurveyNoTradeCodes: a real world can match no trade code at all.
+// C539700-8 is one — its atmosphere (3), hydrographics (9), and population (7)
+// between them exclude every rule on Chart D. Its record must still have a trade-
+// code column, because the record is positional: dropping the column shifted its
+// extensions into the trade-code slot, where a reader (or a parser) would read
+// "{0}(000+0)[0000]" as this world's trade classifications.
+func TestSecondSurveyNoTradeCodes(t *testing.T) {
+	p := uwp.Profile{
+		Starport: 'C', Size: 5, Atmosphere: 3, Hydrographics: 9,
+		Population: 7, Government: 0, Law: 0, TechLevel: 8,
+	}
+	if tcs := TradeClassifications(p); len(tcs) != 0 {
+		t.Fatalf("this test needs a world with no trade codes; %s has %v", p, tcs)
+	}
+	w := World{Profile: p, Nobility: "B"}
+	got := w.SecondSurvey()
+	// Six fields, always: UWP, TCs, extensions, nobility, bases, zone.
+	if n := len(strings.Fields(got)); n != 6 {
+		t.Errorf("record has %d fields, want 6 — a dropped column shifts the rest:\n%s", n, got)
+	}
+	if !strings.HasPrefix(got, "C539700-8 - {") {
+		t.Errorf("an empty trade-code column should be dashed, got %q", got)
 	}
 }

@@ -55,8 +55,12 @@ Tooling (go, go-task, poppler's `pdftotext`) is pinned in `Brewfile`.
   validated against Regina's `{+4}(D7E+4)[9C6D]`); Importance feeds the other two. `Nobility`,
   `RollBases`, `TravelZone`, and `NativeStatus` add the Chart F world data (p. 28).
   `GenerateWorld` composes all of it into a `World` (UWP + every derived attribute), and
-  `World.SecondSurvey` renders the canonical world-record line (golden: Regina's
-  `A788899-C Ph Pa Ri {+4}(D7E+4)[9C6D] BcCeF NS -`).
+  `World.SecondSurvey` renders the world-record line (golden: Regina's
+  `A788899-C Ph Pa Ri {+4}(D7E+4)[9C6D] BcCeF NS -`). It is the **generatable subset** of the
+  book's own Regina line, not a copy: the book also prints `An` (Ancient Site) and `Cp` (Subsector
+  Capital), both referee-assigned, and it spaces the extensions (`{+4} (D7E+4) [9C6D]`). The record
+  is **positional**, so every empty field is dashed rather than dropped — a world matching no trade
+  code at all is real, and collapsing its TC column shifts every later field one place left.
 - `internal/systemgen/` — star system creation (Book 3 pp. 16-17, 28): the stars (spectral
   type/decimal/size via the p. 28 table, transcribed from a rendered image since the dense
   grid does not survive text extraction), gas giants, planetoid belts, world count, and the

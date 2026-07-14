@@ -64,9 +64,20 @@ Complete. Beyond the original 21 UWP codes, the classifier now emits the Gov=0/L
 **Di/Ba** and **Px/Re** (do-now, PR #76); the HZ-orbit **climate** codes Tr/Tu/Fr/Tz
 (`ClimateCodes`, PR #78 — this edition's Chart B has no Ho/Co pair); the satellite codes
 **Sa/Lk** (PR #79); and the context-dependent Secondary codes **Fa/Mi/Pe** via
-`TradeClassificationsWithContext` (PR #84). Every UWP- and context-determinable Chart D code
-is generated; only the referee-assigned Politicals/Specials (Cp/Cs/Cx/Cy/Mr/Fo/Pz/Da/Ab/An)
-remain, and those are intentionally out of scope (Chart D: "assigned by Referee").
+`TradeClassificationsWithContext` (PR #84). The **Ho/Co** (Hot/Cold) pair was added in the Tier-1
+audit: they depend on the ORBIT ALONE (Chart D gives them no UWP columns), which makes them
+strictly more determinable than the Tr/Tu/Fr the classifier already emitted. They had been omitted
+on the stated grounds that "this edition's Chart B has no Ho/Co pair" — false, and the excuse was
+self-inconsistent besides, since the same chart header covers Lk and Tz, which *are* emitted.
+Climate codes now reach non-mainworlds too: Chart D is for "the Mainworld **and other worlds in
+the system**," and only the mainworld had been getting them.
+
+Every UWP- and orbit-determinable Chart D code is now generated. The referee-assigned
+Politicals/Specials (Cp/Cs/Cx/Cy/Mr/Fo/Pz/Da/Ab/An) remain out of scope per Chart D's own header
+("Politicals and Specials are assigned by Referee (not generated)") — with the caveat that **Da/Pz
+are in fact derivable** from Zone + Pop (B3 p.19: an Amber world with Pop≤6 is Dangerous, Pop≥7 is
+Puzzling), so that pair is a genuine remaining gap rather than a referee call. `survey` assigns the
+capital codes it can (Cp/Cs) from the region it surveys.
 
 **2. Population multiplier digit / PBG** — _B3 pp. 24–25 (Chart C, PBG)_ · extends worldgen +
 systemgen · **S** · ✅ **done**
@@ -75,15 +86,23 @@ gas-giant counts systemgen already produces → the three-digit PBG. `EvenDist1t
 in the engine; this is a roll plus string assembly. It's the literal next worldgen step.
 
 **3. Importance Extension {Ix}** — _B3 pp. 18, 27 (Chart E)_ · extends worldgen · **S** · ✅ **done**
-Signed integer = additive DM table over starport, TL, trade classes (Pa/Ag/Hi/In/Ri), Pop,
-and bases; "Important" at +4. Deterministic, no dice. Its trade-code inputs are already built.
-Feeds Nobility, capitals, trade routes, and Book 2 mail contracts. **(Implemented — PR #10.)**
+Signed integer = additive DM table over starport, TL, trade classes (**Ag/Hi/In/Ri** — Pa is
+*not* on Chart E), Pop, and bases; "Important" at +4. Deterministic, no dice. Feeds Nobility,
+capitals, trade routes, and Book 2 mail contracts. **(Implemented — PR #10.)**
+_Book conflict:_ the p.22 Regina example counts Pre-Ag **and** omits the Naval+Scout bonus that
+Regina plainly earns, reaching +4 by two errors cancelling. The code follows Chart E (p.27), which
+reaches the same +4 by a different route — so **Regina cannot discriminate between the two
+readings**, and the golden is weaker than it looks. It does catch the single most likely mistake
+(adding Pa alone yields +5).
 
 **4. Economic Extension (Ex) + Resource Units** — _B3 pp. 18, 27_ · extends worldgen · **M** · ✅ **done**
 `(R L I ±E)` + RU. Resources = 2D (+GG+Belts if TL≥8, both from systemgen); Labor = Pop−1;
-Infrastructure branches on Pop band using Ix; Efficiency = Flux; RU = R·L·I·E straight (the
-printed rule has no "0→1" substitution). R/L/I floor at 0; Efficiency may be negative.
-**(Implemented — PR #10.)**
+Infrastructure branches on Pop band using Ix (Pop 0 → 0; 1-3 → Ix; 4-6 → 1D+Ix; 7+ → 2D+Ix);
+Efficiency = Flux. R/L/I floor at 0; Efficiency may be negative, and a negative Efficiency makes
+RU negative. **RU = R·L·I·E with the zero substitution: "if any value = 0, use 1 instead (to avoid
+multiplying by zero)"** — the book prints that rule on both p.18 and p.27, and the code implements
+it. (This entry previously claimed the opposite. It was wrong, and the code was right — a reader
+trusting it would have "fixed" working code into a bug.) **(Implemented — PR #10.)**
 
 **5. Cultural Extension [Cx]** — _B3 pp. 18, 27_ · extends worldgen · **S** · ✅ **done**
 `[HASS]` — four independent Flux formulas over Pop/Ix/TL with a clamp-to-1 rule, ehex-encoded.
@@ -91,11 +110,23 @@ Watch the book's Heterogeneity-vs-Homogeneity naming slip and the Strangeness = 
 (chart) vs "2D−2" (example) discrepancy — trust the chart.
 
 **6. Bases · Nobility · Travel Zones · Native Status · Allegiance** — _B3 pp. 19, 24, 28
-(Chart F/G)_ · extends worldgen · **S each** · ✅ **done** (Allegiance is referee-supplied, default Im)
-A cluster of small per-world attributes: Bases (2D vs starport-class thresholds), Nobility
-(trade-class/Ix → noble-code string), Travel Zone (Gov+Law and Pop thresholds → G/A/R),
-Native Status (Pop×Atm×TL → status label), Allegiance (enumerated code, referee-supplied,
-default Im). Each is a lookup or a threshold predicate over data already in hand.
+(Chart F/G)_ · extends worldgen · **S each** · 🟡 **partial**
+A cluster of small per-world attributes. **Bases** (2D vs starport-class thresholds), **Nobility**
+(trade-class/Ix → noble-code string, golden-locked to Regina's `BcCeF`), and **Native Status**
+(Pop×Atm×TL → status label, all twelve rows) are done and audit-clean. **Travel Zone** computes
+G/A/R correctly — but from **Gov+Law alone**; population plays no part in it (an earlier version of
+this entry said otherwise). **Allegiance** is referee-imposed per B3 p.23's own checklist, so the
+generators take it as a parameter and default to `Im`; that is a passthrough, not a table.
+
+_Remaining:_ the **Da/Pz** zone labels (derivable from Zone + Pop, B3 p.19 — see item 1), **Fo**
+(the Red-Zone code), Naval **Depots**, and Chart F's Military/Scientific/Diplomatic/Cultural bases.
+
+_Fixed in the Tier-1 audit:_ the **capital codes were swapped**. Chart D (p.26) is unambiguous —
+Cp is a Subsector Capital, Cs is a Sector Capital, Cx is the Imperial Capital — and `survey` marked
+its sector capital `Cx` and each subsector capital `Cs`, so **every generated sector promoted all
+sixteen of its subsector capitals to sector capitals, and its own capital to the capital of the
+Imperium**. `chargen/homeworld.go` had the labels right all along, so the repo disagreed with
+itself.
 
 **7. Starport / spaceport facilities & fuel** — _B2 p. 24; B3 p. 24_ · extends worldgen · **S** · ✅ **done**
 The starport/spaceport letters are generated (mainworld A–E/X and non-MW spaceports F/G/H/Y),

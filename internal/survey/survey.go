@@ -138,13 +138,24 @@ func worldsOf(records []Record) []route.World {
 	return worlds
 }
 
-// markSectorCapitals marks the region's capital (Cx) and each subsector's
-// capital (Cs), skipping the subsector that already holds the sector capital so
-// no world carries both and no subsector gets two.
+// markSectorCapitals marks the region's capital and each subsector's, skipping the
+// subsector that already holds the sector capital so no world carries both and no
+// subsector gets two.
+//
+// The codes are Book 3 Chart D (p.26): Cp is a Subsector Capital, Cs is a Sector
+// Capital, and Cx is the Imperial Capital. They were swapped here — a sector
+// capital was marked Cx and a subsector capital Cs — so every generated sector
+// stamped the wrong codes into the Second Survey line, promoting each of its
+// sixteen subsector capitals to a sector capital and its sector capital to the
+// capital of the Imperium. (chargen/homeworld.go had them right all along, which
+// is how the repo came to disagree with itself.)
+//
+// Cx is not generated: there is one Imperial Capital, and which sector holds it is
+// not a fact about the sector being surveyed.
 func markSectorCapitals(records []Record) {
 	sectorCap := bestCapital(records, nil)
 	if sectorCap >= 0 {
-		records[sectorCap].System.Mainworld.SetCapital("Cx")
+		records[sectorCap].System.Mainworld.SetCapital("Cs")
 	}
 	bySub := map[byte][]int{}
 	for i := range records {
@@ -153,7 +164,7 @@ func markSectorCapitals(records []Record) {
 	}
 	for _, idxs := range bySub {
 		if b := bestCapital(records, idxs); b >= 0 && b != sectorCap {
-			records[b].System.Mainworld.SetCapital("Cs")
+			records[b].System.Mainworld.SetCapital("Cp")
 		}
 	}
 }
