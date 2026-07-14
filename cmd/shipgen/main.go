@@ -44,9 +44,8 @@ func main() {
 		hull: *hull, tl: *tl, config: *configLetter, structure: *structure,
 		armor: *armorLayers, maneuver: *maneuver, jump: *jump, power: *power, mission: *mission,
 	})
-	if err != "" {
-		fmt.Println(err)
-		return
+	if err != nil {
+		cli.Fatalf("%v", err)
 	}
 	for i := range n {
 		if i > 0 {
@@ -64,20 +63,22 @@ type flags struct {
 	maneuver, jump, power, mission string
 }
 
-// specFromFlags builds a ShipSpec from the CLI flags, returning an error message
-// for an unknown hull, config, or structure.
-func specFromFlags(f flags) (shipgen.ShipSpec, string) {
+// specFromFlags builds a ShipSpec from the CLI flags, reporting an unknown hull,
+// config, or structure as an error for the caller to fail on. (An infeasible but
+// well-formed design is not an error: Design is total and reports it in
+// Ship.Problems.)
+func specFromFlags(f flags) (shipgen.ShipSpec, error) {
 	hullOrd := letterOrdinal(f.hull)
 	if hullOrd == 0 {
-		return shipgen.ShipSpec{}, fmt.Sprintf("invalid hull %q (want a letter A-Z)", f.hull)
+		return shipgen.ShipSpec{}, fmt.Errorf("invalid hull %q (want a letter A-Z, no I or O)", f.hull)
 	}
 	config, ok := shipgen.ConfigByLetter(f.config)
 	if !ok {
-		return shipgen.ShipSpec{}, fmt.Sprintf("invalid config %q (want C/B/P/U/S/A/L)", f.config)
+		return shipgen.ShipSpec{}, fmt.Errorf("invalid config %q (want C/B/P/U/S/A/L)", f.config)
 	}
 	structure, ok := shipgen.StructureByName(f.structure)
 	if !ok {
-		return shipgen.ShipSpec{}, fmt.Sprintf("invalid structure %q", f.structure)
+		return shipgen.ShipSpec{}, fmt.Errorf("invalid structure %q (want plate/shell/polymer/feni/organic/charged)", f.structure)
 	}
 	return shipgen.ShipSpec{
 		Mission: f.mission, TL: f.tl, HullLetter: hullOrd, Config: config,
@@ -86,7 +87,7 @@ func specFromFlags(f flags) (shipgen.ShipSpec, string) {
 		Jump:      driveSpec(f.jump),
 		Power:     driveSpec(f.power),
 		FuelScoop: true,
-	}, ""
+	}, nil
 }
 
 // driveSpec returns a standard DriveSpec for a size letter, or nil for a blank.
