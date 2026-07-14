@@ -57,8 +57,11 @@ const (
 
 // densityInfo is the single table of each density's display name and its
 // system-presence check: roll `dice` D6 and a system is present at or under
-// `threshold` (Book 3 p.13). Core is transcribed as the printed "11 or less on
-// 2D" (its ~91% note is approximate).
+// `threshold` (Book 3 p.13). Core uses 2D <= 10, not the row's literal "11 or
+// less": that text conflicts with every other Core figure the book prints — the
+// stated 91% density, the Per-Sector 1170/1280 (91.4%), and the Count-Off [12]
+// (~92%) all triangulate to 2D <= 10 (33/36 = 91.7%), while 2D <= 11 is 97.2%.
+// The "11" reads as a typo for "10"; we follow the corroborated 91%.
 var densityInfo = [...]struct {
 	name            string
 	dice, threshold int
@@ -70,7 +73,7 @@ var densityInfo = [...]struct {
 	Standard:      {"Standard", 1, 3},
 	Dense:         {"Dense", 1, 4},
 	Cluster:       {"Cluster", 1, 5},
-	Core:          {"Core", 2, 11},
+	Core:          {"Core", 2, 10},
 }
 
 func (d Density) String() string {

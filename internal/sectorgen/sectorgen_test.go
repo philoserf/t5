@@ -63,12 +63,12 @@ func TestSystemPresent(t *testing.T) {
 	if SystemPresent(dice.NewScripted(4), Standard) {
 		t.Errorf("Standard 1D=4 should be absent")
 	}
-	// Core = 2D <= 11: 11 present, 12 absent.
-	if !SystemPresent(dice.NewScripted(5, 6), Core) {
-		t.Errorf("Core 2D=11 should be present")
+	// Core = 2D <= 10 (see densityInfo): 10 present, 11 absent.
+	if !SystemPresent(dice.NewScripted(4, 6), Core) {
+		t.Errorf("Core 2D=10 should be present")
 	}
-	if SystemPresent(dice.NewScripted(6, 6), Core) {
-		t.Errorf("Core 2D=12 should be absent")
+	if SystemPresent(dice.NewScripted(5, 6), Core) {
+		t.Errorf("Core 2D=11 should be absent")
 	}
 	// Rift = 2D <= 2 (a natural 2 only).
 	if !SystemPresent(dice.NewScripted(1, 1), Rift) || SystemPresent(dice.NewScripted(1, 2), Rift) {
