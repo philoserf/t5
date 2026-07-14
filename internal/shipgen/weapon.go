@@ -49,6 +49,10 @@ func (t Tonnage) Ceil() int { return (int(t) + 99) / 100 }
 // takes (and what a HardPoint would waste).
 func (t Tonnage) SubTon() bool { return t < 100 }
 
+// RoundUp is the tonnage rounded up to a whole ton, still a Tonnage — what a mount
+// on a HardPoint is charged.
+func (t Tonnage) RoundUp() Tonnage { return Tons(t.Ceil()) }
+
 // String renders the tonnage as the book's tables do — "2", "0.25", "0.33".
 func (t Tonnage) String() string {
 	return strconv.FormatFloat(float64(t)/100, 'f', -1, 64)
@@ -108,12 +112,15 @@ func DesignWeapon(spec WeaponSpec) Weapon {
 	w := weaponData[spec.Model]
 	m := mountData[spec.Mount]
 	rng := rangeData[spec.Range]
-	st := weaponStageData[stageIndex(spec.Stage)]
 
 	var problems []string
+	// The Bolt-In is a defense's mount: a weapon has to see out of the hull.
+	if !m.weaponOK {
+		problems = append(problems, fmt.Sprintf("a weapon cannot be installed in a %s", m.name))
+	}
 	// Each weapon has a minimum mount (p.155): a Meson Gun does not fit in a
 	// turret. Anything at or above the minimum may be selected.
-	if spec.Mount < w.minMount {
+	if m.weaponOK && spec.Mount < w.minMount {
 		problems = append(problems, fmt.Sprintf("%s needs at least a %s, not a %s",
 			w.name, mountData[w.minMount].name, m.name))
 	}
@@ -125,20 +132,16 @@ func DesignWeapon(spec WeaponSpec) Weapon {
 			w.name, scaleName(w.scale), rng.name))
 	}
 
+	tl, tons, cost, band := install(w.tl, w.cost, m.tons, m.cost, spec.Range, spec.Stage)
 	return Weapon{
 		Spec: spec,
-		// The stage and the range both shift the weapon's tech level.
-		TL: w.tl + rng.tlMod + stageTL(spec.Stage),
+		TL:   tl,
 		// The mount supplies the Mod and the dice; the weapon and the stage adjust.
-		Mod:  m.mod + w.mod + st.mod,
+		Mod:  m.mod + w.mod + weaponStageMod[stageIndex(spec.Stage)],
 		Hits: m.hits + w.hitsDice,
-		// Range effects apply to the mount, not the weapon (p.156) — so tonnage
-		// is the mount's, scaled, and the weapon adds none of its own.
-		Tons: Tonnage(m.tons * rng.tons),
-		// The stage prices the weapon; the range prices the mount.
-		Cost: w.cost*st.costNum/st.costDen + m.cost*rng.cost/100,
-
-		Band: rng.band,
+		Tons: tons,
+		Cost: cost,
+		Band: band,
 		// The range decides which ladder this installation reaches on, which is
 		// what a dual-scale weapon's choice of range settles.
 		Scale:    rng.scale,
@@ -153,14 +156,6 @@ func (w Weapon) Name() string {
 		return "?"
 	}
 	return fmt.Sprintf("%s-%d", weaponData[w.Spec.Model].name, w.TL)
-}
-
-// Letter is the weapon's single-letter model code (Book 2 p.83 Table A).
-func (w Weapon) Letter() byte {
-	if !validWeapon(w.Spec.Model) {
-		return '?'
-	}
-	return weaponData[w.Spec.Model].letter
 }
 
 // RangeCode renders the weapon's range band as the book writes it, e.g. "R=08"
@@ -184,14 +179,11 @@ func (w Weapon) LongName() string {
 	if !validWeapon(w.Spec.Model) || !validMount(w.Spec.Mount) || !validRange(w.Spec.Range) {
 		return "?"
 	}
-	var b strings.Builder
 	// Stage may be omitted when it is Standard (p.155), but the book's own tables
 	// print it, so we always do.
-	fmt.Fprintf(&b, "%s %s %s %s", w.Spec.Stage, rangeData[w.Spec.Range].name,
-		mountData[w.Spec.Mount].name, w.Name())
-	fmt.Fprintf(&b, " Mod=%+d. %s. %s. Hits= %dD. %s.",
+	return fmt.Sprintf("%s %s %s %s Mod=%+d. %s. %s. Hits= %dD. %s.",
+		w.Spec.Stage, rangeData[w.Spec.Range].name, mountName(w.Spec.Mount), w.Name(),
 		w.Mod, w.Tons.Phrase(), weaponMCr(w.Cost), w.Hits, w.RangeCode())
-	return b.String()
 }
 
 // WeaponByName finds a weapon by its name or its single-letter model code, both
@@ -218,9 +210,6 @@ func WeaponByName(s string) (WeaponID, bool) {
 // DesignWeapon rejects a weapon asked to sit in one.
 func MountByCode(s string) (Mount, bool) {
 	norm := squash(s)
-	if norm == "bo" || norm == "bolt-in" || norm == "boltin" {
-		return BoltIn, true
-	}
 	for m, d := range mountData {
 		if squash(d.code) == norm || squash(d.name) == norm {
 			return Mount(m), true
@@ -284,6 +273,32 @@ func upper(c byte) byte {
 func validWeapon(id WeaponID) bool { return id >= 0 && int(id) < len(weaponData) }
 func validMount(m Mount) bool      { return m >= 0 && int(m) < len(mountData) }
 func validRange(r Range) bool      { return r >= 0 && int(r) < len(rangeData) }
+
+// mountName is the mount's name, for every renderer that prints one.
+func mountName(m Mount) string {
+	if !validMount(m) {
+		return "?"
+	}
+	return mountData[m].name
+}
+
+// install applies the scaling rule that weapons and defenses share (Book 2 p.156):
+// the stage shifts the device's tech level and prices the device, while the range
+// shifts the tech level again and scales the MOUNT's tonnage and cost. "Range
+// Effects apply to the Mount but not the Weapon"; the device brings no tonnage of
+// its own.
+//
+// It lives in one place because it is one rule. The two builders differ in what
+// they do with the Mod, the damage dice, and what they refuse to build — not in
+// this arithmetic.
+func install(deviceTL, deviceCost, mountTons, mountCost int, rng Range, stage Stage) (tl int, tons Tonnage, cost, band int) {
+	r := rangeData[rng]
+	st := stageCostData[stageIndex(stage)]
+	return deviceTL + r.tlMod + stageTL(stage),
+		Tonnage(mountTons * r.tons),
+		deviceCost*st.num/st.den + mountCost*r.cost/100,
+		r.band
+}
 
 // stageTL is the tech level a stage shifts a component by. Weapons, defenses, and
 // drives share it — it is the one column of the two stage tables that agrees

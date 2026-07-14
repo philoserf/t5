@@ -19,55 +19,55 @@ func TestIdentifyingDefenses(t *testing.T) {
 		want string
 	}{
 		// The plain rows: every defense in its Bolt-In at the standard range.
-		{DefenseSpec{NuclearDamper, BoltIn, Standard, VDistant},
+		{DefenseSpec{Model: NuclearDamper, Mount: BoltIn, Stage: Standard, Range: VDistant},
 			"Standard Vdistant Bolt-In Nuclear Damper-12 Mod=+3. 3 tons. MCr4. R=07. (Electronic)."},
-		{DefenseSpec{MesonScreen, BoltIn, Standard, VDistant},
+		{DefenseSpec{Model: MesonScreen, Mount: BoltIn, Stage: Standard, Range: VDistant},
 			"Standard Vdistant Bolt-In Meson Screen-13 Mod=+3. 3 tons. MCr6. R=07. (Electronic)."},
-		{DefenseSpec{MagScrambler, BoltIn, Standard, VDistant},
+		{DefenseSpec{Model: MagScrambler, Mount: BoltIn, Stage: Standard, Range: VDistant},
 			"Standard Vdistant Bolt-In Mag Scrambler-14 Mod=+3. 3 tons. MCr4. R=07. (Magnetic)."},
-		{DefenseSpec{GravScrambler, BoltIn, Standard, VDistant},
+		{DefenseSpec{Model: GravScrambler, Mount: BoltIn, Stage: Standard, Range: VDistant},
 			"Standard Vdistant Bolt-In Grav Scrambler-17 Mod=+3. 3 tons. MCr5. R=07. (Gravitic)."},
-		{DefenseSpec{ElecScrambler, BoltIn, Standard, VDistant},
+		{DefenseSpec{Model: ElecScrambler, Mount: BoltIn, Stage: Standard, Range: VDistant},
 			"Standard Vdistant Bolt-In Elec Scrambler-12 Mod=+3. 3 tons. MCr5. R=07. (Electronic)."},
-		{DefenseSpec{ProtonScreen, BoltIn, Standard, VDistant},
+		{DefenseSpec{Model: ProtonScreen, Mount: BoltIn, Stage: Standard, Range: VDistant},
 			"Standard Vdistant Bolt-In Proton Screen-19 Mod=+3. 3 tons. MCr4. R=07. (Electronic)."},
-		{DefenseSpec{BlackGlobe, BoltIn, Standard, VDistant},
+		{DefenseSpec{Model: BlackGlobe, Mount: BoltIn, Stage: Standard, Range: VDistant},
 			"Standard Vdistant Bolt-In Black Globe-16 Mod=+3. 3 tons. MCr13. R=07. (Electronic)."},
-		{DefenseSpec{StasisGlobe, BoltIn, Standard, VDistant},
+		{DefenseSpec{Model: StasisGlobe, Mount: BoltIn, Stage: Standard, Range: VDistant},
 			"Standard Vdistant Bolt-In Stasis Globe-24 Mod=+3. 3 tons. MCr13. R=07. (Electronic)."},
 
 		// The varied rows. Each one pins something down.
 		//
 		// x0.33, not /3: a 3-ton Bolt-In at Vlong is 0.99 tons, and MCr3 + 0.99.
-		{DefenseSpec{MesonScreen, BoltIn, Standard, Vlong},
+		{DefenseSpec{Model: MesonScreen, Mount: BoltIn, Stage: Standard, Range: Vlong},
 			"Standard Vlong Bolt-In Meson Screen-11 Mod=+3. 0.99 tons. MCr3.99. R=05. (Electronic)."},
-		{DefenseSpec{BlackGlobe, BoltIn, Basic, Vlong},
+		{DefenseSpec{Model: BlackGlobe, Mount: BoltIn, Stage: Basic, Range: Vlong},
 			"Basic Vlong Bolt-In Black Globe-14 Mod=+3. 0.99 tons. MCr5.99. R=05. (Electronic)."},
 		// ...and a 200-ton Main at Vlong is 66 tons, not 66.67.
-		{DefenseSpec{ProtonScreen, Main, Generic, Vlong},
+		{DefenseSpec{Model: ProtonScreen, Mount: Main, Stage: Generic, Range: Vlong},
 			"Generic Vlong Main Proton Screen-18 Mod=+1. 66 tons. MCr7.1. R=05. (Electronic)."},
 		// The Quad Turret is MCr2.5: MCr10 globe at Early (x2) = 20, plus 2.5.
-		{DefenseSpec{WhiteGlobe, QuadTurret, Early, VDistant},
+		{DefenseSpec{Model: WhiteGlobe, Mount: QuadTurret, Stage: Early, Range: VDistant},
 			"Early Vdistant Quad Turret White Globe-19 Mod=+4. 1 ton. MCr22.5. R=07. (Electronic)."},
-		{DefenseSpec{ProtonScreen, QuadTurret, Generic, VDistant},
+		{DefenseSpec{Model: ProtonScreen, Mount: QuadTurret, Stage: Generic, Range: VDistant},
 			"Generic Vdistant Quad Turret Proton Screen-20 Mod=+4. 1 ton. MCr3. R=07. (Electronic)."},
-		{DefenseSpec{SilverGlobe, QuadTurret, Advanced, Distant},
+		{DefenseSpec{Model: SilverGlobe, Mount: QuadTurret, Stage: Advanced, Range: Distant},
 			"Advanced Distant Quad Turret Silver Globe-24 Mod=+4. 0.5 tons. MCr21.25. R=06. (Electronic)."},
 		// The stage's Mod is not applied: Improved would add +1, Ultimate +4.
-		{DefenseSpec{MesonScreen, TripleTurret, Improved, Vlong},
+		{DefenseSpec{Model: MesonScreen, Mount: TripleTurret, Stage: Improved, Range: Vlong},
 			"Improved Vlong Triple Turret Meson Screen-12 Mod=+3. 0.33 tons. MCr3.33. R=05. (Electronic)."},
-		{DefenseSpec{BlackGlobe, Bay, Ultimate, Distant},
+		{DefenseSpec{Model: BlackGlobe, Mount: Bay, Stage: Ultimate, Range: Distant},
 			"Ultimate Distant Bay Black Globe-19 Mod=+1. 25 tons. MCr32.5. R=06. (Electronic)."},
 		// The rest of the stage cost ladder: Prototype x5, Modified /2, Basic /2.
-		{DefenseSpec{WhiteGlobe, TripleTurret, Prototype, Distant},
+		{DefenseSpec{Model: WhiteGlobe, Mount: TripleTurret, Stage: Prototype, Range: Distant},
 			"Prototype Distant Triple Turret White Globe-17 Mod=+3. 0.5 tons. MCr50.5. R=06. (Electronic)."},
-		{DefenseSpec{GravScrambler, LargeBay, Prototype, VDistant},
+		{DefenseSpec{Model: GravScrambler, Mount: LargeBay, Stage: Prototype, Range: VDistant},
 			"Prototype Vdistant Large Bay Grav Scrambler-15 Mod=+1. 100 tons. MCr20. R=07. (Gravitic)."},
-		{DefenseSpec{WhiteGlobe, DualBarbette, Modified, Distant},
+		{DefenseSpec{Model: WhiteGlobe, Mount: DualBarbette, Stage: Modified, Range: Distant},
 			"Modified Distant Dual Barbette White Globe-21 Mod=+2. 2.5 tons. MCr7. R=06. (Electronic)."},
-		{DefenseSpec{ElecScrambler, TripleTurret, Basic, Vlong},
+		{DefenseSpec{Model: ElecScrambler, Mount: TripleTurret, Stage: Basic, Range: Vlong},
 			"Basic Vlong Triple Turret Elec Scrambler-10 Mod=+3. 0.33 tons. MCr1.33. R=05. (Electronic)."},
-		{DefenseSpec{MagScrambler, BoltIn, Experimental, Distant},
+		{DefenseSpec{Model: MagScrambler, Mount: BoltIn, Stage: Experimental, Range: Distant},
 			"Experimental Distant Bolt-In Mag Scrambler-10 Mod=+3. 1.5 tons. MCr11.5. R=06. (Magnetic)."},
 	}
 	for _, c := range cases {
@@ -82,20 +82,23 @@ func TestIdentifyingDefenses(t *testing.T) {
 }
 
 // TestWeaponsAsDefenses: a weapon allocated to Defensive Fire keeps its own tech
-// level and price but takes the defenses' mount table — and loses its attack Mod,
-// the Beam Laser's +2 included, because it is no longer making an attack
-// (Book 2 pp.176, 186).
+// level, price, and principle, but takes the defenses' mount table — and loses its
+// attack Mod, the Beam Laser's +2 included, because it is no longer making an
+// attack (Book 2 pp.176, 186).
+//
+// The principle is the weapon's own, and a weapon may rest on more than one: the
+// book prints the Fusion and Plasma Guns as "(Elec/Grav)", not "(Electronic)".
 func TestWeaponsAsDefenses(t *testing.T) {
 	cases := []struct {
 		spec WeaponSpec
 		want string
 	}{
 		{WeaponSpec{FusionGun, SingleBarbette, Standard, VDistant},
-			"Standard Vdistant Barbette Fusion Gun-12 Mod=+1. 3 tons. MCr4.5. R=07. (Electronic)."},
+			"Standard Vdistant Barbette Fusion Gun-12 Mod=+1. 3 tons. MCr4.5. R=07. (Elec/Grav)."},
 		{WeaponSpec{PulseLaser, SingleTurret, Standard, VDistant},
 			"Standard Vdistant Single Turret Pulse Laser-9 Mod=+1. 1 ton. MCr0.5. R=07. (Electronic)."},
 		{WeaponSpec{PlasmaGun, SingleBarbette, Standard, VDistant},
-			"Standard Vdistant Barbette Plasma Gun-11 Mod=+1. 3 tons. MCr4. R=07. (Electronic)."},
+			"Standard Vdistant Barbette Plasma Gun-11 Mod=+1. 3 tons. MCr4. R=07. (Elec/Grav)."},
 		{WeaponSpec{SandCaster, SingleTurret, Standard, VDistant},
 			"Standard Vdistant Single Turret SandCaster-9 Mod=+1. 1 ton. MCr0.3. R=07. (Electronic)."},
 		// The Beam Laser attacks at Mod +2 over its mount; defending, it gets the
@@ -130,13 +133,13 @@ func TestWeaponsAsDefenses(t *testing.T) {
 // reach, never for more.
 func TestDefenseRangeLimit(t *testing.T) {
 	for _, r := range []Range{Orbit, Far, Geo} {
-		d := DesignDefense(DefenseSpec{BlackGlobe, BoltIn, Standard, r})
+		d := DesignDefense(DefenseSpec{Model: BlackGlobe, Mount: BoltIn, Stage: Standard, Range: r})
 		if len(d.Problems) == 0 {
 			t.Errorf("a defense built for %s should be reported", rangeData[r].name)
 		}
 	}
 	for _, r := range []Range{Vlong, Distant, VDistant} {
-		if d := DesignDefense(DefenseSpec{BlackGlobe, BoltIn, Standard, r}); len(d.Problems) > 0 {
+		if d := DesignDefense(DefenseSpec{Model: BlackGlobe, Mount: BoltIn, Stage: Standard, Range: r}); len(d.Problems) > 0 {
 			t.Errorf("%s is a legal defense range: %v", rangeData[r].name, d.Problems)
 		}
 	}

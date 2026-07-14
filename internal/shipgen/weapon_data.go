@@ -72,42 +72,43 @@ func (s Scale) reaches(r Scale) bool { return s == EitherScale || s == r }
 // any others") and the Pulse Laser hits harder (+1D "on any Pulse Laser
 // installation"). Every other weapon takes its Mod and Hits from the mount.
 var weaponData = [...]struct {
-	letter   byte
-	name     string
-	tl       int
-	minMount Mount
-	scale    Scale
-	cost     int // Cr
-	mod      int // weapon's own attack Mod, beyond the mount's
-	hitsDice int // extra damage dice, beyond the mount's
+	letter    byte
+	name      string
+	tl        int
+	minMount  Mount
+	scale     Scale
+	cost      int // Cr
+	mod       int // weapon's own attack Mod, beyond the mount's
+	hitsDice  int // extra damage dice, beyond the mount's
+	principle Principle
 }{
-	MiningLaser: {'J', "Mining Laser", 8, SingleTurret, WorldScale, 500_000, 0, 0},
-	PulseLaser:  {'K', "Pulse Laser", 9, SingleTurret, WorldScale, 300_000, 0, 1},
-	BeamLaser:   {'L', "Beam Laser", 10, SingleTurret, WorldScale, 500_000, 2, 0},
-	PlasmaGun:   {'P', "Plasma Gun", 11, SingleBarbette, WorldScale, 1_000_000, 0, 0},
-	FusionGun:   {'F', "Fusion Gun", 12, SingleBarbette, WorldScale, 1_500_000, 0, 0},
+	MiningLaser: {'J', "Mining Laser", 8, SingleTurret, WorldScale, 500_000, 0, 0, Electronic},
+	PulseLaser:  {'K', "Pulse Laser", 9, SingleTurret, WorldScale, 300_000, 0, 1, Electronic},
+	BeamLaser:   {'L', "Beam Laser", 10, SingleTurret, WorldScale, 500_000, 2, 0, Electronic},
+	PlasmaGun:   {'P', "Plasma Gun", 11, SingleBarbette, WorldScale, 1_000_000, 0, 0, Electronic | Gravitic},
+	FusionGun:   {'F', "Fusion Gun", 12, SingleBarbette, WorldScale, 1_500_000, 0, 0, Electronic | Gravitic},
 
-	SlugThrower:     {'B', "Slug Thrower", 9, SingleTurret, WorldScale, 200_000, 0, 0},
-	SalvoRack:       {'V', "Salvo Rack", 10, Bay, WorldScale, 10_000_000, 0, 0},
-	RailGun:         {'R', "Rail Gun", 12, Bay, SpaceScale, 12_000_000, 0, 0},
-	MissileLauncher: {'M', "Missile", 7, SingleTurret, SpaceScale, 2_000_000, 0, 0},
-	KKMissile:       {'N', "KK Missile", 10, Bay, SpaceScale, 3_000_000, 0, 0},
-	AMMissile:       {'X', "AM Missile", 20, SingleBarbette, SpaceScale, 5_000_000, 0, 0},
+	SlugThrower:     {'B', "Slug Thrower", 9, SingleTurret, WorldScale, 200_000, 0, 0, Electronic},
+	SalvoRack:       {'V', "Salvo Rack", 10, Bay, WorldScale, 10_000_000, 0, 0, Electronic | Magnetic},
+	RailGun:         {'R', "Rail Gun", 12, Bay, SpaceScale, 12_000_000, 0, 0, Electronic | Magnetic},
+	MissileLauncher: {'M', "Missile", 7, SingleTurret, SpaceScale, 2_000_000, 0, 0, Electronic},
+	KKMissile:       {'N', "KK Missile", 10, Bay, SpaceScale, 3_000_000, 0, 0, Electronic},
+	AMMissile:       {'X', "AM Missile", 20, SingleBarbette, SpaceScale, 5_000_000, 0, 0, Electronic},
 
-	JumpDamper:     {'T', "Jump Damper", 14, SingleBarbette, WorldScale, 15_000_000, 0, 0},
-	TractorPressor: {'U', "Tractor Pressor", 16, SingleBarbette, WorldScale, 5_000_000, 0, 0},
-	Inducer:        {'H', "Inducer", 17, SingleTurret, WorldScale, 1_000_000, 0, 0},
-	Disruptor:      {'W', "Disruptor", 18, SingleBarbette, SpaceScale, 15_000_000, 0, 0},
-	Stasis:         {'E', "Stasis", 21, SingleTurret, SpaceScale, 5_000_000, 0, 0},
+	JumpDamper:     {'T', "Jump Damper", 14, SingleBarbette, WorldScale, 15_000_000, 0, 0, Electronic},
+	TractorPressor: {'U', "Tractor Pressor", 16, SingleBarbette, WorldScale, 5_000_000, 0, 0, Electronic},
+	Inducer:        {'H', "Inducer", 17, SingleTurret, WorldScale, 1_000_000, 0, 0, Electronic},
+	Disruptor:      {'W', "Disruptor", 18, SingleBarbette, SpaceScale, 15_000_000, 0, 0, Electronic | Gravitic},
+	Stasis:         {'E', "Stasis", 21, SingleTurret, SpaceScale, 5_000_000, 0, 0, Electronic},
 
-	DataCaster: {'D', "DataCaster", 10, SingleTurret, WorldScale, 1_000_000, 0, 0},
-	SandCaster: {'S', "SandCaster", 9, SingleTurret, WorldScale, 100_000, 0, 0},
-	Ortillery:  {'Q', "Ortillery", 12, Bay, WorldScale, 15_000_000, 0, 0},
-	CommCaster: {'C', "CommCaster", 8, SingleTurret, SpaceScale, 5_000_000, 0, 0},
+	DataCaster: {'D', "DataCaster", 10, SingleTurret, WorldScale, 1_000_000, 0, 0, Electronic},
+	SandCaster: {'S', "SandCaster", 9, SingleTurret, WorldScale, 100_000, 0, 0, Electronic},
+	Ortillery:  {'Q', "Ortillery", 12, Bay, WorldScale, 15_000_000, 0, 0, Electronic},
+	CommCaster: {'C', "CommCaster", 8, SingleTurret, SpaceScale, 5_000_000, 0, 0, Electronic},
 	// The Hybrid and the PA are the two dual-scale weapons ("S=7* R=7*").
-	HybridSLM:     {'Y', "Hybrid SLM", 10, SingleTurret, EitherScale, 1_000_000, 0, 0},
-	ParticleAccel: {'A', "PA", 11, SingleBarbette, EitherScale, 2_500_000, 0, 0},
-	MesonGun:      {'G', "Meson Gun", 13, Main, SpaceScale, 5_000_000, 0, 0},
+	HybridSLM:     {'Y', "Hybrid SLM", 10, SingleTurret, EitherScale, 1_000_000, 0, 0, Electronic},
+	ParticleAccel: {'A', "PA", 11, SingleBarbette, EitherScale, 2_500_000, 0, 0, Electronic | Magnetic},
+	MesonGun:      {'G', "Meson Gun", 13, Main, SpaceScale, 5_000_000, 0, 0, Electronic | Gravitic},
 }
 
 // A Mount is the structure a weapon is installed in (Book 2 p.83 Table C). The
@@ -117,7 +118,8 @@ type Mount int
 
 // The mounts, in ascending size — the order matters, because a weapon may go in
 // "any Mount equal to or greater than the Minimum" (Book 2 p.155), which is a
-// comparison on this ordering.
+// comparison on this ordering. BoltIn sits outside that ladder: it is a defense's
+// mount, and weaponOK below, not its position here, is what says so.
 const (
 	SingleTurret   Mount = iota // T1
 	DualTurret                  // T2
@@ -131,31 +133,41 @@ const (
 
 	// BoltIn is the defenses' own mount (Book 2 p.176): three tons placed
 	// anywhere inside the ship, needing neither a hardpoint nor a view outside.
-	// No weapon uses it — it comes last so it sits outside the size ordering
-	// above, which it does not belong to.
+	// A weapon has to see out of the hull, so no weapon uses one.
 	BoltIn // Bo
 )
 
-// mountData is Book 2 p.83 Table C. Extendable and Deployable are omitted: they
-// are tonnage-and-cost surcharges on a turret ("in addition to Turret cost"),
-// not mounts a weapon is installed in on their own.
+// mountData names every mount and says which of them a weapon may use, alongside
+// the weapon stats of Book 2 p.83 Table C. The defenses' numbers for the same
+// mounts are different, and live with the defenses (defenseMountData).
+//
+// weaponOK is what keeps a weapon out of a Bolt-In. It used to be the length of
+// this array — the Bolt-In simply had no row, and validMount checked the bound —
+// which made "no weapon is bolted inside the hull" a rule enforced by an array
+// happening to be nine long. Adding a tenth mount would have silently let weapons
+// into a zero-valued Bolt-In: no tons, no cost, no dice, and no complaint.
+//
+// Extendable and Deployable are omitted: they are tonnage-and-cost surcharges on a
+// turret ("in addition to Turret cost"), not mounts a weapon is installed in.
 var mountData = [...]struct {
-	code string
-	name string
-	tons int
-	mod  int
-	hits int // damage dice
-	cost int // Cr
+	code     string
+	name     string
+	weaponOK bool
+	tons     int
+	mod      int
+	hits     int // damage dice
+	cost     int // Cr
 }{
-	SingleTurret:   {"T1", "Single Turret", 1, -2, 1, 200_000},
-	DualTurret:     {"T2", "Dual Turret", 1, -1, 2, 500_000},
-	TripleTurret:   {"T3", "Triple Turret", 1, 0, 3, 1_000_000},
-	QuadTurret:     {"T4", "Quad Turret", 1, 1, 4, 1_500_000},
-	SingleBarbette: {"B1", "Barbette", 3, 2, 5, 3_000_000},
-	DualBarbette:   {"B2", "Dual Barbette", 5, 3, 10, 4_000_000},
-	Bay:            {"Bay", "Bay", 50, 5, 20, 5_000_000},
-	LargeBay:       {"LBay", "Large Bay", 100, 8, 30, 10_000_000},
-	Main:           {"Main", "Main", 200, 10, 100, 20_000_000},
+	SingleTurret:   {"T1", "Single Turret", true, 1, -2, 1, 200_000},
+	DualTurret:     {"T2", "Dual Turret", true, 1, -1, 2, 500_000},
+	TripleTurret:   {"T3", "Triple Turret", true, 1, 0, 3, 1_000_000},
+	QuadTurret:     {"T4", "Quad Turret", true, 1, 1, 4, 1_500_000},
+	SingleBarbette: {"B1", "Barbette", true, 3, 2, 5, 3_000_000},
+	DualBarbette:   {"B2", "Dual Barbette", true, 5, 3, 10, 4_000_000},
+	Bay:            {"Bay", "Bay", true, 50, 5, 20, 5_000_000},
+	LargeBay:       {"LBay", "Large Bay", true, 100, 8, 30, 10_000_000},
+	Main:           {"Main", "Main", true, 200, 10, 100, 20_000_000},
+	BoltIn:         {"Bo", "Bolt-In", false, 0, 0, 0, 0},
 }
 
 // A Range is the reach a weapon and mount are built for. Choosing a shorter
@@ -235,21 +247,38 @@ var rangeData = [...]struct {
 //     level shift under another name: Generic raises tech level by +1 but grants
 //     no Mod.
 //
-// mod applies to weapons alone. A defense takes its Mod from its mount and none
-// from its stage — see defense.go.
-var weaponStageData = [...]struct {
-	costNum, costDen int
-	mod              int
-}{
-	Standard:     {1, 1, 0},
-	Experimental: {10, 1, -3},
-	Prototype:    {5, 1, -2},
-	Early:        {2, 1, -1},
-	Basic:        {1, 2, 0},
-	Alternate:    {1, 1, 0},
-	Improved:     {1, 1, 1},
-	Generic:      {1, 2, 0},
-	Modified:     {1, 2, 2},
-	Advanced:     {2, 1, 3},
-	Ultimate:     {3, 1, 4},
+// The cost column is shared by weapons and defenses; the Mod column is not. A
+// defense takes its Mod from its mount and none at all from its stage, so the two
+// live in separate tables: the defense builder never has a stage Mod in scope to
+// add. That rule used to be enforced by not writing a line of code, which is the
+// weakest enforcement there is — a later contributor would have "fixed" it.
+var stageCostData = [...]struct{ num, den int }{
+	Standard:     {1, 1},
+	Experimental: {10, 1},
+	Prototype:    {5, 1},
+	Early:        {2, 1},
+	Basic:        {1, 2},
+	Alternate:    {1, 1},
+	Improved:     {1, 1},
+	Generic:      {1, 2},
+	Modified:     {1, 2},
+	Advanced:     {2, 1},
+	Ultimate:     {3, 1},
+}
+
+// weaponStageMod is the Mod column of Table B — weapons only. It is not the tech
+// level shift under another name: Generic raises tech level by +1 but grants no
+// Mod.
+var weaponStageMod = [...]int{
+	Standard:     0,
+	Experimental: -3,
+	Prototype:    -2,
+	Early:        -1,
+	Basic:        0,
+	Alternate:    0,
+	Improved:     1,
+	Generic:      0,
+	Modified:     2,
+	Advanced:     3,
+	Ultimate:     4,
 }

@@ -99,7 +99,7 @@ func TestFirmPoints(t *testing.T) {
 func TestBoltInNeedsNoMountPoint(t *testing.T) {
 	spec := murphySpec()
 	spec.Weapons = []WeaponSpec{{BeamLaser, SingleTurret, Standard, VDistant}}
-	spec.Defenses = []DefenseSpec{{NuclearDamper, BoltIn, Standard, VDistant}}
+	spec.Defenses = []DefenseSpec{{Model: NuclearDamper, Mount: BoltIn, Range: VDistant}}
 	s := Design(spec)
 	if len(s.Problems) > 0 {
 		t.Fatalf("a turret and a bolt-in screen both fit a 100t hull: %v", s.Problems)
@@ -116,7 +116,7 @@ func TestBoltInNeedsNoMountPoint(t *testing.T) {
 
 	// A defense in a turret, though, is a mount like any other — and now it does
 	// compete with the gun for the hull's one point.
-	spec.Defenses = []DefenseSpec{{NuclearDamper, SingleTurret, Standard, VDistant}}
+	spec.Defenses = []DefenseSpec{{Model: NuclearDamper, Mount: SingleTurret, Range: VDistant}}
 	if turreted := Design(spec); len(turreted.Problems) == 0 {
 		t.Errorf("a turreted screen competes for the hardpoint the gun is using")
 	}

@@ -1,6 +1,9 @@
 package shipgen
 
-import "fmt"
+import (
+	"fmt"
+	"strings"
+)
 
 // Defense design (Book 2 pp.174, 175-187). Defenses are built exactly as weapons
 // are — a device, a mount, a tech stage, and a range — and p.174 prints the same
@@ -42,25 +45,37 @@ const (
 	StasisGlobe // W
 )
 
-// A Principle is the physics a defense works on (Book 2 p.174). It decides what
-// the defense can act against: a Magnetic scrambler does nothing to a device that
-// works on gravitics.
+// A Principle is the physics a device works on (Book 2 pp.83, 174). It decides
+// what a defense can act against — a Magnetic scrambler does nothing to a device
+// that works on gravitics — and a device may rest on more than one: the book lists
+// a Fusion Gun as "Elec/Grav", and prints it that way when the gun is serving as a
+// defense. So this is a set, not a single value.
 type Principle int
 
 const (
-	Electronic Principle = iota
+	Electronic Principle = 1 << iota
 	Magnetic
 	Gravitic
 )
 
 func (p Principle) String() string {
-	switch p {
-	case Magnetic:
-		return "Magnetic"
-	case Gravitic:
-		return "Gravitic"
+	var names []string
+	for _, e := range []struct {
+		bit  Principle
+		name string
+	}{{Electronic, "Elec"}, {Magnetic, "Mag"}, {Gravitic, "Grav"}} {
+		if p&e.bit != 0 {
+			names = append(names, e.name)
+		}
+	}
+	switch len(names) {
+	case 0:
+		return "?"
+	case 1:
+		// Alone, each is spelled out in full: "Electronic", not "Elec".
+		return map[Principle]string{Electronic: "Electronic", Magnetic: "Magnetic", Gravitic: "Gravitic"}[p]
 	default:
-		return "Electronic"
+		return strings.Join(names, "/") // "Elec/Grav"
 	}
 }
 
@@ -117,10 +132,19 @@ var defenseMountData = [...]struct {
 }
 
 // A DefenseSpec is a defense installation as the designer chooses it. The zero
-// value is a Standard-stage defense in a Bolt-In at Vdistant — how the book lists
-// every one of them.
+// value is a Standard-stage Nuclear Damper in a Bolt-In at Vdistant.
+//
+// Weapon names a weapon serving in the Defensive Fire mode instead of a screen
+// (Book 2 p.186) — a laser shooting down incoming rounds rather than shooting at
+// ships. It is a pointer because it is the exception: when it is set, Model is
+// ignored. Spelling the exception out in the spec is what lets the spec alone
+// determine the result, as it does everywhere else in this package. It used to be
+// carried in a shadow field on the Defense, which left every weapon-as-defense
+// claiming Model == NuclearDamper.
 type DefenseSpec struct {
-	Model DefenseID
+	Model  DefenseID
+	Weapon *WeaponID
+
 	Mount Mount
 	Stage Stage
 	Range Range
@@ -131,6 +155,7 @@ type DefenseSpec struct {
 type Defense struct {
 	Spec DefenseSpec
 
+	Device    string // the screen's name, or the weapon's when one is standing in
 	TL        int
 	Mod       int
 	Tons      Tonnage
@@ -138,78 +163,94 @@ type Defense struct {
 	Band      int
 	Principle Principle
 	Problems  []string
-
-	// name is set when a weapon is serving as a defense (p.186), so the record
-	// prints "Fusion Gun-12" rather than a screen's name.
-	name string
 }
 
-// DesignDefense computes a defense installation from its spec (Book 2 p.174).
-// Like the rest of shipgen it is total: a defense the book does not allow is
+// A device is the thing being installed as a defense: a screen of its own, or a
+// weapon standing in for one.
+type device struct {
+	name      string
+	tl, cost  int
+	principle Principle
+}
+
+// DesignDefense computes a defense installation from its spec (Book 2 pp.174,
+// 186). Like the rest of shipgen it is total: a defense the book does not allow is
 // reported in Problems, not refused.
+//
+// A spec naming a Weapon builds that weapon in the Defensive Fire mode instead —
+// it keeps its own tech level and price but takes the defenses' mount table, and
+// loses whatever attack Mod it had (the Beam Laser's +2 among them), because it is
+// no longer making an attack.
 func DesignDefense(spec DefenseSpec) Defense {
-	if !validDefense(spec.Model) {
-		return Defense{Spec: spec, Problems: []string{"unknown defense"}}
+	dev, problems := defenseDevice(spec)
+	if problems != nil {
+		return Defense{Spec: spec, Problems: problems}
 	}
-	d := defenseData[spec.Model]
-	return buildDefense(spec, d.name, d.tl, d.cost, d.principle)
-}
-
-// DesignWeaponAsDefense allocates a weapon to the Defensive Fire mode (Book 2
-// p.186): a Plasma or Fusion Gun, or a Mining, Pulse, or Beam Laser, shooting
-// down incoming missiles instead of attacking ships. The weapon keeps its own
-// tech level and price but takes the defenses' mount table — and loses whatever
-// attack Mod it had, the Beam Laser's +2 among them, because it is no longer
-// making an attack.
-func DesignWeaponAsDefense(spec WeaponSpec) Defense {
-	if !validWeapon(spec.Model) {
-		return Defense{Problems: []string{"unknown weapon"}}
-	}
-	w := weaponData[spec.Model]
-	ds := DefenseSpec{Mount: spec.Mount, Stage: spec.Stage, Range: spec.Range}
-	def := buildDefense(ds, w.name, w.tl, w.cost, Electronic)
-	// A weapon still needs a mount big enough to hold it, defending or not.
-	if spec.Mount < w.minMount {
-		def.Problems = append(def.Problems, fmt.Sprintf("%s needs at least a %s",
-			w.name, mountData[w.minMount].name))
-	}
-	return def
-}
-
-// buildDefense is the shared arithmetic of both kinds of defense.
-func buildDefense(spec DefenseSpec, name string, tl, cost int, principle Principle) Defense {
 	if !validDefenseMount(spec.Mount) || !validRange(spec.Range) {
-		return Defense{Spec: spec, name: name, Problems: []string{"unknown mount or range"}}
+		return Defense{Spec: spec, Device: dev.name, Problems: []string{"unknown mount or range"}}
 	}
 	m := defenseMountData[spec.Mount]
 	rng := rangeData[spec.Range]
-	st := weaponStageData[stageIndex(spec.Stage)]
 
-	var problems []string
 	if !rng.defenseOK {
 		problems = append(problems, fmt.Sprintf("a defense cannot be built for %s (Vdistant is the furthest)", rng.name))
 	}
+	// A weapon standing in as a defense still needs a mount big enough to hold it.
+	if spec.Weapon != nil {
+		if w := weaponData[*spec.Weapon]; spec.Mount < w.minMount {
+			problems = append(problems, fmt.Sprintf("%s needs at least a %s",
+				w.name, mountName(w.minMount)))
+		}
+	}
 
+	tl, tons, cost, band := install(dev.tl, dev.cost, m.tons, m.cost, spec.Range, spec.Stage)
 	return Defense{
-		Spec: spec,
-		name: name,
-		TL:   tl + rng.tlMod + stageTL(spec.Stage),
-		// The mount's Mod alone — a defense takes none from its tech stage.
+		Spec:   spec,
+		Device: dev.name,
+		TL:     tl,
+		// The mount's Mod alone. A defense takes none from its tech stage, which is
+		// why the stage's Mod column is not even in scope here (weaponStageMod).
 		Mod:       m.mod,
-		Tons:      Tonnage(m.tons * rng.tons),
-		Cost:      cost*st.costNum/st.costDen + m.cost*rng.cost/100,
-		Band:      rng.band,
-		Principle: principle,
+		Tons:      tons,
+		Cost:      cost,
+		Band:      band,
+		Principle: dev.principle,
 		Problems:  problems,
 	}
 }
 
+// DesignWeaponAsDefense allocates a weapon to the Defensive Fire mode (Book 2
+// p.186): a Plasma or Fusion Gun, or a Mining, Pulse, or Beam Laser, shooting down
+// incoming missiles instead of attacking ships.
+func DesignWeaponAsDefense(spec WeaponSpec) Defense {
+	return DesignDefense(DefenseSpec{
+		Weapon: &spec.Model, Mount: spec.Mount, Stage: spec.Stage, Range: spec.Range,
+	})
+}
+
+// defenseDevice resolves what a spec is actually installing — a screen, or a
+// weapon serving as one.
+func defenseDevice(spec DefenseSpec) (device, []string) {
+	if spec.Weapon != nil {
+		if !validWeapon(*spec.Weapon) {
+			return device{}, []string{"unknown weapon"}
+		}
+		w := weaponData[*spec.Weapon]
+		return device{w.name, w.tl, w.cost, w.principle}, nil
+	}
+	if !validDefense(spec.Model) {
+		return device{}, []string{"unknown defense"}
+	}
+	d := defenseData[spec.Model]
+	return device{d.name, d.tl, d.cost, d.principle}, nil
+}
+
 // Name is the defense's name with its installed tech level, e.g. "Black Globe-16".
 func (d Defense) Name() string {
-	if d.name == "" {
+	if d.Device == "" {
 		return "?"
 	}
-	return fmt.Sprintf("%s-%d", d.name, d.TL)
+	return fmt.Sprintf("%s-%d", d.Device, d.TL)
 }
 
 // LongName renders the defense's identity as the book's own tables do (Book 2
@@ -217,20 +258,12 @@ func (d Defense) Name() string {
 //
 //	Standard Vdistant Bolt-In Nuclear Damper-12 Mod=+3. 3 tons. MCr4. R=07. (Electronic).
 func (d Defense) LongName() string {
-	if d.name == "" || !validDefenseMount(d.Spec.Mount) || !validRange(d.Spec.Range) {
+	if d.Device == "" || !validDefenseMount(d.Spec.Mount) || !validRange(d.Spec.Range) {
 		return "?"
 	}
 	return fmt.Sprintf("%s %s %s %s Mod=%+d. %s. %s. R=%02d. (%s).",
-		d.Spec.Stage, rangeData[d.Spec.Range].name, defenseMountName(d.Spec.Mount),
+		d.Spec.Stage, rangeData[d.Spec.Range].name, mountName(d.Spec.Mount),
 		d.Name(), d.Mod, d.Tons.Phrase(), weaponMCr(d.Cost), d.Band, d.Principle)
-}
-
-// defenseMountName is the mount's name, with the defenses' own Bolt-In.
-func defenseMountName(m Mount) string {
-	if m == BoltIn {
-		return "Bolt-In"
-	}
-	return mountData[m].name
 }
 
 func validDefense(id DefenseID) bool { return id >= 0 && int(id) < len(defenseData) }

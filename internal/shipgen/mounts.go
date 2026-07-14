@@ -31,7 +31,7 @@ const firmPointsPerBlock = 3
 // the sub-ton mounts three to a block, so the hull needs
 // hardMounts + ceil(subTonMounts/3) blocks. Fewer blocks cannot be made to work by
 // any other split, and more are never required.
-func mountPoints(hullTons int, weapons []Weapon, defenses []Defense) string {
+func mountPoints(h Hull, weapons []Weapon, defenses []Defense) string {
 	hard, firm := 0, 0
 	count := func(t Tonnage) {
 		if t.SubTon() {
@@ -52,13 +52,14 @@ func mountPoints(hullTons int, weapons []Weapon, defenses []Defense) string {
 	if hard == 0 && firm == 0 {
 		return ""
 	}
-	blocks := hullTons / 100
+	// Hull.Hardpoints is the hull's mount capacity, one per 100 tons. Recomputing
+	// the division here would give the field a second home and let the two drift.
 	need := hard + (firm+firmPointsPerBlock-1)/firmPointsPerBlock
-	if need <= blocks {
+	if need <= h.Hardpoints {
 		return ""
 	}
 	return fmt.Sprintf("%s need %d mount blocks but a %dt hull has %d (one Hardpoint, or %d Firmpoints, per 100t)",
-		mountPhrase(hard, firm), need, hullTons, blocks, firmPointsPerBlock)
+		mountPhrase(hard, firm), need, h.Tons, h.Hardpoints, firmPointsPerBlock)
 }
 
 // mountPhrase names what is being mounted, for the shortfall message.
@@ -84,7 +85,7 @@ func armamentTonnage(weapons []Weapon, defenses []Defense) int {
 			total += t
 			return
 		}
-		total += Tons(t.Ceil())
+		total += t.RoundUp()
 	}
 	for _, w := range weapons {
 		charge(w.Tons)

@@ -1,10 +1,6 @@
 package shipgen
 
-import (
-	"strings"
-
-	"github.com/philoserf/t5/internal/dice"
-)
+import "github.com/philoserf/t5/internal/dice"
 
 // ConfigByLetter returns the Config for a QSP config letter (C/B/P/U/S/A/L,
 // case-insensitive) and whether it was found. Only the first character is
@@ -34,7 +30,7 @@ var structureByName = map[string]Structure{
 
 // StructureByName returns the Structure for a name and whether it was found.
 func StructureByName(name string) (Structure, bool) {
-	s, ok := structureByName[strings.ToLower(name)]
+	s, ok := structureByName[squash(name)]
 	return s, ok
 }
 

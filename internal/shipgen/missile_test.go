@@ -139,20 +139,30 @@ func TestMissileMagazine(t *testing.T) {
 	}
 }
 
-// TestGuidanceValue is the asset a guidance system contributes to the Missile
-// Attack Task (Book 2 p.157) — the number shipcombat resolves against.
-func TestGuidanceValue(t *testing.T) {
-	const gunner, brain = 12, 9
-	cases := map[Guidance]int{
-		UnGuided:       0,
-		HardWired:      5,
-		OperatorGuided: gunner,
-		DownLoaded:     gunner, // the gunner's own personality, copied in
-		SelfAware:      brain,  // the missile's own mind, rolled at launch
+// TestGuidanceReachTable locks the design constraints each brain carries (Book 2
+// p.170): the smallest round that can house it, and the lowest tech level that can
+// build one. What a brain is WORTH in a fight is shipcombat's rule, and is tested
+// there.
+func TestGuidanceReachTable(t *testing.T) {
+	cases := []struct {
+		g        Guidance
+		size, tl int
+		want     bool
+	}{
+		{UnGuided, 1, 0, true},   // needs nothing; it is the lack of a brain
+		{HardWired, 1, 5, true},  // TL 5
+		{HardWired, 1, 4, false}, // ...and not before
+		{OperatorGuided, 4, 9, true},
+		{OperatorGuided, 3, 9, false}, // too small to house it
+		{OperatorGuided, 4, 8, false}, // too early to build it
+		{SelfAware, 5, 11, true},
+		{SelfAware, 4, 11, false},
+		{DownLoaded, 5, 13, true},
+		{DownLoaded, 5, 12, false},
 	}
-	for g, want := range cases {
-		if got := g.Value(gunner, brain); got != want {
-			t.Errorf("%s value = %d, want %d", g, got, want)
+	for _, c := range cases {
+		if got := c.g.Available(c.size, c.tl); got != c.want {
+			t.Errorf("%s at Size %d TL %d = %v, want %v", c.g, c.size, c.tl, got, c.want)
 		}
 	}
 }

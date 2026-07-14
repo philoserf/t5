@@ -26,7 +26,7 @@ import (
 // A gunner whose C+S+K falls short of the weapon's tech level may use the weapon
 // console's TL instead (p.156); pass whichever is better.
 func Attack(r *dice.Roller, w shipgen.Weapon, rangeBands, csk int, mods ...int) dice.CheckResult {
-	return ResolveSpaceWeapon(r, rangeBands, w.TL, csk, sum(mods)+w.Mod)
+	return ResolveSpaceWeapon(r, rangeBands, w.TL, csk, append([]int{w.Mod}, mods...)...)
 }
 
 // AttackWithMissile rolls a designed round's Missile Attack Task (Book 2 p.197),
@@ -35,7 +35,28 @@ func Attack(r *dice.Roller, w shipgen.Weapon, rangeBands, csk int, mods ...int) 
 // worth as much as the gunner flying it, and a self-aware one is worth whatever
 // mind it rolled at launch (C = 6+1D, S = 1D, plus Flux — pass it as brainCSK).
 func AttackWithMissile(r *dice.Roller, m shipgen.Missile, rangeBands, gunnerCSK, brainCSK int, mods ...int) dice.CheckResult {
-	return ResolveMissile(r, rangeBands, m.TL, m.Spec.Guidance.Value(gunnerCSK, brainCSK), sum(mods))
+	return ResolveMissile(r, rangeBands, m.TL, guidanceAsset(m.Spec.Guidance, gunnerCSK, brainCSK), mods...)
+}
+
+// guidanceAsset is what a missile's brain is worth on the Missile Attack Task
+// (Book 2 p.157). An unguided round contributes nothing, a hardwired one a flat 5,
+// and a guided one is only as good as whoever — or whatever — is flying it: the
+// gunner's own C+S+K, or, for a self-aware round, the mind it rolled at launch
+// (C = 6+1D, S = 1D, plus Flux).
+//
+// The Guidance type is a design property and lives in shipgen; what it is worth in
+// a fight is a target-number rule, and belongs here beside the other two.
+func guidanceAsset(g shipgen.Guidance, gunnerCSK, brainCSK int) int {
+	switch g {
+	case shipgen.HardWired:
+		return 5
+	case shipgen.OperatorGuided, shipgen.DownLoaded:
+		return gunnerCSK
+	case shipgen.SelfAware:
+		return brainCSK
+	default: // UnGuided
+		return 0
+	}
 }
 
 // Defend rolls a designed defense against an incoming attack (Book 2 p.196): 1D
@@ -45,16 +66,12 @@ func AttackWithMissile(r *dice.Roller, m shipgen.Missile, rangeBands, gunnerCSK,
 // This is where the old Mount.Mod would have been wrong in the other direction: a
 // defense in a Quad Turret defends at +4, where a weapon in one attacks at only
 // +1. The Defense carries the Mod from the table it was actually built from.
+//
+// A weapon allocated to the Anti-Missile Defensive Fire mode (p.186) is a Defense
+// by the time it reaches here — build it with shipgen.DesignWeaponAsDefense — so it
+// defends through this same call.
 func Defend(r *dice.Roller, d shipgen.Defense, attackTL int) dice.CheckResult {
 	return ResolveDefensiveFire(r, d.TL, attackTL, d.Mod)
-}
-
-// DefendWithWeapon rolls a weapon allocated to the Anti-Missile Defensive Fire
-// mode (Book 2 p.186) — a laser or a gun shooting down an incoming round instead
-// of attacking a ship. Design it with shipgen.DesignWeaponAsDefense, which gives
-// it the defenses' Mod, and it resolves like any other defense.
-func DefendWithWeapon(r *dice.Roller, d shipgen.Defense, attackTL int) dice.CheckResult {
-	return Defend(r, d, attackTL)
 }
 
 // ArmorLayers is a designed ship's armor as Penetrate wants it: one Armor Value
@@ -89,12 +106,4 @@ func ShipAgility(s shipgen.Ship, usedGs int) int {
 		return 0
 	}
 	return Agility(s.Maneuver.Potential, usedGs)
-}
-
-func sum(xs []int) int {
-	total := 0
-	for _, x := range xs {
-		total += x
-	}
-	return total
 }

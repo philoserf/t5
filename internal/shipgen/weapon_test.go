@@ -212,12 +212,13 @@ func TestWeaponProblems(t *testing.T) {
 }
 
 // TestWeaponLetters: every weapon has the single-letter model code the book
-// identifies it by, and no two share one.
+// identifies it by, no two share one, and each builds cleanly in its own minimum
+// mount at its standard range — the form the book lists it in.
 func TestWeaponLetters(t *testing.T) {
 	seen := map[byte]string{}
 	for id := range WeaponID(len(weaponData)) {
 		w := DesignWeapon(DefaultWeapon(id))
-		letter := w.Letter()
+		letter := weaponData[id].letter
 		if prior, dup := seen[letter]; dup {
 			t.Errorf("weapons %s and %s share the letter %c", prior, w.Name(), letter)
 		}
