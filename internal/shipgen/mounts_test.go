@@ -182,3 +182,25 @@ func TestWeaponTonnage(t *testing.T) {
 		t.Errorf("no weapons = %dt, want 0", got)
 	}
 }
+
+// TestFailedWeaponTakesNoMountPoint: a weapon that could not be built occupies no
+// mount. Counting it invented a second, false problem — a mount shortfall — on top
+// of the real one that stopped it being built.
+func TestFailedWeaponTakesNoMountPoint(t *testing.T) {
+	// One legal turret, plus a weapon asked to sit in a Bolt-In (which it cannot).
+	spec := murphySpec()
+	spec.Weapons = []WeaponSpec{
+		{Model: BeamLaser, Mount: SingleTurret, Range: VDistant},
+		{Model: BeamLaser, Mount: BoltIn, Range: VDistant},
+	}
+	s := Design(spec)
+	for _, p := range s.Problems {
+		if strings.Contains(p, "mount blocks") {
+			t.Errorf("the failed weapon should not also manufacture a mount shortfall: %q", p)
+		}
+	}
+	// The real problem is still reported.
+	if !strings.Contains(strings.Join(s.Problems, "; "), "Bolt-In") {
+		t.Errorf("the Bolt-In weapon should be reported, got %v", s.Problems)
+	}
+}

@@ -39,6 +39,15 @@ func Design(spec ShipSpec) Ship {
 	if ship.Jump != nil {
 		powered = max(powered, ship.Jump.Potential)
 	}
+	// The hull's configuration caps its thrust however big the drive is: a Cluster
+	// is rated for 1G and a Braced hull for 3 (Book 2 p.71). Hull.MaxG has been
+	// computed since the first commit and read by nothing, so a Cluster with a huge
+	// maneuver drive designed clean and then flew at 8G in a fight.
+	if ship.Maneuver != nil && ship.Maneuver.Potential > h.MaxG {
+		problems = append(problems, fmt.Sprintf("maneuver drive rated %dG but a %s hull is capped at %dG",
+			ship.Maneuver.Potential, h.Config, h.MaxG))
+	}
+
 	switch {
 	case powered > 0 && ship.Power == nil:
 		problems = append(problems, "drives require a power plant")

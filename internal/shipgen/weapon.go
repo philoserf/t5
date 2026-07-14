@@ -257,10 +257,15 @@ func RangeNames() []string {
 	return names
 }
 
-// squash lowercases a name and drops its spaces, so "Beam Laser" and "beamlaser"
-// are the same lookup key.
+// squash lowercases a name and drops its spaces and hyphens, so "Beam Laser",
+// "beamlaser", "Bolt-In", and "boltin" are all the same lookup key. The hyphen
+// matters: the flags train users to write a name with its separator removed
+// ("blackglobe"), and dropping only spaces made "boltin" — the defenses' own
+// default mount — an unknown mount.
 func squash(s string) string {
-	return strings.ToLower(strings.ReplaceAll(s, " ", ""))
+	s = strings.ToLower(s)
+	s = strings.ReplaceAll(s, " ", "")
+	return strings.ReplaceAll(s, "-", "")
 }
 
 func upper(c byte) byte {
