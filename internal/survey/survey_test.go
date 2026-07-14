@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/philoserf/t5/internal/dice"
+	"github.com/philoserf/t5/internal/route"
 	"github.com/philoserf/t5/internal/sectorgen"
 	"github.com/philoserf/t5/internal/systemgen"
 	"github.com/philoserf/t5/internal/uwp"
@@ -50,6 +51,70 @@ func TestMarkCapitalNoStarportA(t *testing.T) {
 	for _, rec := range records {
 		if slices.Contains(rec.System.Mainworld.TradeCodes, "Cs") {
 			t.Errorf("no Starport-A world, so no capital should be marked")
+		}
+	}
+}
+
+func TestMarkSectorCapitals(t *testing.T) {
+	records := []Record{
+		recordWith(sectorgen.Hex{Col: 1, Row: 1}, 'A', 5), // subsector A, region-best -> Cx
+		recordWith(sectorgen.Hex{Col: 2, Row: 2}, 'A', 3), // subsector A, lower -> nothing
+		recordWith(sectorgen.Hex{Col: 9, Row: 1}, 'A', 4), // subsector B -> its capital Cs
+	}
+	markSectorCapitals(records)
+
+	tcs := func(i int) []string { return records[i].System.Mainworld.TradeCodes }
+	if !slices.Contains(tcs(0), "Cx") || slices.Contains(tcs(0), "Cs") {
+		t.Errorf("region-best world should be Cx only: %v", tcs(0))
+	}
+	if !slices.Contains(tcs(2), "Cs") {
+		t.Errorf("subsector-B best should be Cs: %v", tcs(2))
+	}
+	if len(tcs(1)) != 0 {
+		t.Errorf("non-capital world should carry no capital code: %v", tcs(1))
+	}
+}
+
+func TestPlaceWayStations(t *testing.T) {
+	a := sectorgen.Hex{Col: 1, Row: 1}
+	b := sectorgen.Hex{Col: 2, Row: 1}
+	c := sectorgen.Hex{Col: 3, Row: 1}
+	records := []Record{recordWith(a, 'A', 4), recordWith(b, 'A', 4), recordWith(c, 'A', 4)}
+	// Total route length 100 pc -> 2 Way Stations. All three worlds have degree 2,
+	// so the tie breaks to the two lowest-CCRR hubs: A and B.
+	links := []route.Link{{From: a, To: b, Jump: 30}, {From: b, To: c, Jump: 40}, {From: a, To: c, Jump: 30}}
+	placeWayStations(records, links)
+
+	if !records[0].System.Mainworld.WayStation || !records[1].System.Mainworld.WayStation {
+		t.Errorf("expected Way Stations at hubs A and B")
+	}
+	if records[2].System.Mainworld.WayStation {
+		t.Errorf("C should not have a Way Station (only 2 stations for 100 pc)")
+	}
+
+	// Under 50 pc of route: no Way Stations.
+	short := []Record{recordWith(a, 'A', 4), recordWith(b, 'A', 4)}
+	placeWayStations(short, []route.Link{{From: a, To: b, Jump: 4}})
+	if short[0].System.Mainworld.WayStation || short[1].System.Mainworld.WayStation {
+		t.Errorf("no Way Station expected under %d pc of route", wayStationSpacing)
+	}
+}
+
+func TestSectorDeterministic(t *testing.T) {
+	a := Sector(dice.NewWithSeed(3), sectorgen.Sparse)
+	b := Sector(dice.NewWithSeed(3), sectorgen.Sparse)
+	if len(a.Records) != len(b.Records) || len(a.Routes) != len(b.Routes) {
+		t.Fatalf("non-deterministic: records %d/%d, routes %d/%d",
+			len(a.Records), len(b.Records), len(a.Routes), len(b.Routes))
+	}
+	// Every route endpoint is a surveyed hex.
+	present := map[sectorgen.Hex]bool{}
+	for _, rec := range a.Records {
+		present[rec.Hex] = true
+	}
+	for _, l := range a.Routes {
+		if !present[l.From] || !present[l.To] {
+			t.Errorf("route %s-%s references an unsurveyed hex", l.From, l.To)
 		}
 	}
 }

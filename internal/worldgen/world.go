@@ -22,6 +22,7 @@ type World struct {
 	Nobility        string
 	NavalBase       bool
 	ScoutBase       bool
+	WayStation      bool
 	Zone            byte
 	NativeStatus    string
 	PopulationDigit int
@@ -72,6 +73,27 @@ func (w *World) SetCapital(code string) {
 	w.Nobility = Nobility(w.TradeCodes, w.Importance, true)
 }
 
+// SetWayStation places a Scout Way Station on the world (Book 3 p.28), a
+// communications relay sited on a trade route. It sets the base and applies the
+// Importance bonus the station confers (Chart E: "+1 If Way Station"),
+// recomputing nobility from the new Importance. The already-rolled Economic and
+// Cultural extensions are left unchanged (the +1 is not cascaded), mirroring
+// SetCapital.
+func (w *World) SetWayStation() {
+	if w.WayStation {
+		return
+	}
+	w.WayStation = true
+	w.Importance = Importance(w.Profile, w.TradeCodes, w.NavalBase, w.ScoutBase, true)
+	w.Nobility = Nobility(w.TradeCodes, w.Importance, hasCapitalCode(w.TradeCodes))
+}
+
+// hasCapitalCode reports whether the trade codes already mark the world a
+// capital (Cs subsector, Cx sector, or Cp Imperial).
+func hasCapitalCode(tcs []string) bool {
+	return slices.Contains(tcs, "Cs") || slices.Contains(tcs, "Cx") || slices.Contains(tcs, "Cp")
+}
+
 // SecondSurvey renders the world portion of the Second Survey record:
 //
 //	UWP  TCs  {Ix}(Ex)[Cx]  Nobility  Bases  Zone
@@ -102,7 +124,8 @@ func importance(ix int) string {
 	return fmt.Sprintf("{%+d}", ix)
 }
 
-// bases renders the base codes: "N" for a Naval base, "S" for a Scout base.
+// bases renders the base codes: "N" for a Naval base, "S" for a Scout base,
+// "W" for a Scout Way Station (Book 3 p.28).
 func (w World) bases() string {
 	var b strings.Builder
 	if w.NavalBase {
@@ -110,6 +133,9 @@ func (w World) bases() string {
 	}
 	if w.ScoutBase {
 		b.WriteByte('S')
+	}
+	if w.WayStation {
+		b.WriteByte('W')
 	}
 	return b.String()
 }
