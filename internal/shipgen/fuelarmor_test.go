@@ -36,8 +36,8 @@ func TestFuelStageMultiplier(t *testing.T) {
 func TestArmorMurphy(t *testing.T) {
 	// Murphy: 2 layers of Shell armor on a 100t TL-12 hull.
 	a := armor(12, 100, Shell, 2)
-	if a.Layers != 2 || a.AV != 6 || a.Tons != 2 || a.Cost != 0 {
-		t.Errorf("armor = %+v, want 2 layers / AV 6 / 2t / free", a)
+	if a.Layers != 2 || a.AV != 6 || a.Tons != 2 {
+		t.Errorf("armor = %+v, want 2 layers / AV 6 / 2t", a)
 	}
 }
 

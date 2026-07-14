@@ -22,13 +22,13 @@ func TestGenerateDeterministic(t *testing.T) {
 }
 
 func TestConfigByLetter(t *testing.T) {
-	if c, ok := ConfigByLetter('L'); !ok || c != Lifting {
+	if c, ok := ConfigByLetter("L"); !ok || c != Lifting {
 		t.Errorf("ConfigByLetter(L) = %v,%v, want Lifting", c, ok)
 	}
-	if c, ok := ConfigByLetter('S'); !ok || c != Streamlined {
+	if c, ok := ConfigByLetter("S"); !ok || c != Streamlined {
 		t.Errorf("ConfigByLetter(S) = %v,%v, want Streamlined", c, ok)
 	}
-	if _, ok := ConfigByLetter('Q'); ok {
+	if _, ok := ConfigByLetter("Q"); ok {
 		t.Errorf("ConfigByLetter(Q) should be unknown")
 	}
 }
