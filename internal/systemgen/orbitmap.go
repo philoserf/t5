@@ -1,7 +1,6 @@
 package systemgen
 
 import (
-	"slices"
 	"sort"
 
 	"github.com/philoserf/t5/internal/dice"
@@ -225,7 +224,7 @@ func (s *System) placeOrbits(r *dice.Roller) {
 	// unplaceable (overflow) world is dropped before it is rolled, so it does not
 	// advance the dice stream ("ignore excess worlds", Book 3 p.21).
 	mwPop := s.Mainworld.Profile.Population
-	mwIndustrial := slices.Contains(s.Mainworld.TradeCodes, "In")
+	mwIndustrial := s.mainworldIndustrial()
 	worldRotate := rotator(hosts)
 	others := max(s.Worlds-1-s.GasGiants-s.Belts, 0)
 	for i := range others {
@@ -248,6 +247,7 @@ func (s *System) placeOrbits(r *dice.Roller) {
 			}
 			placed[gi].Satellites = append(placed[gi].Satellites, Satellite{
 				Far: far, OrbitLetter: letter, Type: wt, Profile: prof,
+				TradeCodes: satelliteTradeCodes(prof, placed[gi].Orbit, h.hz, h.hasHZ, far, mwIndustrial),
 			})
 			continue
 		}

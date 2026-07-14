@@ -148,3 +148,21 @@ func TestSecondSurveyNoTradeCodes(t *testing.T) {
 		t.Errorf("an empty trade-code column should be dashed, got %q", got)
 	}
 }
+
+// TestBaseCodes: the base record codes are N Naval, S Scout, D Naval Depot, W Way
+// Station (Book 3 Chart F, p.28). The Depot's code is "D", not the first letter of
+// its name — that would collide with the Naval base.
+func TestBaseCodes(t *testing.T) {
+	w := World{NavalBase: true, ScoutBase: true, NavalDepot: true, WayStation: true}
+	if got := w.bases(); got != "NSDW" {
+		t.Errorf("bases = %q, want NSDW", got)
+	}
+	// A lone depot renders "D", not "N".
+	depot := World{NavalDepot: true}
+	if got := depot.bases(); got != "D" {
+		t.Errorf("a lone Naval Depot renders %q, want D", got)
+	}
+	if names := depot.BaseNames(); len(names) != 1 || names[0] != "Naval Depot" {
+		t.Errorf("BaseNames = %v, want [Naval Depot]", names)
+	}
+}

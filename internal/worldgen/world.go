@@ -22,6 +22,7 @@ type World struct {
 	Nobility        string
 	NavalBase       bool
 	ScoutBase       bool
+	NavalDepot      bool
 	WayStation      bool
 	Zone            byte
 	NativeStatus    string
@@ -82,6 +83,15 @@ func (w *World) SetCapital(code string) {
 		w.TradeCodes = append(w.TradeCodes, code)
 	}
 	w.Nobility = Nobility(w.TradeCodes, w.Importance, true)
+}
+
+// SetNavalDepot places a Naval Depot on the world (Book 3 p.28), a system-
+// encompassing naval fleet base. Unlike a Way Station it confers no Importance
+// bonus — Chart E's Ix table does not list one — so it only sets the base. Depots
+// are sited by the region survey (1 per 1000 worlds, Starport A only), not rolled
+// per world, so this is a setter rather than part of RollBases.
+func (w *World) SetNavalDepot() {
+	w.NavalDepot = true
 }
 
 // SetWayStation places a Scout Way Station on the world (Book 3 p.28), a
@@ -152,25 +162,38 @@ func importance(ix int) string {
 // the Second Survey record (Book 3 p.28). Empty when the world hosts none.
 func (w World) BaseNames() []string {
 	var out []string
-	if w.NavalBase {
-		out = append(out, "Naval")
-	}
-	if w.ScoutBase {
-		out = append(out, "Scout")
-	}
-	if w.WayStation {
-		out = append(out, "Way Station")
+	for _, b := range w.baseList() {
+		out = append(out, b.name)
 	}
 	return out
 }
 
-// bases renders the base codes: "N" for a Naval base, "S" for a Scout base,
-// "W" for a Scout Way Station (Book 3 p.28) — each base's initial, in BaseNames
-// order.
+// baseList is the world's bases as (record code, display name) pairs, in Chart F
+// order (Book 3 p.28). The code is not the name's initial: a Naval Depot's code is
+// "D", not "N", and it would otherwise collide with the Naval Base.
+func (w World) baseList() []struct{ code, name string } {
+	var out []struct{ code, name string }
+	if w.NavalBase {
+		out = append(out, struct{ code, name string }{"N", "Naval"})
+	}
+	if w.ScoutBase {
+		out = append(out, struct{ code, name string }{"S", "Scout"})
+	}
+	if w.NavalDepot {
+		out = append(out, struct{ code, name string }{"D", "Naval Depot"})
+	}
+	if w.WayStation {
+		out = append(out, struct{ code, name string }{"W", "Way Station"})
+	}
+	return out
+}
+
+// bases renders the base codes: N Naval, S Scout, D Naval Depot, W Way Station
+// (Book 3 p.28), in Chart F order.
 func (w World) bases() string {
 	var b strings.Builder
-	for _, name := range w.BaseNames() {
-		b.WriteByte(name[0])
+	for _, base := range w.baseList() {
+		b.WriteString(base.code)
 	}
 	return b.String()
 }
