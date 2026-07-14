@@ -35,12 +35,15 @@ func (k OrbitKind) String() string {
 // A PlacedOrbit is one occupied orbit in the system's orbit map: the star it
 // orbits (Host), its orbit number around that star, what occupies it, and — for
 // a gas-giant or a detailed secondary-world orbit — the giant or world there. A
-// Mainworld with a non-nil Giant is a satellite riding that gas giant.
+// Mainworld with a non-nil Giant is a satellite riding that gas giant; one with
+// a non-nil Parent rides an accommodating BigWorld created because the system
+// has no gas giant (Book 3 p.21).
 type PlacedOrbit struct {
 	Host       string // "Primary", "Close", "Near", or "Far"
 	Orbit      int
 	Kind       OrbitKind
 	Giant      *GasGiant
+	Parent     *OtherWorld // BigWorld hosting a satellite mainworld when no gas giant exists
 	World      *OtherWorld
 	Satellites []Satellite
 }
@@ -129,11 +132,22 @@ func (s *System) placeOrbits(r *dice.Roller) {
 	if s.MainworldOrbit >= 0 {
 		o, _ := primary.claim(s.MainworldOrbit)
 		mw := PlacedOrbit{Host: "Primary", Orbit: o, Kind: KindMainworld}
-		// A satellite mainworld rides a gas giant placed in its orbit; that
-		// giant is the first of the system's giants and is not rotated again.
-		if s.MainworldSatellite.IsSatellite && len(giants) > 0 {
-			mw.Giant = &giants[0]
-			giants = giants[1:]
+		// A satellite mainworld needs a parent body in its orbit to accommodate
+		// it (Book 3 p.21). It rides the system's first gas giant; that giant is
+		// not rotated again. If the system has no gas giant, an accommodating
+		// BigWorld is created to host it. (The book prints the parent's size as
+		// "-2D+7", but that contradicts worldgen's own BigWorld (Siz 2D+7) and
+		// would make the parent smaller than its moon in violation of the
+		// satellite-size rule, so we create a standard BigWorld.)
+		if s.MainworldSatellite.IsSatellite {
+			switch {
+			case len(giants) > 0:
+				mw.Giant = &giants[0]
+				giants = giants[1:]
+			default:
+				prof := worldgen.GenerateOtherWorld(r, worldgen.BigWorld, s.Mainworld.Profile.Population)
+				mw.Parent = &OtherWorld{Type: worldgen.BigWorld, Profile: prof}
+			}
 		}
 		placed = append(placed, mw)
 	}

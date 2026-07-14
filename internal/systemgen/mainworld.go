@@ -22,6 +22,13 @@ type MainworldSatellite struct {
 // are appended. It returns the mainworld orbit (−1 when the primary has no HZ)
 // and the satellite record.
 func placeMainworld(r *dice.Roller, primary Star, mainworld *worldgen.World) (int, MainworldSatellite) {
+	// An asteroid-belt mainworld (Size 0) is placed using the Belt column of the
+	// P2 chart without regard to the habitable zone (Book 3 p.21): no HZ variance,
+	// no gas-giant-satellite roll, and no climate codes — and it is placed even
+	// when the primary has no habitable zone.
+	if mainworld.Profile.Size == 0 {
+		return p2(r.Dice(2)).belt, MainworldSatellite{}
+	}
 	hzVar := hzVarFromFlux(r.Flux() + hzVarDM(primary))
 	sat := rollMainworldSatellite(r)
 	if sat.IsSatellite {

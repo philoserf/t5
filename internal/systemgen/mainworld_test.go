@@ -61,9 +61,17 @@ func TestPlaceMainworld(t *testing.T) {
 	}
 
 	// A primary with no habitable zone (size-VI O star): orbit -1.
-	var mw3 worldgen.World
+	mw3 := worldgen.World{Profile: uwp.Profile{Size: 7}}
 	orbit3, _ := placeMainworld(dice.NewScripted(4, 4, 5, 3), Star{Type: "O", Size: "VI"}, &mw3)
 	if orbit3 != -1 {
 		t.Errorf("no-HZ orbit = %d, want -1", orbit3)
+	}
+
+	// An asteroid-belt mainworld (Size 0) is placed via the P2 Belt column
+	// without regard to HZ: 2D=7 -> Belt offset 4; no satellite, no codes.
+	mw5 := worldgen.World{Profile: uwp.Profile{Size: 0}}
+	orbit5, sat5 := placeMainworld(dice.NewScripted(3, 4 /*2D=7*/), primary, &mw5)
+	if orbit5 != 4 || sat5.IsSatellite || len(mw5.TradeCodes) != 0 {
+		t.Errorf("belt mainworld: orbit %d sat %v codes %v, want orbit 4, planet, no codes", orbit5, sat5.IsSatellite, mw5.TradeCodes)
 	}
 }
