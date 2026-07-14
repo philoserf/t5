@@ -41,7 +41,7 @@ func RandomTradeGoods(r *dice.Roller, worldTCs []string) TradeGood {
 // none qualify, and picking randomly among several), mapping Ag to Ag-1 or Ag-2
 // at random. It returns the column key and the trade class that chose it.
 func selectGoodsColumn(r *dice.Roller, worldTCs []string) (column, sourceTC string) {
-	var eligible []string
+	eligible := make([]string, 0, len(worldTCs))
 	for _, tc := range worldTCs {
 		if goodsColumnEligible[tc] {
 			eligible = append(eligible, tc)
@@ -50,14 +50,11 @@ func selectGoodsColumn(r *dice.Roller, worldTCs []string) (column, sourceTC stri
 	if len(eligible) == 0 {
 		return "Na", "Na"
 	}
-	tc := eligible[0]
-	if len(eligible) > 1 {
-		tc = eligible[r.Index(len(eligible))]
-	}
-	if tc == "Ag" {
-		if r.Die() <= 3 {
-			return "Ag-1", tc
-		}
+	// Index(1) consumes no dice, so a lone eligible class needs no special case.
+	tc := eligible[r.Index(len(eligible))]
+	// Ag alone splits across two columns on a die; every other class maps directly
+	// (columnFor sends a bare Ag to Ag-1, which is also this roll's low half).
+	if tc == "Ag" && r.Die() > 3 {
 		return "Ag-2", tc
 	}
 	return columnFor(tc), tc

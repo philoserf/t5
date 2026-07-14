@@ -12,6 +12,7 @@ package trade
 import (
 	"fmt"
 	"slices"
+	"strconv"
 	"strings"
 
 	"github.com/philoserf/t5/internal/ehex"
@@ -58,13 +59,16 @@ var priceMatch = map[string]struct {
 
 // actualValue is the percentage of Price a sale realizes at each effective Flux
 // (Flux + Broker DM, clamped to -5..+8), indexed by effective-Flux + 5 (Book 2
-// p.221 Actual Value Table).
+// p.221 Actual Value Table). This is not a raw-Flux table — the Broker DM folds
+// in before the lookup, widening it past Flux's +5 — so dice.FluxIndex, which
+// maps a bare Flux onto a 13-entry table, does not apply here.
 var actualValue = [14]int{40, 50, 70, 80, 90, 100, 110, 120, 130, 150, 170, 200, 300, 400}
 
 // ValueClasses filters a world's trade codes to the value-relevant set, in the
-// chart order used by a Cargo ID (Book 2 p.221).
+// chart order used by a Cargo ID (Book 2 p.221). It also de-duplicates, since it
+// walks the chart order rather than the caller's codes.
 func ValueClasses(tcs []string) []string {
-	var out []string
+	out := make([]string, 0, len(tcs))
 	for _, code := range valueClasses {
 		if slices.Contains(tcs, code) {
 			out = append(out, code)
@@ -96,11 +100,10 @@ func costOf(sourceTL int, valueClasses []string) int {
 // effect of 10% per level the source exceeds the market. Floored at zero.
 func Price(sourceTL, marketTL int, sourceTCs, marketTCs []string) int {
 	p := basePrice
+	// A class with no priceMatch row yields the zero value, whose nil markets make
+	// the inner loop a no-op — no presence check needed.
 	for _, code := range ValueClasses(sourceTCs) {
-		m, ok := priceMatch[code]
-		if !ok {
-			continue
-		}
+		m := priceMatch[code]
 		for _, mc := range m.markets {
 			if slices.Contains(marketTCs, mc) {
 				p += m.per
@@ -160,12 +163,13 @@ func clamp(v, lo, hi int) int {
 
 // commas renders an integer with thousands separators, e.g. 1800 -> "1,800".
 func commas(n int) string {
-	s := fmt.Sprintf("%d", n)
+	s := strconv.Itoa(n)
 	neg := strings.HasPrefix(s, "-")
 	if neg {
 		s = s[1:]
 	}
 	var b strings.Builder
+	b.Grow(len(s) + len(s)/3)
 	for i := range len(s) {
 		if i > 0 && (len(s)-i)%3 == 0 {
 			b.WriteByte(',')

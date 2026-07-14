@@ -1,6 +1,10 @@
 package trade
 
-// Delivery terms and long-term mail contracts (Book 2 pp.210, 220).
+// Delivery terms and mail (Book 2 pp.210, 220).
+
+// MailRatePerTon is the per-jump rate for a ton of mail; the ship must carry a
+// 1-ton Mail Vault (Book 2 p.220).
+const MailRatePerTon = 15_000 // Cr per ton
 
 // StandardDeliveryDays is the customary window local merchants have to deliver
 // accepted goods to a waiting ship (Book 2 p.210).

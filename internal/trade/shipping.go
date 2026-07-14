@@ -5,11 +5,9 @@ package trade
 // engine), and mail. Availability is rolled per world; the rates and broker
 // terms are fixed tables.
 
-// Per-jump revenue rates (Book 2 p.220 Merchant Ship Revenues).
-const (
-	FreightRatePerTon = 1_000  // Cr per ton of freight
-	MailRatePerTon    = 15_000 // Cr per ton of mail (ship must carry a Mail Vault)
-)
+// FreightRatePerTon is the per-jump freight rate (Book 2 p.220 Merchant Ship
+// Revenues); the mail rate lives with the other mail rules in contracts.go.
+const FreightRatePerTon = 1_000 // Cr per ton of freight
 
 // Passage is a class of passenger travel (Book 2 p.220).
 type Passage int
@@ -20,32 +18,45 @@ const (
 	Low
 )
 
-// baseFare is each passage class's Cr fare at neutral Passage Demand (Book 2
-// p.220 Merchant Ship Revenues).
-var baseFare = map[Passage]int{High: 10_000, Mid: 8_000, Low: 1_000}
-
-// PassageFare is the fare for one passenger of the class at the ship's Passage
-// Demand (Book 2 p.220 Premium Passage Pricing): High and Mid move Cr1,000 per
-// point of Demand, Low moves Cr100. Floored at zero.
-func PassageFare(class Passage, demand int) int {
-	step := 1_000
-	if class == Low {
-		step = 100
-	}
-	return max(baseFare[class]+demand*step, 0)
+// passageRate is each class's Cr fare at neutral Passage Demand and the Cr its
+// fare moves per point of Demand (Book 2 p.220 Merchant Ship Revenues and
+// Premium Passage Pricing).
+var passageRate = [...]struct{ fare, step int }{
+	High: {10_000, 1_000},
+	Mid:  {8_000, 1_000},
+	Low:  {1_000, 100},
 }
 
-// AvailablePassengers is the number of passengers of a class offering to board
-// on departure day (Book 2 p.220 C): Flux + the world population digit + the
-// attending skill's modifier (Steward for High, Admin for Mid, Streetwise for
-// Low), floored at zero.
+// Fare is the price of one passage of this class at the ship's Passage Demand
+// (Book 2 p.220 Premium Passage Pricing), floored at zero.
+func (c Passage) Fare(demand int) int {
+	rate := passageRate[c]
+	return max(rate.fare+demand*rate.step, 0)
+}
+
+// AttendingSkill names the skill whose modifier applies to this class's
+// availability roll (Book 2 p.220 C).
+func (c Passage) AttendingSkill() string {
+	switch c {
+	case High:
+		return "Steward"
+	case Mid:
+		return "Admin"
+	default:
+		return "Streetwise"
+	}
+}
+
+// AvailablePassengers is the number of passengers of a class offering to board on
+// departure day (Book 2 p.220 C): Flux + the world population digit + the
+// attending skill's modifier (see Passage.AttendingSkill), floored at zero.
 func AvailablePassengers(flux, populationDigit, skillMod int) int {
 	return max(flux+populationDigit+skillMod, 0)
 }
 
 // AvailableFreight is the tons of freight offered for shipment (Book 2 p.220 D):
 // (Flux + population digit + Liaison) times one more than the count of the
-// world's value trade classes, floored at zero. Pass valueTCs as len(ValueClasses(tcs)).
-func AvailableFreight(flux, populationDigit, valueTCs, liaison int) int {
-	return max(flux+populationDigit+liaison, 0) * (valueTCs + 1)
+// world's value trade classes, floored at zero.
+func AvailableFreight(flux, populationDigit, liaison int, worldTCs []string) int {
+	return max(flux+populationDigit+liaison, 0) * (len(ValueClasses(worldTCs)) + 1)
 }
