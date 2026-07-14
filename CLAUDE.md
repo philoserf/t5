@@ -150,6 +150,14 @@ Tooling (go, go-task, poppler's `pdftotext`) is pinned in `Brewfile`.
   distinct from an eHex value. `Ship.QSP()` renders the compact profile (`S-AL22`, the ship's
   UWP analog); golden-locked to the Murphy Scout and Beowulf. Costs are plain int Cr. Deferred:
   weapons/sensors/defenses, crew/accommodations, Quality, compartment layout.
+- `internal/trade/` — the Trade & Commerce pricing engine (Book 2 pp. 209-221). Speculative cargo
+  is bought at a source world for its `Cost` (Cr3,000 base + per-value-class cost mods + Cr100/TL)
+  and sold at a market world for a fraction/multiple of its `Price` (Cr5,000 base + source→market
+  match mods, scaled 10%/TL-difference), realized through the `ActualValue` table (Flux→40–400%,
+  with the capped Broker DM). Pure int-Cr, no dice in the value math; `CargoID` renders the p.221
+  identity (e.g. `8-De Hi In Na Po Cr1,800`). Golden-locked to the Free Trader Beowulf journey.
+  Deferred: Random Trade Goods detail tables, passenger/freight availability + rates, Trader
+  estimation.
 - `internal/sectorgen/` + `internal/survey/` + `internal/route/` — interstellar mapping (Book 3
   pp. 12-15, 21, 27-28): the 32×40/8×10 hex grid with CCRR/A-P coordinates, `Hex.Distance` (parsec
   jump distance via even-q offset→cube), and density system-presence rolls. `survey.Sector`/

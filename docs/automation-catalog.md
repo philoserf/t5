@@ -19,8 +19,9 @@ multi-star orbit map placing every world/GG/belt round-robin across all hosting 
 port facilities/fuel) · `chargen` (six-characteristic UPP + Check Characteristic + the 13
 careers) · `task` (Difficulty/UTF resolve) · `calendar` · `rangeband` (world/space range ladder) ·
 `senses` · `personals` · `combat` (the play tier, core mechanics) · `sectorgen` (hex map +
-system presence) · `survey` (detailed sector → full systems + capitals) · `shipgen` (ACS ship
-design: hull/drives/Drive-Potential/fuel/armor + QSP).
+system presence) · `survey` (detailed sector → full systems + capitals + trade routes) ·
+`route` (trade-route graph) · `shipgen` (ACS ship design: hull/drives/fuel/armor + QSP) ·
+`trade` (the p.221 Cargo ID / Cost / Price / Actual Value pricing engine).
 
 ## Status legend
 
@@ -217,11 +218,15 @@ mods. Golden-locked to the p.184 example. **Not built:** the full Strategy×Tact
 matrix (which tactics apply per strategy and their ×2/×3 multipliers — dense p.183 grid), the
 quick-NPC generator, and the Violence-fail→combat hook.
 
-**21. Trade & commerce** — _B2 pp. 204–221_ · new `trade` package · **M–L**
-Cargo IDs, random trade goods (two 1D rolls into ~19 TC-keyed columns with imbalance recursion),
-passenger/freight availability (Flux + Pop + skill/TC DMs), premium pricing, broker hire, and
-the buy/sell Actual-Value loop (Flux → 40–400% with capped broker/trader DMs). Consumes worldgen
-TCs/TL + chargen skills; the multi-page goods tables are the transcription load.
+**21. Trade & commerce** — _B2 pp. 204–221_ · new `trade` package · **M–L** · 🟡 **core done**
+Built (`internal/trade`): the p.221 pricing engine — the Cargo ID, source-world `Cost`
+(Cr3,000 base + per-value-class cost mods + Cr100/TL), market-world `Price` (Cr5,000 base +
+source→market match mods, ×10%/TL-difference effect), and the `ActualValue` table (Flux→40–400%
+of Price with the capped Broker DM). Golden-locked end-to-end to the Free Trader Beowulf worked
+journey (Cost/CargoID/Price/SellingPrice incl. the Broker-4 sale). **Deferred:** the Random Trade
+Goods detail tables (specific good names, the ~19 TC-keyed 1D columns + imbalance recursion),
+passenger/freight availability (Flux + Pop + skill/TC DMs) and rates, the Trader estimation
+mechanic, and premium/accelerated-delivery surcharges.
 
 **22. Starship combat** — _B2 pp. 193–204_ · new `shipcombat` package · **M–L**
 Agility-ordered rounds, the space-weapon / missile / defensive-fire tasks, Flux hit-location on
