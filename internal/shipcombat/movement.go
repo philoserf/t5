@@ -18,18 +18,18 @@ func RammingHits(rammerCompartments int) int {
 }
 
 // rangeChangeRounds is the number of Combat Rounds to change between a Space
-// Range band and the adjacent inner band at 1G..7+G (Book 2 p.200), for the
-// tactical bands 1-8 where transit is measured in rounds. Columns are 1G..6G then
-// a shared 7G/8G/9G column. Bands 9-12 transit in hours or days.
-var rangeChangeRounds = map[int][7]int{
-	8: {18, 12, 10, 9, 8, 7, 6},
-	7: {15, 11, 9, 8, 7, 6, 5},
-	6: {5, 4, 3, 2, 2, 2, 2},
-	5: {2, 1, 1, 1, 1, 1, 1},
-	4: {1, 1, 1, 1, 1, 1, 1},
-	3: {1, 1, 1, 1, 1, 1, 1},
-	2: {1, 1, 1, 1, 1, 1, 1},
+// Range band and the adjacent inner band at 1G..7+G (Book 2 p.200), indexed by
+// band (1-8, the tactical bands where transit is measured in rounds). Columns are
+// 1G..6G then a shared 7G/8G/9G column. Bands 9-12 transit in hours or days.
+var rangeChangeRounds = [9][7]int{
 	1: {1, 1, 1, 1, 1, 1, 1},
+	2: {1, 1, 1, 1, 1, 1, 1},
+	3: {1, 1, 1, 1, 1, 1, 1},
+	4: {1, 1, 1, 1, 1, 1, 1},
+	5: {2, 1, 1, 1, 1, 1, 1},
+	6: {5, 4, 3, 2, 2, 2, 2},
+	7: {15, 11, 9, 8, 7, 6, 5},
+	8: {18, 12, 10, 9, 8, 7, 6},
 }
 
 // RangeChangeRounds returns the Combat Rounds to change between the given Space
@@ -37,11 +37,10 @@ var rangeChangeRounds = map[int][7]int{
 // whether that transit is within tactical (round-measured) range. Bands 9-12
 // transit in hours or days (tactical false); band 0 is the target.
 func RangeChangeRounds(band, gs int) (rounds int, tactical bool) {
-	row, ok := rangeChangeRounds[band]
-	if !ok {
+	if band < 1 || band > 8 {
 		return 0, false
 	}
-	return row[gsColumn(gs)], true
+	return rangeChangeRounds[band][gsColumn(gs)], true
 }
 
 // gsColumn maps a thrust in Gs to its column: 1G..6G are their own columns and

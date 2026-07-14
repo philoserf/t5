@@ -68,8 +68,8 @@ func ResolveSpaceWeapon(r *dice.Roller, rangeBands, weaponTL, csk, mods int) dic
 	return task.ResolveDice(r, SpaceWeaponDice(rangeBands, weaponTL), SpaceWeaponTarget(weaponTL, csk, mods))
 }
 
-// Guidance is a missile's guidance option (Book 2 p.197); GuidanceValue turns it
-// into the value it adds to the Missile Attack Task target.
+// Guidance is a missile's guidance option (Book 2 p.197); Value turns it into the
+// value it adds to the Missile Attack Task target.
 type Guidance int
 
 const (
@@ -79,10 +79,10 @@ const (
 	DownLoad                       // = gunner C+S+K
 )
 
-// GuidanceValue is a guidance option's contribution to the Missile Attack target
-// (Book 2 p.197): UnGuided 0, HardWired 5, Operator-Guided and DownLoad the
-// gunner's C+S+K.
-func GuidanceValue(g Guidance, gunnerCSK int) int {
+// Value is a guidance option's contribution to the Missile Attack target (Book 2
+// p.197): UnGuided 0, HardWired 5, Operator-Guided and DownLoad the gunner's
+// C+S+K.
+func (g Guidance) Value(gunnerCSK int) int {
 	switch g {
 	case HardWired:
 		return 5
