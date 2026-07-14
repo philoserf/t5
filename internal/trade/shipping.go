@@ -28,8 +28,12 @@ var passageRate = [...]struct{ fare, step int }{
 }
 
 // Fare is the price of one passage of this class at the ship's Passage Demand
-// (Book 2 p.220 Premium Passage Pricing), floored at zero.
+// (Book 2 p.220 Premium Passage Pricing), floored at zero. An out-of-range class
+// has no fare.
 func (c Passage) Fare(demand int) int {
+	if c < High || int(c) >= len(passageRate) {
+		return 0
+	}
 	rate := passageRate[c]
 	return max(rate.fare+demand*rate.step, 0)
 }

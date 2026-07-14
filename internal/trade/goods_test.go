@@ -36,20 +36,54 @@ func TestTradeGoodString(t *testing.T) {
 
 func TestTradeGoodsDetail(t *testing.T) {
 	cases := []struct {
-		tcs      []string
-		sourceTC string
-		want     string
+		tcs           []string
+		sourceTC, col string
+		want          string
 	}{
-		{[]string{"Fl", "He", "Hi"}, "Fl", "Strange"}, // He is first labeled non-source
-		{[]string{"Ri"}, "Ri", ""},                    // the only class chose the column
-		{[]string{"Hi", "In"}, "Xx", ""},              // Hi's Processed omitted on Industrial
-		{[]string{"Hi"}, "Xx", "Processed"},           // non-Industrial keeps Processed
-		{[]string{"Va", "As"}, "Xx", "Strange"},       // Va's Exotic omitted on Asteroid, As -> Strange
+		{[]string{"Fl", "He", "Hi"}, "Fl", "Fl", "Strange"}, // He precedes Hi in chart order
+		{[]string{"Ri"}, "Ri", "Ri", ""},                    // the only class chose the column
+		{[]string{"Hi"}, "Xx", "Fl", "Processed"},           // goods not from the In column
+		{[]string{"Hi"}, "Xx", "In", ""},                    // Hi's Processed omitted for In-column goods
+		{[]string{"Va"}, "Xx", "Ic", "Exotic"},              // goods not from the As column
+		{[]string{"Va"}, "Xx", "As", ""},                    // Va's Exotic omitted for As-column goods
 	}
 	for _, c := range cases {
-		if got := tradeGoodsDetail(c.tcs, c.sourceTC); got != c.want {
-			t.Errorf("tradeGoodsDetail(%v, %q) = %q, want %q", c.tcs, c.sourceTC, got, c.want)
+		if got := tradeGoodsDetail(c.tcs, c.sourceTC, c.col); got != c.want {
+			t.Errorf("tradeGoodsDetail(%v, %q, col %q) = %q, want %q", c.tcs, c.sourceTC, c.col, got, c.want)
 		}
+	}
+}
+
+// TestTradeGoodsDetailOrderIndependent locks the fix for a prefix that used to
+// depend on how the caller happened to order a world's trade codes.
+func TestTradeGoodsDetailOrderIndependent(t *testing.T) {
+	a := tradeGoodsDetail([]string{"Ri", "Ic", "As"}, "In", "In")
+	b := tradeGoodsDetail([]string{"As", "Ic", "Ri"}, "In", "In")
+	if a != b {
+		t.Errorf("same world, different code order gave %q vs %q", a, b)
+	}
+	if a != "Strange" { // As is first in the p.219 chart order
+		t.Errorf("detail = %q, want Strange (first in chart order)", a)
+	}
+}
+
+// TestImbalanceNeverLeaksTradeCode guards the redirect chain: however many
+// Imbalance hops it takes, the good's Name must be a real good, never a trade
+// class. Rolling block 6 (Imbalances) forever would previously leak "Ic" as a
+// cargo name.
+func TestImbalanceNeverLeaksTradeCode(t *testing.T) {
+	// A scripted roller that always rolls 6: block 6 is Imbalances in every column
+	// that has one, so this is the pathological all-redirects case.
+	sixes := make([]int, 200)
+	for i := range sixes {
+		sixes[i] = 6
+	}
+	g := RandomTradeGoods(dice.NewScripted(sixes...), []string{"Ga"})
+	if g.Type == imbalancesBlock {
+		t.Fatalf("good escaped as an Imbalances entry: %+v", g)
+	}
+	if goodsColumnEligible[g.Name] {
+		t.Errorf("good's Name %q is a trade class, not a good", g.Name)
 	}
 }
 

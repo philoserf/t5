@@ -90,6 +90,33 @@ func TestActualValueRangeAndClamp(t *testing.T) {
 	}
 }
 
+// TestImbalanceBonus locks the Book 2 p.211 rule: Imbalance goods sold into a
+// market carrying the class whose oversupply produced them earn +Cr1,000.
+func TestImbalanceBonus(t *testing.T) {
+	knorbes := TradeGood{Name: "Pelts", Type: "Rares", Imbalance: "Na"}
+	if got := ImbalanceBonus(knorbes, []string{"Na", "Ri"}); got != 1_000 {
+		t.Errorf("ImbalanceBonus into an Na market = %d, want 1000", got)
+	}
+	if got := ImbalanceBonus(knorbes, []string{"Ag", "Ri"}); got != 0 {
+		t.Errorf("ImbalanceBonus into a non-Na market = %d, want 0", got)
+	}
+	// Ordinary (non-Imbalance) goods never earn the bonus.
+	if got := ImbalanceBonus(TradeGood{Name: "Antibiotics"}, []string{"Na"}); got != 0 {
+		t.Errorf("ordinary goods earned an imbalance bonus: %d", got)
+	}
+}
+
+// TestCargoIDNoValueClasses guards against the dangling separator a world with no
+// value trade class used to produce ("8- Cr3,800").
+func TestCargoIDNoValueClasses(t *testing.T) {
+	if got := CargoID(8, []string{"Wa", "An"}, "Im"); got != "8 Cr3,800" {
+		t.Errorf("CargoID(no value classes) = %q, want %q", got, "8 Cr3,800")
+	}
+	if got := CargoID(8, nil, "Im"); got != "8 Cr3,800" {
+		t.Errorf("CargoID(nil) = %q, want %q", got, "8 Cr3,800")
+	}
+}
+
 func TestCargoIDAllegiance(t *testing.T) {
 	// A non-Imperial source appends its allegiance; Imperial and empty do not.
 	if got := CargoID(13, []string{"Hi"}, "Zh"); got != "D-Hi Cr3,300 Zh" {

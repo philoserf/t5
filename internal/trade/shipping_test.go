@@ -50,6 +50,17 @@ func TestAvailableFreight(t *testing.T) {
 	}
 }
 
+// TestPassageFareOutOfRange guards the bounds check: an out-of-range Passage must
+// return zero, not panic on an array index.
+func TestPassageFareOutOfRange(t *testing.T) {
+	if got := Passage(3).Fare(0); got != 0 {
+		t.Errorf("Passage(3).Fare(0) = %d, want 0", got)
+	}
+	if got := Passage(-1).Fare(0); got != 0 {
+		t.Errorf("Passage(-1).Fare(0) = %d, want 0", got)
+	}
+}
+
 func TestPassageAttendingSkill(t *testing.T) {
 	cases := map[Passage]string{High: "Steward", Mid: "Admin", Low: "Streetwise"}
 	for class, want := range cases {
