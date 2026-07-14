@@ -178,20 +178,24 @@ func TestClampGasGiants(t *testing.T) {
 	}
 }
 
-func TestGenerateWithGasGiants(t *testing.T) {
-	// The coarse map symbol governs the generated count across seeds: present
-	// yields at least one gas giant, absent yields none.
+func TestGenerateForMap(t *testing.T) {
+	// The coarse map symbols govern generation across seeds: a gas-giant symbol
+	// forces at least one (its absence none), and an asteroid symbol forces a
+	// Size-0 belt mainworld.
 	for seed := uint64(1); seed <= 25; seed++ {
-		if s := GenerateWithGasGiants(dice.NewWithSeed(seed), true); s.GasGiants < 1 {
+		if s := GenerateForMap(dice.NewWithSeed(seed), true, false); s.GasGiants < 1 {
 			t.Errorf("seed %d: gas giant present but count = %d", seed, s.GasGiants)
 		}
-		if s := GenerateWithGasGiants(dice.NewWithSeed(seed), false); s.GasGiants != 0 {
+		if s := GenerateForMap(dice.NewWithSeed(seed), false, false); s.GasGiants != 0 {
 			t.Errorf("seed %d: no gas giant but count = %d", seed, s.GasGiants)
+		}
+		if s := GenerateForMap(dice.NewWithSeed(seed), false, true); s.Mainworld.Profile.Size != 0 {
+			t.Errorf("seed %d: asteroid symbol but mainworld size = %d", seed, s.Mainworld.Profile.Size)
 		}
 	}
 	// The unconstrained Generate is unchanged: same seed, same gas-giant count as
 	// the internal any-constraint path.
-	if a, b := Generate(dice.NewWithSeed(9)).GasGiants, generate(dice.NewWithSeed(9), ggAny).GasGiants; a != b {
+	if a, b := Generate(dice.NewWithSeed(9)).GasGiants, generate(dice.NewWithSeed(9), ggAny, false).GasGiants; a != b {
 		t.Errorf("Generate diverged from ggAny: %d vs %d", a, b)
 	}
 }

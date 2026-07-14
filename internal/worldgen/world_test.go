@@ -1,10 +1,31 @@
 package worldgen
 
 import (
+	"slices"
 	"testing"
 
 	"github.com/philoserf/t5/internal/dice"
 )
+
+func TestGenerateBeltWorld(t *testing.T) {
+	// An asteroid-belt mainworld is Size 0 (so Atmosphere and Hydrographics are
+	// 0 too) and carries the As trade code.
+	w := GenerateBeltWorld(dice.NewWithSeed(3), 0, 0, false)
+	if w.Profile.Size != 0 || w.Profile.Atmosphere != 0 || w.Profile.Hydrographics != 0 {
+		t.Errorf("belt world = %s, want Size/Atm/Hyd 0", w.Profile)
+	}
+	if !slices.Contains(w.TradeCodes, "As") {
+		t.Errorf("belt world lacks the As trade code: %v", w.TradeCodes)
+	}
+	// The belt path consumes the same dice as a normal world (size is rolled then
+	// superseded), so a following roll lands identically for both.
+	rb, rn := dice.NewWithSeed(3), dice.NewWithSeed(3)
+	GenerateBeltWorld(rb, 0, 0, false)
+	GenerateWorld(rn, 0, 0, false)
+	if rb.Die() != rn.Die() {
+		t.Errorf("belt and normal generation consumed different dice counts")
+	}
+}
 
 func TestSecondSurveyRegina(t *testing.T) {
 	w := World{

@@ -64,22 +64,23 @@ type System struct {
 // Generate rolls a complete unconstrained system: the gas-giant and belt counts,
 // the mainworld built from them, then the stars, the world count, and the orbits.
 func Generate(r *dice.Roller) System {
-	return generate(r, ggAny)
+	return generate(r, ggAny, false)
 }
 
-// GenerateWithGasGiants rolls a system whose gas-giant presence is fixed by a
-// coarse sector-map survey of the hex (Book 3 p.13): a map gas-giant symbol
-// forces at least one gas giant, its absence forces none. The presence roll is
-// still made (and superseded) so the dice stream stays aligned with Generate.
-func GenerateWithGasGiants(r *dice.Roller, present bool) System {
+// GenerateForMap rolls a system whose gas-giant presence and asteroid-belt
+// mainworld are fixed by a coarse sector-map survey of the hex (Book 3 p.13): a
+// gas-giant symbol forces at least one gas giant (its absence none), and an
+// asteroid symbol forces an asteroid-belt mainworld. The presence and size rolls
+// are still made and superseded, so the dice stream stays aligned with Generate.
+func GenerateForMap(r *dice.Roller, gasGiant, asteroidMainworld bool) System {
 	gg := ggAbsent
-	if present {
+	if gasGiant {
 		gg = ggPresent
 	}
-	return generate(r, gg)
+	return generate(r, gg, asteroidMainworld)
 }
 
-func generate(r *dice.Roller, gg ggConstraint) System {
+func generate(r *dice.Roller, gg ggConstraint, asteroidMainworld bool) System {
 	var s System
 	// Gas giants and belts are needed to detail the mainworld (the Economic
 	// Extension and the PBG use them), so roll them before the mainworld.
@@ -87,7 +88,11 @@ func generate(r *dice.Roller, gg ggConstraint) System {
 	s.Giants = rollGasGiants(r, s.GasGiants)
 	s.Belts = belts(r)
 	// Capital status needs region context (sectorgen), so default to false.
-	s.Mainworld = worldgen.GenerateWorld(r, s.GasGiants, s.Belts, false)
+	if asteroidMainworld {
+		s.Mainworld = worldgen.GenerateBeltWorld(r, s.GasGiants, s.Belts, false)
+	} else {
+		s.Mainworld = worldgen.GenerateWorld(r, s.GasGiants, s.Belts, false)
+	}
 
 	var primaryType, primarySize int
 	s.Primary, primaryType, primarySize = rollStar(r, true, 0, 0)

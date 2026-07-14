@@ -154,8 +154,8 @@ Tooling (go, go-task, poppler's `pdftotext`) is pinned in `Brewfile`.
   pp. 12-15, 21, 27-28): the 32×40/8×10 hex grid with CCRR/A-P coordinates, `Hex.Distance` (parsec
   jump distance via even-q offset→cube), and density system-presence rolls. `survey.Sector`/
   `survey.Subsector` compose it with `systemgen` into detailed Second Survey records — the coarse
-  map gas-giant flag constrains generation (`systemgen.GenerateWithGasGiants`: present→≥1, absent→0)
-  so preview and detail agree; `Sector` also
+  map flags constrain generation (`systemgen.GenerateForMap`: gas-giant symbol→≥1 giants / none→0,
+  asteroid symbol→Size-0 belt mainworld) so preview and detail agree; `Sector` also
   marks subsector (Cs) and sector (Cx) capitals, lays **trade routes** (`route.Build` — a pure,
   dice-free graph linking Ix≥4 worlds within J-4, bridging distant ones through intermediate worlds),
   and sites Scout Way Stations (~1/50 pc of route, bumping Ix). `cmd/sectorgen -sector` renders it.
