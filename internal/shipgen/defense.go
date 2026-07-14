@@ -131,8 +131,12 @@ var defenseMountData = [...]struct {
 	Main:           {200, 1, 20_000_000},
 }
 
-// A DefenseSpec is a defense installation as the designer chooses it. The zero
-// value is a Standard-stage Nuclear Damper in a Bolt-In at Vdistant.
+// A DefenseSpec is a defense installation as the designer chooses it.
+//
+// Its zero value is NOT a usable default: Mount's zero is a Single Turret and
+// Range's is Boarding, a Space range no screen reaches. Build one with
+// DefaultDefense, which gives the Bolt-In at Vdistant that the book lists every
+// defense in.
 //
 // Weapon names a weapon serving in the Defensive Fire mode instead of a screen
 // (Book 2 p.186) — a laser shooting down incoming rounds rather than shooting at
@@ -171,6 +175,7 @@ type device struct {
 	name      string
 	tl, cost  int
 	principle Principle
+	scale     Scale
 }
 
 // DesignDefense computes a defense installation from its spec (Book 2 pp.174,
@@ -192,12 +197,25 @@ func DesignDefense(spec DefenseSpec) Defense {
 	m := defenseMountData[spec.Mount]
 	rng := rangeData[spec.Range]
 
-	if !rng.defenseOK {
+	// A device reaches on one ladder or the other, exactly as a weapon does. Without
+	// this a screen could be built for a Space range and would print an R= band from
+	// the wrong ladder entirely.
+	if !dev.scale.reaches(rng.scale) {
+		problems = append(problems, fmt.Sprintf("%s is a %s device and cannot be built for %s",
+			dev.name, scaleName(dev.scale), rng.name))
+	} else if !rng.defenseOK {
 		problems = append(problems, fmt.Sprintf("a defense cannot be built for %s (Vdistant is the furthest)", rng.name))
 	}
-	// A weapon standing in as a defense still needs a mount big enough to hold it.
 	if spec.Weapon != nil {
-		if w := weaponData[*spec.Weapon]; spec.Mount < w.minMount {
+		w := weaponData[*spec.Weapon]
+		// A weapon needs to see out of the hull to shoot, defending or not — so it
+		// cannot take the Bolt-In, whatever its ordinal says. Comparing mounts with
+		// "<" alone would never catch this: BoltIn sorts above every real mount.
+		if !mountData[spec.Mount].weaponOK {
+			problems = append(problems, fmt.Sprintf("%s cannot be installed in a %s",
+				w.name, mountName(spec.Mount)))
+		} else if spec.Mount < w.minMount {
+			// And it still needs a mount big enough to hold it.
 			problems = append(problems, fmt.Sprintf("%s needs at least a %s",
 				w.name, mountName(w.minMount)))
 		}
@@ -236,13 +254,20 @@ func defenseDevice(spec DefenseSpec) (device, []string) {
 			return device{}, []string{"unknown weapon"}
 		}
 		w := weaponData[*spec.Weapon]
-		return device{w.name, w.tl, w.cost, w.principle}, nil
+		dev := device{w.name, w.tl, w.cost, w.principle, w.scale}
+		// Only nine weapons may be allocated to Defensive Fire (Book 2 p.174). A
+		// Meson Gun is not point defence.
+		if !w.defenseOK {
+			return dev, []string{fmt.Sprintf("a %s cannot serve as a defense", w.name)}
+		}
+		return dev, nil
 	}
 	if !validDefense(spec.Model) {
 		return device{}, []string{"unknown defense"}
 	}
 	d := defenseData[spec.Model]
-	return device{d.name, d.tl, d.cost, d.principle}, nil
+	// Every screen is a world-range device standing at R=7 (Book 2 p.174 Table A).
+	return device{d.name, d.tl, d.cost, d.principle, WorldScale}, nil
 }
 
 // Name is the defense's name with its installed tech level, e.g. "Black Globe-16".

@@ -33,7 +33,13 @@ const firmPointsPerBlock = 3
 // any other split, and more are never required.
 func mountPoints(h Hull, weapons []Weapon, defenses []Defense) string {
 	hard, firm := 0, 0
-	count := func(t Tonnage) {
+	// A component that failed to design occupies no mount. Counting it would invent
+	// a mount shortfall on top of the real problem that stopped it being built — two
+	// complaints for one mistake, one of them false.
+	count := func(t Tonnage, problems []string) {
+		if len(problems) > 0 || t == 0 {
+			return
+		}
 		if t.SubTon() {
 			firm++
 		} else {
@@ -41,13 +47,13 @@ func mountPoints(h Hull, weapons []Weapon, defenses []Defense) string {
 		}
 	}
 	for _, w := range weapons {
-		count(w.Tons)
+		count(w.Tons, w.Problems)
 	}
 	for _, d := range defenses {
 		if d.Spec.Mount == BoltIn {
 			continue // needs no mount point at all
 		}
-		count(d.Tons)
+		count(d.Tons, d.Problems)
 	}
 	if hard == 0 && firm == 0 {
 		return ""

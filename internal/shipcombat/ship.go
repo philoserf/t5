@@ -77,15 +77,18 @@ func Defend(r *dice.Roller, d shipgen.Defense, attackTL int) dice.CheckResult {
 // ArmorLayers is a designed ship's armor as Penetrate wants it: one Armor Value
 // per layer (Book 2 p.86). Damage grinds through the layers in turn, so the shape
 // matters — four layers of AV-6 are not one layer of AV-24.
+//
+// Armor.AV is already the per-layer value: "identical layers are not summed on the
+// record" (shipgen/fuelarmor.go). Dividing it by the layer count — which this once
+// did — armored every multi-layer ship at a fraction of its real protection, and
+// the more layers it bought the thinner each one became.
 func ArmorLayers(s shipgen.Ship) []int {
 	if s.Armor.Layers <= 0 {
 		return nil
 	}
-	// The ship's AV is the whole stack; each layer stands for its share of it.
-	per := s.Armor.AV / s.Armor.Layers
 	layers := make([]int, s.Armor.Layers)
 	for i := range layers {
-		layers[i] = per
+		layers[i] = s.Armor.AV
 	}
 	return layers
 }
@@ -101,9 +104,14 @@ func Card(s shipgen.Ship) (HullLocation, bool) {
 // ShipAgility is how much of a designed ship's thrust is left for dodging (Book 2
 // p.200): its maneuver drive's rating, less the Gs it is spending on going
 // somewhere.
+//
+// The thrust is capped by the hull's configuration, not just by the drive: a
+// Cluster hull is rated for 1G however large a drive is bolted to it (Book 2 p.71).
+// Design reports a drive that outruns its hull as a Problem; here we fly the ship
+// the hull can actually fly.
 func ShipAgility(s shipgen.Ship, usedGs int) int {
 	if s.Maneuver == nil {
 		return 0
 	}
-	return Agility(s.Maneuver.Potential, usedGs)
+	return Agility(min(s.Maneuver.Potential, s.Hull.MaxG), usedGs)
 }

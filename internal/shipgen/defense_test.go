@@ -162,3 +162,64 @@ func TestDefenseProblems(t *testing.T) {
 		t.Errorf("an unknown weapon-as-defense should be reported")
 	}
 }
+
+// TestDefenseScale: a defense reaches on the world ladder. Without a scale check a
+// screen could be built for a Space range and would print an R= band from the wrong
+// ladder — "R=12" for a Black Globe at Deep Space, a reach the book says no defense
+// has.
+func TestDefenseScale(t *testing.T) {
+	for _, r := range []Range{Boarding, FighterRange, ShortRange, AttackRange, LongRange, DeepSpace} {
+		d := DesignDefense(DefenseSpec{Model: BlackGlobe, Mount: BoltIn, Range: r})
+		if len(d.Problems) == 0 {
+			t.Errorf("a screen built for the space range %s should be reported", rangeData[r].name)
+		}
+	}
+}
+
+// TestDefenseSpecZeroValue: the zero value is not a usable default — Mount's zero is
+// a Single Turret and Range's is Boarding, a space range. DefaultDefense is the way
+// to get the Bolt-In at Vdistant the book lists every defense in.
+func TestDefenseSpecZeroValue(t *testing.T) {
+	if d := DesignDefense(DefenseSpec{}); len(d.Problems) == 0 {
+		t.Errorf("the zero DefenseSpec is a Boarding-range turret and should be reported, got %s", d.LongName())
+	}
+	if d := DesignDefense(DefaultDefense(NuclearDamper)); len(d.Problems) > 0 {
+		t.Errorf("DefaultDefense should be clean, got %v", d.Problems)
+	}
+}
+
+// TestOnlyNineWeaponsDefend: Book 2 p.174 lists exactly nine weapons under "Weapons
+// As Defenses". A Meson Gun is not point defence.
+func TestOnlyNineWeaponsDefend(t *testing.T) {
+	defenders := 0
+	for id := range WeaponID(len(weaponData)) {
+		d := DesignWeaponAsDefense(DefaultWeapon(id))
+		if len(d.Problems) == 0 {
+			defenders++
+		}
+	}
+	if defenders != 9 {
+		t.Errorf("%d weapons can serve as defenses, want the book's 9", defenders)
+	}
+	for _, id := range []WeaponID{MesonGun, KKMissile, Stasis} {
+		if d := DesignWeaponAsDefense(DefaultWeapon(id)); len(d.Problems) == 0 {
+			t.Errorf("a %s should not serve as a defense", weaponData[id].name)
+		}
+	}
+}
+
+// TestNoWeaponBoltsInAsADefense: a weapon has to see out of the hull to shoot,
+// defending or not. Comparing mounts with "<" alone never caught this — BoltIn sorts
+// ABOVE every real mount, so the minimum-mount check passed every weapon, and a
+// Meson Gun could be bolted inside the hull as point defence, consuming no mount
+// point at all.
+func TestNoWeaponBoltsInAsADefense(t *testing.T) {
+	for _, id := range []WeaponID{BeamLaser, MesonGun, PlasmaGun} {
+		spec := DefaultWeapon(id)
+		spec.Mount = BoltIn
+		if d := DesignWeaponAsDefense(spec); len(d.Problems) == 0 {
+			t.Errorf("a %s cannot be bolted inside the hull, got a clean %s",
+				weaponData[id].name, d.LongName())
+		}
+	}
+}

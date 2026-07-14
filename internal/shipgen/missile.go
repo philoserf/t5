@@ -103,23 +103,6 @@ func (g Guidance) Available(size, launcherTL int) bool {
 	return size >= d.minSize && launcherTL >= d.minTL
 }
 
-// Value is the guidance system's contribution to the MissileLauncher Attack Task's target
-// number (Book 2 p.157). An operator-guided or downloaded missile is only as good
-// as the gunner flying it; a self-aware one rolls its own mind at launch, so its
-// value is supplied rather than fixed.
-func (g Guidance) Value(gunnerCSK, selfAwareCSK int) int {
-	switch g {
-	case HardWired:
-		return 5
-	case OperatorGuided, DownLoaded:
-		return gunnerCSK
-	case SelfAware:
-		return selfAwareCSK
-	default: // UnGuided
-		return 0
-	}
-}
-
 // missileRow is one row of the MISSILES table (Book 2 p.170): a launcher throwing
 // a missile of a given size, with the guidance systems and warheads that
 // combination allows. A launcher may appear more than once — the MissileLauncher launcher
