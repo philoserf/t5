@@ -61,13 +61,29 @@ type System struct {
 	MainworldSatellite MainworldSatellite // whether the mainworld is a moon of a gas giant
 }
 
-// Generate rolls a complete system: the gas-giant and belt counts, the
-// mainworld built from them, then the stars, the world count, and the orbits.
+// Generate rolls a complete unconstrained system: the gas-giant and belt counts,
+// the mainworld built from them, then the stars, the world count, and the orbits.
 func Generate(r *dice.Roller) System {
+	return generate(r, ggAny)
+}
+
+// GenerateWithGasGiants rolls a system whose gas-giant presence is fixed by a
+// coarse sector-map survey of the hex (Book 3 p.13): a map gas-giant symbol
+// forces at least one gas giant, its absence forces none. The presence roll is
+// still made (and superseded) so the dice stream stays aligned with Generate.
+func GenerateWithGasGiants(r *dice.Roller, present bool) System {
+	gg := ggAbsent
+	if present {
+		gg = ggPresent
+	}
+	return generate(r, gg)
+}
+
+func generate(r *dice.Roller, gg ggConstraint) System {
 	var s System
 	// Gas giants and belts are needed to detail the mainworld (the Economic
 	// Extension and the PBG use them), so roll them before the mainworld.
-	s.GasGiants = gasGiants(r)
+	s.GasGiants = clampGasGiants(gasGiants(r), gg)
 	s.Giants = rollGasGiants(r, s.GasGiants)
 	s.Belts = belts(r)
 	// Capital status needs region context (sectorgen), so default to false.
@@ -138,6 +154,29 @@ func farOrbit(r *dice.Roller) int   { return 11 + r.Die() }
 // gasGiants is 2D/2-2, dropping the fraction and flooring at zero (range 0-4).
 func gasGiants(r *dice.Roller) int {
 	return max(r.Dice(2)/2-2, 0)
+}
+
+// ggConstraint fixes a system's gas-giant presence to a coarse sector-map symbol
+// (Book 3 p.13). ggAny leaves the rolled count as is.
+type ggConstraint int
+
+const (
+	ggAny ggConstraint = iota
+	ggPresent
+	ggAbsent
+)
+
+// clampGasGiants applies a gas-giant map constraint to a rolled count: a map
+// symbol forces at least one gas giant, its absence forces none (Book 3 p.13).
+func clampGasGiants(rolled int, gg ggConstraint) int {
+	switch gg {
+	case ggPresent:
+		return max(rolled, 1)
+	case ggAbsent:
+		return 0
+	default:
+		return rolled
+	}
 }
 
 // belts is 1D-3, floored at zero (range 0-3).
