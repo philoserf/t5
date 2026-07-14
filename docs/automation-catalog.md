@@ -42,9 +42,13 @@ they unblock whole tiers below them. Within each tier, items are ordered by that
 
 ## Critical path (build order at a glance)
 
-The worldgen/systemgen/chargen census is **done**: trade classifications, PBG, Ix/Ex/Cx,
-the world census line, port facilities, chargen's 13 careers, and the full multi-star system
-map all ship. The shared play primitives are now in place too — the **RangeBand ladder** (#9)
+The worldgen/systemgen/chargen census is **done and audited against the book page by page**:
+every UWP- and orbit-determinable trade classification (including the Da/Pz/Fo zone codes, the
+Ho/Co climate pair, and satellite codes on every moon), PBG, Ix/Ex/Cx, bases (with Naval Depots),
+the complete port-facilities picture (exotic fuels, local fuel, beltports), the world census line,
+chargen's 13 careers, and the full multi-star system map all ship. The audit corrected real bugs —
+swapped capital codes, a collapsing survey column — and two docs that described working code as
+broken. The shared play primitives are now in place too — the **RangeBand ladder** (#9)
 and the Difficulty/UTF task layer (#10) — so the play side (senses, personals, combat) is
 unblocked. **Starship design (#16) is done**, armament and all, and `shipcombat` (#22) consumes it:
 a generated ship can be flown into a fight. The largest open pieces are now `Sophont creation`
@@ -110,30 +114,33 @@ Watch the book's Heterogeneity-vs-Homogeneity naming slip and the Strangeness = 
 (chart) vs "2D−2" (example) discrepancy — trust the chart.
 
 **6. Bases · Nobility · Travel Zones · Native Status · Allegiance** — _B3 pp. 19, 24, 28
-(Chart F/G)_ · extends worldgen · **S each** · 🟡 **partial**
-A cluster of small per-world attributes. **Bases** (2D vs starport-class thresholds), **Nobility**
-(trade-class/Ix → noble-code string, golden-locked to Regina's `BcCeF`), and **Native Status**
-(Pop×Atm×TL → status label, all twelve rows) are done and audit-clean. **Travel Zone** computes
-G/A/R correctly — but from **Gov+Law alone**; population plays no part in it (an earlier version of
-this entry said otherwise). **Allegiance** is referee-imposed per B3 p.23's own checklist, so the
-generators take it as a parameter and default to `Im`; that is a passthrough, not a table.
+(Chart F/G)_ · extends worldgen · **S each** · ✅ **done**
+A cluster of small per-world attributes. **Bases** (2D vs starport-class thresholds, plus the
+region-scoped Naval **Depot** — 1 per 1000 worlds, sited in `survey` like a Way Station);
+**Nobility** (trade-class/Ix → noble-code string, golden-locked to Regina's `BcCeF`); **Native
+Status** (Pop×Atm×TL → status label, all twelve rows — an inhabited world is assumed TL 1+ per
+Chart F); **Travel Zone** (G/A/R from Gov+Law and starport — *population plays no part*, contrary to
+this entry's earlier wording, but it does drive the Da/Pz split, item 1); and **Allegiance**, which
+is referee-imposed per B3 p.23's checklist and so is a validated code (`Allegiance`,
+`ParseAllegiance`) defaulting to Imperial — a typed passthrough, not a table roll.
 
-_Remaining:_ the **Da/Pz** zone labels (derivable from Zone + Pop, B3 p.19 — see item 1), **Fo**
-(the Red-Zone code), Naval **Depots**, and Chart F's Military/Scientific/Diplomatic/Cultural bases.
+_Out of scope:_ Chart F's Military/Scientific/Diplomatic/Cultural bases, which the book calls
+referee "exceptions" ("Other bases may be established as exceptions").
 
-_Fixed in the Tier-1 audit:_ the **capital codes were swapped**. Chart D (p.26) is unambiguous —
-Cp is a Subsector Capital, Cs is a Sector Capital, Cx is the Imperial Capital — and `survey` marked
-its sector capital `Cx` and each subsector capital `Cs`, so **every generated sector promoted all
-sixteen of its subsector capitals to sector capitals, and its own capital to the capital of the
-Imperium**. `chargen/homeworld.go` had the labels right all along, so the repo disagreed with
-itself.
+_Fixed in the Tier-1 audit:_ the **capital codes were swapped** — Chart D (p.26) is unambiguous
+(Cp Subsector, Cs Sector, Cx Imperial), and `survey` had marked its sector capital `Cx` and each
+subsector capital `Cs`, so every generated sector promoted all sixteen of its subsector capitals to
+sector capitals and its own to the capital of the Imperium.
 
 **7. Starport / spaceport facilities & fuel** — _B2 p. 24; B3 p. 24_ · extends worldgen · **S** · ✅ **done**
 The starport/spaceport letters are generated (mainworld A–E/X and non-MW spaceports F/G/H/Y),
-and `worldgen.PortFacilities` maps each class to its services (Book 2 p.24): shipyard tier,
-heaviest repair, hydrogen fuel-type, downport (full/beacon), refuel time (2D/4D hours), and the
-population-gated A/B/C highport. Golden-tested against every class. _Deferred:_ the TL-gated
-exotic fuels (radioactives/anti-matter/collector, B3 p.24), outside this item's fuel-type scope.
+and `worldgen.PortFacilities` maps a world to its services: shipyard tier, heaviest repair,
+hydrogen fuel-type, downport (full/beacon), refuel time (2D/4D hours), the population-gated A/B/C
+highport, the **TL-gated exotic fuels** (Radioactives 8+, Collector 14+, Anti-Matter 18+ at A/B —
+B3 p.24), the **local unrefined-fuel** fallback for a fuel-less port on a world with water or ice
+(the p.24 ** note), and the **Beltport** that replaces a downport at an asteroid mainworld (B2 p.24).
+It takes the whole `uwp.Profile` now, since those depend on TL, hydrographics, and size, not just
+the class. Golden-tested against every class.
 
 **8. Second Survey line formatter** — _B3 pp. 16, 23_ · extends worldgen · **S** · ✅ **done**
 Serialize everything above into the canonical `Hex Name UWP TC {Ix}(Ex)[Cx] N B Z PBG W A
