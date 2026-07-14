@@ -39,6 +39,37 @@ func TestSubsector(t *testing.T) {
 	}
 }
 
+func TestHexDistance(t *testing.T) {
+	// Distance to self is 0.
+	if d := (Hex{5, 5}).Distance(Hex{5, 5}); d != 0 {
+		t.Errorf("distance to self = %d, want 0", d)
+	}
+	// All six neighbors of an interior hex are 1 parsec away (even-q layout:
+	// even columns shifted down, so 0505's cross-column neighbors are rows 4-5).
+	for _, n := range []Hex{{5, 4}, {5, 6}, {4, 4}, {4, 5}, {6, 4}, {6, 5}} {
+		if d := (Hex{5, 5}).Distance(n); d != 1 {
+			t.Errorf("%s neighbor distance = %d, want 1", n, d)
+		}
+	}
+	// A few known spans, and symmetry.
+	cases := []struct {
+		a, b Hex
+		want int
+	}{
+		{Hex{1, 1}, Hex{3, 1}, 2},    // two columns, same row
+		{Hex{1, 1}, Hex{1, 4}, 3},    // same column, three rows
+		{Hex{1, 1}, Hex{32, 40}, 55}, // opposite corners
+	}
+	for _, c := range cases {
+		if d := c.a.Distance(c.b); d != c.want {
+			t.Errorf("%s-%s distance = %d, want %d", c.a, c.b, d, c.want)
+		}
+		if d := c.b.Distance(c.a); d != c.want {
+			t.Errorf("%s-%s distance = %d, want %d (asymmetric)", c.b, c.a, d, c.want)
+		}
+	}
+}
+
 func TestDensityByName(t *testing.T) {
 	// Case- and space-insensitive.
 	cases := map[string]Density{"standard": Standard, "Core": Core, "extragalactic": ExtraGalactic, "Extra Galactic": ExtraGalactic}
