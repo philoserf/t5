@@ -155,6 +155,10 @@ func NativeStatus(p uwp.Profile) string {
 		}
 	}
 
+	// Chart F's inhabited rows all read "TL 1+"; a populated world at TL 0 is not on
+	// the chart at all. Its inhabitants are living, not extinct, so TL does not
+	// change their label the way it does for the depopulated evidence-of-life rows
+	// above — a Pop-1 TL-0 world is still Transients. TL is not re-checked here.
 	switch p.Government {
 	case 1:
 		return "Corporate"

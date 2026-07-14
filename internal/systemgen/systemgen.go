@@ -327,12 +327,11 @@ func (s System) Stellar() string {
 //
 //	hex  name  UWP TCs {Ix}(Ex)[Cx] N B Z  PBG  Worlds  allegiance  Stellar
 //
-// hex and name are supplied by the caller (they need sector context); allegiance
-// defaults to "Im" (Imperial) when empty.
+// hex and name are supplied by the caller (they need sector context). allegiance
+// is a referee-supplied code (Book 3 p.28, "imposed by referee"); an empty or
+// malformed one defaults to Imperial (worldgen.ParseAllegiance).
 func (s System) SecondSurvey(hex, name, allegiance string) string {
-	if allegiance == "" {
-		allegiance = "Im"
-	}
+	a, _ := worldgen.ParseAllegiance(allegiance)
 	return fmt.Sprintf("%s %s %s %s %d %s %s",
-		hex, name, s.Mainworld.SecondSurvey(), s.PBG(), s.Worlds, allegiance, s.Stellar())
+		hex, name, s.Mainworld.SecondSurvey(), s.PBG(), s.Worlds, a, s.Stellar())
 }
