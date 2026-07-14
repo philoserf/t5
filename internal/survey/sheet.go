@@ -183,7 +183,11 @@ func moonLabel(m systemgen.Satellite) string {
 	if m.Far {
 		orbit = "far"
 	}
-	s := fmt.Sprintf("moon %-5s %-12s %s  (%s orbit)", m.OrbitLetter, m.Type, m.Profile, orbit)
+	s := fmt.Sprintf("moon %-5s %-12s %s", m.OrbitLetter, m.Type, m.Profile)
+	if tcs := strings.Join(m.TradeCodes, " "); tcs != "" {
+		s += " " + tcs
+	}
+	s += fmt.Sprintf("  (%s orbit)", orbit)
 	if m.DoublePlanet {
 		s += "  [double planet]"
 	}

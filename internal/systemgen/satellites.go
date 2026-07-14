@@ -1,6 +1,8 @@
 package systemgen
 
 import (
+	"slices"
+
 	"github.com/philoserf/t5/internal/dice"
 	"github.com/philoserf/t5/internal/uwp"
 	"github.com/philoserf/t5/internal/worldgen"
@@ -19,6 +21,7 @@ type Satellite struct {
 	Type         worldgen.OtherWorldType
 	Profile      uwp.Profile
 	DoublePlanet bool
+	TradeCodes   []string
 }
 
 // rollSatellites gives each placed world and gas giant its moons (Book 3 p.29
@@ -56,9 +59,38 @@ func (s *System) rollSatellites(r *dice.Roller) {
 				Type:         wt,
 				Profile:      prof,
 				DoublePlanet: double,
+				TradeCodes:   satelliteTradeCodes(prof, o.Orbit, hz, hasHZ, far, s.mainworldIndustrial()),
 			})
 		}
 	}
+}
+
+// satelliteTradeCodes is a moon's trade classifications. It gets the context codes
+// like any other non-mainworld (climate, Fa/Mi/Pe, zone), plus the one code the
+// mainworld's own satellite already earned but ordinary moons never did: Sa for a
+// Far satellite, Lk for a close (locked) one (Book 3 Chart D p.26 — both are pure
+// "is this a satellite, and how far" codes, with no UWP constraints). Chart D asks
+// for TCs on "the Mainworld and other worlds in the system," and a moon is one.
+func satelliteTradeCodes(p uwp.Profile, orbit, hz int, hasHZ, far, mwIndustrial bool) []string {
+	tcs := worldgen.TradeClassificationsWithContext(p, worldgen.WorldContext{
+		InHZ:                hasHZ && orbit == hz,
+		MainworldIndustrial: mwIndustrial,
+	})
+	if hasHZ {
+		tcs = append(tcs, worldgen.ClimateCodes(p, orbit, hz)...)
+	}
+	if far {
+		tcs = append(tcs, "Sa") // Far Satellite
+	} else {
+		tcs = append(tcs, "Lk") // Close (Locked) Satellite
+	}
+	return tcs
+}
+
+// mainworldIndustrial reports whether the system mainworld carries In, which the
+// Mining (Mi) secondary code keys off (Book 3 Chart D p.26).
+func (s *System) mainworldIndustrial() bool {
+	return slices.Contains(s.Mainworld.TradeCodes, "In")
 }
 
 // hostStar returns the star an orbit's host label names; an unknown or empty

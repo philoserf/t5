@@ -75,6 +75,7 @@ func Sector(r *dice.Roller, d sectorgen.Density) Survey {
 	markSectorCapitals(records)
 	links := route.Build(worldsOf(records), route.DefaultJump)
 	placeWayStations(records, links)
+	placeNavalDepots(records)
 	return Survey{Records: records, Routes: links}
 }
 
@@ -192,6 +193,42 @@ func bestCapital(records []Record, idxs []int) int {
 		consider(i)
 	}
 	return best
+}
+
+// worldsPerNavalDepot is the Naval Depot frequency (Book 3 p.28 Chart F: "1 per
+// 1000 worlds"). A Standard sector holds ~640 worlds, so most sectors earn one and
+// sparse ones none.
+const worldsPerNavalDepot = 1000
+
+// placeNavalDepots sites Naval Depots across the surveyed region at a density of
+// about one per worldsPerNavalDepot worlds (Book 3 p.28 Chart F). A depot is a
+// system-encompassing fleet base and requires a Starport-A world, so like a
+// capital it goes to the region's most Important Starport-A worlds — the same
+// world may hold both. The book gives a frequency, not a placement, so this rounds
+// to the nearest whole depot.
+func placeNavalDepots(records []Record) {
+	n := (len(records) + worldsPerNavalDepot/2) / worldsPerNavalDepot
+	if n == 0 {
+		return
+	}
+	// Rank the Starport-A worlds by Importance, most Important first (ties by CCRR
+	// order, so the selection is deterministic).
+	var starportA []int
+	for i := range records {
+		if records[i].System.Mainworld.Profile.Starport == 'A' {
+			starportA = append(starportA, i)
+		}
+	}
+	sort.Slice(starportA, func(a, b int) bool {
+		ia, ib := starportA[a], starportA[b]
+		if x, y := records[ia].System.Mainworld.Importance, records[ib].System.Mainworld.Importance; x != y {
+			return x > y
+		}
+		return beforeHex(records[ia].Hex, records[ib].Hex)
+	})
+	for _, i := range starportA[:min(n, len(starportA))] {
+		records[i].System.Mainworld.SetNavalDepot()
+	}
 }
 
 // placeWayStations sites Scout Way Stations along the trade routes at a density

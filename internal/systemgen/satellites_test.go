@@ -1,9 +1,11 @@
 package systemgen
 
 import (
+	"slices"
 	"testing"
 
 	"github.com/philoserf/t5/internal/dice"
+	"github.com/philoserf/t5/internal/uwp"
 	"github.com/philoserf/t5/internal/worldgen"
 )
 
@@ -124,5 +126,36 @@ func TestCapSatelliteSize(t *testing.T) {
 			t.Errorf("capSatelliteSize(%d, %d, %v) = %d,%v, want %d,%v",
 				c.sat, c.parent, c.capped, size, double, c.wantSize, c.wantDouble)
 		}
+	}
+}
+
+// TestSatelliteTradeCodes: a moon earns the satellite code its parent's mainworld
+// already got — Sa for a far moon, Lk for a close one (Book 3 Chart D p.26) — where
+// before, a non-mainworld satellite carried no trade codes at all.
+func TestSatelliteTradeCodes(t *testing.T) {
+	far := satelliteTradeCodes(uwp.Profile{Size: 3, Atmosphere: 0}, 5, 3, true, true, false)
+	if !slices.Contains(far, "Sa") || slices.Contains(far, "Lk") {
+		t.Errorf("a far satellite = %v, want Sa (not Lk)", far)
+	}
+	near := satelliteTradeCodes(uwp.Profile{Size: 3, Atmosphere: 0}, 5, 3, true, false, false)
+	if !slices.Contains(near, "Lk") || slices.Contains(near, "Sa") {
+		t.Errorf("a close satellite = %v, want Lk (not Sa)", near)
+	}
+	// Every generated system's satellites now carry codes.
+	sys := Generate(dice.NewWithSeed(11))
+	found := false
+	for _, o := range sys.Orbits {
+		for _, sat := range o.Satellites {
+			if sat.Ring {
+				continue
+			}
+			found = true
+			if len(sat.TradeCodes) == 0 {
+				t.Errorf("satellite %s carries no trade codes", sat.OrbitLetter)
+			}
+		}
+	}
+	if !found {
+		t.Skip("this seed produced no non-ring satellites")
 	}
 }
