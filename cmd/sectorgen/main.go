@@ -4,11 +4,14 @@
 //
 // Usage:
 //
-//	sectorgen [-density name] [-subsector A] [-detail] [-sector] [-seed value]
+//	sectorgen [-density name] [-subsector A] [-detail] [-sector] [-hex CCRR] [-seed value]
 //
 // density is one of the names sectorgen.DensityNames reports (default standard);
 // with -seed, output is reproducible. -detail prints Second Survey lines for the
 // subsector; -sector surveys the full sector with trade routes and way stations.
+// -hex prints the full system sheet for one hex — the stellar family, the orbit
+// map with every secondary world and moon, and the mainworld's facilities — the
+// detail the one-line survey record cannot carry.
 package main
 
 import (
@@ -26,11 +29,25 @@ func main() {
 	subsector := flag.String("subsector", "A", "subsector letter A-P")
 	detail := flag.Bool("detail", false, "generate a full system per hex and print Second Survey lines")
 	sector := flag.Bool("sector", false, "survey the full sector with trade routes and way stations")
+	hex := flag.String("hex", "", "print the full system sheet for one hex, e.g. 0436 (surveys the sector)")
 	r := cli.Roller()
 
 	d, ok := sectorgen.DensityByName(*densityName)
 	if !ok {
 		fmt.Printf("unknown density %q (known: %s)\n", *densityName, strings.Join(sectorgen.DensityNames(), ", "))
+		return
+	}
+
+	// A hex drills into one system of the surveyed sector, so the sector must be
+	// generated the same way -sector generates it.
+	if *hex != "" {
+		sv := survey.Sector(r, d)
+		rec, found := sv.At(*hex)
+		if !found {
+			fmt.Printf("hex %s holds no star system at %s density (try another hex or seed)\n", *hex, d)
+			return
+		}
+		fmt.Println(rec.Sheet())
 		return
 	}
 

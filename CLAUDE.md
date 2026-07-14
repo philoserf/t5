@@ -182,6 +182,10 @@ Tooling (go, go-task, poppler's `pdftotext`) is pinned in `Brewfile`.
   marks subsector (Cs) and sector (Cx) capitals, lays **trade routes** (`route.Build` — a pure,
   dice-free graph linking Ix≥4 worlds within J-4, bridging distant ones through intermediate worlds),
   and sites Scout Way Stations (~1/50 pc of route, bumping Ix). `cmd/sectorgen -sector` renders it.
+  `Record.Sheet` (`survey/sheet.go`) is the deep renderer: the one-line Second Survey record shows
+  only the mainworld — ~94% of what the generators compute (the stellar family, the orbit map, every
+  secondary world and moon with its own UWP) plus the mainworld's port facilities, native status, and
+  Resource Units have no other renderer. `cmd/sectorgen -hex CCRR` prints one system's full sheet.
 - `internal/senses/`, `internal/personals/`, `internal/combat/` — the play tier (Book 1): sense
   Actions, social Personals, and personal combat, all roll-low via `task.ResolveDice`.
 - `internal/rangeband/` — the world/space range ladder (Book 1 pp. 24-29), shared by the play tier.
