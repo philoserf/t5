@@ -73,7 +73,7 @@ func TestHardpointLimit(t *testing.T) {
 // boarding-range turrets where it could carry only one full one.
 func TestFirmPoints(t *testing.T) {
 	// A turret built for Boarding range is a quarter-ton mount.
-	tiny := WeaponSpec{Missile, SingleTurret, Standard, Boarding}
+	tiny := WeaponSpec{MissileLauncher, SingleTurret, Standard, Boarding}
 	if w := DesignWeapon(tiny); !w.Tons.SubTon() {
 		t.Fatalf("a Boarding-range turret should be sub-ton, got %s", w.Tons)
 	}
@@ -164,7 +164,7 @@ func TestWeaponProblemsReachTheShip(t *testing.T) {
 // least 1 ton, round up"), while sub-ton FirmPoint mounts keep their fractions
 // and round up only once, together.
 func TestWeaponTonnage(t *testing.T) {
-	tiny := DesignWeapon(WeaponSpec{Missile, SingleTurret, Standard, Boarding}) // 0.25t
+	tiny := DesignWeapon(WeaponSpec{MissileLauncher, SingleTurret, Standard, Boarding}) // 0.25t
 	full := DesignWeapon(WeaponSpec{BeamLaser, SingleTurret, Standard, VDistant})
 	if got := armamentTonnage([]Weapon{full}, nil); got != 1 {
 		t.Errorf("one 1t mount = %dt, want 1", got)
