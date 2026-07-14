@@ -226,10 +226,12 @@ of Price with the capped Broker DM). Golden-locked end-to-end to the Free Trader
 journey (Cost/CargoID/Price/SellingPrice incl. the Broker-4 sale). Also the p.220 shipping layer
 (`shipping.go`): premium passage pricing (High/Mid/Low by Passage Demand), passenger/freight
 availability (Flux + Pop + skill/Liaison, freight ×(valueTCs+1)), freight/mail rates, and the
-Broker table (starport availability + 5%/DM commission, `NetSale`). **Deferred:** the Random Trade
-Goods detail tables (specific good names, the ~19 TC-keyed 1D columns + imbalance recursion), the
-Trader estimation mechanic, premium/accelerated-delivery surcharges, and the long-term mail-contract
-bid table.
+Broker table (starport availability + 5%/DM commission, `NetSale`). Also the Random Trade Goods
+chart (`goods.go`/`goods_data.go`, pp.218-219): the 12 TC-keyed columns (~430 goods) with the
+column-selection rules, the 1D type-block → 1D specific-good roll, Imbalance recursion to another
+column, and the Trade Good Detail prefix (Industrial/Asteroid omit rules) — golden-locked to the
+book's Zivije (Antibiotics) and Knorbes (Imbalance→Pelts) examples. **Deferred:** the Trader
+estimation mechanic, premium/accelerated-delivery surcharges, and the long-term mail-contract bid table.
 
 **22. Starship combat** — _B2 pp. 193–204_ · new `shipcombat` package · **M–L**
 Agility-ordered rounds, the space-weapon / missile / defensive-fire tasks, Flux hit-location on

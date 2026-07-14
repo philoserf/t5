@@ -156,8 +156,11 @@ Tooling (go, go-task, poppler's `pdftotext`) is pinned in `Brewfile`.
   match mods, scaled 10%/TL-difference), realized through the `ActualValue` table (Flux→40–400%,
   with the capped Broker DM). Pure int-Cr, no dice in the value math; `CargoID` renders the p.221
   identity (e.g. `8-De Hi In Na Po Cr1,800`). Golden-locked to the Free Trader Beowulf journey.
-  Deferred: Random Trade Goods detail tables, passenger/freight availability + rates, Trader
-  estimation.
+  `shipping.go` adds premium passage pricing, passenger/freight availability + rates, and the Broker
+  table (starport gating + commission + `NetSale`). `goods.go`/`goods_data.go` add the Random Trade
+  Goods chart (12 TC-keyed columns, 1D type→1D good, Imbalance recursion, Trade Good Detail prefix;
+  golden-locked to the Zivije/Knorbes examples). Deferred: Trader estimation, delivery surcharges,
+  long-term mail contracts.
 - `internal/sectorgen/` + `internal/survey/` + `internal/route/` — interstellar mapping (Book 3
   pp. 12-15, 21, 27-28): the 32×40/8×10 hex grid with CCRR/A-P coordinates, `Hex.Distance` (parsec
   jump distance via even-q offset→cube), and density system-presence rolls. `survey.Sector`/
