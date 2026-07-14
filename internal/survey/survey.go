@@ -38,8 +38,9 @@ func (rec Record) SecondSurvey() string {
 // Subsector surveys one subsector (letter 'A'-'P') at the given density: every
 // present hex gets a full generated system and a world name, and the highest-
 // Importance Starport-A world is marked the subsector capital (Cs). The coarse
-// survey flags (gas giant / asteroid) are the long-range preview; the full
-// system generation supersedes them.
+// gas-giant survey flag constrains the full generation (present → at least one
+// gas giant, absent → none), so the long-range preview and the detailed system
+// agree.
 func Subsector(r *dice.Roller, d sectorgen.Density, letter byte) []Record {
 	hexes := sectorgen.GenerateSubsector(r, d, letter)
 	records := make([]Record, len(hexes))
@@ -47,7 +48,7 @@ func Subsector(r *dice.Roller, d sectorgen.Density, letter byte) []Record {
 		records[i] = Record{
 			Hex:    h.Hex,
 			Name:   worldName(r),
-			System: systemgen.Generate(r),
+			System: systemgen.GenerateWithGasGiants(r, h.GasGiant),
 		}
 	}
 	markCapital(records)
@@ -73,7 +74,7 @@ func Sector(r *dice.Roller, d sectorgen.Density) Survey {
 		records[i] = Record{
 			Hex:    h.Hex,
 			Name:   worldName(r),
-			System: systemgen.Generate(r),
+			System: systemgen.GenerateWithGasGiants(r, h.GasGiant),
 		}
 	}
 	// Capitals from base Importance, then routes, then Way Stations (which bump
