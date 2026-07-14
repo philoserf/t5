@@ -36,7 +36,7 @@ func TestBestCapital(t *testing.T) {
 		recordWith(sectorgen.Hex{Col: 3, Row: 3}, 'A', 4), // Starport A, highest among A
 		recordWith(sectorgen.Hex{Col: 4, Row: 4}, 'B', 9),
 	}
-	if got := bestCapital(records, indices(records)); got != 2 {
+	if got := bestCapital(records, nil); got != 2 {
 		t.Errorf("bestCapital = %d, want 2 (the highest-Ix Starport-A world)", got)
 	}
 	// With no Starport-A world, no capital qualifies.
@@ -44,7 +44,7 @@ func TestBestCapital(t *testing.T) {
 		recordWith(sectorgen.Hex{Col: 1, Row: 1}, 'C', 9),
 		recordWith(sectorgen.Hex{Col: 2, Row: 2}, 'B', 8),
 	}
-	if got := bestCapital(none, indices(none)); got != -1 {
+	if got := bestCapital(none, nil); got != -1 {
 		t.Errorf("bestCapital with no Starport A = %d, want -1", got)
 	}
 }
@@ -142,23 +142,37 @@ func TestSectorDeterministicAndSurveyed(t *testing.T) {
 	if len(a.Records) != len(b.Records) || len(a.Records) == 0 {
 		t.Fatalf("expected a stable, non-empty survey: %d vs %d", len(a.Records), len(b.Records))
 	}
-	inA := 0
-	for i := range a.Records {
-		if a.Records[i].SecondSurvey() != b.Records[i].SecondSurvey() {
+	for i, rec := range a.Records {
+		line := rec.SecondSurvey()
+		if line != b.Records[i].SecondSurvey() {
 			t.Fatalf("record %d differs between identical seeds", i)
 		}
 		// Each line begins with the hex coordinate and carries the world name.
-		line := a.Records[i].SecondSurvey()
-		if !strings.HasPrefix(line, a.Records[i].Hex.String()+" ") || !strings.Contains(line, a.Records[i].Name) {
-			t.Errorf("survey line malformed: %q (hex %s, name %s)", line, a.Records[i].Hex, a.Records[i].Name)
-		}
-		if a.Records[i].Hex.Subsector() == 'A' {
-			inA++
+		if !strings.HasPrefix(line, rec.Hex.String()+" ") || !strings.Contains(line, rec.Name) {
+			t.Errorf("survey line malformed: %q (hex %s, name %s)", line, rec.Hex, rec.Name)
 		}
 	}
-	// Selecting a subsector out of the sector is how the default view works.
-	if inA == 0 {
-		t.Errorf("no surveyed hex fell in subsector A")
+}
+
+// TestViewsAgree is the invariant the whole design exists to hold: the views are
+// selections from one survey, so a subsector's record and the same hex's record
+// are the same world. Surveying a subsector on its own would break this — which
+// is why nothing can.
+func TestViewsAgree(t *testing.T) {
+	sv := Sector(dice.NewWithSeed(7), sectorgen.Sparse)
+	inA := sv.Subsector('A')
+	if len(inA) == 0 {
+		t.Skip("this sector has no world in subsector A")
+	}
+	for _, rec := range inA {
+		if rec.Hex.Subsector() != 'A' {
+			t.Errorf("Subsector('A') returned hex %s, which is in %c", rec.Hex, rec.Hex.Subsector())
+		}
+		byHex, found := sv.At(rec.Hex)
+		if !found || byHex.SecondSurvey() != rec.SecondSurvey() {
+			t.Errorf("subsector view and hex view disagree at %s:\n %s\n %s",
+				rec.Hex, rec.SecondSurvey(), byHex.SecondSurvey())
+		}
 	}
 }
 

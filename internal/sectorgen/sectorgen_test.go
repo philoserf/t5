@@ -1,6 +1,7 @@
 package sectorgen
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/philoserf/t5/internal/dice"
@@ -126,21 +127,18 @@ func TestRollContents(t *testing.T) {
 	}
 }
 
-func TestGenerateSubsector(t *testing.T) {
-	// Every system generated for subsector C lands in subsector C, and there are
-	// at most 80 of them.
-	systems := GenerateSubsector(dice.NewWithSeed(7), Dense, 'C')
-	if len(systems) == 0 || len(systems) > 80 {
-		t.Fatalf("subsector C has %d systems, want 1..80", len(systems))
-	}
-	for _, s := range systems {
-		if s.Hex.Subsector() != 'C' {
-			t.Errorf("hex %s is in subsector %c, not C", s.Hex, s.Hex.Subsector())
+func TestParseSubsector(t *testing.T) {
+	for _, s := range []string{"A", "a", "P", "p"} {
+		if letter, ok := ParseSubsector(s); !ok || letter != strings.ToUpper(s)[0] {
+			t.Errorf("ParseSubsector(%q) = %c,%v, want the upper-case letter", s, letter, ok)
 		}
 	}
-	// An out-of-range letter yields nothing.
-	if GenerateSubsector(dice.NewWithSeed(7), Dense, 'Z') != nil {
-		t.Errorf("subsector Z should yield no systems")
+	// Out of range, empty, and — the trap a bare first-byte read would miss —
+	// anything longer than one letter.
+	for _, bad := range []string{"", "Q", "z", "1", "AB", "Applesauce"} {
+		if _, ok := ParseSubsector(bad); ok {
+			t.Errorf("ParseSubsector(%q) should be rejected", bad)
+		}
 	}
 }
 

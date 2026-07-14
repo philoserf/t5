@@ -1,8 +1,9 @@
 // Package survey composes sectorgen and systemgen into a detailed sector survey:
 // every hex that holds a star system (Book 3 p.13 System Contents) is generated
 // as a full systemgen.System and rendered as a canonical Second Survey line, and
-// the subsector capital is identified (the stub systemgen leaves to region
-// context).
+// the region-wide facts a single system cannot know — capitals, trade routes, and
+// way stations — are settled across it. A sector is surveyed whole; callers select
+// the part they want (Survey.Subsector, Survey.At) rather than surveying it.
 package survey
 
 import (
@@ -50,11 +51,14 @@ type Survey struct {
 // symbols constrain the full generation, so the long-range preview and the
 // detailed system agree.
 //
-// A sector is surveyed whole because its systems share one dice stream — a hex's
-// world depends on every hex before it — and because capitals, routes, and way
-// stations can only be assigned once the whole region is known. Callers wanting
-// one subsector or one hex survey the sector and select from it, so every view
-// agrees about what sits where.
+// A sector is always surveyed whole, and callers select the part they want (see
+// Subsector and At). A region cannot be surveyed piecemeal: a world's own printed
+// record depends on the rest of the sector — whether it is a capital is decided
+// against every other world, and its bases and Importance shift when a trade route
+// running through it earns a way station. (The systems also share one dice stream,
+// so a hex's world depends on every hex rolled before it, but that is an artifact
+// of the roller; the region-wide passes are the reason that would survive any
+// redesign.)
 func Sector(r *dice.Roller, d sectorgen.Density) Survey {
 	hexes := sectorgen.GenerateSector(r, d)
 	records := make([]Record, len(hexes))
@@ -87,6 +91,20 @@ func (s Survey) At(hex sectorgen.Hex) (Record, bool) {
 	return Record{}, false
 }
 
+// Subsector selects the records of one subsector ('A'-'P') from the survey. It is
+// a view of an already-surveyed sector, not a survey of its own: a subsector
+// generated in isolation would hold different worlds (see Sector), so selecting
+// is the only way to see part of a region and still agree with the rest of it.
+func (s Survey) Subsector(letter byte) []Record {
+	var out []Record
+	for _, rec := range s.Records {
+		if rec.Hex.Subsector() == letter {
+			out = append(out, rec)
+		}
+	}
+	return out
+}
+
 // String renders the survey: each hex's canonical Second Survey line annotated
 // with its expected weekly ship traffic, followed by a trade-route listing.
 func (s Survey) String() string {
@@ -116,7 +134,7 @@ func worldsOf(records []Record) []route.World {
 // capital (Cs), skipping the subsector that already holds the sector capital so
 // no world carries both and no subsector gets two.
 func markSectorCapitals(records []Record) {
-	sectorCap := bestCapital(records, indices(records))
+	sectorCap := bestCapital(records, nil)
 	if sectorCap >= 0 {
 		records[sectorCap].System.Mainworld.SetCapital("Cx")
 	}
@@ -134,7 +152,14 @@ func markSectorCapitals(records []Record) {
 
 // bestCapital returns the index (into records) of the highest-Importance
 // Starport-A world among idxs, or -1 if none qualifies (Book 3 Chart D p.26).
+// A nil idxs considers every record.
 func bestCapital(records []Record, idxs []int) int {
+	if idxs == nil {
+		idxs = make([]int, len(records))
+		for i := range idxs {
+			idxs[i] = i
+		}
+	}
 	best := -1
 	for _, i := range idxs {
 		if records[i].System.Mainworld.Profile.Starport != 'A' {
@@ -145,15 +170,6 @@ func bestCapital(records []Record, idxs []int) int {
 		}
 	}
 	return best
-}
-
-// indices returns 0..len(records)-1.
-func indices(records []Record) []int {
-	idxs := make([]int, len(records))
-	for i := range idxs {
-		idxs[i] = i
-	}
-	return idxs
 }
 
 // placeWayStations sites Scout Way Stations along the trade routes at a density
