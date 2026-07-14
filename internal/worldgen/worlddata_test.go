@@ -125,3 +125,26 @@ func TestNativeStatus(t *testing.T) {
 		}
 	}
 }
+
+func TestZoneName(t *testing.T) {
+	cases := map[byte]string{'G': "Green", 'A': "Amber", 'R': "Red", 0: "Green"}
+	for z, want := range cases {
+		if got := ZoneName(z); got != want {
+			t.Errorf("ZoneName(%q) = %q, want %q", z, got, want)
+		}
+	}
+}
+
+func TestBaseNames(t *testing.T) {
+	w := World{NavalBase: true, ScoutBase: true, WayStation: true}
+	if got := w.BaseNames(); len(got) != 3 || got[0] != "Naval" || got[2] != "Way Station" {
+		t.Errorf("BaseNames = %v, want Naval/Scout/Way Station", got)
+	}
+	// The code form is each name's initial, so it must still read "NSW".
+	if got := w.bases(); got != "NSW" {
+		t.Errorf("bases() = %q, want NSW", got)
+	}
+	if got := (World{}).BaseNames(); len(got) != 0 {
+		t.Errorf("a world with no bases named %v", got)
+	}
+}

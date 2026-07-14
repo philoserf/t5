@@ -116,12 +116,18 @@ func (w World) SecondSurvey() string {
 	fields := []string{
 		w.Profile.String(),
 		strings.Join(w.TradeCodes, " "),
-		importance(w.Importance) + w.Economic.String() + w.Cultural.String(),
+		w.Extensions(),
 		w.Nobility,
 		dashIfEmpty(w.bases()),
 		dashIfEmpty(w.zone()),
 	}
 	return strings.Join(slices.DeleteFunc(fields, isEmpty), " ")
+}
+
+// Extensions renders the world's three extensions as they appear in the Second
+// Survey record: "{Ix}(Ex)[Cx]", e.g. "{+4}(D7E+4)[9C6D]".
+func (w World) Extensions() string {
+	return importance(w.Importance) + w.Economic.String() + w.Cultural.String()
 }
 
 func isEmpty(s string) bool { return s == "" }

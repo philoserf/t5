@@ -40,8 +40,8 @@ func (rec Record) Sheet() string {
 	fmt.Fprintf(&b, "%s  %s%s\n%s\n", rec.Hex, rec.Name, capitalTitle(mw), rule)
 
 	field("Mainworld", "%s  %s", mw.Profile, strings.Join(mw.TradeCodes, " "))
-	field("Extensions", "{%+d}%s%s   RU %d", mw.Importance, mw.Economic, mw.Cultural, mw.Economic.RU())
-	field("Traffic", "~%d ships/week", route.ExpectedTraffic(mw.Importance))
+	field("Extensions", "%s   RU %d", mw.Extensions(), mw.Economic.RU())
+	field("Traffic", "~%s/week", plural(route.ExpectedTraffic(mw.Importance), "ship", "ships"))
 	if mw.Nobility != "" {
 		field("Nobility", "%s", mw.Nobility)
 	}
@@ -52,7 +52,10 @@ func (rec Record) Sheet() string {
 	}
 	if f, ok := worldgen.PortFacilities(mw.Profile.Starport, mw.Profile.Population); ok {
 		field("Starport", "%c — %s", f.Class, f.Quality)
-		fmt.Fprintf(&b, "              %s\n", strings.Join(f.Services(), " · "))
+		// Classes X and Y are no port at all and offer nothing to list.
+		if svc := f.Services(); len(svc) > 0 {
+			fmt.Fprintf(&b, "              %s\n", strings.Join(svc, " · "))
+		}
 	}
 
 	b.WriteString("\n  Stars\n")
@@ -60,11 +63,34 @@ func (rec Record) Sheet() string {
 		fmt.Fprintf(&b, "    %-18s %s%s\n", sl.Label, sl.Star, starOrbit(sl))
 	}
 
-	fmt.Fprintf(&b, "\n  Orbits — %d worlds · PBG %s · %d gas giants · %d belts\n",
-		s.Worlds, s.PBG(), s.GasGiants, s.Belts)
+	fmt.Fprintf(&b, "\n  Orbits — %s · PBG %s · %s · %s\n",
+		plural(s.Worlds, "world", "worlds"), s.PBG(),
+		plural(s.GasGiants, "gas giant", "gas giants"), plural(s.Belts, "belt", "belts"))
 	writeOrbits(&b, s)
+	writeUnplacedMainworld(&b, s)
 
 	return strings.TrimRight(b.String(), "\n")
+}
+
+// plural renders a count with the right form of its noun.
+func plural(n int, one, many string) string {
+	if n == 1 {
+		return fmt.Sprintf("%d %s", n, one)
+	}
+	return fmt.Sprintf("%d %s", n, many)
+}
+
+// writeUnplacedMainworld names the mainworld when the orbit map has no place for
+// it: a primary with no habitable zone gives systemgen no orbit to put it in, so
+// it would otherwise vanish from a map that claims to be complete.
+func writeUnplacedMainworld(b *strings.Builder, s systemgen.System) {
+	for _, o := range s.Orbits {
+		if o.Kind == systemgen.KindMainworld {
+			return
+		}
+	}
+	fmt.Fprintf(b, "    *  --  %-14s %s  — unplaced (the primary has no habitable zone)\n",
+		"Mainworld", s.Mainworld.Profile)
 }
 
 // starOrbit notes where a star sits: a secondary holds a numbered orbit around
@@ -135,7 +161,7 @@ func bodyLabel(o systemgen.PlacedOrbit, mainworld uwp.Profile) string {
 	case o.Giant != nil:
 		return fmt.Sprintf("%-14s %s", "Gas Giant", o.Giant)
 	case o.Kind == systemgen.KindBelt:
-		return "Planetoid Belt"
+		return o.Kind.String() // systemgen names the kinds; do not restate them here
 	case o.World != nil:
 		s := fmt.Sprintf("%-14s %s", o.World.Type, o.World.Profile)
 		if tcs := strings.Join(o.World.TradeCodes, " "); tcs != "" {

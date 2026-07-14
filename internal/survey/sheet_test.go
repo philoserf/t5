@@ -18,10 +18,25 @@ func TestSurveyAt(t *testing.T) {
 	if !ok || rec.Hex != want {
 		t.Errorf("At(%s) = %v,%v, want that record", want, rec.Hex, ok)
 	}
-	// A hex the sector left empty is not found.
-	empty := sectorgen.Hex{Col: 1, Row: 1}
-	if _, taken := sv.At(empty); taken && sv.Records[0].Hex != empty {
-		t.Errorf("At(%s) found a record that is not there", empty)
+	// A hex the sector actually left empty is not found.
+	held := map[sectorgen.Hex]bool{}
+	for _, rec := range sv.Records {
+		held[rec.Hex] = true
+	}
+	var empty sectorgen.Hex
+	for col := 1; col <= sectorgen.Columns && empty == (sectorgen.Hex{}); col++ {
+		for row := 1; row <= sectorgen.Rows; row++ {
+			if h := (sectorgen.Hex{Col: col, Row: row}); !held[h] {
+				empty = h
+				break
+			}
+		}
+	}
+	if empty == (sectorgen.Hex{}) {
+		t.Skip("this sector has a system in every hex")
+	}
+	if _, found := sv.At(empty); found {
+		t.Errorf("At(%s) found a record in an empty hex", empty)
 	}
 }
 
@@ -30,7 +45,9 @@ func TestParseHexRoundTrip(t *testing.T) {
 	if !ok || h.Col != 4 || h.Row != 36 || h.String() != "0436" {
 		t.Errorf("ParseHex(0436) = %v,%v, want col 4 row 36", h, ok)
 	}
-	for _, bad := range []string{"", "436", "04366", "zzzz", "0041", "3341"} {
+	// Malformed, out-of-range, and — the trap — signed halves, which strconv would
+	// otherwise accept ("+436" silently parsing as hex 0436).
+	for _, bad := range []string{"", "436", "04366", "zzzz", "0041", "3341", "0000", "+436", "04+3", "-436", " 436", "04 3"} {
 		if _, ok := sectorgen.ParseHex(bad); ok {
 			t.Errorf("ParseHex(%q) should be rejected", bad)
 		}

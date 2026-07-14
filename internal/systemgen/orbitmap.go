@@ -139,6 +139,15 @@ func (s *System) placeOrbits(r *dice.Roller) {
 	primary := hosts[0]
 	var placed []PlacedOrbit
 
+	// A secondary star fills its own orbit around the primary (Book 3 p.21), so no
+	// world may share it. Reserve those orbits before anything is placed; a body
+	// aimed at one is nudged aside by claim, as with any other collision.
+	for _, sl := range s.Stars() {
+		if !sl.Companion && sl.Orbit >= 0 {
+			primary.occupied[sl.Orbit] = true
+		}
+	}
+
 	giants := s.Giants
 	if s.MainworldOrbit >= 0 {
 		o, _ := primary.claim(s.MainworldOrbit)
