@@ -92,6 +92,36 @@ func TestFirmPoints(t *testing.T) {
 	}
 }
 
+// TestBoltInNeedsNoMountPoint is the Bolt-In's whole point: it "does not require
+// a HardPoint or FirmPoint" (Book 2 p.176), so a ship can carry screens without
+// giving up its gun. A 100-ton scout has exactly one mount point — and can still
+// have both.
+func TestBoltInNeedsNoMountPoint(t *testing.T) {
+	spec := murphySpec()
+	spec.Weapons = []WeaponSpec{{BeamLaser, SingleTurret, Standard, VDistant}}
+	spec.Defenses = []DefenseSpec{{NuclearDamper, BoltIn, Standard, VDistant}}
+	s := Design(spec)
+	if len(s.Problems) > 0 {
+		t.Fatalf("a turret and a bolt-in screen both fit a 100t hull: %v", s.Problems)
+	}
+	// It is free of the mount points, not of the tonnage: the screen still weighs
+	// its three tons, and the turret one.
+	bare := Design(murphySpec())
+	if got, want := bare.Tonnage.Payload-s.Tonnage.Payload, 4; got != want {
+		t.Errorf("turret + screen cost %dt of payload, want %dt", got, want)
+	}
+	if !strings.Contains(s.String(), "Defenses: Standard Vdistant Bolt-In Nuclear Damper-12") {
+		t.Errorf("ship card is missing its screen:\n%s", s)
+	}
+
+	// A defense in a turret, though, is a mount like any other — and now it does
+	// compete with the gun for the hull's one point.
+	spec.Defenses = []DefenseSpec{{NuclearDamper, SingleTurret, Standard, VDistant}}
+	if turreted := Design(spec); len(turreted.Problems) == 0 {
+		t.Errorf("a turreted screen competes for the hardpoint the gun is using")
+	}
+}
+
 // TestWeaponAboveShipTL: a yard cannot build above its own tech level. The range
 // and stage shift a weapon's TL, so a long-range model can outrun the ship.
 func TestWeaponAboveShipTL(t *testing.T) {
@@ -136,19 +166,19 @@ func TestWeaponProblemsReachTheShip(t *testing.T) {
 func TestWeaponTonnage(t *testing.T) {
 	tiny := DesignWeapon(WeaponSpec{Missile, SingleTurret, Standard, Boarding}) // 0.25t
 	full := DesignWeapon(WeaponSpec{BeamLaser, SingleTurret, Standard, VDistant})
-	if got := weaponTonnage([]Weapon{full}); got != 1 {
+	if got := armamentTonnage([]Weapon{full}, nil); got != 1 {
 		t.Errorf("one 1t mount = %dt, want 1", got)
 	}
 	// Four quarter-ton mounts are one ton together, not four.
-	if got := weaponTonnage([]Weapon{tiny, tiny, tiny, tiny}); got != 1 {
+	if got := armamentTonnage([]Weapon{tiny, tiny, tiny, tiny}, nil); got != 1 {
 		t.Errorf("four 0.25t mounts = %dt, want 1", got)
 	}
 	// A Bay built for Vlong is 16.67 tons, charged as 17.
 	bay := DesignWeapon(WeaponSpec{SalvoRack, Bay, Standard, Vlong})
-	if got := weaponTonnage([]Weapon{bay}); got != 17 {
+	if got := armamentTonnage([]Weapon{bay}, nil); got != 17 {
 		t.Errorf("a 16.67t bay = %dt, want 17 (a mount rounds up)", got)
 	}
-	if got := weaponTonnage(nil); got != 0 {
+	if got := armamentTonnage(nil, nil); got != 0 {
 		t.Errorf("no weapons = %dt, want 0", got)
 	}
 }

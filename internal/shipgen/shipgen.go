@@ -158,7 +158,8 @@ type ShipSpec struct {
 	Jump     *DriveSpec
 	Power    *DriveSpec
 
-	Weapons []WeaponSpec
+	Weapons  []WeaponSpec
+	Defenses []DefenseSpec
 
 	FuelScoop, FuelPurifier bool
 }
@@ -220,6 +221,7 @@ type Ship struct {
 	Armor    Armor
 	Fuel     Fuel
 	Weapons  []Weapon
+	Defenses []Defense
 
 	Cost     int // total, Cr
 	Tonnage  Budget
@@ -277,6 +279,13 @@ func (s Ship) String() string {
 			label = "        " // the rest of the battery lines up under the first
 		}
 		fmt.Fprintf(&b, "%s %s\n", label, w.LongName())
+	}
+	for i, d := range s.Defenses {
+		label := "Defenses:"
+		if i > 0 {
+			label = "         "
+		}
+		fmt.Fprintf(&b, "%s %s\n", label, d.LongName())
 	}
 	fmt.Fprintf(&b, "Fuel:    %dt · Cost %s · Payload %dt", s.Fuel.Tons, mcr(s.Cost), s.Tonnage.Payload)
 	for _, p := range s.Problems {

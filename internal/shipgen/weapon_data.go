@@ -115,6 +115,9 @@ var weaponData = [...]struct {
 // Mod: a weapon in a bigger mount hits more often and hits harder.
 type Mount int
 
+// The mounts, in ascending size — the order matters, because a weapon may go in
+// "any Mount equal to or greater than the Minimum" (Book 2 p.155), which is a
+// comparison on this ordering.
 const (
 	SingleTurret   Mount = iota // T1
 	DualTurret                  // T2
@@ -125,6 +128,12 @@ const (
 	Bay                         // Bay
 	LargeBay                    // LBay
 	Main                        // M
+
+	// BoltIn is the defenses' own mount (Book 2 p.176): three tons placed
+	// anywhere inside the ship, needing neither a hardpoint nor a view outside.
+	// No weapon uses it — it comes last so it sits outside the size ordering
+	// above, which it does not belong to.
+	BoltIn // Bo
 )
 
 // mountData is Book 2 p.83 Table C. Extendable and Deployable are omitted: they
@@ -175,46 +184,72 @@ const (
 )
 
 // rangeData is Book 2 p.83 Tables D (Space) and E (World). Each range shifts the
-// weapon's tech level and scales the mount's tonnage and cost. The multipliers
-// are stored as fractions (num/den) to stay exact in integer credits.
+// weapon's tech level and scales the mount's tonnage and cost.
+//
+// The multipliers are hundredths, not exact fractions, because that is what the
+// book computes with: it divides by three by multiplying by 0.33. Its own worked
+// defenses (p.176) put a 200-ton Main mount at Vlong at "66 tons" (200 x 0.33)
+// and a 3-ton Bolt-In at "0.99 tons. MCr3.99" — numbers exact division would give
+// as 66.67 and 1.00. Following the book's arithmetic reproduces its tables to the
+// credit; being more precise than the book would not.
+//
+// defenseOK marks the ranges a defense may be built for. A defense reaches at
+// most Vdistant: Book 2 p.174 greys out Orbit, Far, and Geo on its copy of the
+// World table, and the Defense Ranges table (p.179) stops at R=7. A defense can
+// be built for less reach, never for more.
 var rangeData = [...]struct {
-	name             string
-	scale            Scale
-	band             int // the S= or R= number the weapon record prints
-	tlMod            int
-	tonsNum, tonsDen int
-	costNum, costDen int
+	name      string
+	scale     Scale
+	band      int // the S= or R= number the record prints
+	tlMod     int
+	tons      int // hundredths: 33 = x0.33, 200 = x2
+	cost      int // hundredths
+	defenseOK bool
 }{
-	Boarding:     {"Boarding", SpaceScale, 0, -3, 1, 4, 1, 4},
-	FighterRange: {"Fighter Range", SpaceScale, 2, -2, 1, 3, 1, 3},
-	ShortRange:   {"Short Range", SpaceScale, 5, -1, 1, 2, 1, 2},
-	AttackRange:  {"Attack Range", SpaceScale, 7, 0, 1, 1, 1, 1},
-	LongRange:    {"Long Range", SpaceScale, 9, 1, 2, 1, 3, 1},
-	DeepSpace:    {"Deep Space", SpaceScale, 12, 2, 3, 1, 5, 1},
+	Boarding:     {"Boarding", SpaceScale, 0, -3, 25, 25, true},
+	FighterRange: {"Fighter Range", SpaceScale, 2, -2, 33, 33, true},
+	ShortRange:   {"Short Range", SpaceScale, 5, -1, 50, 50, true},
+	AttackRange:  {"Attack Range", SpaceScale, 7, 0, 100, 100, true},
+	LongRange:    {"Long Range", SpaceScale, 9, 1, 200, 300, true},
+	DeepSpace:    {"Deep Space", SpaceScale, 12, 2, 300, 500, true},
 
-	Vlong:    {"Vlong", WorldScale, 5, -2, 1, 3, 1, 3},
-	Distant:  {"Distant", WorldScale, 6, -1, 1, 2, 1, 2},
-	VDistant: {"Vdistant", WorldScale, 7, 0, 1, 1, 1, 1},
-	Orbit:    {"Orbit", WorldScale, 8, 1, 2, 1, 3, 1},
-	Far:      {"Far", WorldScale, 9, 2, 3, 1, 5, 1},
-	Geo:      {"Geo", WorldScale, 10, 3, 4, 1, 6, 1},
+	Vlong:    {"Vlong", WorldScale, 5, -2, 33, 33, true},
+	Distant:  {"Distant", WorldScale, 6, -1, 50, 50, true},
+	VDistant: {"Vdistant", WorldScale, 7, 0, 100, 100, true},
+	Orbit:    {"Orbit", WorldScale, 8, 1, 200, 300, false},
+	Far:      {"Far", WorldScale, 9, 2, 300, 500, false},
+	Geo:      {"Geo", WorldScale, 10, 3, 400, 600, false},
 }
 
-// weaponStageMod is the Mod column of Book 2 p.83 Table B, the one column of the
-// stage ladder that drives do not use. It is NOT the same as the stage's tlDelta
-// (drive.go): Generic raises tech level by +1 but grants no Mod. The p.156
-// summary lists Generic as +1, contradicting the p.83 design table it summarizes;
-// we follow p.83, the table the designer actually builds from.
-var weaponStageMod = [...]int{
-	Standard:     0,
-	Experimental: -3,
-	Prototype:    -2,
-	Early:        -1,
-	Basic:        0,
-	Alternate:    0,
-	Improved:     1,
-	Generic:      0,
-	Modified:     2,
-	Advanced:     3,
-	Ultimate:     4,
+// weaponStageData is Book 2 p.83 Table B (printed again for defenses on p.174) —
+// the stage ladder as weapons use it. It shares the eleven stages and their tech
+// level shifts with the drives' X table (stageData, drive.go), but it is not the
+// same table:
+//
+//   - The cost multipliers agree on every stage but one. Modified costs a drive
+//     x1 (and saves it half its tonnage); it costs a weapon /2. The book prints
+//     both, and each table governs its own kind of component — the defense
+//     catalog's Modified White Globe (p.176, MCr7) only works at /2, and the
+//     drives have no worked Modified example to contradict their own table.
+//   - The Mod column is weapons-only; drives have no attack. It is NOT the tech
+//     level shift under another name: Generic raises tech level by +1 but grants
+//     no Mod.
+//
+// mod applies to weapons alone. A defense takes its Mod from its mount and none
+// from its stage — see defense.go.
+var weaponStageData = [...]struct {
+	costNum, costDen int
+	mod              int
+}{
+	Standard:     {1, 1, 0},
+	Experimental: {10, 1, -3},
+	Prototype:    {5, 1, -2},
+	Early:        {2, 1, -1},
+	Basic:        {1, 2, 0},
+	Alternate:    {1, 1, 0},
+	Improved:     {1, 1, 1},
+	Generic:      {1, 2, 0},
+	Modified:     {1, 2, 2},
+	Advanced:     {2, 1, 3},
+	Ultimate:     {3, 1, 4},
 }

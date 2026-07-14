@@ -63,9 +63,7 @@ func Design(spec ShipSpec) Ship {
 	for _, ws := range spec.Weapons {
 		w := DesignWeapon(ws)
 		ship.Weapons = append(ship.Weapons, w)
-		for _, p := range w.Problems {
-			problems = append(problems, p)
-		}
+		problems = append(problems, w.Problems...)
 		// A yard cannot build above its own tech level: the weapon's TL is its
 		// base shifted by the range and the stage, so a long-range or advanced
 		// model can outrun the ship that carries it.
@@ -74,10 +72,21 @@ func Design(spec ShipSpec) Ship {
 				w.Name(), w.TL, spec.TL))
 		}
 	}
-	if p := mountPoints(h.Tons, ship.Weapons); p != "" {
+	// Defenses are built the same way, and mostly ride Bolt-Ins, which need no
+	// mount point — a ship can carry screens without giving up a gun.
+	for _, ds := range spec.Defenses {
+		d := DesignDefense(ds)
+		ship.Defenses = append(ship.Defenses, d)
+		problems = append(problems, d.Problems...)
+		if d.TL > spec.TL {
+			problems = append(problems, fmt.Sprintf("%s is TL-%d, above the ship's TL-%d",
+				d.Name(), d.TL, spec.TL))
+		}
+	}
+	if p := mountPoints(h.Tons, ship.Weapons, ship.Defenses); p != "" {
 		problems = append(problems, p)
 	}
-	used += weaponTonnage(ship.Weapons)
+	used += armamentTonnage(ship.Weapons, ship.Defenses)
 
 	ship.Tonnage = Budget{Hull: h.Tons, Used: used, Payload: h.Tons - used}
 	if ship.Tonnage.Payload < 0 {
@@ -92,6 +101,9 @@ func Design(spec ShipSpec) Ship {
 	}
 	for _, w := range ship.Weapons {
 		ship.Cost += w.Cost
+	}
+	for _, d := range ship.Defenses {
+		ship.Cost += d.Cost
 	}
 
 	ship.Problems = problems
