@@ -65,6 +65,20 @@ func (h Hex) Distance(o Hex) int {
 	return (max(ax-bx, bx-ax) + max(ay-by, by-ay) + max(az-bz, bz-az)) / 2
 }
 
+// ParseSubsector reads a subsector letter A-P, case-insensitively, reporting
+// whether it is well-formed. Like ParseHex, it rejects anything longer than the
+// name it expects, so a mistyped argument is caught rather than truncated.
+func ParseSubsector(s string) (byte, bool) {
+	if len(s) != 1 {
+		return 0, false
+	}
+	letter := strings.ToUpper(s)[0]
+	if letter < 'A' || letter > 'P' {
+		return 0, false
+	}
+	return letter, true
+}
+
 // Subsector returns the hex's subsector letter A-P (Book 3 p.12): the sixteen
 // 8x10 subsectors are lettered left-to-right, top-to-bottom in a 4x4 grid.
 func (h Hex) Subsector() byte {
@@ -172,28 +186,15 @@ func rollContents(r *dice.Roller, h Hex) StellarHex {
 
 // GenerateSector rolls all 1280 hexes of a sector at the given density and
 // returns the populated ones in column-major CCRR order (Book 3 pp.12-13).
+//
+// A sector is the only unit that can be rolled. Rolling a sub-region on its own
+// would consume a different run of the dice, so its hexes would hold different
+// systems than the same coordinates do in a sector — see survey.Survey.Subsector,
+// which selects a subsector from a surveyed sector instead.
 func GenerateSector(r *dice.Roller, d Density) []StellarHex {
-	return generate(r, d, Hex{1, 1}, Hex{Columns, Rows})
-}
-
-// GenerateSubsector rolls the 80 hexes of one subsector — letter 'A'-'P' — at
-// the given density (Book 3 p.12). An out-of-range letter yields no systems.
-func GenerateSubsector(r *dice.Roller, d Density, letter byte) []StellarHex {
-	if letter < 'A' || letter > 'P' {
-		return nil
-	}
-	i := int(letter - 'A')
-	col := (i%subsectorCols)*subsectorCol + 1
-	row := (i/subsectorCols)*subsectorRow + 1
-	return generate(r, d, Hex{col, row}, Hex{col + subsectorCol - 1, row + subsectorRow - 1})
-}
-
-// generate rolls every hex in the inclusive rectangle from lo to hi and returns
-// the populated ones in column-major CCRR order.
-func generate(r *dice.Roller, d Density, lo, hi Hex) []StellarHex {
 	var systems []StellarHex
-	for col := lo.Col; col <= hi.Col; col++ {
-		for row := lo.Row; row <= hi.Row; row++ {
+	for col := 1; col <= Columns; col++ {
+		for row := 1; row <= Rows; row++ {
 			if SystemPresent(r, d) {
 				systems = append(systems, rollContents(r, Hex{col, row}))
 			}
