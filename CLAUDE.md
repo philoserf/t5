@@ -63,7 +63,11 @@ Tooling (go, go-task, poppler's `pdftotext`) is pinned in `Brewfile`.
   mainworld via `worldgen`. `classify` is the pure table lookup; `rollStar`/`Generate` roll and
   compose. Secondary stars (Close/Near/Far) are placed in orbit bands. The mainworld is a full
   `worldgen.World` (UWP + all derived data); `System.SecondSurvey(hex, name, allegiance)` renders
-  the canonical one-line record and `String` shows it with PBG. Per-world orbital detail is deferred.
+  the canonical one-line record and `String` shows it with PBG. `placeOrbits` lays the full orbit
+  map (mainworld/gas giants/belts/other worlds in concrete orbits, rotate-per-star); `rollSatellites`
+  gives every placed body its moons — each a real satellite with a type (`satelliteType`, the p.29
+  Satellites tables) and UWP, capped to its parent's size with a double-planet flag at equal size
+  (Book 3 p.21), or a Ring.
 - `internal/chargen/` — character creation (Book 1, Characteristics pp. 47+, careers pp. 63-79,
   Master Chargen Checklist p. 72). Generates the six-characteristic UPP (Str/Dex/End/Int/Edu/Soc,
   each 2D, eHex) at age 18, offers `Check`, and `AgingCheck` (Book 1 p. 89: `2D < LifeStage`,

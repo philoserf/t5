@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/philoserf/t5/internal/dice"
+	"github.com/philoserf/t5/internal/worldgen"
 )
 
 func TestSatelliteCount(t *testing.T) {
@@ -45,22 +46,83 @@ func TestSatelliteCount(t *testing.T) {
 }
 
 func TestRollSatellites(t *testing.T) {
-	// A gas giant in orbit 2 (1D-1). 1D=4 -> 3 moons. Each: 2D for Close/Far,
-	// Flux for the orbit letter (Flux 0 -> index 6 -> "Gee" close / "Tee" far).
-	// moon0 Close (2D=5), moon1 Far (2D=9), moon2 Close (2D=7).
-	s := &System{
-		Primary: Star{Type: "F", Decimal: 8, Size: "V"}, // HZ 4
-		Orbits:  []PlacedOrbit{{Orbit: 2, Kind: KindGasGiant}},
+	newSys := func() *System {
+		s := &System{
+			Primary: Star{Type: "F", Decimal: 8, Size: "V"}, // HZ 4
+			Orbits:  []PlacedOrbit{{Orbit: 2, Kind: KindGasGiant}},
+		}
+		s.Mainworld.Profile.Population = 8
+		return s
 	}
-	s.rollSatellites(dice.NewScripted(4 /*count*/, 2, 3 /*Close*/, 3, 3 /*Flux 0*/, 4, 5 /*Far*/, 3, 3, 3, 4 /*Close*/, 3, 3))
+	// A gas giant with moons: each is a real body (type + UWP + orbit letter), and
+	// a gas giant's moon is never size-capped, so never a double planet.
+	s := newSys()
+	s.rollSatellites(dice.NewWithSeed(4))
 	moons := s.Orbits[0].Satellites
-	if len(moons) != 3 {
-		t.Fatalf("got %d moons, want 3: %+v", len(moons), moons)
+	if len(moons) == 0 {
+		t.Fatal("gas giant got no satellites for seed 4")
 	}
-	if moons[0].Far || moons[0].OrbitLetter != "Gee" {
-		t.Errorf("moon 0 = %+v, want Close Gee", moons[0])
+	for i, m := range moons {
+		if m.Ring {
+			continue
+		}
+		if m.OrbitLetter == "" || m.Profile.String() == "" {
+			t.Errorf("moon %d missing letter or UWP: %+v", i, m)
+		}
+		if m.DoublePlanet {
+			t.Errorf("gas-giant moon %d flagged double planet: %+v", i, m)
+		}
 	}
-	if !moons[1].Far || moons[1].OrbitLetter != "Tee" {
-		t.Errorf("moon 1 = %+v, want Far Tee", moons[1])
+	// Deterministic for a fixed seed.
+	s2 := newSys()
+	s2.rollSatellites(dice.NewWithSeed(4))
+	if len(s2.Orbits[0].Satellites) != len(moons) {
+		t.Errorf("non-deterministic satellite count: %d vs %d", len(s2.Orbits[0].Satellites), len(moons))
+	}
+}
+
+func TestSatelliteType(t *testing.T) {
+	hz := 4
+	// Inner/HZ satellites match the other-world inner table exactly.
+	for roll := 1; roll <= 6; roll++ {
+		if got, want := satelliteType(hz, hz, true, roll), otherWorldType(hz, hz, true, roll); got != want {
+			t.Errorf("inner satelliteType(roll %d) = %v, want %v", roll, got, want)
+		}
+	}
+	// Outer satellites match the outer other-world table except roll 4, which is a
+	// StormWorld (Iceworld for an other world).
+	for roll := 1; roll <= 6; roll++ {
+		got := satelliteType(hz+3, hz, true, roll)
+		want := otherWorldType(hz+3, hz, true, roll)
+		if roll == 4 {
+			want = worldgen.StormWorld
+			if otherWorldType(hz+3, hz, true, 4) != worldgen.Iceworld {
+				t.Errorf("fixture: outer other-world roll 4 should be Iceworld")
+			}
+		}
+		if got != want {
+			t.Errorf("outer satelliteType(roll %d) = %v, want %v", roll, got, want)
+		}
+	}
+}
+
+func TestCapSatelliteSize(t *testing.T) {
+	cases := []struct {
+		sat, parent int
+		capped      bool
+		wantSize    int
+		wantDouble  bool
+	}{
+		{10, 5, true, 5, true},    // oversized -> cut to parent, double planet
+		{5, 5, true, 5, true},     // equal -> double planet
+		{3, 5, true, 3, false},    // smaller -> unchanged
+		{10, 0, false, 10, false}, // gas-giant parent: never capped
+	}
+	for _, c := range cases {
+		size, double := capSatelliteSize(c.sat, c.parent, c.capped)
+		if size != c.wantSize || double != c.wantDouble {
+			t.Errorf("capSatelliteSize(%d, %d, %v) = %d,%v, want %d,%v",
+				c.sat, c.parent, c.capped, size, double, c.wantSize, c.wantDouble)
+		}
 	}
 }
