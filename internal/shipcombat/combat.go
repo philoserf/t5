@@ -76,12 +76,15 @@ const (
 	UnGuided       Guidance = iota // 0
 	HardWired                      // 5
 	OperatorGuided                 // = gunner C+S+K
+	SelfAware                      // rolled: C=6+1D, S=1D, +Flux (caller-computed)
 	DownLoad                       // = gunner C+S+K
 )
 
-// Value is a guidance option's contribution to the Missile Attack target (Book 2
-// p.197): UnGuided 0, HardWired 5, Operator-Guided and DownLoad the gunner's
-// C+S+K.
+// Value is a guidance option's fixed contribution to the Missile Attack target
+// (Book 2 p.197): UnGuided 0, HardWired 5, Operator-Guided and DownLoad the
+// gunner's C+S+K. SelfAware has no fixed value — the missile rolls its own
+// C=6+1D, S=1D, +Flux — so Value returns 0 for it and the caller passes the
+// rolled value to ResolveMissile directly.
 func (g Guidance) Value(gunnerCSK int) int {
 	switch g {
 	case HardWired:
