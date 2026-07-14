@@ -231,28 +231,11 @@ func orbitLabel(o PlacedOrbit) string {
 // String renders a one-block summary of the system.
 func (s System) String() string {
 	var b strings.Builder
-	fmt.Fprintf(&b, "Primary: %s\n", s.Primary)
-	// orbit is -1 for stars without a numbered orbit (companions).
-	for _, e := range []struct {
-		label string
-		star  *Star
-		orbit int
-	}{
-		{"Primary Companion", s.PrimaryCompanion, -1},
-		{"Close", s.Close, s.CloseOrbit},
-		{"Close Companion", s.CloseCompanion, -1},
-		{"Near", s.Near, s.NearOrbit},
-		{"Near Companion", s.NearCompanion, -1},
-		{"Far", s.Far, s.FarOrbit},
-		{"Far Companion", s.FarCompanion, -1},
-	} {
-		if e.star == nil {
-			continue
-		}
-		if e.orbit >= 0 {
-			fmt.Fprintf(&b, "%s: %s (Orbit %d)\n", e.label, *e.star, e.orbit)
+	for _, sl := range s.Stars() {
+		if sl.Orbit >= 0 {
+			fmt.Fprintf(&b, "%s: %s (Orbit %d)\n", sl.Label, sl.Star, sl.Orbit)
 		} else {
-			fmt.Fprintf(&b, "%s: %s\n", e.label, *e.star)
+			fmt.Fprintf(&b, "%s: %s\n", sl.Label, sl.Star)
 		}
 	}
 	switch {
@@ -292,14 +275,50 @@ func (s System) PBG() string {
 		ehex.Format(s.Mainworld.PopulationDigit), ehex.Format(s.Belts), ehex.Format(s.GasGiants))
 }
 
+// A StarSlot is one member of a system's stellar family: the role it fills, the
+// star itself, the orbit it holds around the primary (-1 for the primary and for
+// a companion, which orbits inside its own star), and whether it is a companion.
+type StarSlot struct {
+	Label     string
+	Star      Star
+	Orbit     int
+	Companion bool
+}
+
+// Stars lists the system's stellar family in rotation order — the Primary, then
+// each secondary and companion that is present (Book 3 p. 28). This is the single
+// ordered enumeration of the star slots; every renderer of the family reads it
+// rather than walking the eight pointers again.
+func (s System) Stars() []StarSlot {
+	slots := make([]StarSlot, 0, 8)
+	slots = append(slots, StarSlot{Label: "Primary", Star: s.Primary, Orbit: -1})
+	for _, e := range []struct {
+		label     string
+		star      *Star
+		orbit     int
+		companion bool
+	}{
+		{"Primary Companion", s.PrimaryCompanion, -1, true},
+		{"Close", s.Close, s.CloseOrbit, false},
+		{"Close Companion", s.CloseCompanion, -1, true},
+		{"Near", s.Near, s.NearOrbit, false},
+		{"Near Companion", s.NearCompanion, -1, true},
+		{"Far", s.Far, s.FarOrbit, false},
+		{"Far Companion", s.FarCompanion, -1, true},
+	} {
+		if e.star != nil {
+			slots = append(slots, StarSlot{Label: e.label, Star: *e.star, Orbit: e.orbit, Companion: e.companion})
+		}
+	}
+	return slots
+}
+
 // Stellar renders the system's stars as a compact space-joined list, primary
 // first (e.g. "F8 V M6 VI F5 VI").
 func (s System) Stellar() string {
-	stars := []string{s.Primary.String()}
-	for _, st := range []*Star{s.PrimaryCompanion, s.Close, s.CloseCompanion, s.Near, s.NearCompanion, s.Far, s.FarCompanion} {
-		if st != nil {
-			stars = append(stars, st.String())
-		}
+	stars := make([]string, 0, 8)
+	for _, sl := range s.Stars() {
+		stars = append(stars, sl.Star.String())
 	}
 	return strings.Join(stars, " ")
 }

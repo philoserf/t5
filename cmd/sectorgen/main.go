@@ -38,13 +38,20 @@ func main() {
 		return
 	}
 
-	// A hex drills into one system of the surveyed sector, so the sector must be
-	// generated the same way -sector generates it.
+	// A hex drills into one system of the surveyed sector. The whole sector must be
+	// generated: the systems share one dice stream (so a hex's system depends on
+	// every hex before it), and the sheet shows capitals and way stations, which
+	// are only assigned once the whole region is known.
 	if *hex != "" {
-		sv := survey.Sector(r, d)
-		rec, found := sv.At(*hex)
+		h, ok := sectorgen.ParseHex(*hex)
+		if !ok {
+			fmt.Printf("invalid hex %q (want CCRR, columns 1-%d, rows 1-%d, e.g. 0436)\n",
+				*hex, sectorgen.Columns, sectorgen.Rows)
+			return
+		}
+		rec, found := survey.Sector(r, d).At(h)
 		if !found {
-			fmt.Printf("hex %s holds no star system at %s density (try another hex or seed)\n", *hex, d)
+			fmt.Printf("hex %s holds no star system at %s density (try another hex or seed)\n", h, d)
 			return
 		}
 		fmt.Println(rec.Sheet())
@@ -56,10 +63,11 @@ func main() {
 		return
 	}
 
-	letter := byte('A')
-	if len(*subsector) > 0 {
-		letter = strings.ToUpper(*subsector)[0]
+	if *subsector == "" {
+		fmt.Println("invalid subsector \"\" (want a letter A-P)")
+		return
 	}
+	letter := strings.ToUpper(*subsector)[0]
 	if letter < 'A' || letter > 'P' {
 		fmt.Printf("invalid subsector %q (want a letter A-P)\n", *subsector)
 		return
