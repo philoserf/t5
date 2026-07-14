@@ -35,8 +35,7 @@ func main() {
 
 	d, ok := sectorgen.DensityByName(*densityName)
 	if !ok {
-		fmt.Printf("unknown density %q (known: %s)\n", *densityName, strings.Join(sectorgen.DensityNames(), ", "))
-		return
+		cli.Fatalf("unknown density %q (known: %s)", *densityName, strings.Join(sectorgen.DensityNames(), ", "))
 	}
 
 	switch {
@@ -53,7 +52,7 @@ func main() {
 func printSector(r *dice.Roller, d sectorgen.Density) {
 	sv := survey.Sector(r, d)
 	if len(sv.Records) == 0 {
-		fmt.Printf("no star systems in this sector at %s density\n", d)
+		cli.Note("no star systems in this sector at %s density", d)
 		return
 	}
 	fmt.Println(sv)
@@ -63,30 +62,28 @@ func printSector(r *dice.Roller, d sectorgen.Density) {
 func printHex(r *dice.Roller, d sectorgen.Density, hex string) {
 	h, ok := sectorgen.ParseHex(hex)
 	if !ok {
-		fmt.Printf("invalid hex %q (want CCRR, columns 1-%d, rows 1-%d, e.g. 0436)\n",
+		cli.Fatalf("invalid hex %q (want CCRR, columns 1-%d, rows 1-%d, e.g. 0436)",
 			hex, sectorgen.Columns, sectorgen.Rows)
-		return
 	}
 	rec, found := survey.Sector(r, d).At(h)
 	if !found {
-		fmt.Printf("hex %s holds no star system at %s density (try another hex or seed)\n", h, d)
+		cli.Note("hex %s holds no star system at %s density (try another hex or seed)", h, d)
 		return
 	}
 	fmt.Println(rec.Sheet())
 }
 
 // printSubsector lists one subsector's worlds as Second Survey lines. An empty
-// subsector says so: at a low density it is an ordinary result, and printing
-// nothing at all would be indistinguishable from a failure.
+// subsector is a true result at a low density, not a failure — it says so on
+// stderr, so stdout stays a clean record stream either way.
 func printSubsector(r *dice.Roller, d sectorgen.Density, subsector string) {
 	letter, ok := sectorgen.ParseSubsector(subsector)
 	if !ok {
-		fmt.Printf("invalid subsector %q (want a letter A-P)\n", subsector)
-		return
+		cli.Fatalf("invalid subsector %q (want a letter A-P)", subsector)
 	}
 	records := survey.Sector(r, d).Subsector(letter)
 	if len(records) == 0 {
-		fmt.Printf("no star systems in subsector %c at %s density\n", letter, d)
+		cli.Note("no star systems in subsector %c at %s density", letter, d)
 		return
 	}
 	for _, rec := range records {

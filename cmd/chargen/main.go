@@ -13,7 +13,6 @@ package main
 import (
 	"flag"
 	"fmt"
-	"os"
 	"strconv"
 	"strings"
 
@@ -35,8 +34,7 @@ func main() {
 
 	careers, err := careersByNames(*careerName)
 	if err != nil {
-		fmt.Fprintln(os.Stderr, "chargen:", err)
-		os.Exit(2)
+		cli.Fatalf("%v", err)
 	}
 	for range n {
 		// A homeworld is an input to character generation (selected, assigned, or
