@@ -4,10 +4,13 @@ package survey
 // Survey line carries only the mainworld, so the great bulk of what the
 // generators compute — the stellar family, the orbit map, every secondary world
 // and moon, the mainworld's port facilities, native status, and Resource Units —
-// has no other renderer. Sheet is that renderer.
+// has no other renderer. Sheet is that renderer. It lays out; each generator
+// still owns the meaning of its own data (systemgen.System.Stars,
+// worldgen.Facilities.Services, worldgen.ZoneName, worldgen.World.BaseNames).
 
 import (
 	"fmt"
+	"slices"
 	"strings"
 
 	"github.com/philoserf/t5/internal/route"
@@ -16,44 +19,47 @@ import (
 	"github.com/philoserf/t5/internal/worldgen"
 )
 
+// rule separates the sheet's header from its body.
+const rule = "────────────────────────────────────────────────────────────────"
+
 // Sheet renders everything known about a surveyed hex: the mainworld in full
 // (profile, extensions with Resource Units, nobility, bases, zone, native status,
 // and starport facilities), the stellar family, and the complete orbit map with
 // each world's UWP and each body's moons.
 func (rec Record) Sheet() string {
 	var b strings.Builder
+	b.Grow(2048)
 	s := rec.System
 	mw := s.Mainworld
 
-	fmt.Fprintf(&b, "%s  %s%s\n", rec.Hex, rec.Name, capitalTitle(mw))
-	fmt.Fprintf(&b, "%s\n", strings.Repeat("─", 64))
-
-	// The mainworld, expanded past what the one-line record can hold.
-	fmt.Fprintf(&b, "  Mainworld   %s", mw.Profile)
-	if tcs := strings.Join(mw.TradeCodes, " "); tcs != "" {
-		fmt.Fprintf(&b, "  %s", tcs)
+	// field writes one "label   value" row of the mainworld block.
+	field := func(label, format string, a ...any) {
+		fmt.Fprintf(&b, "  %-11s %s\n", label, fmt.Sprintf(format, a...))
 	}
-	b.WriteByte('\n')
-	fmt.Fprintf(&b, "  Extensions  {%+d}%s%s   RU %d\n",
-		mw.Importance, mw.Economic, mw.Cultural, mw.Economic.RU())
-	fmt.Fprintf(&b, "  Traffic     ~%d ships/week\n", route.ExpectedTraffic(mw.Importance))
+
+	fmt.Fprintf(&b, "%s  %s%s\n%s\n", rec.Hex, rec.Name, capitalTitle(mw), rule)
+
+	field("Mainworld", "%s  %s", mw.Profile, strings.Join(mw.TradeCodes, " "))
+	field("Extensions", "{%+d}%s%s   RU %d", mw.Importance, mw.Economic, mw.Cultural, mw.Economic.RU())
+	field("Traffic", "~%d ships/week", route.ExpectedTraffic(mw.Importance))
 	if mw.Nobility != "" {
-		fmt.Fprintf(&b, "  Nobility    %s\n", mw.Nobility)
+		field("Nobility", "%s", mw.Nobility)
 	}
-	fmt.Fprintf(&b, "  Bases       %s\n", basesOf(mw))
-	fmt.Fprintf(&b, "  Travel Zone %s\n", zoneName(mw.Zone))
+	field("Bases", "%s", orNone(mw.BaseNames()))
+	field("Travel Zone", "%s", worldgen.ZoneName(mw.Zone))
 	if mw.NativeStatus != "" {
-		fmt.Fprintf(&b, "  Natives     %s\n", mw.NativeStatus)
+		field("Natives", "%s", mw.NativeStatus)
 	}
-	writeFacilities(&b, mw)
+	if f, ok := worldgen.PortFacilities(mw.Profile.Starport, mw.Profile.Population); ok {
+		field("Starport", "%c — %s", f.Class, f.Quality)
+		fmt.Fprintf(&b, "              %s\n", strings.Join(f.Services(), " · "))
+	}
 
-	// The stellar family.
 	b.WriteString("\n  Stars\n")
-	for _, e := range stellarFamily(s) {
-		fmt.Fprintf(&b, "    %-18s %s\n", e.label, e.star)
+	for _, sl := range s.Stars() {
+		fmt.Fprintf(&b, "    %-18s %s%s\n", sl.Label, sl.Star, starOrbit(sl))
 	}
 
-	// The orbit map — the bulk of the hidden detail.
 	fmt.Fprintf(&b, "\n  Orbits — %d worlds · PBG %s · %d gas giants · %d belts\n",
 		s.Worlds, s.PBG(), s.GasGiants, s.Belts)
 	writeOrbits(&b, s)
@@ -61,113 +67,36 @@ func (rec Record) Sheet() string {
 	return strings.TrimRight(b.String(), "\n")
 }
 
+// starOrbit notes where a star sits: a secondary holds a numbered orbit around
+// the primary, while a companion orbits inside its own star.
+func starOrbit(sl systemgen.StarSlot) string {
+	switch {
+	case sl.Companion:
+		return "  (companion)"
+	case sl.Orbit >= 0:
+		return fmt.Sprintf("  (Orbit %d)", sl.Orbit)
+	default:
+		return ""
+	}
+}
+
 // capitalTitle names the capital a world is, if any.
 func capitalTitle(w worldgen.World) string {
 	switch {
-	case hasCode(w, "Cx"):
+	case slices.Contains(w.TradeCodes, "Cx"):
 		return "   — Sector Capital"
-	case hasCode(w, "Cs"):
+	case slices.Contains(w.TradeCodes, "Cs"):
 		return "   — Subsector Capital"
 	default:
 		return ""
 	}
 }
 
-func hasCode(w worldgen.World, code string) bool {
-	for _, c := range w.TradeCodes {
-		if c == code {
-			return true
-		}
-	}
-	return false
-}
-
-// basesOf spells out the base codes the Second Survey line abbreviates.
-func basesOf(w worldgen.World) string {
-	var out []string
-	if w.NavalBase {
-		out = append(out, "Naval")
-	}
-	if w.ScoutBase {
-		out = append(out, "Scout")
-	}
-	if w.WayStation {
-		out = append(out, "Way Station")
-	}
-	if len(out) == 0 {
+func orNone(items []string) string {
+	if len(items) == 0 {
 		return "none"
 	}
-	return strings.Join(out, ", ")
-}
-
-func zoneName(z byte) string {
-	switch z {
-	case 'A':
-		return "Amber"
-	case 'R':
-		return "Red"
-	default:
-		return "Green"
-	}
-}
-
-// writeFacilities renders the starport's services (Book 2 p.24), which the
-// survey line has no room for.
-func writeFacilities(b *strings.Builder, w worldgen.World) {
-	f, ok := worldgen.PortFacilities(w.Profile.Starport, w.Profile.Population)
-	if !ok {
-		return
-	}
-	fmt.Fprintf(b, "  Starport    %c — %s\n", f.Class, f.Quality)
-	var svc []string
-	if f.Shipyard != "" {
-		svc = append(svc, "builds "+f.Shipyard)
-	}
-	svc = append(svc, "repairs: "+f.Repairs.String())
-	if f.Fuel.String() != "" {
-		fuel := "fuel: " + f.Fuel.String()
-		if f.RefuelHours != "" {
-			fuel += " (" + f.RefuelHours + " hours)"
-		}
-		svc = append(svc, fuel)
-	}
-	if f.Downport {
-		svc = append(svc, "downport")
-	}
-	if f.Beacon {
-		svc = append(svc, "beacon only")
-	}
-	if f.Highport {
-		svc = append(svc, "highport")
-	}
-	fmt.Fprintf(b, "              %s\n", strings.Join(svc, " · "))
-}
-
-// a starEntry is one member of the stellar family, with its role and orbit.
-type starEntry struct{ label, star string }
-
-// stellarFamily lists the system's stars in rotation order, noting the orbit each
-// secondary holds around the primary. Companions orbit inside their own star.
-func stellarFamily(s systemgen.System) []starEntry {
-	out := []starEntry{{"Primary", s.Primary.String()}}
-	add := func(label string, st *systemgen.Star, orbit int, companion bool) {
-		if st == nil {
-			return
-		}
-		if companion {
-			out = append(out, starEntry{label, st.String() + "  (companion)"})
-			return
-		}
-		out = append(out, starEntry{label, fmt.Sprintf("%s  (Orbit %d)", st, orbit)})
-	}
-	add("Primary companion", s.PrimaryCompanion, 0, true)
-	add("Close", s.Close, s.CloseOrbit, false)
-	add("Close companion", s.CloseCompanion, 0, true)
-	add("Near", s.Near, s.NearOrbit, false)
-	add("Near companion", s.NearCompanion, 0, true)
-	add("Far", s.Far, s.FarOrbit, false)
-	add("Far companion", s.FarCompanion, 0, true)
-	return out
+	return strings.Join(items, ", ")
 }
 
 // writeOrbits renders the orbit map as a tree: one line per placed body, with its
@@ -194,12 +123,15 @@ func writeOrbits(b *strings.Builder, s systemgen.System) {
 // passed in, since its PlacedOrbit records only that it is the mainworld.
 func bodyLabel(o systemgen.PlacedOrbit, mainworld uwp.Profile) string {
 	switch {
-	case o.Kind == systemgen.KindMainworld && o.Giant != nil:
-		return fmt.Sprintf("%-14s %s  — moon of Gas Giant %s", "Mainworld", mainworld, o.Giant)
-	case o.Kind == systemgen.KindMainworld && o.Parent != nil:
-		return fmt.Sprintf("%-14s %s  — moon of %s %s", "Mainworld", mainworld, o.Parent.Type, o.Parent.Profile)
 	case o.Kind == systemgen.KindMainworld:
-		return fmt.Sprintf("%-14s %s", "Mainworld", mainworld)
+		s := fmt.Sprintf("%-14s %s", "Mainworld", mainworld)
+		switch {
+		case o.Giant != nil:
+			s += fmt.Sprintf("  — moon of Gas Giant %s", o.Giant)
+		case o.Parent != nil:
+			s += fmt.Sprintf("  — moon of %s %s", o.Parent.Type, o.Parent.Profile)
+		}
+		return s
 	case o.Giant != nil:
 		return fmt.Sprintf("%-14s %s", "Gas Giant", o.Giant)
 	case o.Kind == systemgen.KindBelt:

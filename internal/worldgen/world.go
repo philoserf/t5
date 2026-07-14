@@ -135,18 +135,29 @@ func importance(ix int) string {
 	return fmt.Sprintf("{%+d}", ix)
 }
 
-// bases renders the base codes: "N" for a Naval base, "S" for a Scout base,
-// "W" for a Scout Way Station (Book 3 p.28).
-func (w World) bases() string {
-	var b strings.Builder
+// BaseNames names the bases the world hosts, in the order their codes appear in
+// the Second Survey record (Book 3 p.28). Empty when the world hosts none.
+func (w World) BaseNames() []string {
+	var out []string
 	if w.NavalBase {
-		b.WriteByte('N')
+		out = append(out, "Naval")
 	}
 	if w.ScoutBase {
-		b.WriteByte('S')
+		out = append(out, "Scout")
 	}
 	if w.WayStation {
-		b.WriteByte('W')
+		out = append(out, "Way Station")
+	}
+	return out
+}
+
+// bases renders the base codes: "N" for a Naval base, "S" for a Scout base,
+// "W" for a Scout Way Station (Book 3 p.28) — each base's initial, in BaseNames
+// order.
+func (w World) bases() string {
+	var b strings.Builder
+	for _, name := range w.BaseNames() {
+		b.WriteByte(name[0])
 	}
 	return b.String()
 }

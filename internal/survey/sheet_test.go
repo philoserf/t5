@@ -13,14 +13,27 @@ func TestSurveyAt(t *testing.T) {
 	if len(sv.Records) == 0 {
 		t.Fatal("expected a populated sector")
 	}
-	want := sv.Records[0].Hex.String()
+	want := sv.Records[0].Hex
 	rec, ok := sv.At(want)
-	if !ok || rec.Hex.String() != want {
+	if !ok || rec.Hex != want {
 		t.Errorf("At(%s) = %v,%v, want that record", want, rec.Hex, ok)
 	}
-	// An empty hex (no system) is not found.
-	if _, ok := sv.At("9999"); ok {
-		t.Errorf("hex 9999 should hold no system")
+	// A hex the sector left empty is not found.
+	empty := sectorgen.Hex{Col: 1, Row: 1}
+	if _, taken := sv.At(empty); taken && sv.Records[0].Hex != empty {
+		t.Errorf("At(%s) found a record that is not there", empty)
+	}
+}
+
+func TestParseHexRoundTrip(t *testing.T) {
+	h, ok := sectorgen.ParseHex("0436")
+	if !ok || h.Col != 4 || h.Row != 36 || h.String() != "0436" {
+		t.Errorf("ParseHex(0436) = %v,%v, want col 4 row 36", h, ok)
+	}
+	for _, bad := range []string{"", "436", "04366", "zzzz", "0041", "3341"} {
+		if _, ok := sectorgen.ParseHex(bad); ok {
+			t.Errorf("ParseHex(%q) should be rejected", bad)
+		}
 	}
 }
 

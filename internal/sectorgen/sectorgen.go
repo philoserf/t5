@@ -6,6 +6,7 @@ package sectorgen
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 
 	"github.com/philoserf/t5/internal/dice"
@@ -30,6 +31,26 @@ type Hex struct {
 // String renders the hex as its four-digit CCRR location, e.g. "0803".
 func (h Hex) String() string {
 	return fmt.Sprintf("%02d%02d", h.Col, h.Row)
+}
+
+// ParseHex reads a four-digit CCRR location (e.g. "0803") into a Hex, reporting
+// whether it is well-formed and inside the sector.
+func ParseHex(s string) (Hex, bool) {
+	if len(s) != 4 {
+		return Hex{}, false
+	}
+	col, err := strconv.Atoi(s[:2])
+	if err != nil {
+		return Hex{}, false
+	}
+	row, err := strconv.Atoi(s[2:])
+	if err != nil {
+		return Hex{}, false
+	}
+	if col < 1 || col > Columns || row < 1 || row > Rows {
+		return Hex{}, false
+	}
+	return Hex{Col: col, Row: row}, true
 }
 
 // Distance returns the number of parsecs (jump distance) between two hexes on

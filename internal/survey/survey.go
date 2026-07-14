@@ -86,11 +86,13 @@ func Sector(r *dice.Roller, d sectorgen.Density) Survey {
 	return Survey{Records: records, Routes: links}
 }
 
-// At finds the record for a hex given as its four-digit CCRR location (e.g.
-// "0436"), reporting whether that hex holds a star system at all.
-func (s Survey) At(hex string) (Record, bool) {
+// At finds the record for a hex, reporting whether that hex holds a star system.
+// Records stay in CCRR order (String, route building, and way-station placement
+// all depend on it), so this is a scan rather than a map lookup — it runs once
+// per drill-in, against a sector that took far longer to generate.
+func (s Survey) At(hex sectorgen.Hex) (Record, bool) {
 	for _, rec := range s.Records {
-		if rec.Hex.String() == hex {
+		if rec.Hex == hex {
 			return rec, true
 		}
 	}

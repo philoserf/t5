@@ -66,6 +66,35 @@ type Facilities struct {
 	RefuelHours string // "2D", "4D", or "" when no fuel
 }
 
+// Services lists a port's services in prose (Book 2 p.24): what it builds, how
+// far it can repair, its fuel and refuelling time, and its surface and orbital
+// facilities. A port with no fuel simply omits fuel; a beacon-only downport
+// (classes E and H) is named as such rather than claiming a staffed one.
+func (f Facilities) Services() []string {
+	var out []string
+	if f.Shipyard != "" {
+		out = append(out, "builds "+f.Shipyard)
+	}
+	out = append(out, "repairs: "+f.Repairs.String())
+	if f.Fuel != NoFuel {
+		fuel := "fuel: " + f.Fuel.String()
+		if f.RefuelHours != "" {
+			fuel += " (" + f.RefuelHours + " hours)"
+		}
+		out = append(out, fuel)
+	}
+	switch {
+	case f.Beacon:
+		out = append(out, "beacon-only downport")
+	case f.Downport:
+		out = append(out, "downport")
+	}
+	if f.Highport {
+		out = append(out, "highport")
+	}
+	return out
+}
+
 // portTable is the fixed, population-independent part of each port class
 // (Book 2 p.24). Highport is filled in by PortFacilities.
 var portTable = map[byte]Facilities{

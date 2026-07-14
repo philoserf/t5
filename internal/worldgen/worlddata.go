@@ -72,6 +72,19 @@ func RollBases(r *dice.Roller, starport byte) (naval, scout bool) {
 	return naval, scout
 }
 
+// ZoneName names a travel-zone code (Book 3 p. 28); anything but Amber or Red is
+// Green, the common case.
+func ZoneName(zone byte) string {
+	switch zone {
+	case 'A':
+		return "Amber"
+	case 'R':
+		return "Red"
+	default:
+		return "Green"
+	}
+}
+
 // TravelZone classifies a world as Green ('G'), Amber ('A'), or Red ('R') from
 // its Government+Law level and starport (Book 3 p. 28): Gov+Law of 20+ is Amber,
 // 22+ is Red, and a class-X starport is Red. The Dangerous/Puzzling (Da/Pz)
