@@ -69,8 +69,9 @@ func TestDefensiveFire(t *testing.T) {
 }
 
 func TestMissileTask(t *testing.T) {
-	// Guidance values (Book 2 p.197).
-	if UnGuided.Value(8) != 0 || HardWired.Value(8) != 5 || OperatorGuided.Value(8) != 8 {
+	// Guidance values (Book 2 p.197). SelfAware has no fixed value (it is rolled),
+	// so Value returns 0 and the caller supplies the rolled value directly.
+	if UnGuided.Value(8) != 0 || HardWired.Value(8) != 5 || OperatorGuided.Value(8) != 8 || SelfAware.Value(8) != 0 {
 		t.Errorf("guidance values wrong")
 	}
 	if got := MissileTarget(10, 5, 1); got != 16 { // HardWired missile TL-10, mod +1

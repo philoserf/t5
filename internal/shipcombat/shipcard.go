@@ -1,11 +1,11 @@
 package shipcombat
 
-// The ShipCard compartment model (Book 2 p.86 Table H Hull Location and
+// The ShipCard compartment model (Book 2 p.95 Table H Hull Location and
 // Compartment Tonnage). A hull's hit locations are its Compartments, numbered
 // within a Span (-Span..+Span) and each holding six SubCompartments; Flux picks
 // the hit Compartment and 1D the SubCompartment.
 
-// A HullLocation describes a hull's compartment structure (Book 2 p.86 Table H):
+// A HullLocation describes a hull's compartment structure (Book 2 p.95 Table H):
 // the number of Compartments (hit locations), the Span they are numbered within,
 // and the tonnage per Compartment and per SubCompartment.
 type HullLocation struct {
@@ -15,8 +15,7 @@ type HullLocation struct {
 	SubTons         int
 }
 
-// hullLocation is Table H indexed by hull size ordinal (A=1 … X=22); hulls larger
-// than X (Y, Z) are not tabulated.
+// hullLocation is Table H indexed by hull size ordinal (A=1 … Z=24).
 var hullLocation = map[int]HullLocation{
 	1:  {5, 4, 20, 3},     // A 100t
 	2:  {7, 4, 30, 5},     // B 200t
@@ -40,14 +39,16 @@ var hullLocation = map[int]HullLocation{
 	20: {21, 10, 100, 17}, // V 2000t
 	21: {21, 10, 100, 17}, // W 2100t
 	22: {23, 11, 100, 17}, // X 2200t
+	23: {23, 11, 100, 17}, // Y 2300t
+	24: {25, 12, 100, 17}, // Z 2400t
 }
 
 // SubCompartmentsPerCompartment is the number of SubCompartments in each
-// Compartment (a 1D refinement of a hit location, Book 2 p.86).
+// Compartment (a 1D refinement of a hit location, Book 2 p.95).
 const SubCompartmentsPerCompartment = 6
 
 // HullLocations returns a hull's compartment structure by hull size ordinal
-// (A=1 … X=22) and whether the hull is tabulated (Book 2 p.86 Table H).
+// (A=1 … Z=24) and whether the hull is tabulated (Book 2 p.95 Table H).
 func HullLocations(hullOrdinal int) (HullLocation, bool) {
 	h, ok := hullLocation[hullOrdinal]
 	return h, ok

@@ -18,9 +18,13 @@ func TestHullLocations(t *testing.T) {
 			t.Errorf("HullLocations(%d) = %+v,%v, want %+v", c.ord, got, ok, c.want)
 		}
 	}
-	// Hulls beyond X are not tabulated.
-	if _, ok := HullLocations(24); ok {
-		t.Errorf("Hull Z should not be tabulated")
+	// Hull Z (the largest, 2400t) is tabulated with 25 compartments and span ±12;
+	// ordinals beyond it are not.
+	if got, ok := HullLocations(24); !ok || got != (HullLocation{25, 12, 100, 17}) {
+		t.Errorf("HullLocations(24) = %+v,%v, want Z {25,12,100,17}", got, ok)
+	}
+	if _, ok := HullLocations(25); ok {
+		t.Errorf("ordinal 25 (beyond Z) should not be tabulated")
 	}
 	// A hit on a Hull-A ship centers on Compartment 0 and clamps to its ±4 span.
 	a, _ := HullLocations(1)
