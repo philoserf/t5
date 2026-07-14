@@ -261,6 +261,13 @@ func (s *System) placeOrbits(r *dice.Roller) {
 			InHZ:                h.hasHZ && o == h.hz,
 			MainworldIndustrial: mwIndustrial,
 		})
+		// Chart D is for "the Mainworld AND other worlds in the system" (Book 3
+		// p.26), and a placed world's orbit and its star's habitable zone are both
+		// in hand right here — so it earns its climate codes like any other world.
+		// Only the mainworld used to get them.
+		if h.hasHZ {
+			tcs = append(tcs, worldgen.ClimateCodes(prof, o, h.hz)...)
+		}
 		placed = append(placed, PlacedOrbit{Host: h.label, Orbit: o, Kind: KindWorld, World: &OtherWorld{Type: wt, Profile: prof, TradeCodes: tcs}})
 	}
 

@@ -66,8 +66,11 @@ The mainworld line is the full world record — UWP, trade classifications, the
 `{Ix}(Ex)[Cx]` Extensions, nobility, bases, and travel zone.
 
 The engine is faithful to the rules and validated against the books' own worked
-examples — e.g. worldgen reproduces the canonical Regina profile `A788899-C` and
-its full record `A788899-C Ph Pa Ri {+4}(D7E+4)[9C6D] BcCeF NS -`.
+examples — e.g. worldgen reproduces the Regina profile `A788899-C` and the
+generated part of its record, `A788899-C Ph Pa Ri {+4}(D7E+4)[9C6D] BcCeF NS -`.
+(The book prints Regina with two more trade codes, `An` and `Cp` — an Ancient Site
+and a Subsector Capital. Both are referee-assigned rather than generated, so the
+line is the generatable subset of the book's, not a copy of it.)
 Chargen runs the character lifecycle (homeworld skills, college with a Major and
 Minor, then career qualification, four-year terms with Risk & Reward and aging,
 skill eligibility, and mustering out) for all thirteen careers, each selected

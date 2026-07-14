@@ -53,16 +53,26 @@ func TestMarkSectorCapitals(t *testing.T) {
 	records := []Record{
 		recordWith(sectorgen.Hex{Col: 1, Row: 1}, 'A', 5), // subsector A, region-best -> Cx
 		recordWith(sectorgen.Hex{Col: 2, Row: 2}, 'A', 3), // subsector A, lower -> nothing
-		recordWith(sectorgen.Hex{Col: 9, Row: 1}, 'A', 4), // subsector B -> its capital Cs
+		recordWith(sectorgen.Hex{Col: 9, Row: 1}, 'A', 4), // subsector B -> its capital Cp
 	}
 	markSectorCapitals(records)
 
+	// Book 3 Chart D (p.26): Cp is a Subsector Capital, Cs is a Sector Capital, and
+	// Cx is the Imperial Capital. These were swapped, so every generated sector
+	// promoted each subsector capital to a sector capital, and its sector capital to
+	// the capital of the Imperium.
 	tcs := func(i int) []string { return records[i].System.Mainworld.TradeCodes }
-	if !slices.Contains(tcs(0), "Cx") || slices.Contains(tcs(0), "Cs") {
-		t.Errorf("region-best world should be Cx only: %v", tcs(0))
+	if !slices.Contains(tcs(0), "Cs") || slices.Contains(tcs(0), "Cp") {
+		t.Errorf("the sector's best world is its Sector Capital (Cs) only: %v", tcs(0))
 	}
-	if !slices.Contains(tcs(2), "Cs") {
-		t.Errorf("subsector-B best should be Cs: %v", tcs(2))
+	if !slices.Contains(tcs(2), "Cp") {
+		t.Errorf("subsector-B's best world is a Subsector Capital (Cp): %v", tcs(2))
+	}
+	// Cx is the Imperial Capital: there is one, and it is not a fact about a sector.
+	for i := range records {
+		if slices.Contains(tcs(i), "Cx") {
+			t.Errorf("record %d was marked the Imperial Capital (Cx): %v", i, tcs(i))
+		}
 	}
 	if len(tcs(1)) != 0 {
 		t.Errorf("non-capital world should carry no capital code: %v", tcs(1))

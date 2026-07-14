@@ -2,23 +2,40 @@ package worldgen
 
 import "github.com/philoserf/t5/internal/uwp"
 
-// ClimateCodes returns the climate / orbit-dependent trade classifications a
-// mainworld earns from where it sits relative to its star's habitable zone
-// (Book 3 Chart D, p.26; the HZ offset comes from Chart B, p.24). These are the
-// codes TradeClassifications intentionally omits because they need a concrete
-// orbit — systemgen supplies it once the mainworld is placed.
+// ClimateCodes returns the climate / orbit-dependent trade classifications a world
+// earns from where it sits relative to its star's habitable zone (Book 3 Chart D,
+// p.26; the HZ offset comes from Chart B, p.24). These are the codes
+// TradeClassifications intentionally omits because they need a concrete orbit —
+// systemgen supplies it once the world is placed.
 //
-// Tr (Tropic) and Tu (Tundra) each need the world one orbit inside/outside the
-// habitable zone AND a temperate-band UWP; Fr (Frozen) needs it two-plus orbits
-// out AND a water-bearing UWP; Tz (Twilight Zone) is any world in orbit 0 or 1.
-// This edition's Chart B does not emit the broader T5SS Hot/Cold pair.
+// The chart splits them into two kinds, and the distinction is the whole point:
+//
+//   - Ho (Hot) and Co (Cold) depend on the ORBIT ALONE. Chart D gives them no Size,
+//     Atmosphere, Hydrographics, Population, Government, or Law constraint — every
+//     column is "--". A world one orbit inside the habitable zone is Hot and one
+//     orbit outside it is Cold, whatever else it is.
+//   - Tr (Tropic), Tu (Tundra), and Fr (Frozen) need the orbit AND a UWP that can
+//     carry the climate: a temperate-band world for Tr/Tu, a water-bearing one for
+//     Fr.
+//
+// So Ho and Tr describe the same orbit, and a world there is Hot whether or not it
+// is also Tropic — which is why these are not mutually exclusive cases. Ho and Co
+// were previously omitted on the grounds that "this edition's Chart B does not emit
+// the broader T5SS Hot/Cold pair"; Chart D, the chart this function implements,
+// defines both. Tz (Twilight Zone) is any world in orbit 0 or 1.
 func ClimateCodes(p uwp.Profile, orbit, hzOrbit int) []string {
 	var out []string
 	switch offset := orbit - hzOrbit; {
-	case offset == -1 && tropicUWP(p):
-		out = append(out, "Tr")
-	case offset == 1 && tropicUWP(p):
-		out = append(out, "Tu")
+	case offset == -1:
+		out = append(out, "Ho") // orbit alone
+		if tropicUWP(p) {
+			out = append(out, "Tr")
+		}
+	case offset == 1:
+		out = append(out, "Co") // orbit alone
+		if tropicUWP(p) {
+			out = append(out, "Tu")
+		}
 	case offset >= 2 && frozenUWP(p):
 		out = append(out, "Fr")
 	}
