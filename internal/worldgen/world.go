@@ -55,7 +55,7 @@ func GenerateBeltWorld(r *dice.Roller, gasGiants, belts int, isCapital bool) Wor
 
 func generateWorld(r *dice.Roller, gasGiants, belts int, isCapital, belt bool) World {
 	p := generate(r, belt)
-	tcs := TradeClassifications(p)
+	tcs := append(TradeClassifications(p), ZoneCodes(p)...)
 	naval, scout := RollBases(r, p.Starport)
 	ix := Importance(p, tcs, naval, scout, false)
 	return World{

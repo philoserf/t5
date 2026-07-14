@@ -20,10 +20,14 @@ type WorldContext struct {
 // the secondary codes that need system context: Fa (Farming), Mi (Mining), and
 // Pe (Penal Colony) — Book 3 Chart D, p.26. All three are "not the mainworld"
 // codes; Mr and the referee-assigned Politicals/Specials are out of scope.
+//
+// The Special-section zone codes (Da/Pz/Fo) are appended last, matching Chart D's
+// order; they are pure-UWP, so every world earns them (the mainworld gets them the
+// same way in generateWorld).
 func TradeClassificationsWithContext(p uwp.Profile, ctx WorldContext) []string {
 	tcs := TradeClassifications(p)
 	if ctx.IsMainworld {
-		return tcs
+		return append(tcs, ZoneCodes(p)...)
 	}
 	// Px (Prison/Exile Camp) is a mainworld-only code (Book 3 Chart D p.26, "MW");
 	// a non-mainworld with that same profile is a Pe (Penal Colony) instead, so
@@ -42,5 +46,5 @@ func TradeClassificationsWithContext(p uwp.Profile, ctx WorldContext) []string {
 		allows("3456", p.Population) && allows("6", p.Government) && allows("6789", p.Law) {
 		tcs = append(tcs, "Pe")
 	}
-	return tcs
+	return append(tcs, ZoneCodes(p)...)
 }
