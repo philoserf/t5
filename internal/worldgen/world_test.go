@@ -49,6 +49,28 @@ func TestSecondSurveyZeroImportance(t *testing.T) {
 	}
 }
 
+func TestSetWayStation(t *testing.T) {
+	w := World{Profile: regina, TradeCodes: []string{"Ph"}}
+	base := Importance(w.Profile, w.TradeCodes, w.NavalBase, w.ScoutBase, false)
+	w.Importance = base
+
+	w.SetWayStation()
+	if !w.WayStation {
+		t.Errorf("WayStation flag not set")
+	}
+	if w.Importance != base+1 {
+		t.Errorf("Importance = %d, want %d (base + Way Station bonus)", w.Importance, base+1)
+	}
+	if got := w.bases(); got != "W" {
+		t.Errorf("bases() = %q, want W", got)
+	}
+	// Idempotent: a second call does not bump Importance again.
+	w.SetWayStation()
+	if w.Importance != base+1 {
+		t.Errorf("second SetWayStation re-bumped Importance to %d", w.Importance)
+	}
+}
+
 func TestPopulationDigit(t *testing.T) {
 	if got := PopulationDigit(dice.NewScripted(1, 1), 0); got != 0 {
 		t.Errorf("PopulationDigit(pop 0) = %d, want 0", got)

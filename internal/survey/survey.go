@@ -6,12 +6,18 @@
 package survey
 
 import (
+	"sort"
 	"strings"
 
 	"github.com/philoserf/t5/internal/dice"
+	"github.com/philoserf/t5/internal/route"
 	"github.com/philoserf/t5/internal/sectorgen"
 	"github.com/philoserf/t5/internal/systemgen"
 )
+
+// wayStationSpacing is the trade-route length, in parsecs, per Scout Way Station
+// (Book 3 p.28: "1 per 50 parsecs on trade route").
+const wayStationSpacing = 50
 
 // A Record is one surveyed hex: its location, a generated world name, and the
 // full star system generated for it.
@@ -47,12 +53,80 @@ func Subsector(r *dice.Roller, d sectorgen.Density, letter byte) []Record {
 	return records
 }
 
+// A Survey is a surveyed region: its per-hex system records and the trade routes
+// linking their Important worlds (Book 3 pp. 21, 27).
+type Survey struct {
+	Records []Record
+	Routes  []route.Link
+}
+
+// Sector surveys an entire sector (all 1280 hexes) at the given density: every
+// present hex gets a full generated system and name, each subsector's highest-
+// Importance Starport-A world is marked its capital (Cs) and the region's is the
+// sector capital (Cx), then trade routes are laid among the Important worlds and
+// Scout Way Stations sited along them.
+func Sector(r *dice.Roller, d sectorgen.Density) Survey {
+	hexes := sectorgen.GenerateSector(r, d)
+	records := make([]Record, len(hexes))
+	for i, h := range hexes {
+		records[i] = Record{
+			Hex:    h.Hex,
+			Name:   worldName(r),
+			System: systemgen.Generate(r),
+		}
+	}
+	// Capitals from base Importance, then routes, then Way Stations (which bump
+	// Importance) — a single pass; a Way Station's +1 does not re-trigger route
+	// or capital selection.
+	markSectorCapitals(records)
+	links := route.Build(worldsOf(records), route.DefaultJump)
+	placeWayStations(records, links)
+	return Survey{Records: records, Routes: links}
+}
+
+// worldsOf projects the survey records to the route package's world summaries.
+func worldsOf(records []Record) []route.World {
+	worlds := make([]route.World, len(records))
+	for i, rec := range records {
+		worlds[i] = route.World{Hex: rec.Hex, Importance: rec.System.Mainworld.Importance}
+	}
+	return worlds
+}
+
 // markCapital tags the highest-Importance Starport-A world as the subsector
 // capital (Cs; Book 3 Chart D p.26 requires Starport A). If no world has Starport
 // A, none is marked.
 func markCapital(records []Record) {
-	best := -1
+	if b := bestCapital(records, indices(records)); b >= 0 {
+		records[b].System.Mainworld.SetCapital("Cs")
+	}
+}
+
+// markSectorCapitals marks the region's capital (Cx) and each subsector's
+// capital (Cs), skipping the subsector that already holds the sector capital so
+// no world carries both and no subsector gets two.
+func markSectorCapitals(records []Record) {
+	sectorCap := bestCapital(records, indices(records))
+	if sectorCap >= 0 {
+		records[sectorCap].System.Mainworld.SetCapital("Cx")
+	}
+	bySub := map[byte][]int{}
 	for i := range records {
+		l := records[i].Hex.Subsector()
+		bySub[l] = append(bySub[l], i)
+	}
+	for _, idxs := range bySub {
+		if b := bestCapital(records, idxs); b >= 0 && b != sectorCap {
+			records[b].System.Mainworld.SetCapital("Cs")
+		}
+	}
+}
+
+// bestCapital returns the index (into records) of the highest-Importance
+// Starport-A world among idxs, or -1 if none qualifies (Book 3 Chart D p.26).
+func bestCapital(records []Record, idxs []int) int {
+	best := -1
+	for _, i := range idxs {
 		if records[i].System.Mainworld.Profile.Starport != 'A' {
 			continue
 		}
@@ -60,9 +134,63 @@ func markCapital(records []Record) {
 			best = i
 		}
 	}
-	if best >= 0 {
-		records[best].System.Mainworld.SetCapital("Cs")
+	return best
+}
+
+// indices returns 0..len(records)-1.
+func indices(records []Record) []int {
+	idxs := make([]int, len(records))
+	for i := range idxs {
+		idxs[i] = i
 	}
+	return idxs
+}
+
+// placeWayStations sites Scout Way Stations along the trade routes at a density
+// of about one per wayStationSpacing parsecs of total route length (Book 3
+// p.28). The book gives a frequency, not exact placement, so stations go to the
+// busiest route hubs — the worlds touched by the most links, ties broken by CCRR
+// order. Setting a station bumps the host's Importance (+1).
+func placeWayStations(records []Record, links []route.Link) {
+	total := 0
+	degree := map[sectorgen.Hex]int{}
+	for _, l := range links {
+		total += l.Jump
+		degree[l.From]++
+		degree[l.To]++
+	}
+	n := total / wayStationSpacing
+	if n == 0 {
+		return
+	}
+	hubs := make([]sectorgen.Hex, 0, len(degree))
+	for h := range degree {
+		hubs = append(hubs, h)
+	}
+	sort.Slice(hubs, func(i, j int) bool {
+		if degree[hubs[i]] != degree[hubs[j]] {
+			return degree[hubs[i]] > degree[hubs[j]]
+		}
+		return beforeHex(hubs[i], hubs[j])
+	})
+	if n > len(hubs) {
+		n = len(hubs)
+	}
+	byHex := map[sectorgen.Hex]int{}
+	for i := range records {
+		byHex[records[i].Hex] = i
+	}
+	for _, h := range hubs[:n] {
+		records[byHex[h]].System.Mainworld.SetWayStation()
+	}
+}
+
+// beforeHex orders hexes in column-major (CCRR) order.
+func beforeHex(a, b sectorgen.Hex) bool {
+	if a.Col != b.Col {
+		return a.Col < b.Col
+	}
+	return a.Row < b.Row
 }
 
 // nameConsonants and nameVowels build simple pronounceable world names; T5 has
