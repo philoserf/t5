@@ -160,12 +160,22 @@ func TestDefensiveFire(t *testing.T) {
 }
 
 func TestMissileTask(t *testing.T) {
-	// Guidance is a property of the designed round (shipgen.Guidance): the value it
-	// contributes here is a flat 5 for a hardwired brain, the gunner's own C+S+K
-	// for one they fly, and the missile's rolled mind for a self-aware one.
-	if shipgen.UnGuided.Value(8, 9) != 0 || shipgen.HardWired.Value(8, 9) != 5 ||
-		shipgen.OperatorGuided.Value(8, 9) != 8 || shipgen.SelfAware.Value(8, 9) != 9 {
-		t.Errorf("guidance values wrong")
+	// Guidance is a property of the designed round (shipgen.Guidance); what it is
+	// worth on this task is a combat rule, and lives here: a flat 5 for a hardwired
+	// brain, the gunner's own C+S+K for one they fly, and the missile's rolled mind
+	// for a self-aware one.
+	const gunner, brain = 8, 9
+	cases := map[shipgen.Guidance]int{
+		shipgen.UnGuided:       0,
+		shipgen.HardWired:      5,
+		shipgen.OperatorGuided: gunner,
+		shipgen.DownLoaded:     gunner, // the gunner's personality, copied in
+		shipgen.SelfAware:      brain,  // the round's own mind, rolled at launch
+	}
+	for g, want := range cases {
+		if got := guidanceAsset(g, gunner, brain); got != want {
+			t.Errorf("%v asset = %d, want %d", g, got, want)
+		}
 	}
 	if got := MissileTarget(10, 5, 1); got != 16 { // HardWired missile TL-10, mod +1
 		t.Errorf("MissileTarget = %d, want 16", got)

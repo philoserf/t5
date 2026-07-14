@@ -56,11 +56,13 @@ func main() {
 	if err != nil {
 		cli.Fatalf("%v", err)
 	}
+	// The spec is fixed, so the ship is too: design it once and print it n times.
+	ship := shipgen.Design(spec)
 	for i := range n {
 		if i > 0 {
 			fmt.Println()
 		}
-		fmt.Println(shipgen.Design(spec))
+		fmt.Println(ship)
 	}
 }
 
@@ -110,76 +112,113 @@ func specFromFlags(f flags) (shipgen.ShipSpec, error) {
 	}, nil
 }
 
-// weaponSpecs parses the -weapon flag: a comma-separated list of weapons, each
-// "name[:mount[:range]]". The mount defaults to the weapon's own minimum and the
-// range to the standard rung of its ladder, so "beamlaser" alone is a valid
-// weapon and the full form "beamlaser:T1:orbit" spells out the installation.
-//
-// An infeasible but well-formed weapon is not an error here — Design reports it
-// in Ship.Problems, the same as an underpowered plant.
-func weaponSpecs(list string) ([]shipgen.WeaponSpec, error) {
+// An installation is one entry of -weapon or -defense: "name[:mount[:range]]". The
+// two flags have the same shape, so they share a parser; only the lookup of the
+// name and the default spec differ.
+type installation struct {
+	name  string
+	mount Mount
+	rng   Range
+}
+
+// Mount and Range here are the optional halves of an entry — "unset" is a real
+// state, meaning "use the component's own default".
+type (
+	Mount struct {
+		set   bool
+		value shipgen.Mount
+	}
+	Range struct {
+		set   bool
+		value shipgen.Range
+	}
+)
+
+// parseInstallations splits a comma-separated list of "name[:mount[:range]]"
+// entries and resolves the mount and range of each, leaving the name to the caller
+// (which knows whether it is looking up a weapon or a defense).
+func parseInstallations(list, kind string) ([]installation, error) {
 	if list == "" {
 		return nil, nil
 	}
-	var specs []shipgen.WeaponSpec
+	var out []installation
 	for _, entry := range strings.Split(list, ",") {
 		parts := strings.Split(strings.TrimSpace(entry), ":")
-		model, ok := shipgen.WeaponByName(parts[0])
-		if !ok {
-			return nil, fmt.Errorf("unknown weapon %q (known: %s)",
-				parts[0], strings.Join(shipgen.WeaponNames(), ", "))
+		if len(parts) > 3 {
+			return nil, fmt.Errorf("%s %q has too many fields (want name[:mount[:range]])", kind, entry)
 		}
-		spec := shipgen.DefaultWeapon(model)
+		inst := installation{name: parts[0]}
 		if len(parts) > 1 && parts[1] != "" {
-			if spec.Mount, ok = shipgen.MountByCode(parts[1]); !ok {
+			m, ok := shipgen.MountByCode(parts[1])
+			if !ok {
 				return nil, fmt.Errorf("unknown mount %q (known: %s)",
 					parts[1], strings.Join(shipgen.MountCodes(), ", "))
 			}
+			inst.mount = Mount{set: true, value: m}
 		}
 		if len(parts) > 2 && parts[2] != "" {
-			if spec.Range, ok = shipgen.RangeByName(parts[2]); !ok {
+			r, ok := shipgen.RangeByName(parts[2])
+			if !ok {
 				return nil, fmt.Errorf("unknown range %q (known: %s)",
 					parts[2], strings.Join(shipgen.RangeNames(), ", "))
 			}
+			inst.rng = Range{set: true, value: r}
 		}
-		if len(parts) > 3 {
-			return nil, fmt.Errorf("weapon %q has too many fields (want name[:mount[:range]])", entry)
+		out = append(out, inst)
+	}
+	return out, nil
+}
+
+// weaponSpecs parses the -weapon flag. The mount defaults to the weapon's own
+// minimum and the range to the standard rung of its ladder, so "beamlaser" alone is
+// a valid weapon and "beamlaser:T1:orbit" spells the installation out.
+//
+// An infeasible but well-formed weapon is not an error here — Design reports it in
+// Ship.Problems, the same as an underpowered plant.
+func weaponSpecs(list string) ([]shipgen.WeaponSpec, error) {
+	entries, err := parseInstallations(list, "weapon")
+	if err != nil {
+		return nil, err
+	}
+	var specs []shipgen.WeaponSpec
+	for _, e := range entries {
+		model, ok := shipgen.WeaponByName(e.name)
+		if !ok {
+			return nil, fmt.Errorf("unknown weapon %q (known: %s)",
+				e.name, strings.Join(shipgen.WeaponNames(), ", "))
+		}
+		spec := shipgen.DefaultWeapon(model)
+		if e.mount.set {
+			spec.Mount = e.mount.value
+		}
+		if e.rng.set {
+			spec.Range = e.rng.value
 		}
 		specs = append(specs, spec)
 	}
 	return specs, nil
 }
 
-// defenseSpecs parses the -defense flag, the same shape as -weapon: a
-// comma-separated list of "name[:mount[:range]]", defaulting to the Bolt-In mount
-// (which needs no hardpoint) at the standard range.
+// defenseSpecs parses the -defense flag, the same shape as -weapon, defaulting to
+// the Bolt-In mount (which needs no hardpoint) at the standard range.
 func defenseSpecs(list string) ([]shipgen.DefenseSpec, error) {
-	if list == "" {
-		return nil, nil
+	entries, err := parseInstallations(list, "defense")
+	if err != nil {
+		return nil, err
 	}
 	var specs []shipgen.DefenseSpec
-	for _, entry := range strings.Split(list, ",") {
-		parts := strings.Split(strings.TrimSpace(entry), ":")
-		model, ok := shipgen.DefenseByName(parts[0])
+	for _, e := range entries {
+		model, ok := shipgen.DefenseByName(e.name)
 		if !ok {
 			return nil, fmt.Errorf("unknown defense %q (known: %s)",
-				parts[0], strings.Join(shipgen.DefenseNames(), ", "))
+				e.name, strings.Join(shipgen.DefenseNames(), ", "))
 		}
 		spec := shipgen.DefaultDefense(model)
-		if len(parts) > 1 && parts[1] != "" {
-			if spec.Mount, ok = shipgen.MountByCode(parts[1]); !ok {
-				return nil, fmt.Errorf("unknown mount %q (known: Bo, %s)",
-					parts[1], strings.Join(shipgen.MountCodes(), ", "))
-			}
+		if e.mount.set {
+			spec.Mount = e.mount.value
 		}
-		if len(parts) > 2 && parts[2] != "" {
-			if spec.Range, ok = shipgen.RangeByName(parts[2]); !ok {
-				return nil, fmt.Errorf("unknown range %q (known: %s)",
-					parts[2], strings.Join(shipgen.RangeNames(), ", "))
-			}
-		}
-		if len(parts) > 3 {
-			return nil, fmt.Errorf("defense %q has too many fields (want name[:mount[:range]])", entry)
+		if e.rng.set {
+			spec.Range = e.rng.value
 		}
 		specs = append(specs, spec)
 	}

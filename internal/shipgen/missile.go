@@ -2,6 +2,7 @@ package shipgen
 
 import (
 	"fmt"
+	"slices"
 	"strings"
 )
 
@@ -35,26 +36,25 @@ const (
 	SensorPkg                     // Z — carries a sensor rather than a warhead
 )
 
-var missileTypeData = [...]struct {
-	letter byte
-	name   string
-}{
-	Slug:       {'S', "Slug"},
-	Deadfall:   {'D', "Deadfall"},
-	Explosive:  {'X', "Explosive"},
-	EMP:        {'E', "EMP"},
-	Nuke:       {'N', "Nuke"},
-	AntiMatter: {'A', "AM"},
-	Kinetic:    {'K', "Kinetic"},
-	Decoy:      {'Y', "Decoy"},
-	SensorPkg:  {'Z', "Sensor"},
+// The warhead names. Their letters are the const block's own comments above — the
+// book indexes missiles by size, not by warhead letter, so nothing looks one up.
+var missileTypeNames = [...]string{
+	Slug:       "Slug",
+	Deadfall:   "Deadfall",
+	Explosive:  "Explosive",
+	EMP:        "EMP",
+	Nuke:       "Nuke",
+	AntiMatter: "AM",
+	Kinetic:    "Kinetic",
+	Decoy:      "Decoy",
+	SensorPkg:  "Sensor",
 }
 
 func (m MissileType) String() string {
-	if m < 0 || int(m) >= len(missileTypeData) {
+	if m < 0 || int(m) >= len(missileTypeNames) {
 		return "?"
 	}
-	return missileTypeData[m].name
+	return missileTypeNames[m]
 }
 
 // A Guidance is a missile's brain (Book 2 pp.157, 170) — how it finds its target
@@ -230,11 +230,6 @@ type Missile struct {
 	PerTon   int // rounds per ton of magazine (0 if the round is measured in tons)
 	TonsEach int // tons per round (0 if many fit in a ton)
 	Problems []string
-
-	// available and unavailable are the guidance systems this round could carry,
-	// split by whether its size and its launcher's tech level allow them.
-	available   []Guidance
-	unavailable []Guidance
 }
 
 // DesignMissile builds a round for a designed launcher (Book 2 p.170). Like the
@@ -254,30 +249,17 @@ func DesignMissile(launcher Weapon, spec MissileSpec) Missile {
 	row := missileRows[i]
 	m.PerTon, m.TonsEach = row.perTon, row.tonsEach
 
-	// Which brains this round could carry at all, and which its size and its
-	// launcher's tech level actually allow.
-	for _, g := range row.guidance {
-		if g == UnGuided {
-			continue // not a guidance system; it is the lack of one
-		}
-		if g.Available(spec.Size, launcher.TL) {
-			m.available = append(m.available, g)
-		} else {
-			m.unavailable = append(m.unavailable, g)
-		}
-	}
-
 	effect, ok := missileEffect(spec.Size, spec.Type)
 	if !ok {
 		m.Problems = append(m.Problems, fmt.Sprintf("a Size-%d round carries no %s warhead",
 			spec.Size, spec.Type))
 	}
 	m.Effect = effect
-	if !allowsType(row.types, spec.Type) {
+	if !slices.Contains(row.types, spec.Type) {
 		m.Problems = append(m.Problems, fmt.Sprintf("%s does not throw a %s round",
 			launcher.Name(), spec.Type))
 	}
-	if !allowsGuidance(row.guidance, spec.Guidance) {
+	if !slices.Contains(row.guidance, spec.Guidance) {
 		m.Problems = append(m.Problems, fmt.Sprintf("a Size-%d %s round cannot be %s",
 			spec.Size, row.name, spec.Guidance))
 	} else if !spec.Guidance.Available(spec.Size, launcher.TL) {
@@ -299,24 +281,49 @@ func DesignMissile(launcher Weapon, spec MissileSpec) Missile {
 func (m Missile) LongName() string {
 	var b strings.Builder
 	fmt.Fprintf(&b, "%s Missile-%d Size-%d %s.", m.Stage, m.TL, m.Spec.Size, m.Effect)
-	if len(m.available) > 0 {
-		fmt.Fprintf(&b, " Guidance: %s", guidanceList(m.available))
-	}
-	if len(m.unavailable) > 0 {
-		fmt.Fprintf(&b, " (%s not available)", guidanceList(m.unavailable))
+	// Which brains this round can carry, and which it cannot — derived, not stored:
+	// everything the split needs is already in the Missile and the launcher's row.
+	if can, cannot := m.guidanceOptions(); len(can) > 0 || len(cannot) > 0 {
+		if len(can) > 0 {
+			fmt.Fprintf(&b, " Guidance: %s", guidanceList(can))
+		}
+		if len(cannot) > 0 {
+			fmt.Fprintf(&b, " (%s not available)", guidanceList(cannot))
+		}
 	}
 	return b.String()
 }
 
-// guidanceList renders guidance codes in the book's order — the cleverest brain
-// first, since that is the one a designer is choosing between.
+// guidanceOptions splits the brains this round's launcher offers into those its
+// size and tech level allow, and those they do not.
+func (m Missile) guidanceOptions() (can, cannot []Guidance) {
+	i, ok := findMissileRow(m.Spec.Launcher, m.Spec.Size)
+	if !ok {
+		return nil, nil
+	}
+	for _, g := range missileRows[i].guidance {
+		if g == UnGuided {
+			continue // not a guidance system; it is the lack of one
+		}
+		if g.Available(m.Spec.Size, m.TL) {
+			can = append(can, g)
+		} else {
+			cannot = append(cannot, g)
+		}
+	}
+	return can, cannot
+}
+
+// guidanceOrder is the book's print order — the cleverest brain first, since that
+// is the one a designer is choosing between.
+var guidanceOrder = [...]Guidance{OperatorGuided, HardWired, SelfAware, DownLoaded}
+
+// guidanceList renders guidance codes in the book's order.
 func guidanceList(gs []Guidance) string {
 	codes := make([]string, 0, len(gs))
-	for _, g := range []Guidance{OperatorGuided, HardWired, SelfAware, DownLoaded} {
-		for _, have := range gs {
-			if have == g {
-				codes = append(codes, g.String())
-			}
+	for _, g := range guidanceOrder {
+		if slices.Contains(gs, g) {
+			codes = append(codes, g.String())
 		}
 	}
 	return strings.Join(codes, " ")
@@ -329,22 +336,4 @@ func findMissileRow(launcher WeaponID, size int) (int, bool) {
 		}
 	}
 	return 0, false
-}
-
-func allowsType(types []MissileType, t MissileType) bool {
-	for _, have := range types {
-		if have == t {
-			return true
-		}
-	}
-	return false
-}
-
-func allowsGuidance(gs []Guidance, g Guidance) bool {
-	for _, have := range gs {
-		if have == g {
-			return true
-		}
-	}
-	return false
 }

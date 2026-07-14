@@ -83,7 +83,7 @@ func Design(spec ShipSpec) Ship {
 				d.Name(), d.TL, spec.TL))
 		}
 	}
-	if p := mountPoints(h.Tons, ship.Weapons, ship.Defenses); p != "" {
+	if p := mountPoints(h, ship.Weapons, ship.Defenses); p != "" {
 		problems = append(problems, p)
 	}
 	used += armamentTonnage(ship.Weapons, ship.Defenses)
