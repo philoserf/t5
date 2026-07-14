@@ -164,9 +164,10 @@ per-type partial-UWP generation + zone-based type selection + context trade code
 (PRs #83, #84); corrected HZ zone boundaries (PR #87); per-world satellites (PR #86); and
 **"Rotate Placement Per Star"** — round-robin placement across the Primary/Close/Near/Far
 hosts, each with its own habitable zone, sub-orbit floor, and Orbit N-3 range, with overflow
-drop (PR #88). `System.String` and `cmd/systemgen` render the full multi-star orbit map.
-_Minor documented deferral:_ a non-mainworld world landing on a gas-giant orbit is nudged to
-a free orbit rather than becoming that giant's moon.
+drop (PR #88). Satellites carry real bodies — each moon gets a type (the p.29 Satellites tables)
+and UWP, capped to its parent's size with a double-planet flag at equal size (Book 3 p.21); a
+non-mainworld world whose target orbit is held by a gas giant becomes that giant's moon rather
+than being nudged aside. `System.String` and `cmd/systemgen` render the full multi-star orbit map.
 
 **16. Starship design generator** — _B2 pp. 30–95, 101–135, 188–192_ · new `shipgen` package · **L** · 🟡 **core done**
 Built (`internal/shipgen` + `cmd/shipgen`): the deterministic ACS design engine — `Design(spec)

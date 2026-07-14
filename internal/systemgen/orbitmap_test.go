@@ -109,6 +109,45 @@ func TestPlaceOrbitsSatelliteMainworldNoGasGiant(t *testing.T) {
 	}
 }
 
+func TestPlaceOrbitsWorldCapturedByGiant(t *testing.T) {
+	// Primary F8 V (HZ 4, floor 0). One SGG and one other world whose World2
+	// target lands on the giant's orbit, so the world becomes the giant's moon
+	// instead of being nudged aside.
+	s := &System{
+		Primary:        Star{Type: "F", Decimal: 8, Size: "V"},
+		GasGiants:      1,
+		Worlds:         3, // others = 3 - 1 - 1 - 0 = 1
+		MainworldOrbit: 4,
+		Giants:         []GasGiant{{Size: 23, Class: SmallGasGiant}},
+	}
+	s.Mainworld.Profile.Population = 8
+	// GG 2D=8 -> SGG offset +4 -> orbit 8. World 2D=11 -> World2 col = 8 (the
+	// giant's orbit) -> capture. Capture rolls: type 1D=5 (outer -> RadWorld),
+	// RadWorld UWP (size 2D, atm Flux, hyd Flux, spaceport 1D), Close/Far 2D=5
+	// (Close), letter Flux 0 -> "Gee".
+	s.placeOrbits(dice.NewScripted(4, 4, 5, 6, 5, 3, 3, 3, 3, 3, 3, 4, 2, 3, 3, 3))
+
+	if len(s.Orbits) != 2 {
+		t.Fatalf("got %d orbits, want 2 (mainworld + giant, no standalone world): %+v", len(s.Orbits), s.Orbits)
+	}
+	for _, o := range s.Orbits {
+		if o.Kind == KindWorld {
+			t.Errorf("captured world should not occupy a standalone orbit: %+v", o)
+		}
+	}
+	giant := s.Orbits[1] // sorted: mainworld@4, giant@8
+	if giant.Kind != KindGasGiant || giant.Orbit != 8 {
+		t.Fatalf("expected the giant at orbit 8: %+v", giant)
+	}
+	if len(giant.Satellites) != 1 {
+		t.Fatalf("giant should have 1 captured moon, has %d: %+v", len(giant.Satellites), giant.Satellites)
+	}
+	m := giant.Satellites[0]
+	if m.Type != worldgen.RadWorld || m.OrbitLetter != "Gee" || m.DoublePlanet {
+		t.Errorf("captured moon = %+v, want RadWorld, Gee, not a double planet", m)
+	}
+}
+
 func TestOtherWorldType(t *testing.T) {
 	hz := 4
 	// Inner/HZ table (orbit <= hz+1): rolls 1..6.

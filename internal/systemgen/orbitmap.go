@@ -96,6 +96,17 @@ func (h *orbitHost) claim(want int) (int, bool) {
 	return 0, false
 }
 
+// giantAt returns the index in placed of a gas giant occupying the given host's
+// orbit, or -1 if none does.
+func giantAt(placed []PlacedOrbit, host string, orbit int) int {
+	for i := range placed {
+		if placed[i].Kind == KindGasGiant && placed[i].Host == host && placed[i].Orbit == orbit {
+			return i
+		}
+	}
+	return -1
+}
+
 // buildHosts lists the stars that hold worlds, in rotation order: the Primary,
 // then each present secondary (Close/Near/Far). A secondary at primary-orbit N
 // may hold worlds only out to its own Orbit N-3 (Book 3 p.21), so one too close
@@ -214,6 +225,22 @@ func (s *System) placeOrbits(r *dice.Roller) {
 		want := row.world1
 		if i == others-1 {
 			want = row.world2
+		}
+		// A world whose target orbit is already held by a gas giant becomes that
+		// giant's moon rather than being nudged to a free orbit (Book 3 p.21).
+		if gi := giantAt(placed, h.label, clamp(want, h.floor, h.maxOrbit)); gi >= 0 {
+			wt := otherWorldType(placed[gi].Orbit, h.hz, h.hasHZ, r.Die())
+			prof := worldgen.GenerateOtherWorld(r, wt, mwPop)
+			far := r.Dice(2) >= 8
+			idx := dice.FluxIndex(r.Flux())
+			letter := closeOrbitLetters[idx]
+			if far {
+				letter = farOrbitLetters[idx]
+			}
+			placed[gi].Satellites = append(placed[gi].Satellites, Satellite{
+				Far: far, OrbitLetter: letter, Type: wt, Profile: prof,
+			})
+			continue
 		}
 		o, ok := h.claim(want)
 		if !ok {
