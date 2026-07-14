@@ -48,6 +48,33 @@ func TestBuildThresholdAndRange(t *testing.T) {
 	}
 }
 
+func TestBuildIntermediateHops(t *testing.T) {
+	// Two Important worlds 6 pc apart (beyond J-4) bridged by one lesser world
+	// at the midpoint: no direct link, but a 2-hop route through the midpoint.
+	a := sectorgen.Hex{Col: 1, Row: 1}
+	mid := sectorgen.Hex{Col: 1, Row: 4}
+	b := sectorgen.Hex{Col: 1, Row: 7}
+	if d := a.Distance(b); d <= DefaultJump {
+		t.Fatalf("fixture A-B distance = %d, want > %d", d, DefaultJump)
+	}
+	worlds := []World{{a, 4}, {mid, 0}, {b, 5}}
+	links := Build(worlds, 0)
+	if len(links) != 2 {
+		t.Fatalf("got %d links, want 2 (A-mid, mid-B): %+v", len(links), links)
+	}
+	want := []Link{{From: a, To: mid, Jump: 3}, {From: mid, To: b, Jump: 3}}
+	for i, w := range want {
+		if links[i] != w {
+			t.Errorf("link %d = %+v, want %+v", i, links[i], w)
+		}
+	}
+
+	// With no stepping stone, the far Important pair stays unlinked.
+	if links := Build([]World{{a, 4}, {b, 5}}, 0); len(links) != 0 {
+		t.Errorf("unreachable Important pair linked: %+v", links)
+	}
+}
+
 func TestBuildStableOrder(t *testing.T) {
 	// Three mutually-close Important worlds -> three links in CCRR order,
 	// regardless of input order.
