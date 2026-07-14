@@ -27,31 +27,25 @@ func recordWith(hex sectorgen.Hex, starport byte, ix int) Record {
 	}
 }
 
-func TestMarkCapital(t *testing.T) {
+// TestBestCapital: a capital must be a Starport-A world, and among those the most
+// Important (Book 3 Chart D p.26) — a higher-Ix world at a lesser port loses.
+func TestBestCapital(t *testing.T) {
 	records := []Record{
 		recordWith(sectorgen.Hex{Col: 1, Row: 1}, 'C', 5), // higher Ix but not Starport A
 		recordWith(sectorgen.Hex{Col: 2, Row: 2}, 'A', 2), // Starport A
-		recordWith(sectorgen.Hex{Col: 3, Row: 3}, 'A', 4), // Starport A, highest among A -> capital
+		recordWith(sectorgen.Hex{Col: 3, Row: 3}, 'A', 4), // Starport A, highest among A
 		recordWith(sectorgen.Hex{Col: 4, Row: 4}, 'B', 9),
 	}
-	markCapital(records)
-	if !slices.Contains(records[2].System.Mainworld.TradeCodes, "Cs") {
-		t.Errorf("highest-Ix Starport-A world should be the capital: %+v", records[2].System.Mainworld.TradeCodes)
+	if got := bestCapital(records, indices(records)); got != 2 {
+		t.Errorf("bestCapital = %d, want 2 (the highest-Ix Starport-A world)", got)
 	}
-	for i, rec := range records {
-		if i != 2 && slices.Contains(rec.System.Mainworld.TradeCodes, "Cs") {
-			t.Errorf("record %d should not be the capital", i)
-		}
+	// With no Starport-A world, no capital qualifies.
+	none := []Record{
+		recordWith(sectorgen.Hex{Col: 1, Row: 1}, 'C', 9),
+		recordWith(sectorgen.Hex{Col: 2, Row: 2}, 'B', 8),
 	}
-}
-
-func TestMarkCapitalNoStarportA(t *testing.T) {
-	records := []Record{recordWith(sectorgen.Hex{Col: 1, Row: 1}, 'C', 9), recordWith(sectorgen.Hex{Col: 2, Row: 2}, 'B', 8)}
-	markCapital(records)
-	for _, rec := range records {
-		if slices.Contains(rec.System.Mainworld.TradeCodes, "Cs") {
-			t.Errorf("no Starport-A world, so no capital should be marked")
-		}
+	if got := bestCapital(none, indices(none)); got != -1 {
+		t.Errorf("bestCapital with no Starport A = %d, want -1", got)
 	}
 }
 
@@ -139,25 +133,32 @@ func TestSurveyString(t *testing.T) {
 	}
 }
 
-func TestSubsectorDeterministicAndSurveyed(t *testing.T) {
-	a := Subsector(dice.NewWithSeed(7), sectorgen.Sparse, 'A')
-	b := Subsector(dice.NewWithSeed(7), sectorgen.Sparse, 'A')
-	if len(a) != len(b) || len(a) == 0 {
-		t.Fatalf("expected a stable, non-empty survey: %d vs %d", len(a), len(b))
+// TestSectorDeterministicAndSurveyed: the same seed yields the same sector, and
+// every record renders a well-formed Second Survey line. Views select from one
+// sector survey, so this covers what the subsector and single-hex views print.
+func TestSectorDeterministicAndSurveyed(t *testing.T) {
+	a := Sector(dice.NewWithSeed(7), sectorgen.Sparse)
+	b := Sector(dice.NewWithSeed(7), sectorgen.Sparse)
+	if len(a.Records) != len(b.Records) || len(a.Records) == 0 {
+		t.Fatalf("expected a stable, non-empty survey: %d vs %d", len(a.Records), len(b.Records))
 	}
-	for i := range a {
-		if a[i].SecondSurvey() != b[i].SecondSurvey() {
+	inA := 0
+	for i := range a.Records {
+		if a.Records[i].SecondSurvey() != b.Records[i].SecondSurvey() {
 			t.Fatalf("record %d differs between identical seeds", i)
 		}
 		// Each line begins with the hex coordinate and carries the world name.
-		line := a[i].SecondSurvey()
-		if !strings.HasPrefix(line, a[i].Hex.String()+" ") || !strings.Contains(line, a[i].Name) {
-			t.Errorf("survey line malformed: %q (hex %s, name %s)", line, a[i].Hex, a[i].Name)
+		line := a.Records[i].SecondSurvey()
+		if !strings.HasPrefix(line, a.Records[i].Hex.String()+" ") || !strings.Contains(line, a.Records[i].Name) {
+			t.Errorf("survey line malformed: %q (hex %s, name %s)", line, a.Records[i].Hex, a.Records[i].Name)
 		}
-		// Every surveyed hex sits inside subsector A.
-		if a[i].Hex.Subsector() != 'A' {
-			t.Errorf("hex %s is not in subsector A", a[i].Hex)
+		if a.Records[i].Hex.Subsector() == 'A' {
+			inA++
 		}
+	}
+	// Selecting a subsector out of the sector is how the default view works.
+	if inA == 0 {
+		t.Errorf("no surveyed hex fell in subsector A")
 	}
 }
 
