@@ -56,12 +56,10 @@ var priceMatch = map[string]struct {
 	"Va": {[]string{"As", "In", "Va"}, 1000},
 }
 
-// actualValue maps an effective Flux (Flux + Broker DM, clamped to -5..+8) to the
-// percentage of Price a sale realizes (Book 2 p.221 Actual Value Table).
-var actualValue = map[int]int{
-	-5: 40, -4: 50, -3: 70, -2: 80, -1: 90, 0: 100,
-	1: 110, 2: 120, 3: 130, 4: 150, 5: 170, 6: 200, 7: 300, 8: 400,
-}
+// actualValue is the percentage of Price a sale realizes at each effective Flux
+// (Flux + Broker DM, clamped to -5..+8), indexed by effective-Flux + 5 (Book 2
+// p.221 Actual Value Table).
+var actualValue = [14]int{40, 50, 70, 80, 90, 100, 110, 120, 130, 150, 170, 200, 300, 400}
 
 // ValueClasses filters a world's trade codes to the value-relevant set, in the
 // chart order used by a Cargo ID (Book 2 p.221).
@@ -79,8 +77,14 @@ func ValueClasses(tcs []string) []string {
 // a Cr3,000 base, each value trade class's cost modifier, and Cr100 per source
 // Tech Level, floored at zero.
 func Cost(sourceTL int, sourceTCs []string) int {
+	return costOf(sourceTL, ValueClasses(sourceTCs))
+}
+
+// costOf sums the base cost, the Cr100/TL effect, and the cost modifiers over
+// already-filtered value classes, floored at zero (Book 2 p.221 A).
+func costOf(sourceTL int, valueClasses []string) int {
 	c := baseCost + sourceTL*100
-	for _, code := range ValueClasses(sourceTCs) {
+	for _, code := range valueClasses {
 		c += costMod[code]
 	}
 	return max(c, 0)
@@ -107,18 +111,12 @@ func Price(sourceTL, marketTL int, sourceTCs, marketTCs []string) int {
 	return max(p, 0)
 }
 
-// BrokerDM is the Actual Value bonus a broker of the given skill provides: half
-// skill rounded up, capped at +4 (Book 2 p.221).
-func BrokerDM(brokerSkill int) int {
-	return min((brokerSkill+1)/2, 4)
-}
-
 // ActualValuePercent is the percentage of Price a sale realizes at the given
 // Flux with a broker of the given skill (Book 2 p.221 Actual Value Table). The
 // effective Flux is clamped to the table's -5..+8 range.
 func ActualValuePercent(flux, brokerSkill int) int {
 	e := clamp(flux+BrokerDM(brokerSkill), -5, 8)
-	return actualValue[e]
+	return actualValue[e+5]
 }
 
 // SellingPrice is the realized per-ton sale price: the expected Price times the
@@ -146,8 +144,9 @@ func EstimateActualValue(firstDie, brokerSkill int) (minPct, maxPct int) {
 // eHex digit, its value trade classes, the computed per-ton Cost, and a trailing
 // allegiance code when the source is not Imperial. E.g. "8-De Hi In Na Po Cr1,800".
 func CargoID(sourceTL int, sourceTCs []string, allegiance string) string {
+	vc := ValueClasses(sourceTCs)
 	id := fmt.Sprintf("%s-%s Cr%s",
-		ehex.Format(sourceTL), strings.Join(ValueClasses(sourceTCs), " "), commas(Cost(sourceTL, sourceTCs)))
+		ehex.Format(sourceTL), strings.Join(vc, " "), commas(costOf(sourceTL, vc)))
 	if allegiance != "" && allegiance != "Im" {
 		id += " " + allegiance
 	}
