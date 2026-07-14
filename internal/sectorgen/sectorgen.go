@@ -34,19 +34,20 @@ func (h Hex) String() string {
 }
 
 // ParseHex reads a four-digit CCRR location (e.g. "0803") into a Hex, reporting
-// whether it is well-formed and inside the sector.
+// whether it is well-formed and inside the sector. All four characters must be
+// digits: strconv would accept a sign, so "+436" would otherwise silently parse
+// as hex 0436.
 func ParseHex(s string) (Hex, bool) {
 	if len(s) != 4 {
 		return Hex{}, false
 	}
-	col, err := strconv.Atoi(s[:2])
-	if err != nil {
-		return Hex{}, false
+	for i := range len(s) {
+		if s[i] < '0' || s[i] > '9' {
+			return Hex{}, false
+		}
 	}
-	row, err := strconv.Atoi(s[2:])
-	if err != nil {
-		return Hex{}, false
-	}
+	col, _ := strconv.Atoi(s[:2])
+	row, _ := strconv.Atoi(s[2:])
 	if col < 1 || col > Columns || row < 1 || row > Rows {
 		return Hex{}, false
 	}

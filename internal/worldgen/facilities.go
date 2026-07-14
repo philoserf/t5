@@ -68,14 +68,18 @@ type Facilities struct {
 
 // Services lists a port's services in prose (Book 2 p.24): what it builds, how
 // far it can repair, its fuel and refuelling time, and its surface and orbital
-// facilities. A port with no fuel simply omits fuel; a beacon-only downport
-// (classes E and H) is named as such rather than claiming a staffed one.
+// facilities. Each service is named only when the port offers it — so a fuel-less
+// port omits fuel, and classes X and Y, which are no port at all, return nothing
+// rather than advertising a repair capability they do not have. A beacon-only
+// downport (classes E and H) is named as such rather than claiming a staffed one.
 func (f Facilities) Services() []string {
 	var out []string
 	if f.Shipyard != "" {
 		out = append(out, "builds "+f.Shipyard)
 	}
-	out = append(out, "repairs: "+f.Repairs.String())
+	if f.Repairs != NoRepairs {
+		out = append(out, "repairs: "+f.Repairs.String())
+	}
 	if f.Fuel != NoFuel {
 		fuel := "fuel: " + f.Fuel.String()
 		if f.RefuelHours != "" {

@@ -199,3 +199,40 @@ func TestGenerateForMap(t *testing.T) {
 		t.Errorf("Generate diverged from ggAny: %d vs %d", a, b)
 	}
 }
+
+// TestStars locks the single ordered enumeration of the stellar family that
+// String, Stellar, and the survey sheet all consume.
+func TestStars(t *testing.T) {
+	slots := reginaSystem().Stars()
+	if len(slots) != 3 {
+		t.Fatalf("got %d star slots, want 3 (primary, close, close companion)", len(slots))
+	}
+	if slots[0].Label != "Primary" || slots[0].Orbit != -1 || slots[0].Companion {
+		t.Errorf("slot 0 = %+v, want the Primary at no orbit", slots[0])
+	}
+	if slots[1].Label != "Close" || slots[1].Orbit != 3 || slots[1].Companion {
+		t.Errorf("slot 1 = %+v, want Close at Orbit 3", slots[1])
+	}
+	if slots[2].Label != "Close Companion" || !slots[2].Companion || slots[2].Orbit != -1 {
+		t.Errorf("slot 2 = %+v, want a companion at no orbit", slots[2])
+	}
+}
+
+// TestSecondaryStarOrbitsAreReserved: a world may not be placed in the orbit a
+// secondary star occupies around the primary (Book 3 p.21).
+func TestSecondaryStarOrbitsAreReserved(t *testing.T) {
+	for seed := uint64(1); seed <= 300; seed++ {
+		s := Generate(dice.NewWithSeed(seed))
+		taken := map[int]bool{}
+		for _, sl := range s.Stars() {
+			if !sl.Companion && sl.Orbit >= 0 {
+				taken[sl.Orbit] = true
+			}
+		}
+		for _, o := range s.Orbits {
+			if o.Host == "Primary" && taken[o.Orbit] {
+				t.Fatalf("seed %d: %s sits in orbit %d, which a secondary star occupies", seed, o.Kind, o.Orbit)
+			}
+		}
+	}
+}

@@ -1,6 +1,9 @@
 package worldgen
 
-import "testing"
+import (
+	"strings"
+	"testing"
+)
 
 func TestPortFacilities(t *testing.T) {
 	cases := []struct {
@@ -51,5 +54,27 @@ func TestFuelAndRepairStrings(t *testing.T) {
 	}
 	if Overhaul.String() != "Overhaul" || MajorRepairs.String() != "Major" || NoRepairs.String() != "None" {
 		t.Errorf("RepairLevel.String mismatch")
+	}
+}
+
+// TestServices golden-locks the prose a port advertises (Book 2 p.24): a class-A
+// port lists everything, a beacon port (E) names its beacon-only downport, and a
+// class-X world — no port at all — advertises nothing.
+func TestServices(t *testing.T) {
+	a, _ := PortFacilities('A', 8)
+	got := strings.Join(a.Services(), " · ")
+	want := "builds Starships · repairs: Overhaul · fuel: Refined+Unrefined (2D hours) · downport · highport"
+	if got != want {
+		t.Errorf("class-A services =\n%q\nwant\n%q", got, want)
+	}
+	// E is a beacon-only downport with no fuel and no repairs.
+	e, _ := PortFacilities('E', 5)
+	if got := strings.Join(e.Services(), " · "); got != "beacon-only downport" {
+		t.Errorf("class-E services = %q, want %q", got, "beacon-only downport")
+	}
+	// X is no port at all: it must advertise nothing, not "repairs: None".
+	x, _ := PortFacilities('X', 5)
+	if svc := x.Services(); len(svc) != 0 {
+		t.Errorf("class-X advertises services it does not have: %v", svc)
 	}
 }
