@@ -91,11 +91,19 @@ func (s Survey) At(hex sectorgen.Hex) (Record, bool) {
 	return Record{}, false
 }
 
-// Subsector selects the records of one subsector ('A'-'P') from the survey. It is
-// a view of an already-surveyed sector, not a survey of its own: a subsector
-// generated in isolation would hold different worlds (see Sector), so selecting
-// is the only way to see part of a region and still agree with the rest of it.
+// Subsector selects the records of one subsector from the survey, by its letter
+// A-P (lower case accepted). It is a view of an already-surveyed sector, not a
+// survey of its own: a subsector generated in isolation would hold different
+// worlds (see Sector), so selecting is the only way to see part of a region and
+// still agree with the rest of it.
+//
+// A subsector with no star system selects nothing, and so does a letter outside
+// A-P — callers taking a letter from a user should reject it first with
+// sectorgen.ParseSubsector rather than read an empty result as an empty region.
 func (s Survey) Subsector(letter byte) []Record {
+	if letter >= 'a' && letter <= 'z' {
+		letter -= 'a' - 'A'
+	}
 	var out []Record
 	for _, rec := range s.Records {
 		if rec.Hex.Subsector() == letter {
@@ -152,22 +160,25 @@ func markSectorCapitals(records []Record) {
 
 // bestCapital returns the index (into records) of the highest-Importance
 // Starport-A world among idxs, or -1 if none qualifies (Book 3 Chart D p.26).
-// A nil idxs considers every record.
+// A nil idxs considers every record; an empty (non-nil) one considers none.
 func bestCapital(records []Record, idxs []int) int {
-	if idxs == nil {
-		idxs = make([]int, len(records))
-		for i := range idxs {
-			idxs[i] = i
-		}
-	}
 	best := -1
-	for _, i := range idxs {
+	consider := func(i int) {
 		if records[i].System.Mainworld.Profile.Starport != 'A' {
-			continue
+			return
 		}
 		if best < 0 || records[i].System.Mainworld.Importance > records[best].System.Mainworld.Importance {
 			best = i
 		}
+	}
+	if idxs == nil {
+		for i := range records {
+			consider(i)
+		}
+		return best
+	}
+	for _, i := range idxs {
+		consider(i)
 	}
 	return best
 }

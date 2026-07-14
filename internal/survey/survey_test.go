@@ -158,21 +158,43 @@ func TestSectorDeterministicAndSurveyed(t *testing.T) {
 // selections from one survey, so a subsector's record and the same hex's record
 // are the same world. Surveying a subsector on its own would break this — which
 // is why nothing can.
+//
+// It walks all sixteen subsectors and checks they partition the survey, so it
+// cannot quietly become a no-op if any one of them happens to come up empty.
 func TestViewsAgree(t *testing.T) {
 	sv := Sector(dice.NewWithSeed(7), sectorgen.Sparse)
-	inA := sv.Subsector('A')
-	if len(inA) == 0 {
-		t.Skip("this sector has no world in subsector A")
+	if len(sv.Records) == 0 {
+		t.Fatal("expected a populated sector")
 	}
-	for _, rec := range inA {
-		if rec.Hex.Subsector() != 'A' {
-			t.Errorf("Subsector('A') returned hex %s, which is in %c", rec.Hex, rec.Hex.Subsector())
+
+	selected := 0
+	for letter := byte('A'); letter <= 'P'; letter++ {
+		for _, rec := range sv.Subsector(letter) {
+			selected++
+			if rec.Hex.Subsector() != letter {
+				t.Errorf("Subsector(%c) returned hex %s, which is in %c", letter, rec.Hex, rec.Hex.Subsector())
+			}
+			// The same hex, reached the other way, is the same world.
+			byHex, found := sv.At(rec.Hex)
+			if !found || byHex.SecondSurvey() != rec.SecondSurvey() {
+				t.Errorf("subsector view and hex view disagree at %s:\n %s\n %s",
+					rec.Hex, rec.SecondSurvey(), byHex.SecondSurvey())
+			}
 		}
-		byHex, found := sv.At(rec.Hex)
-		if !found || byHex.SecondSurvey() != rec.SecondSurvey() {
-			t.Errorf("subsector view and hex view disagree at %s:\n %s\n %s",
-				rec.Hex, rec.SecondSurvey(), byHex.SecondSurvey())
-		}
+	}
+	// Every record belongs to exactly one subsector, so the selections partition
+	// the survey — no world is dropped by the views, and none is double-counted.
+	if selected != len(sv.Records) {
+		t.Errorf("the sixteen subsectors selected %d of %d records", selected, len(sv.Records))
+	}
+
+	// A lower-case letter selects the same subsector; a letter outside A-P selects
+	// nothing (callers validate with sectorgen.ParseSubsector first).
+	if len(sv.Subsector('a')) != len(sv.Subsector('A')) {
+		t.Errorf("Subsector('a') and Subsector('A') disagree")
+	}
+	if got := sv.Subsector('Q'); got != nil {
+		t.Errorf("Subsector('Q') selected %d records, want none", len(got))
 	}
 }
 
