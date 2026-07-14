@@ -1,9 +1,12 @@
 package worldgen
 
-// Starport and spaceport facilities (Book 2 p.24). Every world's port is one of
-// the mainworld starport classes A-E/X or, for a non-mainworld, a spaceport
-// class F/G/H/Y. Its class fixes the shipyard, repair, fuel, and downport
-// services; only the highport depends on population.
+import "github.com/philoserf/t5/internal/uwp"
+
+// Starport and spaceport facilities (Book 2 p.24; the fuel table is Book 3 p.24).
+// Every world's port is one of the mainworld starport classes A-E/X or, for a
+// non-mainworld, a spaceport class F/G/H/Y. Its class fixes the shipyard, repair,
+// hydrogen fuel, and downport services; the highport depends on population, the
+// exotic fuels on tech level, and the local-fuel fallback on the world itself.
 
 // FuelKind is the hydrogen fuel a port offers (Book 2 p.24).
 type FuelKind int
@@ -23,6 +26,19 @@ func (f FuelKind) String() string {
 	default:
 		return "None"
 	}
+}
+
+// exoticFuelMinTL is the tech level at which a class-A or -B starport begins to
+// offer each exotic fuel (Book 3 p.24 "Fuel at Starports and Spaceports"):
+// Radioactives at TL 8, Collector at TL 14, Anti-Matter at TL 18. No other class
+// offers any of them.
+var exoticFuelMinTL = []struct {
+	name  string
+	minTL int
+}{
+	{"Radioactives", 8},
+	{"Collector", 14},
+	{"Anti-Matter", 18},
 }
 
 // RepairLevel is the heaviest repair a port supports (Book 2 p.24).
@@ -52,15 +68,21 @@ func (r RepairLevel) String() string {
 }
 
 // Facilities describes a port's services (Book 2 p.24). Downport reports whether
-// there is any surface port; Beacon marks an unmanned beacon-only downport
-// (classes E/H). Highport is population-dependent and set by PortFacilities.
+// there is any surface port; Beltport marks the asteroid-belt case that replaces a
+// downport (Book 2 p.24: "An Asteroid Mainworld has a Beltport instead"); Beacon
+// marks an unmanned beacon-only downport (classes E/H). Highport is
+// population-dependent; ExoticFuels are tech-level-gated; LocalFuel is the
+// environmental fallback — all set by PortFacilities.
 type Facilities struct {
 	Class       byte
 	Quality     string
 	Shipyard    string // "", "Spacecraft", or "Starships"
 	Repairs     RepairLevel
 	Fuel        FuelKind
+	ExoticFuels []string // Radioactives / Collector / Anti-Matter, TL-gated (A/B only)
+	LocalFuel   bool     // no port fuel, but unrefined is skimmable from the world
 	Downport    bool
+	Beltport    bool
 	Beacon      bool
 	Highport    bool
 	RefuelHours string // "2D", "4D", or "" when no fuel
@@ -86,8 +108,17 @@ func (f Facilities) Services() []string {
 			fuel += " (" + f.RefuelHours + " hours)"
 		}
 		out = append(out, fuel)
+	} else if f.LocalFuel {
+		// No port fuel, but the world's own water or ice can be skimmed unrefined
+		// (Book 3 p.24, the ** note) — the difference between "stranded" and "slow".
+		out = append(out, "fuel: Unrefined (local water/ice)")
+	}
+	for _, e := range f.ExoticFuels {
+		out = append(out, "exotic fuel: "+e)
 	}
 	switch {
+	case f.Beltport:
+		out = append(out, "beltport")
 	case f.Beacon:
 		out = append(out, "beacon-only downport")
 	case f.Downport:
@@ -118,16 +149,39 @@ var portTable = map[byte]Facilities{
 // starport has a highport (Book 2 p.24). Other classes never have one.
 var highportPop = map[byte]int{'A': 7, 'B': 8, 'C': 9}
 
-// PortFacilities returns the services for a port class and the world's
-// population (population matters only for the A/B/C highport). It reports false
-// for an unknown class letter.
-func PortFacilities(class byte, population int) (Facilities, bool) {
-	f, ok := portTable[class]
+// PortFacilities returns the services for a world's port, from its whole profile:
+// the class fixes most of it, but the highport depends on population, the exotic
+// fuels on tech level (Book 3 p.24), the local-fuel fallback on hydrographics, and
+// the beltport on whether the mainworld is an asteroid belt (Size 0). It reports
+// false for an unknown class letter.
+func PortFacilities(p uwp.Profile) (Facilities, bool) {
+	f, ok := portTable[p.Starport]
 	if !ok {
 		return Facilities{}, false
 	}
-	if threshold, gated := highportPop[class]; gated {
-		f.Highport = population >= threshold
+	if threshold, gated := highportPop[p.Starport]; gated {
+		f.Highport = p.Population >= threshold
+	}
+	// Class A and B carry the exotic fuels their tech level has reached (Book 3
+	// p.24); no other class offers any.
+	if p.Starport == 'A' || p.Starport == 'B' {
+		for _, e := range exoticFuelMinTL {
+			if p.TechLevel >= e.minTL {
+				f.ExoticFuels = append(f.ExoticFuels, e.name)
+			}
+		}
+	}
+	// A port with no hydrogen of its own can still be refuelled from the world's
+	// own water or ice, unrefined (Book 3 p.24, the ** note): any Hydrographics at
+	// all means there is something to skim. Gas-giant skimming is a system fact, not
+	// a world one, so it is left to the referee.
+	if f.Fuel == NoFuel && p.Hydrographics >= 1 {
+		f.LocalFuel = true
+	}
+	// An asteroid-belt mainworld (Size 0) has a Beltport in place of a downport
+	// (Book 2 p.24).
+	if p.Size == 0 && f.Downport {
+		f.Downport, f.Beltport = false, true
 	}
 	return f, true
 }
