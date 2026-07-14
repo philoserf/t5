@@ -22,22 +22,22 @@ func NonStandardTermsSurcharge(amount int) int {
 	return amount / 10
 }
 
-// mailContractBid holds the long-term mail-contract low bids in Cr per jump by
-// 2D roll (index 2-12), for a 10-round-trip and a 5-round-trip commitment
-// (Book 2 p.220). A contract runs between two worlds whose Importance differs by
-// at least 2, and the ship must carry a 1-ton Mail Vault.
-var mailContractBid = map[int]struct{ tenTrip, fiveTrip int }{
-	2:  {8_000, 4_000},
-	3:  {10_000, 6_000},
-	4:  {12_000, 8_000},
-	5:  {13_000, 10_000},
-	6:  {14_000, 13_000},
-	7:  {15_000, 15_000},
-	8:  {16_000, 18_000},
-	9:  {18_000, 22_000},
-	10: {20_000, 24_000},
-	11: {22_000, 28_000},
-	12: {24_000, 30_000},
+// mailContractBid holds the long-term mail-contract low bids in Cr per jump for a
+// 10-round-trip and a 5-round-trip commitment, indexed by 2D roll - 2 (Book 2
+// p.220). A contract runs between two worlds whose Importance differs by at least
+// 2, and the ship must carry a 1-ton Mail Vault.
+var mailContractBid = [11]struct{ tenTrip, fiveTrip int }{
+	{8_000, 4_000},   // 2D = 2
+	{10_000, 6_000},  // 3
+	{12_000, 8_000},  // 4
+	{13_000, 10_000}, // 5
+	{14_000, 13_000}, // 6
+	{15_000, 15_000}, // 7
+	{16_000, 18_000}, // 8
+	{18_000, 22_000}, // 9
+	{20_000, 24_000}, // 10
+	{22_000, 28_000}, // 11
+	{24_000, 30_000}, // 12
 }
 
 // MailContractBid returns the low bid, in Cr per jump, for a long-term mail
@@ -45,7 +45,7 @@ var mailContractBid = map[int]struct{ tenTrip, fiveTrip int }{
 // ten-round-trip column; fewer uses the five-round-trip column. The 2D roll is
 // clamped to the table's 2-12 range.
 func MailContractBid(twoD, roundTrips int) int {
-	bid := mailContractBid[clamp(twoD, 2, 12)]
+	bid := mailContractBid[clamp(twoD, 2, 12)-2]
 	if roundTrips >= 10 {
 		return bid.tenTrip
 	}
