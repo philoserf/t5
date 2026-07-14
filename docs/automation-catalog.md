@@ -21,7 +21,8 @@ careers) · `task` (Difficulty/UTF resolve) · `calendar` · `rangeband` (world/
 `senses` · `personals` · `combat` (the play tier, core mechanics) · `sectorgen` (hex map +
 system presence) · `survey` (detailed sector → full systems + capitals + trade routes) ·
 `route` (trade-route graph) · `shipgen` (ACS ship design: hull/drives/fuel/armor + QSP) ·
-`trade` (the p.221 Cargo ID / Cost / Price / Actual Value pricing engine).
+`trade` (the p.221 Cargo ID / Cost / Price / Actual Value pricing engine) · `shipcombat` (space
+combat resolution: weapon/missile/defensive tasks, penetration, hit location, damage, movement).
 
 ## Status legend
 
@@ -236,10 +237,16 @@ known), the OTO/STS and accelerated-delivery surcharges, and the long-term mail-
 Complete — a ship can price, sell (brokered), fill its hold with passengers/freight, name each
 cargo, and bid mail contracts.
 
-**22. Starship combat** — _B2 pp. 193–204_ · new `shipcombat` package · **M–L**
-Agility-ordered rounds, the space-weapon / missile / defensive-fire tasks, Flux hit-location on
-the ShipCard, penetration vs layered armor, damage spread across compartments, massive-explosion
-proximity, and ranging movement. Depends on shipgen's compartment model.
+**22. Starship combat** — _B2 pp. 193–204_ · new `shipcombat` package · **M–L** · 🟡 **core done**
+Built (`internal/shipcombat`): the resolution engine — the Space Weapon, Missile, and Defensive
+Fire tasks (roll-low over `task.ResolveDice`: range-band/5D dice, TL+C+S+K / DefenseTL−AttackTL+Mount
+targets), mount mods, missile guidance, `HitCompartment` (Flux + targeting), `Penetrate` vs layered
+armor, the L1 damage-location table, damage/diagnosis `Severity`, the missile `MassiveExplosion`
+proximity table, and movement (`Agility`, `RammingHits` = compartments², the p.200 range-change
+grid). Golden-locked to the book's Murphy-vs-Gryphon, Vanguard-vs-Antares, and Antares-vs-Joshua
+worked examples. **Deferred (needs the shipgen weapon/compartment model):** the full ShipCard
+(compartment/subcompartment layout, per-weapon stat catalog, the weapons-task Massive-Explosion
+multiplier table, screens/globes/coatings defense catalog, interference/clustering).
 
 ---
 
