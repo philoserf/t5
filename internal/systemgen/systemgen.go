@@ -153,6 +153,8 @@ func orbitLabel(o PlacedOrbit) string {
 	switch {
 	case o.Kind == KindMainworld && o.Giant != nil:
 		label = fmt.Sprintf("Mainworld (moon of Gas Giant %s)", o.Giant)
+	case o.Kind == KindMainworld && o.Parent != nil:
+		label = fmt.Sprintf("Mainworld (moon of %s %s)", o.Parent.Type, o.Parent.Profile)
 	case o.Giant != nil:
 		label = fmt.Sprintf("%s %s", o.Kind, o.Giant)
 	case o.World != nil:

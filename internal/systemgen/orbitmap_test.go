@@ -78,6 +78,37 @@ func TestPlaceOrbitsMultiStar(t *testing.T) {
 	}
 }
 
+func TestPlaceOrbitsSatelliteMainworldNoGasGiant(t *testing.T) {
+	// A satellite mainworld whose system has no gas giant gets an accommodating
+	// BigWorld parent created in its orbit (Book 3 p.21).
+	s := &System{
+		Primary:            Star{Type: "F", Decimal: 8, Size: "V"},
+		GasGiants:          0,
+		Worlds:             1, // others = 1 - 1 - 0 - 0 = 0
+		MainworldOrbit:     4,
+		MainworldSatellite: MainworldSatellite{IsSatellite: true},
+	}
+	s.Mainworld.Profile.Population = 8
+	s.placeOrbits(dice.NewWithSeed(1))
+
+	if len(s.Orbits) != 1 {
+		t.Fatalf("placed %d orbits, want 1: %+v", len(s.Orbits), s.Orbits)
+	}
+	mw := s.Orbits[0]
+	if mw.Kind != KindMainworld || mw.Orbit != 4 {
+		t.Errorf("mainworld orbit = {%s %d}, want {Mainworld 4}", mw.Kind, mw.Orbit)
+	}
+	if mw.Giant != nil {
+		t.Errorf("system has no gas giant, but mainworld rides one: %v", mw.Giant)
+	}
+	if mw.Parent == nil || mw.Parent.Type != worldgen.BigWorld {
+		t.Fatalf("mainworld parent = %+v, want a BigWorld", mw.Parent)
+	}
+	if sz := mw.Parent.Profile.Size; sz < 9 || sz > 19 {
+		t.Errorf("BigWorld parent size = %d, want 2D+7 (9..19)", sz)
+	}
+}
+
 func TestOtherWorldType(t *testing.T) {
 	hz := 4
 	// Inner/HZ table (orbit <= hz+1): rolls 1..6.
