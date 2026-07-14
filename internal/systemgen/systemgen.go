@@ -166,17 +166,20 @@ func orbitLabel(o PlacedOrbit) string {
 	if n := len(o.Satellites); n > 0 {
 		moons := make([]string, n)
 		for j, sat := range o.Satellites {
-			if sat.Ring {
+			switch {
+			case sat.Ring:
 				moons[j] = "Ring"
-			} else {
-				moons[j] = sat.OrbitLetter
+			case sat.DoublePlanet:
+				moons[j] = fmt.Sprintf("%s %s dp", sat.OrbitLetter, sat.Profile)
+			default:
+				moons[j] = fmt.Sprintf("%s %s", sat.OrbitLetter, sat.Profile)
 			}
 		}
 		suffix := ""
 		if n > 1 {
 			suffix = "s"
 		}
-		label += fmt.Sprintf(" (%d moon%s: %s)", n, suffix, strings.Join(moons, " "))
+		label += fmt.Sprintf(" (%d moon%s: %s)", n, suffix, strings.Join(moons, "; "))
 	}
 	return label
 }

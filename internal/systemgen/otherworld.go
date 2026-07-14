@@ -66,3 +66,14 @@ func otherWorldType(orbit, hz int, hasHZ bool, oneD int) worldgen.OtherWorldType
 		return worldgen.Hospitable
 	}
 }
+
+// satelliteType picks a moon's world type from a 1D roll and its parent body's
+// orbital zone (Book 3 p.29 Satellites tables). It matches otherWorldType except
+// that an outer-zone roll of 4 yields a StormWorld rather than an Iceworld — the
+// one cell where the Outer Satellites table diverges from Outer Worlds.
+func satelliteType(orbit, hz int, hasHZ bool, oneD int) worldgen.OtherWorldType {
+	if oneD == 4 && zoneOf(orbit, hz, hasHZ) == outerZone {
+		return worldgen.StormWorld
+	}
+	return otherWorldType(orbit, hz, hasHZ, oneD)
+}
