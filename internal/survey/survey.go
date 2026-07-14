@@ -35,26 +35,6 @@ func (rec Record) SecondSurvey() string {
 	return rec.System.SecondSurvey(rec.Hex.String(), rec.Name, "Im")
 }
 
-// Subsector surveys one subsector (letter 'A'-'P') at the given density: every
-// present hex gets a full generated system and a world name, and the highest-
-// Importance Starport-A world is marked the subsector capital (Cs). The coarse
-// gas-giant survey flag constrains the full generation (present → at least one
-// gas giant, absent → none), so the long-range preview and the detailed system
-// agree.
-func Subsector(r *dice.Roller, d sectorgen.Density, letter byte) []Record {
-	hexes := sectorgen.GenerateSubsector(r, d, letter)
-	records := make([]Record, len(hexes))
-	for i, h := range hexes {
-		records[i] = Record{
-			Hex:    h.Hex,
-			Name:   worldName(r),
-			System: systemgen.GenerateForMap(r, h.GasGiant, h.AsteroidMainworld),
-		}
-	}
-	markCapital(records)
-	return records
-}
-
 // A Survey is a surveyed region: its per-hex system records and the trade routes
 // linking their Important worlds (Book 3 pp. 21, 27).
 type Survey struct {
@@ -66,7 +46,15 @@ type Survey struct {
 // present hex gets a full generated system and name, each subsector's highest-
 // Importance Starport-A world is marked its capital (Cs) and the region's is the
 // sector capital (Cx), then trade routes are laid among the Important worlds and
-// Scout Way Stations sited along them.
+// Scout Way Stations sited along them. The coarse gas-giant and asteroid map
+// symbols constrain the full generation, so the long-range preview and the
+// detailed system agree.
+//
+// A sector is surveyed whole because its systems share one dice stream — a hex's
+// world depends on every hex before it — and because capitals, routes, and way
+// stations can only be assigned once the whole region is known. Callers wanting
+// one subsector or one hex survey the sector and select from it, so every view
+// agrees about what sits where.
 func Sector(r *dice.Roller, d sectorgen.Density) Survey {
 	hexes := sectorgen.GenerateSector(r, d)
 	records := make([]Record, len(hexes))
@@ -122,15 +110,6 @@ func worldsOf(records []Record) []route.World {
 		worlds[i] = route.World{Hex: rec.Hex, Importance: rec.System.Mainworld.Importance}
 	}
 	return worlds
-}
-
-// markCapital tags the highest-Importance Starport-A world as the subsector
-// capital (Cs; Book 3 Chart D p.26 requires Starport A). If no world has Starport
-// A, none is marked.
-func markCapital(records []Record) {
-	if b := bestCapital(records, indices(records)); b >= 0 {
-		records[b].System.Mainworld.SetCapital("Cs")
-	}
 }
 
 // markSectorCapitals marks the region's capital (Cx) and each subsector's
