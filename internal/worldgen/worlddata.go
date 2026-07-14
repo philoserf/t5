@@ -87,8 +87,7 @@ func ZoneName(zone byte) string {
 
 // TravelZone classifies a world as Green ('G'), Amber ('A'), or Red ('R') from
 // its Government+Law level and starport (Book 3 p. 28): Gov+Law of 20+ is Amber,
-// 22+ is Red, and a class-X starport is Red. The Dangerous/Puzzling (Da/Pz)
-// sub-labels need referee context and are not distinguished here.
+// 22+ is Red, and a class-X starport is Red.
 func TravelZone(p uwp.Profile) byte {
 	switch {
 	case p.Starport == 'X':
@@ -99,6 +98,29 @@ func TravelZone(p uwp.Profile) byte {
 		return 'A'
 	default:
 		return 'G'
+	}
+}
+
+// ZoneCodes returns the trade classifications a world's travel zone earns it
+// (Book 3 p. 28, and the same rows on Chart D p. 26): an Amber world is Dangerous
+// (Da) if its population is 6 or less and Puzzling (Pz) if 7 or more, and a Red
+// world is Forbidden (Fo). A Green world earns none.
+//
+// These sit in TradeClassifications' deliberate exclusions no longer: the zone is
+// a pure function of the UWP (see TravelZone), so the codes are as determinable as
+// any other. The catalog once called them referee-only; the book gives the rule
+// outright.
+func ZoneCodes(p uwp.Profile) []string {
+	switch TravelZone(p) {
+	case 'A':
+		if p.Population <= 6 {
+			return []string{"Da"}
+		}
+		return []string{"Pz"}
+	case 'R':
+		return []string{"Fo"}
+	default:
+		return nil
 	}
 }
 

@@ -1,6 +1,7 @@
 package worldgen
 
 import (
+	"slices"
 	"testing"
 
 	"github.com/philoserf/t5/internal/dice"
@@ -146,5 +147,38 @@ func TestBaseNames(t *testing.T) {
 	}
 	if got := (World{}).BaseNames(); len(got) != 0 {
 		t.Errorf("a world with no bases named %v", got)
+	}
+}
+
+// TestZoneCodes: the Da/Pz/Fo trade codes are derived from the travel zone and
+// population (Book 3 p.28), not referee-assigned. An Amber world is Dangerous when
+// small and Puzzling when populous; a Red world is Forbidden.
+func TestZoneCodes(t *testing.T) {
+	// Gov+Law 20 = Amber. Pop 6 or less -> Da.
+	amberLow := uwp.Profile{Starport: 'C', Government: 11, Law: 9, Population: 4}
+	if got := ZoneCodes(amberLow); !slices.Equal(got, []string{"Da"}) {
+		t.Errorf("amber low-pop = %v, want [Da]", got)
+	}
+	// Amber, Pop 7+ -> Pz.
+	amberHigh := uwp.Profile{Starport: 'C', Government: 11, Law: 9, Population: 9}
+	if got := ZoneCodes(amberHigh); !slices.Equal(got, []string{"Pz"}) {
+		t.Errorf("amber high-pop = %v, want [Pz]", got)
+	}
+	// Gov+Law 22 = Red -> Fo, regardless of population.
+	red := uwp.Profile{Starport: 'C', Government: 13, Law: 9, Population: 9}
+	if got := ZoneCodes(red); !slices.Equal(got, []string{"Fo"}) {
+		t.Errorf("red = %v, want [Fo]", got)
+	}
+	// A class-X starport is Red -> Fo.
+	if got := ZoneCodes(uwp.Profile{Starport: 'X', Population: 3}); !slices.Equal(got, []string{"Fo"}) {
+		t.Errorf("class-X = %v, want [Fo]", got)
+	}
+	// Green earns nothing.
+	if got := ZoneCodes(uwp.Profile{Starport: 'A', Government: 5, Law: 5, Population: 8}); got != nil {
+		t.Errorf("green = %v, want none", got)
+	}
+	// Regina (Gov 8, Law 9 -> 17) is Green, so the golden is untouched.
+	if got := ZoneCodes(regina); got != nil {
+		t.Errorf("Regina should earn no zone code, got %v", got)
 	}
 }
