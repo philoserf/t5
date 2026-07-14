@@ -32,6 +32,17 @@ func (h Hex) String() string {
 	return fmt.Sprintf("%02d%02d", h.Col, h.Row)
 }
 
+// Distance returns the number of parsecs (jump distance) between two hexes on
+// the Traveller map (Book 3 p.12). Traveller hexes are flat-topped and arranged
+// in columns with even columns shifted half a hex down ("even-q" offset); the
+// distance is the cube-coordinate distance after converting from that offset.
+func (h Hex) Distance(o Hex) int {
+	ax, az := h.Col, h.Row-(h.Col+(h.Col&1))/2
+	bx, bz := o.Col, o.Row-(o.Col+(o.Col&1))/2
+	ay, by := -ax-az, -bx-bz
+	return (max(ax-bx, bx-ax) + max(ay-by, by-ay) + max(az-bz, bz-az)) / 2
+}
+
 // Subsector returns the hex's subsector letter A-P (Book 3 p.12): the sixteen
 // 8x10 subsectors are lettered left-to-right, top-to-bottom in a 4x4 grid.
 func (h Hex) Subsector() byte {
