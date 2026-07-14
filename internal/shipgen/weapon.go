@@ -63,6 +63,21 @@ func (t Tonnage) Phrase() string {
 	return t.String() + " tons"
 }
 
+// DefaultWeapon is a weapon as the book lists it: in its own minimum mount, at
+// the standard rung of its range ladder, at Standard stage. It is the sensible
+// starting point a designer then varies.
+func DefaultWeapon(model WeaponID) WeaponSpec {
+	if !validWeapon(model) {
+		return WeaponSpec{Model: model}
+	}
+	w := weaponData[model]
+	rng := AttackRange // the standard space range
+	if w.scale == WorldScale {
+		rng = VDistant // ...and the standard world one
+	}
+	return WeaponSpec{Model: model, Mount: w.minMount, Range: rng}
+}
+
 // A Weapon is a designed weapon installation: the spec plus everything derived
 // from it. TL is the installed weapon's tech level (its base, shifted by the
 // range and the stage), Mod is the total modifier on the Space Weapon Task, and
@@ -177,6 +192,89 @@ func (w Weapon) LongName() string {
 	fmt.Fprintf(&b, " Mod=%+d. %s. %s. Hits= %dD. %s.",
 		w.Mod, w.Tons.Phrase(), weaponMCr(w.Cost), w.Hits, w.RangeCode())
 	return b.String()
+}
+
+// WeaponByName finds a weapon by its name or its single-letter model code, both
+// case-insensitively and ignoring spaces ("beam laser", "beamlaser", "L").
+func WeaponByName(s string) (WeaponID, bool) {
+	if len(s) == 1 {
+		for id, w := range weaponData {
+			if upper(s[0]) == w.letter {
+				return WeaponID(id), true
+			}
+		}
+	}
+	norm := squash(s)
+	for id, w := range weaponData {
+		if squash(w.name) == norm {
+			return WeaponID(id), true
+		}
+	}
+	return 0, false
+}
+
+// MountByCode finds a mount by its code ("T1", "Bay") or its name ("single
+// turret"), case-insensitively.
+func MountByCode(s string) (Mount, bool) {
+	norm := squash(s)
+	for m, d := range mountData {
+		if squash(d.code) == norm || squash(d.name) == norm {
+			return Mount(m), true
+		}
+	}
+	return 0, false
+}
+
+// RangeByName finds a range by name ("orbit", "attack range", "vdistant"),
+// case-insensitively.
+func RangeByName(s string) (Range, bool) {
+	norm := squash(s)
+	for r, d := range rangeData {
+		if squash(d.name) == norm {
+			return Range(r), true
+		}
+	}
+	return 0, false
+}
+
+// WeaponNames lists every weapon's name, for a "known weapons" message.
+func WeaponNames() []string {
+	names := make([]string, len(weaponData))
+	for i, w := range weaponData {
+		names[i] = w.name
+	}
+	return names
+}
+
+// MountCodes lists every mount's code, for a "known mounts" message.
+func MountCodes() []string {
+	codes := make([]string, len(mountData))
+	for i, m := range mountData {
+		codes[i] = m.code
+	}
+	return codes
+}
+
+// RangeNames lists every range's name, for a "known ranges" message.
+func RangeNames() []string {
+	names := make([]string, len(rangeData))
+	for i, r := range rangeData {
+		names[i] = r.name
+	}
+	return names
+}
+
+// squash lowercases a name and drops its spaces, so "Beam Laser" and "beamlaser"
+// are the same lookup key.
+func squash(s string) string {
+	return strings.ToLower(strings.ReplaceAll(s, " ", ""))
+}
+
+func upper(c byte) byte {
+	if c >= 'a' && c <= 'z' {
+		return c - ('a' - 'A')
+	}
+	return c
 }
 
 func validWeapon(id WeaponID) bool { return id >= 0 && int(id) < len(weaponData) }

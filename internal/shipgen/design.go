@@ -4,10 +4,11 @@ import "fmt"
 
 // Design builds a complete ship from a spec (Book 2 Starship Design Checklist).
 // It is total — never an error: infeasibility is reported in Ship.Problems (a
-// power plant weaker than its drives, a TL-capped drive, or an over-budget
-// hull). The tonnage budget's Payload is the residual left for the payload the
-// core engine does not yet model — accommodations, weapons, and cargo — so a
-// clean core ship still lists that tonnage as Payload rather than fully spent.
+// power plant weaker than its drives, a TL-capped drive, a weapon the hull has no
+// mount point for or the yard cannot build, or an over-budget hull). The tonnage
+// budget's Payload is the residual left for what the engine does not yet model —
+// accommodations and cargo — so a clean ship still lists that tonnage as Payload
+// rather than fully spent.
 func Design(spec ShipSpec) Ship {
 	h := hull(spec.TL, spec.HullLetter, spec.Tons, spec.Config, spec.Structure)
 	ship := Ship{Spec: spec, Hull: h}
@@ -57,6 +58,27 @@ func Design(spec ShipSpec) Ship {
 	ship.Armor = armor(spec.TL, h.Tons, spec.Structure, spec.ArmorLayers)
 	used += ship.Armor.Tons
 
+	// Weapons: each is designed on its own (DesignWeapon), then the hull has to
+	// have somewhere to put them and the yard has to be able to build them.
+	for _, ws := range spec.Weapons {
+		w := DesignWeapon(ws)
+		ship.Weapons = append(ship.Weapons, w)
+		for _, p := range w.Problems {
+			problems = append(problems, p)
+		}
+		// A yard cannot build above its own tech level: the weapon's TL is its
+		// base shifted by the range and the stage, so a long-range or advanced
+		// model can outrun the ship that carries it.
+		if w.TL > spec.TL {
+			problems = append(problems, fmt.Sprintf("%s is TL-%d, above the ship's TL-%d",
+				w.Name(), w.TL, spec.TL))
+		}
+	}
+	if p := mountPoints(h.Tons, ship.Weapons); p != "" {
+		problems = append(problems, p)
+	}
+	used += weaponTonnage(ship.Weapons)
+
 	ship.Tonnage = Budget{Hull: h.Tons, Used: used, Payload: h.Tons - used}
 	if ship.Tonnage.Payload < 0 {
 		problems = append(problems, fmt.Sprintf("over budget by %dt", -ship.Tonnage.Payload))
@@ -67,6 +89,9 @@ func Design(spec ShipSpec) Ship {
 		if d != nil {
 			ship.Cost += d.Cost
 		}
+	}
+	for _, w := range ship.Weapons {
+		ship.Cost += w.Cost
 	}
 
 	ship.Problems = problems
