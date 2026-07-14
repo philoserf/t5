@@ -20,7 +20,8 @@ port facilities/fuel) · `chargen` (six-characteristic UPP + Check Characteristi
 careers) · `task` (Difficulty/UTF resolve) · `calendar` · `rangeband` (world/space range ladder) ·
 `senses` · `personals` · `combat` (the play tier, core mechanics) · `sectorgen` (hex map +
 system presence) · `survey` (detailed sector → full systems + capitals + trade routes) ·
-`route` (trade-route graph) · `shipgen` (ACS ship design: hull/drives/fuel/armor + QSP) ·
+`route` (trade-route graph) · `shipgen` (ACS ship design: hull/drives/fuel/armor + QSP, and the
+armament — weapons, mounts, defenses, missiles) ·
 `trade` (the p.221 Cargo ID / Cost / Price / Actual Value pricing engine) · `shipcombat` (space
 combat resolution: weapon/missile/defensive tasks, penetration, hit location, damage, movement).
 
@@ -45,8 +46,10 @@ The worldgen/systemgen/chargen census is **done**: trade classifications, PBG, I
 the world census line, port facilities, chargen's 13 careers, and the full multi-star system
 map all ship. The shared play primitives are now in place too — the **RangeBand ladder** (#9)
 and the Difficulty/UTF task layer (#10) — so the play side (senses, personals, combat) is
-unblocked. `Starship design` (#16) is the largest open piece. Everything in Tiers 5–6 is
-independent content-generation that can follow in any order.
+unblocked. **Starship design (#16) is done**, armament and all, and `shipcombat` (#22) consumes it:
+a generated ship can be flown into a fight. The largest open pieces are now `Sophont creation`
+(#17, the last big Tier-3 generator) and the Tier-5 content makers, which are independent and can
+follow in any order.
 
 ---
 
@@ -171,17 +174,40 @@ and UWP, capped to its parent's size with a double-planet flag at equal size (Bo
 non-mainworld world whose target orbit is held by a gas giant becomes that giant's moon rather
 than being nudged aside. `System.String` and `cmd/systemgen` render the full multi-star orbit map.
 
-**16. Starship design generator** — _B2 pp. 30–95, 101–135, 188–192_ · new `shipgen` package · **L** · 🟡 **core done**
+**16. Starship design generator** — _B2 pp. 30–95, 101–135, 188–192_ · new `shipgen` package · **L** · ✅ **done**
 Built (`internal/shipgen` + `cmd/shipgen`): the deterministic ACS design engine — `Design(spec)
 Ship` (never errors; infeasibility is reported in `Ship.Problems`) composing hull (tons/cost/
 config/structure/armor/hardpoints/over-tonnage), drives (the **Drive Potential** formula — the
 p.78 Z1 grid is exactly `min(⌊2·drive/hull⌋, 9)`, with the Z2 inverse, TL availability, and the
 11 stage effects), fuel (`P·hull/10` jump, `P·hull/100` ops), and armor. Renders the QSP
 (`S-AL22`) and a ship card; a thin `Generate(r)` rolls a random feasible ship. Golden-locked to
-the Murphy Scout (S-AL22 end to end) and Beowulf (overtonnage). **Deferred:** weapons/sensors/
-defenses (the mount/stage/range grids, B2 pp.153–192), consoles/computers/crew/accommodations,
-Quality (Demand/Comfort/Ergonomics), the ShipCard compartment layout, QSP decode, and the
-non-jump interstellar drives (Hop/Skip/NAFAL). Kinunir (stage-effect-heavy) awaits verification.
+the Murphy Scout (S-AL22 end to end) and Beowulf (overtonnage).
+
+**Armament** (p.83 for weapons, p.174 for defenses — each page carries the whole system as six
+tables: the devices, the TL stage effects, the mounts, and the space/world range effects). One
+rule, `install`, scales both: the stage shifts the device's TL and prices it, the range shifts the
+TL again and scales the **mount's** tonnage and cost ("Range Effects apply to the Mount but not the
+Weapon" — a weapon's own tonnage is zero; the mount is what takes up room). The mount also supplies
+the damage dice and the attack Mod, and the weapon and defense mount tables run **opposite ways**: a
+Single Turret attacks at −2 and defends at +1. `DesignWeapon` (23 models), `DesignDefense` (10
+screens, plus the nine weapons p.174 allows in the Anti-Missile Defensive Fire mode), and
+`DesignMissile` (sizes 1–7 × warhead × guidance, each constraining the others) render the book's
+`LongName` — the weapon's UWP analog. `Design` mounts them: one HardPoint per 100t, or three
+FirmPoints instead (sub-ton mounts only), with the Bolt-In needing neither. Golden-locked to the
+p.167 TYPICAL WEAPONS and p.176 IDENTIFYING DEFENSES catalogs, every row.
+
+**Deferred:** sensors (pp.136–153), consoles/computers/crew/accommodations, Quality
+(Demand/Comfort/Ergonomics), Batteries (p.171), world-surface defenses (p.187), the pp.168–169
+weapon/defense-vs-range interference grid, QSP decode, and the non-jump interstellar drives
+(Hop/Skip/NAFAL). Kinunir (stage-effect-heavy) awaits verification.
+
+_Rules notes:_ the book divides by three by multiplying by **0.33** (a 200t Main mount at Vlong is
+"66 tons"), so range multipliers are hundredths — being more precise than the book would be wrong.
+Four book conflicts were resolved against the design tables and documented in comments: the Generic
+stage Mod (p.156 says +1, p.83's table says 0), the defense Quad Turret cost (three worked rows need
+MCr2.5, the table prints 1.5), the missile catalogs' EMP (one lower than the effects grid on the
+same page), and p.155's catalog (does not derive from its own tables). The drive and weapon stage
+tables also genuinely differ in one cell: **Modified** costs a drive ×1 but a weapon /2.
 
 **17. Sophont (species) creation** — _B3 pp. 215–246_ · extends chargen · **L**
 A Flux-driven pipeline producing a non-human species template (homeworld, environment/niche,
@@ -247,8 +273,10 @@ spread** (`SubCompartmentsKnockedOut`, 10/subcompartment, 60/compartment); damag
 `Severity`; the missile `MassiveExplosion` proximity table **and** the p.196 weapons-task multiplier
 table; and movement (`Agility`, `RammingHits` = compartments², the p.200 range-change grid).
 Golden-locked to the book's Murphy-vs-Gryphon, Vanguard-vs-Antares, Antares-vs-Joshua, and Vigilant
-worked examples. _Out of scope (belongs to a future shipgen weapons-design extension, not combat
-resolution):_ the per-weapon/defense stat catalogs and mount installation (B2 pp.101–192), and the
+worked examples. The per-weapon/defense stat catalogs and mount installation now live where they
+belong — in `shipgen` (#16) — and `shipcombat/ship.go` bridges them: `Attack` takes a designed
+`Weapon`, `Defend` a designed `Defense`, `AttackWithMissile` a designed round, and `ArmorLayers` /
+`Card` / `ShipAgility` a designed `Ship`. A generated ship can fight. _Still out of scope:_ the
 p.201 interference/clustering tactical options.
 
 ---
