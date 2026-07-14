@@ -21,3 +21,22 @@ func TestMissileMassiveExplosion(t *testing.T) {
 		t.Errorf("MissileMassiveExplosion(12) = %+v, want a clean Miss", e)
 	}
 }
+
+// TestWeaponsMassiveExplosion golden-locks the Book 2 p.196 Weapons-Task Massive
+// Explosion multiplier table.
+func TestWeaponsMassiveExplosion(t *testing.T) {
+	cases := map[string]MassiveExplosionMultiplier{
+		"AM":        {AV: 10, Flash: 1},
+		"Nuke":      {AV: 10, Rad: 1, Flash: 1, EMP: 1},
+		"KK":        {AV: 1},
+		"DeadFall6": {AV: 10, Flash: 3},
+	}
+	for option, want := range cases {
+		if got, ok := WeaponsMassiveExplosion(option); !ok || got != want {
+			t.Errorf("WeaponsMassiveExplosion(%q) = %+v,%v, want %+v", option, got, ok, want)
+		}
+	}
+	if _, ok := WeaponsMassiveExplosion("Sandcaster"); ok {
+		t.Errorf("a non-explosive weapon should not be tabulated")
+	}
+}

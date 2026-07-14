@@ -167,10 +167,12 @@ Tooling (go, go-task, poppler's `pdftotext`) is pinned in `Brewfile`.
   dice; targets `weaponTL+C+S+K+mods`, `missileTL+guidance+mods`, `defenseTL−attackTL+mountMod`);
   plus `HitCompartment` (Flux + targeting), `Penetrate` (layered armor), the L1 damage-location
   table, damage/diagnosis `Severity`, the missile `MassiveExplosion` proximity table, and movement
-  (`Agility`, `RammingHits`, the p.200 range-change grid). Pure primitives (TLs/mods/AV/compartment
-  numbers), no ShipCard — golden-locked to the Murphy/Gryphon, Vanguard/Antares, and Joshua worked
-  examples. Deferred: the full ShipCard compartment model + per-weapon/defense stat catalogs (await
-  the deferred shipgen weapons model).
+  (`Agility`, `RammingHits`, the p.200 range-change grid). The ShipCard compartment model
+  (`HullLocations`, p.86 Table H — compartments/span/subcompartments by hull ordinal) backs hit
+  location and `SubCompartmentsKnockedOut` damage spread; the missile and weapons-task Massive
+  Explosion tables are both present. Pure primitives (TLs/mods/AV/compartment numbers) — golden-locked
+  to the Murphy/Gryphon, Vanguard/Antares, Joshua, and Vigilant worked examples. Out of scope (a
+  future shipgen weapons-design extension): the per-weapon/defense stat catalogs and interference.
 - `internal/sectorgen/` + `internal/survey/` + `internal/route/` — interstellar mapping (Book 3
   pp. 12-15, 21, 27-28): the 32×40/8×10 hex grid with CCRR/A-P coordinates, `Hex.Distance` (parsec
   jump distance via even-q offset→cube), and density system-presence rolls. `survey.Sector`/

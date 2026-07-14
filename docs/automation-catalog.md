@@ -237,16 +237,19 @@ known), the OTO/STS and accelerated-delivery surcharges, and the long-term mail-
 Complete — a ship can price, sell (brokered), fill its hold with passengers/freight, name each
 cargo, and bid mail contracts.
 
-**22. Starship combat** — _B2 pp. 193–204_ · new `shipcombat` package · **M–L** · 🟡 **core done**
-Built (`internal/shipcombat`): the resolution engine — the Space Weapon, Missile, and Defensive
-Fire tasks (roll-low over `task.ResolveDice`: range-band/5D dice, TL+C+S+K / DefenseTL−AttackTL+Mount
-targets), mount mods, missile guidance, `HitCompartment` (Flux + targeting), `Penetrate` vs layered
-armor, the L1 damage-location table, damage/diagnosis `Severity`, the missile `MassiveExplosion`
-proximity table, and movement (`Agility`, `RammingHits` = compartments², the p.200 range-change
-grid). Golden-locked to the book's Murphy-vs-Gryphon, Vanguard-vs-Antares, and Antares-vs-Joshua
-worked examples. **Deferred (needs the shipgen weapon/compartment model):** the full ShipCard
-(compartment/subcompartment layout, per-weapon stat catalog, the weapons-task Massive-Explosion
-multiplier table, screens/globes/coatings defense catalog, interference/clustering).
+**22. Starship combat** — _B2 pp. 193–204_ · new `shipcombat` package · **M–L** · ✅ **done**
+Built (`internal/shipcombat`): the full space-combat resolution engine — the Space Weapon, Missile,
+and Defensive Fire tasks (roll-low over `task.ResolveDice`: range-band/5D dice, TL+C+S+K /
+DefenseTL−AttackTL+Mount targets), mount mods, missile guidance; `HitCompartment` (Flux + targeting)
+over the **ShipCard compartment model** (`HullLocations`, the p.86 Table H of compartments/span/
+subcompartments per hull); `Penetrate` vs layered armor; the L1 damage-location table; **damage
+spread** (`SubCompartmentsKnockedOut`, 10/subcompartment, 60/compartment); damage/diagnosis
+`Severity`; the missile `MassiveExplosion` proximity table **and** the p.196 weapons-task multiplier
+table; and movement (`Agility`, `RammingHits` = compartments², the p.200 range-change grid).
+Golden-locked to the book's Murphy-vs-Gryphon, Vanguard-vs-Antares, Antares-vs-Joshua, and Vigilant
+worked examples. _Out of scope (belongs to a future shipgen weapons-design extension, not combat
+resolution):_ the per-weapon/defense stat catalogs and mount installation (B2 pp.101–192), and the
+p.201 interference/clustering tactical options.
 
 ---
 

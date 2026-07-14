@@ -69,6 +69,18 @@ func SeverityLabel(severity int) string {
 // Destroyed reports whether a severity level is beyond repair (Book 2 p.198).
 func Destroyed(severity int) bool { return severity >= 9 }
 
+// SubCompartmentsKnockedOut is the number of SubCompartments a burst of interior
+// damage renders Out-Of-Action (Book 2 p.198): each absorbs up to
+// SubCompartmentCapacity points before the surplus spreads to an adjacent one, so
+// the count is the damage divided by that capacity, rounded up. Sixty points
+// (CompartmentCapacity) fill a whole Compartment's six SubCompartments.
+func SubCompartmentsKnockedOut(points int) int {
+	if points <= 0 {
+		return 0
+	}
+	return (points + SubCompartmentCapacity - 1) / SubCompartmentCapacity
+}
+
 // clamp constrains v to [lo, hi].
 func clamp(v, lo, hi int) int {
 	return min(max(v, lo), hi)
