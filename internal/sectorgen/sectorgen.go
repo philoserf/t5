@@ -156,8 +156,9 @@ func normalizeName(s string) string {
 }
 
 // SystemPresent rolls whether a hex holds a star system at the given density
-// (Book 3 p.13). An out-of-range density yields no system, matching the letter
-// guard in GenerateSubsector.
+// (Book 3 p.13). An out-of-range density yields no system rather than a lookup
+// past the end of densityInfo — this is the only guard on the density, so
+// GenerateSector relies on it.
 func SystemPresent(r *dice.Roller, d Density) bool {
 	if d < ExtraGalactic || d > Core {
 		return false

@@ -43,10 +43,20 @@ func main() {
 	case *hex != "":
 		printHex(r, d, *hex)
 	case *sector:
-		fmt.Println(survey.Sector(r, d))
+		printSector(r, d)
 	default:
 		printSubsector(r, d, *subsector)
 	}
+}
+
+// printSector lists every world in the sector, with its trade routes.
+func printSector(r *dice.Roller, d sectorgen.Density) {
+	sv := survey.Sector(r, d)
+	if len(sv.Records) == 0 {
+		fmt.Printf("no star systems in this sector at %s density\n", d)
+		return
+	}
+	fmt.Println(sv)
 }
 
 // printHex prints one system's full sheet.
@@ -65,14 +75,21 @@ func printHex(r *dice.Roller, d sectorgen.Density, hex string) {
 	fmt.Println(rec.Sheet())
 }
 
-// printSubsector lists one subsector's worlds as Second Survey lines.
+// printSubsector lists one subsector's worlds as Second Survey lines. An empty
+// subsector says so: at a low density it is an ordinary result, and printing
+// nothing at all would be indistinguishable from a failure.
 func printSubsector(r *dice.Roller, d sectorgen.Density, subsector string) {
 	letter, ok := sectorgen.ParseSubsector(subsector)
 	if !ok {
 		fmt.Printf("invalid subsector %q (want a letter A-P)\n", subsector)
 		return
 	}
-	for _, rec := range survey.Sector(r, d).Subsector(letter) {
+	records := survey.Sector(r, d).Subsector(letter)
+	if len(records) == 0 {
+		fmt.Printf("no star systems in subsector %c at %s density\n", letter, d)
+		return
+	}
+	for _, rec := range records {
 		fmt.Println(rec.SecondSurvey())
 	}
 }
