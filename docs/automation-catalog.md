@@ -218,7 +218,7 @@ mods. Golden-locked to the p.184 example. **Not built:** the full Strategy×Tact
 matrix (which tactics apply per strategy and their ×2/×3 multipliers — dense p.183 grid), the
 quick-NPC generator, and the Violence-fail→combat hook.
 
-**21. Trade & commerce** — _B2 pp. 204–221_ · new `trade` package · **M–L** · 🟡 **core done**
+**21. Trade & commerce** — _B2 pp. 204–221_ · new `trade` package · **M–L** · ✅ **done**
 Built (`internal/trade`): the p.221 pricing engine — the Cargo ID, source-world `Cost`
 (Cr3,000 base + per-value-class cost mods + Cr100/TL), market-world `Price` (Cr5,000 base +
 source→market match mods, ×10%/TL-difference effect), and the `ActualValue` table (Flux→40–400%
@@ -230,8 +230,11 @@ Broker table (starport availability + 5%/DM commission, `NetSale`). Also the Ran
 chart (`goods.go`/`goods_data.go`, pp.218-219): the 12 TC-keyed columns (~430 goods) with the
 column-selection rules, the 1D type-block → 1D specific-good roll, Imbalance recursion to another
 column, and the Trade Good Detail prefix (Industrial/Asteroid omit rules) — golden-locked to the
-book's Zivije (Antibiotics) and Knorbes (Imbalance→Pelts) examples. **Deferred:** the Trader
-estimation mechanic, premium/accelerated-delivery surcharges, and the long-term mail-contract bid table.
+book's Zivije (Antibiotics) and Knorbes (Imbalance→Pelts) examples. Finally the edge rules
+(`contracts.go`): Trader estimation (`EstimateActualValue` bounds the sale once one Flux die is
+known), the OTO/STS and accelerated-delivery surcharges, and the long-term mail-contract bid table.
+Complete — a ship can price, sell (brokered), fill its hold with passengers/freight, name each
+cargo, and bid mail contracts.
 
 **22. Starship combat** — _B2 pp. 193–204_ · new `shipcombat` package · **M–L**
 Agility-ordered rounds, the space-weapon / missile / defensive-fire tasks, Flux hit-location on
