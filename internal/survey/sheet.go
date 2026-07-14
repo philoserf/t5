@@ -50,7 +50,7 @@ func (rec Record) Sheet() string {
 	if mw.NativeStatus != "" {
 		field("Natives", "%s", mw.NativeStatus)
 	}
-	if f, ok := worldgen.PortFacilities(mw.Profile.Starport, mw.Profile.Population); ok {
+	if f, ok := worldgen.PortFacilities(mw.Profile); ok {
 		field("Starport", "%c — %s", f.Class, f.Quality)
 		// Classes X and Y are no port at all and offer nothing to list.
 		if svc := f.Services(); len(svc) > 0 {
