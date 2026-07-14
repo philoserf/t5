@@ -119,6 +119,26 @@ func TestSectorDeterministic(t *testing.T) {
 	}
 }
 
+func TestSurveyString(t *testing.T) {
+	sv := Sector(dice.NewWithSeed(5), sectorgen.Sparse)
+	out := sv.String()
+	if len(sv.Records) == 0 {
+		t.Fatal("expected a non-empty survey")
+	}
+	// Every world line carries the per-world traffic annotation.
+	if !strings.Contains(out, "/wk]") {
+		t.Errorf("survey output missing traffic annotation: %q", out[:min(120, len(out))])
+	}
+	// The first record's hex appears in the output.
+	if !strings.Contains(out, sv.Records[0].Hex.String()) {
+		t.Errorf("survey output missing first hex %s", sv.Records[0].Hex)
+	}
+	// If routes exist they are listed under a Trade Routes heading.
+	if len(sv.Routes) > 0 && !strings.Contains(out, "Trade Routes") {
+		t.Errorf("routes present but no Trade Routes section rendered")
+	}
+}
+
 func TestSubsectorDeterministicAndSurveyed(t *testing.T) {
 	a := Subsector(dice.NewWithSeed(7), sectorgen.Sparse, 'A')
 	b := Subsector(dice.NewWithSeed(7), sectorgen.Sparse, 'A')

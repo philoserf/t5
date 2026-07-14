@@ -266,8 +266,12 @@ coordinates and the A–P subsector partition (`Hex.String`/`Hex.Subsector`), th
 densities with their system-presence rolls (Book 3 p.13), and per-hex contents (gas giant on
 2D≤8, asteroid-belt mainworld on a natural 2). `GenerateSector`/`GenerateSubsector` populate a
 region; the CLI prints a subsector map. Golden-locked to the geometry and the density/contents
-rolls. _Follow-on:_ wiring each stellar hex to a full `systemgen.System` (world names,
-capitals, allegiance, trade routes, the Cy owned-world link, the T5SS `.sec` line).
+rolls. `survey` wires each stellar hex to a full `systemgen.System` (world names, subsector Cs
+and sector Cx capitals) and `internal/route` lays the **trade routes** — a pure, dice-free graph
+linking Important (Ix≥4) worlds within J-4, bridging distant ones through intermediate worlds
+(Book 3 pp. 21, 27), plus `Hex.Distance` (parsec jump distance) and Scout Way Stations (~1/50 pc,
+Book 3 p.28). `cmd/sectorgen -sector` renders the sector with routes and Expected-Ship-Traffic.
+_Follow-on:_ the Cy owned-world link and the full T5SS `.sec` route metadata serialization.
 ---
 
 ## Tier 6 — Support primitives, niche generators, and reference data

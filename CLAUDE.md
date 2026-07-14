@@ -146,9 +146,13 @@ Tooling (go, go-task, poppler's `pdftotext`) is pinned in `Brewfile`.
   distinct from an eHex value. `Ship.QSP()` renders the compact profile (`S-AL22`, the ship's
   UWP analog); golden-locked to the Murphy Scout and Beowulf. Costs are plain int Cr. Deferred:
   weapons/sensors/defenses, crew/accommodations, Quality, compartment layout.
-- `internal/sectorgen/` + `internal/survey/` — interstellar mapping (Book 3 pp. 12-15): the
-  32×40/8×10 hex grid with CCRR/A-P coordinates and density system-presence rolls; `survey`
-  composes it with `systemgen` into detailed Second Survey records with subsector capitals.
+- `internal/sectorgen/` + `internal/survey/` + `internal/route/` — interstellar mapping (Book 3
+  pp. 12-15, 21, 27-28): the 32×40/8×10 hex grid with CCRR/A-P coordinates, `Hex.Distance` (parsec
+  jump distance via even-q offset→cube), and density system-presence rolls. `survey.Sector`/
+  `survey.Subsector` compose it with `systemgen` into detailed Second Survey records; `Sector` also
+  marks subsector (Cs) and sector (Cx) capitals, lays **trade routes** (`route.Build` — a pure,
+  dice-free graph linking Ix≥4 worlds within J-4, bridging distant ones through intermediate worlds),
+  and sites Scout Way Stations (~1/50 pc of route, bumping Ix). `cmd/sectorgen -sector` renders it.
 - `internal/senses/`, `internal/personals/`, `internal/combat/` — the play tier (Book 1): sense
   Actions, social Personals, and personal combat, all roll-low via `task.ResolveDice`.
 - `internal/rangeband/` — the world/space range ladder (Book 1 pp. 24-29), shared by the play tier.
