@@ -5,12 +5,12 @@
 // for its Cost and sold at a Market World for a fraction or multiple of its
 // Price. Costs are plain int Cr.
 //
-// This package covers the value engine; the Random Trade Goods detail tables
-// (specific good names) and passenger/freight availability are separate.
+// The package also covers the Random Trade Goods chart that names a cargo
+// (goods.go), the passenger, freight, and mail economics (shipping.go,
+// contracts.go), and the broker who negotiates a sale (brokers.go).
 package trade
 
 import (
-	"fmt"
 	"slices"
 	"strconv"
 	"strings"
@@ -146,14 +146,33 @@ func EstimateActualValue(firstDie, brokerSkill int) (minPct, maxPct int) {
 // CargoID renders a cargo's identity (Book 2 p.221): the source Tech Level as an
 // eHex digit, its value trade classes, the computed per-ton Cost, and a trailing
 // allegiance code when the source is not Imperial. E.g. "8-De Hi In Na Po Cr1,800".
+//
+// Only the value classes are listed, matching the p.221 chart and its worked
+// examples (Efate's Hi In An renders "D-Hi In Cr2,300" — the non-value An is
+// dropped). The looser p.210 prose examples keep some non-value codes while still
+// dropping An; the book is inconsistent, and the mechanical chart wins here.
 func CargoID(sourceTL int, sourceTCs []string, allegiance string) string {
 	vc := ValueClasses(sourceTCs)
-	id := fmt.Sprintf("%s-%s Cr%s",
-		ehex.Format(sourceTL), strings.Join(vc, " "), commas(costOf(sourceTL, vc)))
+	id := ehex.Format(sourceTL)
+	if len(vc) > 0 { // a world with no value class has no class field, not an empty one
+		id += "-" + strings.Join(vc, " ")
+	}
+	id += " Cr" + commas(costOf(sourceTL, vc))
 	if allegiance != "" && allegiance != "Im" {
 		id += " " + allegiance
 	}
 	return id
+}
+
+// ImbalanceBonus is the premium a cargo of Imbalance goods earns when sold into a
+// market that carries the trade class whose oversupply produced it (Book 2 p.211:
+// "If these goods are sold on a market world with this Trade Classification,
+// increase their Price +Cr1,000"). Add it to Price; it is zero for ordinary goods.
+func ImbalanceBonus(g TradeGood, marketTCs []string) int {
+	if g.Imbalance != "" && slices.Contains(marketTCs, g.Imbalance) {
+		return 1_000
+	}
+	return 0
 }
 
 // clamp constrains v to [lo, hi].

@@ -111,9 +111,18 @@ var tradeGoodsColumns = map[string][6]goodsBlock{
 	},
 }
 
+// tradeGoodsDetailOrder lists the detail-bearing trade classes in the order the
+// p.219 Trade Good Detail chart prints them. The book only says "select one" when
+// several apply, so tradeGoodsDetail takes the first in this order — a fixed rule,
+// so a world's cargo always describes the same way.
+var tradeGoodsDetailOrder = []string{
+	"As", "Ba", "De", "Di", "Fl", "Ga", "He", "Hi", "Ic", "Ni", "Po", "Ri", "Va", "Wa",
+}
+
 // tradeGoodsDetailLabel is the Trade Good Detail prefix each trade class confers
-// (Book 2 p.219). Hi's "Processed" is omitted for Industrial worlds and Va's
-// "Exotic" for Asteroid worlds (handled in tradeGoodsDetail).
+// (Book 2 p.219). Hi's "Processed" is omitted for goods out of the Industrial
+// column and Va's "Exotic" for goods out of the Asteroid column, where the label
+// would restate the goods' own origin (handled in tradeGoodsDetail).
 var tradeGoodsDetailLabel = map[string]string{
 	"As": "Strange", "Ba": "Gathered", "De": "Mineral", "Di": "Artifact",
 	"Fl": "Unusual", "Ga": "Premium", "He": "Strange", "Hi": "Processed",
