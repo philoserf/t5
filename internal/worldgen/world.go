@@ -43,7 +43,18 @@ func PopulationDigit(r *dice.Roller, population int) int {
 // affects nobility. Bases are rolled before Importance because Importance
 // depends on them.
 func GenerateWorld(r *dice.Roller, gasGiants, belts int, isCapital bool) World {
-	p := Generate(r)
+	return generateWorld(r, gasGiants, belts, isCapital, false)
+}
+
+// GenerateBeltWorld is GenerateWorld for an asteroid-belt mainworld (Book 3
+// p.13): the UWP is a belt (Size 0), and every derived attribute follows from
+// it. Used when the sector map's asteroid symbol fixes the mainworld.
+func GenerateBeltWorld(r *dice.Roller, gasGiants, belts int, isCapital bool) World {
+	return generateWorld(r, gasGiants, belts, isCapital, true)
+}
+
+func generateWorld(r *dice.Roller, gasGiants, belts int, isCapital, belt bool) World {
+	p := generate(r, belt)
 	tcs := TradeClassifications(p)
 	naval, scout := RollBases(r, p.Starport)
 	ix := Importance(p, tcs, naval, scout, false)

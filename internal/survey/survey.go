@@ -48,7 +48,7 @@ func Subsector(r *dice.Roller, d sectorgen.Density, letter byte) []Record {
 		records[i] = Record{
 			Hex:    h.Hex,
 			Name:   worldName(r),
-			System: systemgen.GenerateWithGasGiants(r, h.GasGiant),
+			System: systemgen.GenerateForMap(r, h.GasGiant, h.AsteroidMainworld),
 		}
 	}
 	markCapital(records)
@@ -74,7 +74,7 @@ func Sector(r *dice.Roller, d sectorgen.Density) Survey {
 		records[i] = Record{
 			Hex:    h.Hex,
 			Name:   worldName(r),
-			System: systemgen.GenerateWithGasGiants(r, h.GasGiant),
+			System: systemgen.GenerateForMap(r, h.GasGiant, h.AsteroidMainworld),
 		}
 	}
 	// Capitals from base Importance, then routes, then Way Stations (which bump

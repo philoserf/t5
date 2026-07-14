@@ -24,8 +24,19 @@ const (
 // Generate rolls a complete mainworld UWP in checklist order: Starport, Size,
 // Atmosphere, Hydrographics, Population, Government, Law, then Tech Level.
 func Generate(r *dice.Roller) uwp.Profile {
+	return generate(r, false)
+}
+
+// generate rolls a mainworld UWP; belt forces an asteroid belt (Book 3 p.13:
+// "If Asteroid, then World Size = 0", which zeroes Atmosphere and Hydrographics
+// too). The size roll is still made and superseded, so a belt world's dice
+// stream stays aligned with a normal one.
+func generate(r *dice.Roller, belt bool) uwp.Profile {
 	sp := starport(r.Dice(2))
 	size := rollSize(r)
+	if belt {
+		size = 0
+	}
 	atm := atmosphere(r.Flux(), size)
 	hyd := hydrographics(r.Flux(), atm, size)
 	pop := rollPopulation(r)
