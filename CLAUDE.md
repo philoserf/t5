@@ -159,8 +159,9 @@ Tooling (go, go-task, poppler's `pdftotext`) is pinned in `Brewfile`.
   `shipping.go` adds premium passage pricing, passenger/freight availability + rates, and the Broker
   table (starport gating + commission + `NetSale`). `goods.go`/`goods_data.go` add the Random Trade
   Goods chart (12 TC-keyed columns, 1D type→1D good, Imbalance recursion, Trade Good Detail prefix;
-  golden-locked to the Zivije/Knorbes examples). Deferred: Trader estimation, delivery surcharges,
-  long-term mail contracts.
+  golden-locked to the Zivije/Knorbes examples). `contracts.go` adds Trader estimation
+  (`EstimateActualValue`), the OTO/STS and accelerated-delivery surcharges, and the long-term
+  mail-contract bid table. #21 is complete.
 - `internal/sectorgen/` + `internal/survey/` + `internal/route/` — interstellar mapping (Book 3
   pp. 12-15, 21, 27-28): the 32×40/8×10 hex grid with CCRR/A-P coordinates, `Hex.Distance` (parsec
   jump distance via even-q offset→cube), and density system-presence rolls. `survey.Sector`/

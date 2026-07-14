@@ -127,6 +127,21 @@ func SellingPrice(price, flux, brokerSkill int) int {
 	return price * ActualValuePercent(flux, brokerSkill) / 100
 }
 
+// EstimateActualValue is the Actual Value percentage range a merchant with Trader
+// skill can foresee once one of the two Flux dice is thrown early (Book 2 pp.210,
+// 221): with the first die known, the second still varies 1-6, bounding the sale.
+// The Broker DM applies as in ActualValuePercent. E.g. a first die of 6 with no
+// broker bounds the outcome to 100%-170%.
+func EstimateActualValue(firstDie, brokerSkill int) (minPct, maxPct int) {
+	minPct = 1 << 30
+	for second := 1; second <= 6; second++ {
+		pct := ActualValuePercent(firstDie-second, brokerSkill)
+		minPct = min(minPct, pct)
+		maxPct = max(maxPct, pct)
+	}
+	return minPct, maxPct
+}
+
 // CargoID renders a cargo's identity (Book 2 p.221): the source Tech Level as an
 // eHex digit, its value trade classes, the computed per-ton Cost, and a trailing
 // allegiance code when the source is not Imperial. E.g. "8-De Hi In Na Po Cr1,800".
