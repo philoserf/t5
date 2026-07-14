@@ -4,17 +4,108 @@ import (
 	"testing"
 
 	"github.com/philoserf/t5/internal/dice"
+	"github.com/philoserf/t5/internal/shipgen"
 )
 
-func TestMountMod(t *testing.T) {
-	cases := map[Mount]int{
-		SingleTurret: 1, DualTurret: 2, TripleTurret: 3, QuadTurret: 4,
-		SingleBarbette: 1, DualBarbette: 2,
-	}
-	for m, want := range cases {
-		if got := m.Mod(); got != want {
-			t.Errorf("Mount %d Mod = %d, want %d", m, got, want)
+// TestMountModsDiffer is the defect this package used to have, now impossible to
+// reproduce. There was one Mount type with one Mod table (T1 +1 ... T4 +4), and
+// its doc said the Mod "adds to a weapon's attack and to Defensive Fire". The book
+// has two tables, and they do not merely differ — they run opposite ways.
+//
+// A weapon in a Single Turret attacks at Mod -2; a defense in one defends at +1.
+// The old table gave the weapon +1, so every Space Weapon Task built with it was
+// three too generous. No golden caught it, because the goldens all passed mods as
+// literal ints and never routed a mount through them. The Mod now comes from the
+// designed component, which knows which table it was built from.
+func TestMountModsDiffer(t *testing.T) {
+	std := shipgen.Standard
+	for _, c := range []struct {
+		mount          shipgen.Mount
+		attack, defend int
+	}{
+		{shipgen.SingleTurret, -2, 1},
+		{shipgen.DualTurret, -1, 2},
+		{shipgen.TripleTurret, 0, 3},
+		{shipgen.QuadTurret, 1, 4},
+	} {
+		// The Mining Laser has no Mod of its own, so its attack Mod is the mount's.
+		w := shipgen.DesignWeapon(shipgen.WeaponSpec{Model: shipgen.MiningLaser, Mount: c.mount, Stage: std, Range: shipgen.VDistant})
+		if w.Mod != c.attack {
+			t.Errorf("%v attacking = %+d, want %+d", c.mount, w.Mod, c.attack)
 		}
+		d := shipgen.DesignDefense(shipgen.DefenseSpec{Model: shipgen.NuclearDamper, Mount: c.mount, Stage: std, Range: shipgen.VDistant})
+		if d.Mod != c.defend {
+			t.Errorf("%v defending = %+d, want %+d", c.mount, d.Mod, c.defend)
+		}
+		if w.Mod == d.Mod {
+			t.Errorf("%v attacks and defends at the same Mod (%+d) — the two tables differ", c.mount, w.Mod)
+		}
+	}
+}
+
+// TestAttackWithDesignedWeapon: a designed ship can finally fight. The weapon
+// carries its own tech level and Mod into the task, where a caller used to have to
+// invent both.
+func TestAttackWithDesignedWeapon(t *testing.T) {
+	// A Beam Laser in a Single Turret: TL 10, Mod +0 (the turret's -2, the laser's
+	// own +2). Target = 10 + C+S+K 12 + 0 = 22 — the Murphy's number below.
+	w := shipgen.DesignWeapon(shipgen.WeaponSpec{Model: shipgen.BeamLaser, Mount: shipgen.SingleTurret, Range: shipgen.VDistant})
+	if got := SpaceWeaponTarget(w.TL, 12, w.Mod); got != 22 {
+		t.Errorf("designed Beam Laser target = %d, want 22", got)
+	}
+	if !Attack(dice.NewScripted(3, 3, 3, 3, 3), w, 5, 12).Success {
+		t.Errorf("5D=15 should hit target 22")
+	}
+	if Attack(dice.NewScripted(6, 5, 5, 5, 4), w, 5, 12).Success {
+		t.Errorf("5D=25 should miss target 22")
+	}
+
+	// The same laser in a Quad Turret aims better (+1) and hits harder (4D vs 1D).
+	quad := shipgen.DesignWeapon(shipgen.WeaponSpec{Model: shipgen.BeamLaser, Mount: shipgen.QuadTurret, Range: shipgen.VDistant})
+	if quad.Mod != 3 || quad.Hits != 4 {
+		t.Errorf("quad Beam Laser = Mod %+d, %dD; want +3, 4D", quad.Mod, quad.Hits)
+	}
+}
+
+// TestDefendWithDesignedDefense: the Vanguard's Meson Screen, designed rather than
+// hand-numbered. A Meson Screen (TL 13) in its Bolt-In (+3) against a Meson Gun-12
+// is target 13 - 12 + 3 = 4, the book's own number (Book 2 p.196).
+func TestDefendWithDesignedDefense(t *testing.T) {
+	d := shipgen.DesignDefense(shipgen.DefenseSpec{Model: shipgen.MesonScreen, Mount: shipgen.BoltIn, Range: shipgen.VDistant})
+	if d.TL != 13 || d.Mod != 3 {
+		t.Fatalf("Meson Screen = TL %d Mod %+d, want TL 13 Mod +3", d.TL, d.Mod)
+	}
+	if got := DefensiveFireTarget(d.TL, 12, d.Mod); got != 4 {
+		t.Errorf("Vanguard Meson Screen target = %d, want 4", got)
+	}
+	if !Defend(dice.NewScripted(4), d, 12).Success {
+		t.Errorf("1D=4 should deflect at target 4")
+	}
+	if Defend(dice.NewScripted(5), d, 12).Success {
+		t.Errorf("1D=5 should not deflect at target 4")
+	}
+}
+
+// TestShipBridge: the pieces a fight needs, taken from a designed ship rather than
+// invented — its armor layers, its compartments, and its agility.
+func TestShipBridge(t *testing.T) {
+	ship := shipgen.Design(shipgen.ShipSpec{
+		TL: 12, HullLetter: 1, Config: shipgen.Lifting, Structure: shipgen.Shell, ArmorLayers: 2,
+		Maneuver: &shipgen.DriveSpec{Letter: 1}, Power: &shipgen.DriveSpec{Letter: 1},
+	})
+	// The Murphy's two Shell layers, AV-6 all told.
+	layers := ArmorLayers(ship)
+	if len(layers) != 2 {
+		t.Fatalf("armor = %v, want 2 layers", layers)
+	}
+	// The hull ordinal already keyed Table H — the packages agreed all along.
+	card, ok := Card(ship)
+	if !ok || card.Compartments == 0 {
+		t.Errorf("a Hull-A ship should have a compartment card, got %+v", card)
+	}
+	// Agility is the thrust left over after going somewhere.
+	if got := ShipAgility(ship, 1); got != ship.Maneuver.Potential-1 {
+		t.Errorf("agility spending 1G = %d, want %d", got, ship.Maneuver.Potential-1)
 	}
 }
 
@@ -69,9 +160,11 @@ func TestDefensiveFire(t *testing.T) {
 }
 
 func TestMissileTask(t *testing.T) {
-	// Guidance values (Book 2 p.197). SelfAware has no fixed value (it is rolled),
-	// so Value returns 0 and the caller supplies the rolled value directly.
-	if UnGuided.Value(8) != 0 || HardWired.Value(8) != 5 || OperatorGuided.Value(8) != 8 || SelfAware.Value(8) != 0 {
+	// Guidance is a property of the designed round (shipgen.Guidance): the value it
+	// contributes here is a flat 5 for a hardwired brain, the gunner's own C+S+K
+	// for one they fly, and the missile's rolled mind for a self-aware one.
+	if shipgen.UnGuided.Value(8, 9) != 0 || shipgen.HardWired.Value(8, 9) != 5 ||
+		shipgen.OperatorGuided.Value(8, 9) != 8 || shipgen.SelfAware.Value(8, 9) != 9 {
 		t.Errorf("guidance values wrong")
 	}
 	if got := MissileTarget(10, 5, 1); got != 16 { // HardWired missile TL-10, mod +1

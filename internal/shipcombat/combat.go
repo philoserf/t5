@@ -6,9 +6,10 @@
 //
 // The tasks are roll-low and resolve through internal/task; this package supplies
 // the T5-specific dice counts and target numbers plus the penetration/damage
-// tables. It works on primitives (TLs, mods, armor values, compartment numbers)
-// rather than a full ShipCard, which the ship-design weapon/compartment model
-// (deferred in shipgen) will later supply.
+// tables. They still take primitives — a tech level, a Mod, an armor value — since
+// that is what the book's tables are, but nobody has to invent them any more:
+// shipgen designs the weapons, defenses, and rounds, and ship.go feeds them in.
+// Attack, Defend, and AttackWithMissile take designed components directly.
 package shipcombat
 
 import (
@@ -16,32 +17,12 @@ import (
 	"github.com/philoserf/t5/internal/task"
 )
 
-// A Mount holds a weapon; its Mod adds to a weapon's attack and to Defensive Fire
-// (Book 2 pp. 195-196), roughly the number of tubes.
-type Mount int
-
-const (
-	SingleTurret   Mount = iota // T1
-	DualTurret                  // T2
-	TripleTurret                // T3
-	QuadTurret                  // T4
-	SingleBarbette              // B1
-	DualBarbette                // B2
-)
-
-var mountMod = [...]int{
-	SingleTurret: 1, DualTurret: 2, TripleTurret: 3, QuadTurret: 4,
-	SingleBarbette: 1, DualBarbette: 2,
-}
-
-// Mod is the mount's attack/defense modifier (Book 2 p.196): T1/B1 +1, T2/B2 +2,
-// T3 +3, T4 +4.
-func (m Mount) Mod() int {
-	if int(m) < 0 || int(m) >= len(mountMod) {
-		return 0
-	}
-	return mountMod[m]
-}
+// A mount's Mod is not defined here. It was, and it was wrong: one Mount type
+// carried one Mod table (T1 +1 ... T4 +4), used for both attacking and defending.
+// The book has two. A weapon in a Single Turret attacks at Mod -2 (Book 2 p.83);
+// a defense in one defends at +1 (p.174) — a bigger mount aims worse but defends
+// better. The Mod now comes from the designed component, which knows which table
+// it was built from: shipgen.Weapon.Mod and shipgen.Defense.Mod.
 
 // SpaceWeaponDice is the Space Weapon Task's dice count (Book 2 p.195): one die
 // per range band (minimum one), plus one more when the weapon's TL is below the
@@ -68,33 +49,9 @@ func ResolveSpaceWeapon(r *dice.Roller, rangeBands, weaponTL, csk, mods int) dic
 	return task.ResolveDice(r, SpaceWeaponDice(rangeBands, weaponTL), SpaceWeaponTarget(weaponTL, csk, mods))
 }
 
-// Guidance is a missile's guidance option (Book 2 p.197); Value turns it into the
-// value it adds to the Missile Attack Task target.
-type Guidance int
-
-const (
-	UnGuided       Guidance = iota // 0
-	HardWired                      // 5
-	OperatorGuided                 // = gunner C+S+K
-	SelfAware                      // rolled: C=6+1D, S=1D, +Flux (caller-computed)
-	DownLoad                       // = gunner C+S+K
-)
-
-// Value is a guidance option's fixed contribution to the Missile Attack target
-// (Book 2 p.197): UnGuided 0, HardWired 5, Operator-Guided and DownLoad the
-// gunner's C+S+K. SelfAware has no fixed value — the missile rolls its own
-// C=6+1D, S=1D, +Flux — so Value returns 0 for it and the caller passes the
-// rolled value to ResolveMissile directly.
-func (g Guidance) Value(gunnerCSK int) int {
-	switch g {
-	case HardWired:
-		return 5
-	case OperatorGuided, DownLoad:
-		return gunnerCSK
-	default:
-		return 0
-	}
-}
+// A missile's Guidance is not defined here either — it is a property of the round,
+// chosen when it is designed, so it lives with the design: shipgen.Guidance, whose
+// Value supplies the asset this package resolves against.
 
 // MissileDice is the Missile Attack Task's dice count (Book 2 p.197): a constant
 // 5D, plus one more when the missile TL is below the range.

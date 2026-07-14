@@ -22,12 +22,12 @@ const (
 	PlasmaGun                   // P
 	FusionGun                   // F
 
-	SlugThrower // B
-	SalvoRack   // V
-	RailGun     // R
-	Missile     // M
-	KKMissile   // N
-	AMMissile   // X
+	SlugThrower     // B
+	SalvoRack       // V
+	RailGun         // R
+	MissileLauncher // M
+	KKMissile       // N
+	AMMissile       // X
 
 	JumpDamper     // T
 	TractorPressor // U
@@ -87,12 +87,12 @@ var weaponData = [...]struct {
 	PlasmaGun:   {'P', "Plasma Gun", 11, SingleBarbette, WorldScale, 1_000_000, 0, 0},
 	FusionGun:   {'F', "Fusion Gun", 12, SingleBarbette, WorldScale, 1_500_000, 0, 0},
 
-	SlugThrower: {'B', "Slug Thrower", 9, SingleTurret, WorldScale, 200_000, 0, 0},
-	SalvoRack:   {'V', "Salvo Rack", 10, Bay, WorldScale, 10_000_000, 0, 0},
-	RailGun:     {'R', "Rail Gun", 12, Bay, SpaceScale, 12_000_000, 0, 0},
-	Missile:     {'M', "Missile", 7, SingleTurret, SpaceScale, 2_000_000, 0, 0},
-	KKMissile:   {'N', "KK Missile", 10, Bay, SpaceScale, 3_000_000, 0, 0},
-	AMMissile:   {'X', "AM Missile", 20, SingleBarbette, SpaceScale, 5_000_000, 0, 0},
+	SlugThrower:     {'B', "Slug Thrower", 9, SingleTurret, WorldScale, 200_000, 0, 0},
+	SalvoRack:       {'V', "Salvo Rack", 10, Bay, WorldScale, 10_000_000, 0, 0},
+	RailGun:         {'R', "Rail Gun", 12, Bay, SpaceScale, 12_000_000, 0, 0},
+	MissileLauncher: {'M', "Missile", 7, SingleTurret, SpaceScale, 2_000_000, 0, 0},
+	KKMissile:       {'N', "KK Missile", 10, Bay, SpaceScale, 3_000_000, 0, 0},
+	AMMissile:       {'X', "AM Missile", 20, SingleBarbette, SpaceScale, 5_000_000, 0, 0},
 
 	JumpDamper:     {'T', "Jump Damper", 14, SingleBarbette, WorldScale, 15_000_000, 0, 0},
 	TractorPressor: {'U', "Tractor Pressor", 16, SingleBarbette, WorldScale, 5_000_000, 0, 0},

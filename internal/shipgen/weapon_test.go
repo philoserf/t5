@@ -23,7 +23,7 @@ func TestTypicalWeapons(t *testing.T) {
 		spec WeaponSpec
 		want string
 	}{
-		{WeaponSpec{Missile, SingleTurret, Standard, AttackRange},
+		{WeaponSpec{MissileLauncher, SingleTurret, Standard, AttackRange},
 			"Standard Attack Range Single Turret Missile-7 Mod=-2. 1 ton. MCr2.2. Hits= 1D. S=07."},
 		{WeaponSpec{MiningLaser, SingleTurret, Standard, Orbit},
 			"Standard Orbit Single Turret Mining Laser-9 Mod=-2. 2 tons. MCr1.1. Hits= 1D. R=08."},
@@ -136,7 +136,7 @@ func TestWeaponRangeEffects(t *testing.T) {
 
 	// A turret built for Boarding is a quarter-ton mount — it goes on a FirmPoint,
 	// and whole-ton arithmetic would have rounded it away to nothing.
-	board := DesignWeapon(WeaponSpec{Missile, SingleTurret, Standard, Boarding})
+	board := DesignWeapon(WeaponSpec{MissileLauncher, SingleTurret, Standard, Boarding})
 	if board.Tons != 25 || !board.Tons.SubTon() || board.Tons.Ceil() != 1 {
 		t.Errorf("Boarding turret = %s tons (subton %v, ceil %d), want 0.25/true/1",
 			board.Tons, board.Tons.SubTon(), board.Tons.Ceil())
