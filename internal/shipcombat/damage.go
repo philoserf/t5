@@ -34,16 +34,16 @@ func Penetrate(damage int, layerAV []int) (penetrated bool, interior int) {
 }
 
 // damageLocation is the Ship column of the L1 Damage Location table (Book 2
-// p.198), indexed by a 2D roll.
-var damageLocation = map[int]string{
-	2: "Bridge", 3: "Hold", 4: "Sensors", 5: "Protections", 6: "Life Support",
-	7: "Drives", 8: "Power Plant", 9: "Hull", 10: "Weaponry", 11: "Astrogation", 12: "Computer",
+// p.198), indexed by a 2D roll - 2.
+var damageLocation = [...]string{
+	"Bridge", "Hold", "Sensors", "Protections", "Life Support",
+	"Drives", "Power Plant", "Hull", "Weaponry", "Astrogation", "Computer",
 }
 
 // DamageLocation names the ship system a hit strikes on a 2D roll (Book 2 p.198
 // L1 Damage Location, Ship column); the roll is clamped to 2-12.
 func DamageLocation(twoD int) string {
-	return damageLocation[clamp(twoD, 2, 12)]
+	return damageLocation[clamp(twoD, 2, 12)-2]
 }
 
 // severityLabel names each Damage/Diagnosis Severity level (Book 2 p.198),

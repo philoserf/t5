@@ -14,14 +14,15 @@ type MassiveExplosion struct {
 	Blast, BFE, Rad, Burn int
 }
 
-// missileMassiveExplosion is the Sz+1D proximity table (Book 2 p.197), indexed by
-// the Size + 1D roll: 6 or less a direct hit, 12 or more a clean miss.
-var missileMassiveExplosion = map[int]MassiveExplosion{
-	7:  {Proximity: "Hit", Blast: 90, BFE: 20, Rad: 10, Burn: 30},
-	8:  {Proximity: "Hit", Blast: 40, BFE: 15, Rad: 10, Burn: 20},
-	9:  {Proximity: "Very Near Miss", Blast: 30, BFE: 10, Rad: 10, Burn: 10},
-	10: {Proximity: "Near Miss", Blast: 10, BFE: 5, Rad: 5, Burn: 5},
-	11: {Proximity: "Far Miss", Blast: 5, BFE: 1, Rad: 1, Burn: 1},
+// missileMassiveExplosion is the Sz+1D proximity table for rolls 7-11 (Book 2
+// p.197), indexed by the Size + 1D roll - 7; 6 or less is a direct hit and 12 or
+// more a clean miss, handled in MissileMassiveExplosion.
+var missileMassiveExplosion = [...]MassiveExplosion{
+	{Proximity: "Hit", Blast: 90, BFE: 20, Rad: 10, Burn: 30},            // 7
+	{Proximity: "Hit", Blast: 40, BFE: 15, Rad: 10, Burn: 20},            // 8
+	{Proximity: "Very Near Miss", Blast: 30, BFE: 10, Rad: 10, Burn: 10}, // 9
+	{Proximity: "Near Miss", Blast: 10, BFE: 5, Rad: 5, Burn: 5},         // 10
+	{Proximity: "Far Miss", Blast: 5, BFE: 1, Rad: 1, Burn: 1},           // 11
 }
 
 // MissileMassiveExplosion returns a detonation's effects at a Size + 1D roll
@@ -34,7 +35,7 @@ func MissileMassiveExplosion(szPlus1D int) MassiveExplosion {
 	case szPlus1D >= 12:
 		return MassiveExplosion{Proximity: "Miss"}
 	default:
-		return missileMassiveExplosion[szPlus1D]
+		return missileMassiveExplosion[szPlus1D-7]
 	}
 }
 

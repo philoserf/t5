@@ -70,7 +70,7 @@ func TestDefensiveFire(t *testing.T) {
 
 func TestMissileTask(t *testing.T) {
 	// Guidance values (Book 2 p.197).
-	if GuidanceValue(UnGuided, 8) != 0 || GuidanceValue(HardWired, 8) != 5 || GuidanceValue(OperatorGuided, 8) != 8 {
+	if UnGuided.Value(8) != 0 || HardWired.Value(8) != 5 || OperatorGuided.Value(8) != 8 {
 		t.Errorf("guidance values wrong")
 	}
 	if got := MissileTarget(10, 5, 1); got != 16 { // HardWired missile TL-10, mod +1
