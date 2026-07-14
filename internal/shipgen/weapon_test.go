@@ -215,7 +215,7 @@ func TestWeaponProblems(t *testing.T) {
 func TestWeaponLetters(t *testing.T) {
 	seen := map[byte]string{}
 	for id := range WeaponID(len(weaponData)) {
-		w := DesignWeapon(WeaponSpec{Model: id, Mount: weaponData[id].minMount, Range: standardRange(weaponData[id].scale)})
+		w := DesignWeapon(DefaultWeapon(id))
 		letter := w.Letter()
 		if prior, dup := seen[letter]; dup {
 			t.Errorf("weapons %s and %s share the letter %c", prior, w.Name(), letter)
@@ -232,12 +232,4 @@ func TestWeaponLetters(t *testing.T) {
 	if len(seen) != 23 {
 		t.Errorf("got %d distinct weapon letters, want 23 (Book 2 p.83 Table A)", len(seen))
 	}
-}
-
-// standardRange is the unmodified rung of a scale's range ladder.
-func standardRange(s Scale) Range {
-	if s == WorldScale {
-		return VDistant
-	}
-	return AttackRange
 }

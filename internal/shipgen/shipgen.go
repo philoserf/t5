@@ -158,6 +158,8 @@ type ShipSpec struct {
 	Jump     *DriveSpec
 	Power    *DriveSpec
 
+	Weapons []WeaponSpec
+
 	FuelScoop, FuelPurifier bool
 }
 
@@ -170,9 +172,12 @@ type Hull struct {
 	MaxG               int
 	Agility, Stability int
 	LandCapable        bool
-	Hardpoints         int // Tons / 100
-	BaseArmor          int // = TL (Shell: TL/2)
-	Cost               int // Cr
+	// Hardpoints is the hull's weapon mount capacity: one per 100 tons (Book 2
+	// p.156). Each may instead be allocated as three FirmPoints, which carry
+	// sub-ton mounts only — see mounts.go, which spends them.
+	Hardpoints int // Tons / 100
+	BaseArmor  int // = TL (Shell: TL/2)
+	Cost       int // Cr
 }
 
 // A Drive is a designed drive with its performance and cost.
@@ -214,6 +219,7 @@ type Ship struct {
 	Power    *Drive
 	Armor    Armor
 	Fuel     Fuel
+	Weapons  []Weapon
 
 	Cost     int // total, Cr
 	Tonnage  Budget
@@ -264,6 +270,13 @@ func (s Ship) String() string {
 
 	if s.Armor.Layers > 0 {
 		fmt.Fprintf(&b, "Armor:   %d layers AV-%d\n", s.Armor.Layers, s.Armor.AV)
+	}
+	for i, w := range s.Weapons {
+		label := "Weapons:"
+		if i > 0 {
+			label = "        " // the rest of the battery lines up under the first
+		}
+		fmt.Fprintf(&b, "%s %s\n", label, w.LongName())
 	}
 	fmt.Fprintf(&b, "Fuel:    %dt · Cost %s · Payload %dt", s.Fuel.Tons, mcr(s.Cost), s.Tonnage.Payload)
 	for _, p := range s.Problems {
