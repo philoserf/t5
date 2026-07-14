@@ -53,8 +53,8 @@ func TestLetterOrdinal(t *testing.T) {
 		{'Z', 24, 2400},
 	}
 	for _, c := range cases {
-		if got := letterOrdinal(c.letter); got != c.ordinal {
-			t.Errorf("letterOrdinal(%c) = %d, want %d", c.letter, got, c.ordinal)
+		if got := LetterOrdinal(c.letter); got != c.ordinal {
+			t.Errorf("LetterOrdinal(%c) = %d, want %d", c.letter, got, c.ordinal)
 		}
 		if got := ordinalLetter(c.ordinal); got != c.letter {
 			t.Errorf("ordinalLetter(%d) = %c, want %c", c.ordinal, got, c.letter)
@@ -65,8 +65,8 @@ func TestLetterOrdinal(t *testing.T) {
 	}
 	// 'I' and 'O' are not letters in the scale; digits and junk map to 0.
 	for _, c := range []byte{'I', 'O', '0', '9', '?'} {
-		if got := letterOrdinal(c); got != 0 {
-			t.Errorf("letterOrdinal(%c) = %d, want 0", c, got)
+		if got := LetterOrdinal(c); got != 0 {
+			t.Errorf("LetterOrdinal(%c) = %d, want 0", c, got)
 		}
 	}
 }

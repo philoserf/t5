@@ -62,7 +62,7 @@ func Design(spec ShipSpec) Ship {
 		problems = append(problems, fmt.Sprintf("over budget by %dt", -ship.Tonnage.Payload))
 	}
 
-	ship.Cost = h.Cost + ship.Fuel.Cost + ship.Armor.Cost
+	ship.Cost = h.Cost + ship.Fuel.Cost
 	for _, d := range []*Drive{ship.Maneuver, ship.Jump, ship.Power} {
 		if d != nil {
 			ship.Cost += d.Cost

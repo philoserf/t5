@@ -6,11 +6,20 @@ import (
 	"github.com/philoserf/t5/internal/dice"
 )
 
-// ConfigByLetter returns the Config for a QSP config letter (C/B/P/U/S/A/L) and
-// whether it was found.
-func ConfigByLetter(letter byte) (Config, bool) {
+// ConfigByLetter returns the Config for a QSP config letter (C/B/P/U/S/A/L,
+// case-insensitive) and whether it was found. Only the first character is
+// significant, so a full config name whose initial matches (e.g. "Cluster")
+// also resolves.
+func ConfigByLetter(letter string) (Config, bool) {
+	if letter == "" {
+		return 0, false
+	}
+	b := letter[0]
+	if b >= 'a' && b <= 'z' {
+		b -= 'a' - 'A'
+	}
 	for c := Cluster; c <= Lifting; c++ {
-		if c.Letter() == letter {
+		if c.Letter() == b {
 			return c, true
 		}
 	}

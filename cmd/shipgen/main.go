@@ -30,18 +30,27 @@ func main() {
 	mission := flag.String("mission", "X", "QSP mission code")
 	n, r := cli.SeededRoller("ships")
 
+	if *hull == "" {
+		for i := range n {
+			if i > 0 {
+				fmt.Println()
+			}
+			fmt.Println(shipgen.Generate(r))
+		}
+		return
+	}
+
+	spec, err := specFromFlags(flags{
+		hull: *hull, tl: *tl, config: *configLetter, structure: *structure,
+		armor: *armorLayers, maneuver: *maneuver, jump: *jump, power: *power, mission: *mission,
+	})
+	if err != "" {
+		fmt.Println(err)
+		return
+	}
 	for i := range n {
 		if i > 0 {
 			fmt.Println()
-		}
-		if *hull == "" {
-			fmt.Println(shipgen.Generate(r))
-			continue
-		}
-		spec, err := specFromFlags(flags{*hull, *tl, *configLetter, *structure, *armorLayers, *maneuver, *jump, *power, *mission})
-		if err != "" {
-			fmt.Println(err)
-			return
 		}
 		fmt.Println(shipgen.Design(spec))
 	}
@@ -62,7 +71,7 @@ func specFromFlags(f flags) (shipgen.ShipSpec, string) {
 	if hullOrd == 0 {
 		return shipgen.ShipSpec{}, fmt.Sprintf("invalid hull %q (want a letter A-Z)", f.hull)
 	}
-	config, ok := shipgen.ConfigByLetter(upper(f.config))
+	config, ok := shipgen.ConfigByLetter(f.config)
 	if !ok {
 		return shipgen.ShipSpec{}, fmt.Sprintf("invalid config %q (want C/B/P/U/S/A/L)", f.config)
 	}
@@ -93,16 +102,5 @@ func letterOrdinal(s string) int {
 	if len(s) != 1 {
 		return 0
 	}
-	return shipgen.LetterOrdinal(upper(s))
-}
-
-func upper(s string) byte {
-	if len(s) == 0 {
-		return 0
-	}
-	c := s[0]
-	if c >= 'a' && c <= 'z' {
-		c -= 'a' - 'A'
-	}
-	return c
+	return shipgen.LetterOrdinal(s[0])
 }

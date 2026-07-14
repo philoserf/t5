@@ -175,7 +175,7 @@ func designDrive(kind DriveKind, spec DriveSpec, hullOrd, tl int) (*Drive, strin
 	cost := tons * driveCrPerTon(kind) * st.costNum / st.costDen
 
 	return &Drive{
-		Kind: kind, Letter: spec.Letter, EP: spec.Letter * 100,
+		Kind: kind, Letter: spec.Letter,
 		Potential: pot, Stage: spec.Stage, Tons: tons, Cost: cost,
 	}, problem
 }

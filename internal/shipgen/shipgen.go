@@ -108,9 +108,13 @@ func (k DriveKind) String() string {
 
 const maxLetter = 24 // Z, the largest hull/drive size
 
-// letterOrdinal maps a hull/drive letter to its ordinal 1..24, or 0 if the byte
-// is not one of the eHex letters.
-func letterOrdinal(c byte) int {
+// LetterOrdinal maps a hull/drive letter (A-Z omitting I/O, case-insensitive) to
+// its ordinal 1..24, or 0 if the byte is not one of the eHex letters — the
+// reverse of a hull/drive size code.
+func LetterOrdinal(c byte) int {
+	if c >= 'a' && c <= 'z' {
+		c -= 'a' - 'A'
+	}
 	if i := strings.IndexByte(ehex.Alphabet, c); i >= 10 {
 		return i - 9
 	}
@@ -122,15 +126,11 @@ func ordinalLetter(n int) byte {
 	if n < 1 || n > maxLetter {
 		return '?'
 	}
-	return ehex.Alphabet[9+n]
+	return ehex.Digit(9 + n)
 }
 
 // HullTons is the nominal tonnage of a hull size ordinal: ordinal * 100 tons.
 func HullTons(ordinal int) int { return ordinal * 100 }
-
-// LetterOrdinal maps a hull/drive letter (A-Z omitting I/O) to its ordinal
-// 1..24, or 0 for a non-letter — the reverse of a hull/drive size code.
-func LetterOrdinal(c byte) int { return letterOrdinal(c) }
 
 // A DriveSpec is a requested drive: its size letter (as an ordinal 1..24, or an
 // even 26..48 for an extended "letter2" size) and its TL stage (Standard is the
@@ -178,16 +178,17 @@ type Hull struct {
 // A Drive is a designed drive with its performance and cost.
 type Drive struct {
 	Kind       DriveKind
-	Letter, EP int
+	Letter     int
 	Potential  int // thrust-G / jump-N / EP tier
 	Stage      Stage
 	Tons, Cost int // Cost in Cr
 	Fuel       int // tons of fuel this drive demands
 }
 
-// Armor is a hull's armor: layer count, total armor value, and tonnage/cost.
+// Armor is a hull's armor: layer count, armor value, and tonnage. Armor imposes
+// no separate monetary cost (Book 2 p.75).
 type Armor struct {
-	Layers, AV, Tons, Cost int
+	Layers, AV, Tons int
 }
 
 // Fuel is a ship's fuel tankage.
