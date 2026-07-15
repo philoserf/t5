@@ -336,19 +336,13 @@ func TestGenerateCareeredQualify(t *testing.T) {
 		t.Fatalf("qualified but no career recorded: %+v", c.Careers)
 	}
 
-	// A failed first qualify (12) retries; a successful retry (2) still enters it.
-	seqRetry := append(append([]int{}, upp...), 6, 6 /*qualify 12*/, 1, 1 /*retry 2*/)
-	cRetry := GenerateCareered(dice.NewScripted(seqRetry...), stopAfter{1}, worldgen.World{}, testCareer)
-	if len(cRetry.Careers) != 1 || cRetry.Careers[0].Career != testCareer.ID {
-		t.Fatalf("a successful retry should enter the career: %+v", cRetry.Careers)
-	}
-
-	// A failed qualify and failed retry fall back to the auto-begin Citizen life,
-	// rather than leaving the character careerless.
-	seqDraft := append(append([]int{}, upp...), 6, 6 /*qualify 12*/, 6, 6 /*retry 12*/)
+	// A failed qualify (12) has no Begin retry (Book 1 p.65: no career in this
+	// edition grants one), so the character falls straight back to the auto-begin
+	// Citizen life rather than getting a second roll or ending up careerless.
+	seqDraft := append(append([]int{}, upp...), 6, 6 /*qualify 12*/)
 	cDraft := GenerateCareered(dice.NewScripted(seqDraft...), stopAfter{1}, worldgen.World{}, testCareer)
 	if len(cDraft.Careers) != 1 || cDraft.Careers[0].Career != Citizen {
-		t.Fatalf("a failed Begin should fall back to Citizen: %+v", cDraft.Careers)
+		t.Fatalf("a failed Begin should fall back to Citizen (no retry): %+v", cDraft.Careers)
 	}
 }
 

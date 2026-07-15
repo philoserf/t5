@@ -55,11 +55,18 @@ var (
 
 // ScoutCareer is the Scout career (Book 1 p. 79). Qualify vs the best of
 // Str/Dex/End; Risk & Reward rotates Str/Dex/End; Continue vs Int.
+//
+// Deferred: the Scout's box entry "Retry R&R C5" is a term-level retry of a failed
+// Risk & Reward roll against Education (C5) — NOT a Begin retry. It was once
+// modelled as a Begin retry against Education, which conflated the two; the page
+// underspecifies which roll it retries and how, so rather than guess a misread into
+// the term loop it stays out until the mechanic is pinned down. The Scout's other
+// R&R escape, avoiding the rolls entirely via Courier Duty, is implemented
+// (ScoutDuty).
 var ScoutCareer = Career{
 	ID:               Scout,
 	Name:             "Scout",
 	Qualify:          Qualification{Chars: []Characteristic{Strength, Dexterity, Endurance}},
-	Retry:            Qualification{Chars: []Characteristic{Education}}, // "Retry vs C5" (Book 1 p.79)
 	CCMode:           RotateCC,
 	ControllingChars: []Characteristic{Strength, Dexterity, Endurance},
 	Continue:         ContinueRule{UseChar: true, Char: Intelligence},

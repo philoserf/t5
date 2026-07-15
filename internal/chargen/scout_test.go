@@ -99,19 +99,20 @@ func TestGoldenScout(t *testing.T) {
 	}
 }
 
-// TestScoutRetryVsEducation confirms the Scout's failed Begin retries against
-// Education (Book 1 p.79 "Retry vs C5"), not the Str/Dex/End qualify set.
-func TestScoutRetryVsEducation(t *testing.T) {
-	c := Character{scores: [count]int{5, 5, 5, 7, 12, 7}} // Str/Dex/End 5, Edu 12
-	// First Begin 2D=8 > qualify 5 fails; the Retry rolls vs Education (8 <= 12).
-	if !beginCareer(dice.NewScripted(6, 2, 6, 2), &c, ScoutCareer, true) {
-		t.Error("Scout retry should roll against Education (8 <= 12) and enter the career")
+// TestScoutBeginNoRetry: a Scout's Begin is a single roll — no Begin retry (Book 1
+// p.65: Begin retry is a per-career property, and the Scout's box grants none; its
+// "Retry R&R C5" is a term-level R&R retry, not a Begin retry, and is deferred).
+// This once wrongly retried a failed Begin against Education.
+func TestScoutBeginNoRetry(t *testing.T) {
+	c := Character{scores: [count]int{5, 5, 5, 7, 12, 7}} // Str/Dex/End 5, high Edu 12
+	// Begin 2D=8 > qualify 5 fails, and there is no retry — high Education does not
+	// rescue it, because that was the conflated R&R-retry stat, not a Begin retry.
+	if beginCareer(dice.NewScripted(6, 2), &c, ScoutCareer) {
+		t.Error("a failed Scout Begin has no retry (8 > 5), even with high Education")
 	}
-	// A career with no declared Retry re-rolls the qualify target instead (8 > 5).
-	plain := ScoutCareer
-	plain.Retry = Qualification{}
-	if beginCareer(dice.NewScripted(6, 2, 6, 2), &c, plain, true) {
-		t.Error("with no Retry characteristic, the retry re-rolls the qualify target (8 > 5, fails)")
+	// A passing Begin still enters on the single roll.
+	if !beginCareer(dice.NewScripted(2, 1), &c, ScoutCareer) { // 2D=3 <= 5
+		t.Error("a Scout Begin of 3 <= 5 should enter the career")
 	}
 }
 
