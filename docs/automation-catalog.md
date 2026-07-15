@@ -220,6 +220,11 @@ package that chargen birthdates, aging ticks, and time-degradation effects all u
 
 ## Tier 3 — The big generators (highest value, large effort)
 
+Three of four built and audited against the book: **#14 chargen** and **#15 systemgen** page by
+page (this review), **#16 starship design** through the #146–160 build-and-review chain. **#17
+Sophont creation** is the one unbuilt item — the last big Tier-3 generator, and what makes chargen
+work for aliens.
+
 **14. Chargen careers** — _B1 pp. 63–99_ · extends chargen · **L** (the flagship piece) · ✅ **done**
 The full career life-cycle: 2D career selection, per-term Controlling-Characteristic rotation,
 the Risk & Reward roll, injury/wound/disabled/dead consequences, branch/operations/medals,
@@ -310,7 +315,7 @@ MCr2.5, the table prints 1.5), the missile catalogs' EMP (one lower than the eff
 same page), and p.155's catalog (does not derive from its own tables). The drive and weapon stage
 tables also genuinely differ in one cell: **Modified** costs a drive ×1 but a weapon /2.
 
-**17. Sophont (species) creation** — _B3 pp. 215–246_ · extends chargen · **L**
+**17. Sophont (species) creation** — _B3 pp. 215–246_ · extends chargen · **L** · ⬜ **not started**
 A Flux-driven pipeline producing a non-human species template (homeworld, environment/niche,
 characteristics + genetic profile, caste & gender structures, life stages, senses, body
 structure, special abilities, size/height, uniques/metamorphosis, psionics, TL cap) that
