@@ -55,7 +55,8 @@ broken. The shared play primitives (Tier 2) are in place and audited too — the
 (#9, one descriptor fixed), the **dice** faces/Many-Dice/Flux (#11), and the **Imperial Calendar**
 (#13) all check out against Book 1; the **Difficulty/UTF task layer** (#10) has a correct roll-low
 core but a larger deferred tail than once recorded (four special task modes, Extra Hasty, the
-mishap system); and **Money/Value** (#12) remains genuinely unbuilt. So the play side (senses,
+mishap system); and **Money/Value** (#12) is deferred by decision until its first consumer (a
+Tier-5 equipment maker) needs it, since it has none in the repo today. So the play side (senses,
 personals, combat) is unblocked. **Starship design (#16) is done**, armament and all, and `shipcombat` (#22) consumes it:
 a generated ship can be flown into a fight. The largest open pieces are now `Sophont creation`
 (#17, the last big Tier-3 generator) and the Tier-5 content makers, which are independent and can
@@ -186,14 +187,28 @@ classify three-1s/6s results; the four Many-Dice fast methods for 11D+ (reuse-10
 2D-subsample, ×3.5, 3.5-Flux) are implemented and golden-tested. Good/Bad Flux already
 existed in the engine.
 
-**12. Money · Value · Cost scales** — _B1 pp. 20 (Money), 44 (Costs), 45 (Value)_ · new primitive · **S** · ⬜ **not started**
+**12. Money · Value · Cost scales** — _B1 pp. 20 (Money), 44 (Costs), 45 (Value)_ · new primitive · **S** · ⬜ **deferred (by decision)**
 An integer credit type (avoid float), the p.45 Value tier↔credits log scale (Value 0–8 ↔ 10ⁿ Cr),
 the production-cost divisors (/10 /5 /3 /2), and the Flux-driven Typical-Cost and supply/demand
-multipliers. Foundational for every economy system (land grants, trade, ship costs, muster-out).
+multipliers, plus the p.44 economy formulas (Cost of Living = Soc×Cr100/mo, Land Grant Value =
+Cr10,000/TC, the Wages-by-skill table).
+
 Confirmed genuinely absent: `shipgen` and `trade` each carry their own ad-hoc `int` Cr with the
 Book 2 numbers, but none of #12's shared primitive — no Value type, no log scale, no divisors —
 exists. (The pp.36–37 this once cited are the Fame/Risk/Hot-Cold benchmark tables, item #31, not
 money.)
+
+_Decision (2026-07-14): defer the build until its first consumer exists._ The Value scale,
+production divisors, and supply/demand have **no consumer in the repo today** — their natural users
+are the Tier-5 equipment makers (#26 ThingMaker, #27 GunMaker/ArmorMaker), which price objects from
+a Value tier and are not built. And #12 does **not** dedup `shipgen`/`trade`: those use distinct
+Book 2 tables (the ship-stage cost table diverges from p.45's Typical Cost Modifiers at Ultimate —
+Book 2 3× vs Book 1 2×), and the three Cr renderers (`commas`, `mcr`, `weaponMCr`) are deliberately
+different formats. So building #12 now would lay a foundation ahead of its walls, against the repo's
+YAGNI rule. Build it **with** the first equipment maker that needs it, or as a cheap early slice
+(just the `Cr` type + Value ladder) if the money vocabulary is wanted sooner. The plan — a pure,
+dice-free `internal/money` package golden-locked to the p.45 meal example, in three PRs (ladder+Cr
+type / Flux modifiers / p.44 formulas) — is worked out and ready to execute when that moment comes.
 
 **13. Imperial Calendar date type** — _B1 pp. 262–263_ · new primitive · **S** · ✅ **done**
 365-day year (1 Holiday + 52×7), named **days** (Wonday…Senday) + Holiday, day-of-year↔weekday,
