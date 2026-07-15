@@ -7,20 +7,27 @@ package chargen
 // and Continue targets. The Scholar has a single rank ladder (Lecturer …
 // Distinguished Professor) with no officer track or commission.
 //
-// Slice scope: begin is modelled as a roll vs Edu (the "automatic if Edu 8+"
-// and the Amateur/Non-Traditional low-Edu paths are simplified — a Scholar here
-// starts at rank 1). Deferred: Tenure (so promotion is not gated past Scholar 3),
-// the Scholar's own Major/Minor selection when the character has no degree (so
-// the Academic Major/Minor cells are lost for the uneducated, as elsewhere), the
-// Award-Winning double Publication, the Research-Success Major+2 and Promoted+1
-// skill eligibility, and the muster Money-column +Scholar-Rank DM (treated as
-// the standard +Terms).
+// Begin follows Education (Book 1 p.76): a Scholar with Edu 8+ is admitted
+// automatically at rank 1 (Lecturer) and may promote; one with Edu 7 or less must
+// roll 2D <= Edu to Begin and, on success, enters as an Amateur (rank 0) who
+// serves but cannot promote until — dynamically — their Education reaches 8. At
+// rank 3 (Assistant Professor) a Scholar with Edu 10+ applies for Tenure (2D <=
+// Publications×3); promotion beyond rank 3 needs it (Tenure). A Publication rolled
+// 4 under the CC is Award-Winning and counts as two (career.go).
+//
+// Deferred: the Scholar's own Major/Minor selection when the character has no
+// degree (the Academic Major/Minor cells are lost for the uneducated, as
+// elsewhere — a cross-career footnote); the Research-Success Major+2 skill
+// eligibility; the C5=Tra Non-Traditional and C5=Ins-excluded sophont paths; the
+// Tenure waiver (an adverse roll may be waived vs Soc); and the muster
+// Money-column +Scholar-Rank DM (treated as the standard +Terms).
 
 // ScholarCareer is the Scholar (Book 1 p. 76).
 var ScholarCareer = Career{
 	ID:               Scholar,
 	Name:             "Scholar",
-	Qualify:          Qualification{Chars: []Characteristic{Education}}, // Begin vs Edu
+	Qualify:          Qualification{Chars: []Characteristic{Education}}, // an Amateur (Edu <8) rolls 2D <= Edu to Begin
+	PromoteEduMin:    8,                                                 // Edu 8+ auto-begins at Scholar1 and may promote; else an Amateur (rank 0)
 	CCMode:           RotateCC,
 	ControllingChars: []Characteristic{Strength, Dexterity, Endurance, Intelligence}, // C1 C2 C3 C4
 	Continue:         ContinueRule{UseChar: true, Char: Education, PubsMod: true},    // Edu, Mod +Pubs
@@ -29,6 +36,7 @@ var ScholarCareer = Career{
 	BenefitDM:        DMTerms,
 	RewardKind:       RewardPublication,
 	EnlistedPromote:  PromotionRule{Char: Intelligence, PubsMod: true}, // Int, Mod +Pubs
+	Tenure:           &TenureRule{Rank: 3, EduMin: 10, PubsMult: 3},    // Scholar3, Edu 10+, Pub×3
 	// A single rank ladder (Book 1 p. 76): rank 1 is Lecturer. No auto-skills.
 	EnlistedRanks: []Rank{
 		{Title: "Lecturer"},

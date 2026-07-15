@@ -155,6 +155,32 @@ func TestRandomizeMusterDMPolicy(t *testing.T) {
 	}
 }
 
+// TestProfessorsPension covers the tenured Professor's pension (Book 1 p.69): a
+// flat Cr10,000/year from age 66 that stacks with other pensions.
+func TestProfessorsPension(t *testing.T) {
+	// Tenured Scholar -> Professor's Pension.
+	c := &Character{Tenured: true, Careers: []CareerRecord{{Career: Scholar, Terms: 4}}}
+	computeEntitlements(c)
+	if !equalEntitlements(c.Entitlements, []Entitlement{{"Professor's Pension", 10000, 66}}) {
+		t.Errorf("tenured Scholar entitlements = %+v, want one Professor's Pension", c.Entitlements)
+	}
+
+	// An untenured Scholar gets nothing.
+	c = &Character{Careers: []CareerRecord{{Career: Scholar, Terms: 4}}}
+	computeEntitlements(c)
+	if len(c.Entitlements) != 0 {
+		t.Errorf("untenured Scholar entitlements = %+v, want none", c.Entitlements)
+	}
+
+	// It stacks with a Functionary pension (Book 1 p.69 allows duplicate entitlements).
+	c = &Character{Tenured: true, Careers: []CareerRecord{{Career: Functionary, Terms: 1}, {Career: Scholar, Terms: 4}}}
+	computeEntitlements(c)
+	want := []Entitlement{{"Functionary's Pension", 15000, 66}, {"Professor's Pension", 10000, 66}}
+	if !equalEntitlements(c.Entitlements, want) {
+		t.Errorf("Functionary+Professor entitlements = %+v, want both pensions", c.Entitlements)
+	}
+}
+
 // TestDeadCollectsNothing confirms a character who died in service gets no
 // entitlement, even with qualifying service.
 func TestDeadCollectsNothing(t *testing.T) {

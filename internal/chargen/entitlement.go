@@ -8,8 +8,7 @@ package chargen
 // doubles the base per the p. 68 stacking (the first x2 doubles it, the second
 // triples it, and so on: multiplier = 1 + the number of doublings).
 //
-// Deferred: the Reserve Pension (the engine models no Reserves/OTC/NOTC) and the
-// Professor's Pension (Scholar tenure is not modelled).
+// Deferred: the Reserve Pension (the engine models no Reserves/OTC/NOTC).
 
 // retirementAge is Life Stage 9, when Citizen/Functionary pensions begin.
 const retirementAge = 66
@@ -35,6 +34,20 @@ func computeEntitlements(c *Character) {
 	if e, ok := civilPension(c); ok {
 		c.Entitlements = append(c.Entitlements, e)
 	}
+	if e, ok := professorsPension(c); ok {
+		c.Entitlements = append(c.Entitlements, e)
+	}
+}
+
+// professorsPension is the tenured Professor's pension (Book 1 p. 69): a flat
+// Cr10,000/year from age 66. It stacks with any other pension (p.69 allows
+// duplicate entitlements), and takes no "Pension x2" doubling — there is no such
+// muster result for it, and the Functionary doubling stays scoped to civilPension.
+func professorsPension(c *Character) (Entitlement, bool) {
+	if !c.Tenured {
+		return Entitlement{}, false
+	}
+	return Entitlement{Source: "Professor's Pension", PerYear: 10000, FromAge: retirementAge}, true
 }
 
 // retirementPay is the armed-forces Retirement Pay (Book 1 p. 69): a Soldier,

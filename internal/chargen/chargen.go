@@ -69,6 +69,7 @@ type Character struct {
 	Masterpieces     int            // works of art the Craftsman has created (Book 1 p. 75)
 	MasterpieceValue int            // total Cr value of those masterpieces
 	Publications     int            // research the Scholar has published (Book 1 p. 76)
+	Tenured          bool           // the Scholar has earned academic Tenure (Book 1 p. 76)
 	Commendations    int            // official recognitions the Agent has earned (Book 1 p. 83)
 	LandGrants       int            // fiefs granted to the Noble on each Elevation, and to the Scout on each Discovery (Book 1 pp. 79, 85)
 	Discoveries      int            // valuable worlds or features the Scout has found (Book 1 p. 79)
