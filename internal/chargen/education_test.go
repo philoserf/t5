@@ -173,13 +173,16 @@ func TestGraduateLadder(t *testing.T) {
 		3, 4, // College apply Check Int(8): 7 <= 8, admitted
 		3, 4, 3, 4, 3, 4, 3, 4, // 4 College years pass -> Psychology-4, Robotics-2, BA, Edu 8
 		3, 4, // Masters apply (best of Int 8/Edu 8): 7 <= 8, admitted
-		3, 4, 3, 4, // 2 Masters years pass -> Robotics +1 (2nd pass) -> 3, MA, Edu 9
+		3, 4, 3, 4, // 2 Masters years pass -> Major +2 (Psych 4->6), Minor +1 (Robotics 2->3), MA, Edu 9
 		3, 4, // Professors apply (best of Int 8/Edu 9): 7 <= 9, admitted
-		3, 4, 3, 4, // 2 Professors years pass -> no skill, Professor, Edu 12
+		3, 4, 3, 4, // 2 Professors years pass -> Major +2 (Psych 6->8), Minor +1 (Robotics 3->4), Edu 12
 	}
 	educate(dice.NewScripted(seq...), gradPolicy{}, &c)
-	if c.Skills.Level("Psychology") != 4 || c.Skills.Level("Robotics") != 3 {
-		t.Errorf("Psychology=%d Robotics=%d, want 4/3 (Masters raises the Minor; Professors neither)",
+	// All five higher-ed programs award Major+1/pass and Minor+1/2-passes (p.60's
+	// merged Provides cell): College 4 passes = Psych+4/Robotics+2, then Masters and
+	// Professors each add Psych+2 and Robotics+1.
+	if c.Skills.Level("Psychology") != 8 || c.Skills.Level("Robotics") != 4 {
+		t.Errorf("Psychology=%d Robotics=%d, want 8/4",
 			c.Skills.Level("Psychology"), c.Skills.Level("Robotics"))
 	}
 	if c.Score(Education) != 12 {
@@ -212,11 +215,14 @@ func TestProfessorsDegree(t *testing.T) {
 	c.Skills.Raise("Robotics", 3)
 	seq := []int{
 		3, 4, // apply Check (best of Int 9/Edu 9): 7 <= 9, admitted
-		3, 4, 3, 4, // 2 years pass — no Major or Minor awarded
+		3, 4, 3, 4, // 2 years pass — Major +1 each (Psych 4->6), Minor +1 per 2 (Robotics 3->4)
 	}
 	attendAcademic(dice.NewScripted(seq...), DefaultPolicy{}, &c, professors)
-	if c.Skills.Level("Psychology") != 4 || c.Skills.Level("Robotics") != 3 {
-		t.Errorf("Professors changed Major/Minor: Psychology=%d Robotics=%d, want 4/3 unchanged",
+	// Professors provides Major+1 per Pass and Minor+1 per 2 Passes, like the rest
+	// of the higher-education block (p.60's merged Provides cell). It once awarded
+	// neither; two passes now raise the Major twice and the Minor once.
+	if c.Skills.Level("Psychology") != 6 || c.Skills.Level("Robotics") != 4 {
+		t.Errorf("Professors Major/Minor: Psychology=%d Robotics=%d, want 6/4",
 			c.Skills.Level("Psychology"), c.Skills.Level("Robotics"))
 	}
 	if c.Score(Education) != 12 {
@@ -253,5 +259,42 @@ func TestTradeSchoolFailsOut(t *testing.T) {
 	if c.Major != "" || c.Skills.Level("Biologics") != 0 {
 		t.Errorf("failed Trade School still granted Major %q (Biologics %d), want none",
 			c.Major, c.Skills.Level("Biologics"))
+	}
+}
+
+// TestMastersRaisesMajor is the post-grad case the Eneri College golden never
+// reaches — and where a misread of p.60's merged "Provides" cell hid. Masters and
+// Professors provide "Major+1 per Pass and Minor+1 per 2 Passes" like the
+// undergraduate programs, not Minor-only / nothing. A Masters with two passes
+// raises the Major twice and the Minor once.
+func TestMastersRaisesMajor(t *testing.T) {
+	// A BA-holder with an established Major and Minor enrolls in a Masters (2 years,
+	// prereq BA). Both years pass.
+	c := Character{scores: [count]int{9, 10, 11, 12, 10, 10}} // Int 12, Edu 10
+	c.Degrees = []string{"BA"}
+	c.Major, c.Minor = "History", "Art"
+	c.Skills.Raise("History", 1)
+	c.Skills.Raise("Art", 1)
+	p := &eduPolicy{}
+
+	seq := []int{
+		1, 1, // year 1 Check Int(12): 2, pass -> Major History 1->2
+		1, 1, // year 2: pass -> Major 2->3, Minor Art 1->2 (2nd pass)
+	}
+	attendAcademic(dice.NewScripted(seq...), p, &c, masters)
+
+	if lvl := c.Skills.Level("History"); lvl != 3 {
+		t.Errorf("Masters Major = History %d, want 3 (Major+1 per pass, 2 passes)", lvl)
+	}
+	if lvl := c.Skills.Level("Art"); lvl != 2 {
+		t.Errorf("Masters Minor = Art %d, want 2 (Minor+1 per 2 passes)", lvl)
+	}
+	if !c.hasDegree("MA") {
+		t.Errorf("Masters should confer an MA: %v", c.Degrees)
+	}
+	// Professors likewise awards the Major (not nothing).
+	prof := professors
+	if !prof.awardsMajor || !prof.awardsMinor {
+		t.Errorf("Professors should award Major and Minor per p.60's merged cell")
 	}
 }

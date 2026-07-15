@@ -231,6 +231,18 @@ and golden-test against a worked character. Prerequisites: homeworld skills (B1 
 worldgen→chargen), education engine (B1 pp. 58–62), aging (B1 pp. 88–89), the skills/knowledges
 data model (B1 pp. 132–171).
 
+_Audited against Book 1 (page by page):_ the homeworld-skills table (p.56), the Scout/Soldier/
+Spacer/Marine skill grids and rank ladders (pp.79–86, a representative sample), the aging cascade
+(p.89), the term engine (pp.63–72), and muster mechanics all check out cell for cell. One real bug
+fixed: the **Masters and Professors** programs under-awarded skills — p.60's "Provides" cell
+(Major+1 per Pass, Minor+1 per 2 Passes) is a single merged cell spanning **all five** higher-ed
+rows including Masters and Professors, but the code awarded Masters the Minor only and Professors
+nothing. The undergraduate Eneri golden never reaches the post-grad ladder, so nothing caught it —
+the systematic-misread blind spot. Known remaining gaps (documented deferrals, not bugs): per-career
+Retry is modelled per-attempt-order rather than per-career; pension/retirement entitlements are
+recorded as benefit tokens, not recurring income; and the disabled muster-out doubling covers the
+per-term rolls but not the commendation/fame bonus rolls.
+
 **15. Systemgen per-world detailing & placement** — _B3 pp. 20–29 (Chart G)_ · extends systemgen
 · **L** · ✅ **done**
 Complete. HZ orbit by spectral type/size + orbital distances (`HZOrbit`/`OrbitAU`, PR #77);
@@ -247,6 +259,11 @@ drop (PR #88). Satellites carry real bodies — each moon gets a type (the p.29 
 and UWP, capped to its parent's size with a double-planet flag at equal size (Book 3 p.21); a
 non-mainworld world whose target orbit is held by a gas giant becomes that giant's moon rather
 than being nudged aside. `System.String` and `cmd/systemgen` render the full multi-star orbit map.
+_Audited against Book 3 (page by page):_ the 105-cell stellar spectral grid (p.28), the HZ-orbit and
+orbital-distance tables (p.28/p.29, B1 p.31), the gas-giant detail (p.29), and the satellite tables
+(p.29, including the one-cell Outer-Worlds vs Outer-Satellites divergence at row 4) are all faithful —
+no mis-transcribed cell. (The goldens only spot-check these dense grids, so the manual render-and-
+compare pass was the real coverage.)
 
 **16. Starship design generator** — _B2 pp. 30–95, 101–135, 188–192_ · new `shipgen` package · **L** · ✅ **done**
 Built (`internal/shipgen` + `cmd/shipgen`): the deterministic ACS design engine — `Design(spec)

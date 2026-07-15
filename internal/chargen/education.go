@@ -27,16 +27,18 @@ const (
 )
 
 // An academicProgram is a degree course (Book 1 p. 60): apply, one Pass/Fail
-// Check per year, then graduate for a degree and an Edu bump. The undergraduate
-// College and University award a Major each pass and a Minor every second; the
-// post-graduate Masters raises only the Minor; the terminal Professors program
-// awards neither, conferring only its Edu bump and title. Post-graduate programs
+// Check per year, then graduate for a degree and an Edu bump. All five higher-
+// education programs — College, University, Service Academy, Masters, and
+// Professors — share one merged "Provides" cell on p.60: Major+1 per Pass and
+// Minor+1 per 2 Passes. (The Masters and Professors rows were once read as awarding
+// only the Minor / nothing; the cell spans them too. The undergraduate goldens
+// never reach the post-grad ladder, so nothing caught it.) Post-graduate programs
 // are gated on a prior degree rather than an Edu level.
 type academicProgram struct {
 	name         string
 	years        int
-	awardsMajor  bool   // raise a Major each pass (College/University)
-	awardsMinor  bool   // raise a Minor every second pass (College/University/Masters)
+	awardsMajor  bool   // raise a Major each pass
+	awardsMinor  bool   // raise a Minor every second pass
 	preReqEdu    int    // minimum Edu to enroll (0 when preReqDegree is the gate)
 	preReqDegree string // a prior degree required to enroll ("" for undergraduate programs)
 	gradEdu      int
@@ -46,8 +48,8 @@ type academicProgram struct {
 var (
 	college    = academicProgram{name: "College", years: 4, awardsMajor: true, awardsMinor: true, preReqEdu: 5, gradEdu: 8, degree: "BA"}
 	university = academicProgram{name: "University", years: 4, awardsMajor: true, awardsMinor: true, preReqEdu: 7, gradEdu: 9, degree: "BA"}
-	masters    = academicProgram{name: "Masters", years: 2, awardsMinor: true, preReqDegree: "BA", gradEdu: 9, degree: "MA"}
-	professors = academicProgram{name: "Professors", years: 2, preReqDegree: "MA", gradEdu: 12, degree: "Professor"}
+	masters    = academicProgram{name: "Masters", years: 2, awardsMajor: true, awardsMinor: true, preReqDegree: "BA", gradEdu: 9, degree: "MA"}
+	professors = academicProgram{name: "Professors", years: 2, awardsMajor: true, awardsMinor: true, preReqDegree: "MA", gradEdu: 12, degree: "Professor"}
 )
 
 // academicMajors is a representative list of College Major/Minor subjects (the
@@ -179,10 +181,9 @@ func waiverGranted(r *dice.Roller, p Policy, c *Character, priorWaivers *int) bo
 	return res.Success
 }
 
-// awardAcademicPass applies one passed year (Book 1 p. 60: "Major+1 per Pass"
-// and "Minor+1 per 2 Passes"): an undergraduate program raises the Major each
-// pass, and every second pass raises the Minor. A post-graduate program that
-// awards no Major (the Masters) raises only the Minor.
+// awardAcademicPass applies one passed year (Book 1 p. 60: "Major+1 per Pass" and
+// "Minor+1 per 2 Passes"): the Major rises each pass, and every second pass raises
+// the Minor. All five higher-education programs share this rule.
 func awardAcademicPass(c *Character, p Policy, prog academicProgram, passNum int) {
 	if prog.awardsMajor {
 		if c.Major == "" {
