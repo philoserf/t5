@@ -26,17 +26,21 @@ type WorldContext struct {
 }
 
 // TradeClassificationsWithContext assembles a world's complete trade-code list
-// from its profile and its place in the system (Book 3 Chart D, p.26). It is the
-// single assembler for a non-mainworld: the base UWP codes, the Secondary codes
-// that need system context (Fa Farming, Mi Mining, Pe Penal Colony), the climate
-// codes its orbit earns, the satellite code if it is a moon, and the pure-UWP zone
-// codes — in Chart D order. A caller passes a WorldContext and gets the finished
-// list, rather than appending climate and Sa/Lk by hand as three call sites once
-// did.
+// from its profile and its place in the system (Book 3 Chart D, p.26): the base
+// UWP codes, the Secondary codes that need system context (Fa Farming, Mi Mining,
+// Pe Penal Colony), the climate codes its orbit earns, the satellite code if it is
+// a moon, and the pure-UWP zone codes.
+//
+// The result is sorted into Chart D order (OrderTradeCodes) before it is returned,
+// so a caller can store and render it directly — no renderer has to remember to
+// sort. This is the single place a non-mainworld's codes are finalized, so sorting
+// here covers every one of them.
 //
 // The mainworld is the one exception: it is generated before it is placed, so it
 // takes only the base and zone codes here (IsMainworld, no orbit) and earns its
-// climate and satellite codes later, at placement (see systemgen/mainworld.go).
+// climate and satellite codes later, at placement (systemgen/mainworld.go), plus a
+// capital code later still (survey) — so its list is not final here and is sorted
+// when it renders instead (World.SecondSurvey).
 func TradeClassificationsWithContext(p uwp.Profile, ctx WorldContext) []string {
 	tcs := TradeClassifications(p)
 	// The Secondary codes apply only to non-mainworlds (Book 3 Chart D p.26).
@@ -73,6 +77,8 @@ func TradeClassificationsWithContext(p uwp.Profile, ctx WorldContext) []string {
 		}
 	}
 	// The Special-section zone codes (Da/Pz/Fo) are pure-UWP, so every world earns
-	// them, last, in Chart D order.
-	return append(tcs, ZoneCodes(p)...)
+	// them. The whole list is then put in Chart D order — codes were appended in
+	// generation order (climate before the Planetary Sa/Lk, for one), which is not
+	// the book's.
+	return OrderTradeCodes(append(tcs, ZoneCodes(p)...))
 }
