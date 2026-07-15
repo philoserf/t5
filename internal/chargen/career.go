@@ -115,6 +115,15 @@ type PromotionRule struct {
 	PubsMod         bool
 }
 
+// A TenureRule gates a Scholar's promotion beyond a rank until they earn Tenure
+// (Book 1 p.76): with Education at EduMin, apply for Tenure each term at Rank by
+// rolling 2D at or under Publications × PubsMult.
+type TenureRule struct {
+	Rank     int // the rank at which further promotion is gated (Scholar 3)
+	EduMin   int // the Education needed to apply (10)
+	PubsMult int // the tenure target is Publications × this (3)
+}
+
 // A MusterDM selects the die modifier a career's Benefit muster-out column adds
 // to each 1D roll (Book 1 pp. 67-70, each career page's muster DM line).
 type MusterDM int
@@ -223,10 +232,20 @@ type Career struct {
 	OfficerPromote  PromotionRule
 
 	BranchOps *BranchOps // armed-forces Branch/Operations R&R modifiers (nil for the rest)
+
+	PromoteEduMin int         // minimum Education to hold rank 1+ and to promote (Scholar 8); 0 = no gate
+	Tenure        *TenureRule // gates promotion beyond a rank until Tenure is earned (Scholar); nil for the rest
 }
 
 // hasRanks reports whether a career runs the rank/promotion machinery.
 func (c Career) hasRanks() bool { return len(c.EnlistedRanks) > 0 }
+
+// amateur reports whether a character falls below the career's Education floor
+// for holding rank (Book 1 p.76's "Edu 8+"). An Amateur Scholar begins at rank 0
+// — the sentinel below the EnlistedRanks ladder — and cannot be promoted.
+func (career Career) amateur(c *Character) bool {
+	return career.PromoteEduMin > 0 && c.Score(Education) < career.PromoteEduMin
+}
 
 // A TermOutcome is the result of a term or of a whole career. Ongoing marks a
 // term the character survived; the others are how a character left a career.
@@ -345,6 +364,12 @@ func beginCareer(r *dice.Roller, c *Character, career Career) bool {
 	if career.AutoBegin {
 		return true
 	}
+	// An Education-floored career auto-admits those who meet the floor (Book 1
+	// p.76: "To Begin (Edu 8+) Automatic"); a character below it must roll to
+	// Begin ("To Begin Edu or Tra"), entering as an Amateur on success.
+	if career.PromoteEduMin > 0 && c.Score(Education) >= career.PromoteEduMin {
+		return true
+	}
 	return r.Resolve(dice.Check{Dice: 2, Target: career.Qualify.target(*c)}).Success
 }
 
@@ -358,7 +383,11 @@ func RunCareer(r *dice.Roller, p Policy, c *Character, career Career) {
 	rec := CareerRecord{Career: career.ID}
 	if career.hasRanks() {
 		run.rank = 1 // armed forces begin at enlisted rank 1 (Book 1 p. 64)
-		grantRankSkill(c, career.EnlistedRanks, 1)
+		if career.amateur(c) {
+			run.rank = 0 // an Amateur Scholar (Book 1 p.76): serves but cannot be promoted
+		} else {
+			grantRankSkill(c, career.EnlistedRanks, 1)
+		}
 	}
 	if career.FameCareer {
 		talent := r.Dice(2) // initial Talent (and starting Fame) are one 2D roll (Book 1 p. 77)
@@ -439,12 +468,15 @@ func runTerm(r *dice.Roller, p Policy, c *Character, run *careerRun, career Care
 	riskOK := r.Resolve(dice.Check{Dice: 2, Target: ccVal + mod - bo}).Success
 	if riskOK {
 		// Survived. Reward roll; success earns the career's reward token.
-		if r.Resolve(dice.Check{Dice: 2, Target: ccVal - mod + bo}).Success {
+		if reward := r.Resolve(dice.Check{Dice: 2, Target: ccVal - mod + bo}); reward.Success {
 			switch career.RewardKind {
 			case RewardMedal:
 				c.Medals++
 			case RewardPublication:
 				c.Publications++
+				if reward.Roll <= ccVal-4 {
+					c.Publications++ // Award-Winning (Book 1 p.76): a Publication 4 under the CC counts as two
+				}
 			case RewardShipShares:
 				run.rewards++ // the Nth Reward success is worth N Ship Shares
 				c.ShipShares += run.rewards
@@ -826,6 +858,18 @@ func resolveRank(r *dice.Roller, c *Character, run *careerRun, career Career) bo
 	if !career.hasRanks() {
 		return false
 	}
+	// A Scholar below the Education floor is an Amateur and cannot be promoted
+	// (Book 1 p.76: "Promotion is possible only to those with Edu 8+").
+	if career.amateur(c) {
+		return false
+	}
+	// Tenure gate: at the tenure rank without Tenure, the term's advancement is a
+	// Tenure application, not a promotion — promotion beyond is blocked until it
+	// is earned (Book 1 p.76).
+	if career.Tenure != nil && run.rank == career.Tenure.Rank && !c.Tenured {
+		attemptTenure(r, c, *career.Tenure)
+		return false
+	}
 	if run.officer {
 		if run.rank < len(career.OfficerRanks) && promoted(r, *c, career.OfficerPromote) {
 			promoteRank(c, run, career.OfficerRanks)
@@ -845,6 +889,19 @@ func resolveRank(r *dice.Roller, c *Character, run *careerRun, career Career) bo
 		return true
 	}
 	return false
+}
+
+// attemptTenure resolves a Scholar's Tenure application (Book 1 p.76): with
+// Education at the rule's minimum, roll 2D at or under Publications × PubsMult.
+// Success grants Tenure, the prerequisite for promotion beyond the tenure rank.
+// A Scholar with too few Publications (target below 2) can never earn it.
+func attemptTenure(r *dice.Roller, c *Character, rule TenureRule) {
+	if c.Score(Education) < rule.EduMin {
+		return // not yet eligible to apply
+	}
+	if r.Resolve(dice.Check{Dice: 2, Target: c.Publications * rule.PubsMult}).Success {
+		c.Tenured = true
+	}
 }
 
 // promoted resolves one promotion roll: 2D at or under the rule's characteristic,
