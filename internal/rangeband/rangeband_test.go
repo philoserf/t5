@@ -92,3 +92,27 @@ func TestWorldSubBand(t *testing.T) {
 		t.Errorf("WorldSubBand(8km) = %g, want ~6.2", got)
 	}
 }
+
+// TestSpaceDescriptors pins the descriptor of every space band against Book 1
+// p.29 — the column that was untested, which let "Missile" sit on S=6 (it belongs
+// on S=7; S=6 is the Attack Range band). A blank-descriptor row takes its band's
+// name (S=5 Short Range, S=8/9 Long Range, S=11/12 Deep Space); a row with its own
+// descriptor keeps it (S=7 Missile, S=10 Siege).
+func TestSpaceDescriptors(t *testing.T) {
+	want := map[string]string{
+		"0": "Contact", "B": "Boarding", "1": "Close Fighter", "2": "Fighter",
+		"3": "Orbit", "4": "Far Orbit", "5": "Short Range", "6": "Attack Range",
+		"7": "Missile", "8": "Long Range", "9": "Long Range", "10": "Siege",
+		"11": "Deep Space", "12": "Deep Space", "13": "Outer System",
+	}
+	for code, desc := range want {
+		b, ok := SpaceBand(code)
+		if !ok {
+			t.Errorf("SpaceBand(%q) not found", code)
+			continue
+		}
+		if b.Descriptor != desc {
+			t.Errorf("SpaceBand(%q).Descriptor = %q, want %q", code, b.Descriptor, desc)
+		}
+	}
+}

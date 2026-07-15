@@ -12,11 +12,14 @@ Page numbers are the printed page markers (e.g. "p. 28"); B1/B2/B3 = Core Rules 
 
 `dice` (full engine: rolls, Flux/Good/Bad Flux, even distributions, roll-low Check/Resolve,
 notation parser, individual die faces + Spectacular + Many-Dice) · `ehex` · `uwp` ·
-`worldgen` (mainworld UWP + all UWP/context-determinable trade classifications + secondary
-"other" worlds) · `systemgen` (full star family, gas-giant detail, belts, mainworld with
-orbit/climate/satellite, detailed "other" worlds, per-world satellites, and a concrete
-multi-star orbit map placing every world/GG/belt round-robin across all hosting stars, plus
-port facilities/fuel) · `chargen` (six-characteristic UPP + Check Characteristic + the 13
+`worldgen` (mainworld UWP + every UWP- and orbit-determinable Chart D trade code — including the
+Da/Pz/Fo zone codes, the Ho/Co climate pair, and satellite codes, all rendered in canonical Chart
+D order — plus Ix/Ex/Cx, bases with Naval Depots, nobility, travel zones, native status, validated
+allegiance, and the complete port-facilities picture with exotic/local fuel and beltports; audited
+against the book page by page) · `systemgen` (full star family, gas-giant detail, belts, mainworld
+with orbit/climate/satellite, detailed "other" worlds, per-world satellites each carrying their own
+trade codes, and a concrete multi-star orbit map placing every world/GG/belt round-robin across all
+hosting stars) · `chargen` (six-characteristic UPP + Check Characteristic + the 13
 careers) · `task` (Difficulty/UTF resolve) · `calendar` · `rangeband` (world/space range ladder) ·
 `senses` · `personals` · `combat` (the play tier, core mechanics) · `sectorgen` (hex map +
 system presence) · `survey` (detailed sector → full systems + capitals + trade routes) ·
@@ -48,9 +51,12 @@ Ho/Co climate pair, and satellite codes on every moon), PBG, Ix/Ex/Cx, bases (wi
 the complete port-facilities picture (exotic fuels, local fuel, beltports), the world census line,
 chargen's 13 careers, and the full multi-star system map all ship. The audit corrected real bugs —
 swapped capital codes, a collapsing survey column — and two docs that described working code as
-broken. The shared play primitives are now in place too — the **RangeBand ladder** (#9)
-and the Difficulty/UTF task layer (#10) — so the play side (senses, personals, combat) is
-unblocked. **Starship design (#16) is done**, armament and all, and `shipcombat` (#22) consumes it:
+broken. The shared play primitives (Tier 2) are in place and audited too — the **RangeBand ladder**
+(#9, one descriptor fixed), the **dice** faces/Many-Dice/Flux (#11), and the **Imperial Calendar**
+(#13) all check out against Book 1; the **Difficulty/UTF task layer** (#10) has a correct roll-low
+core but a larger deferred tail than once recorded (four special task modes, Extra Hasty, the
+mishap system); and **Money/Value** (#12) remains genuinely unbuilt. So the play side (senses,
+personals, combat) is unblocked. **Starship design (#16) is done**, armament and all, and `shipcombat` (#22) consumes it:
 a generated ship can be flown into a fight. The largest open pieces are now `Sophont creation`
 (#17, the last big Tier-3 generator) and the Tier-5 content makers, which are independent and can
 follow in any order.
@@ -72,7 +78,7 @@ Complete. Beyond the original 21 UWP codes, the classifier now emits the Gov=0/L
 audit: they depend on the ORBIT ALONE (Chart D gives them no UWP columns), which makes them
 strictly more determinable than the Tr/Tu/Fr the classifier already emitted. They had been omitted
 on the stated grounds that "this edition's Chart B has no Ho/Co pair" — false, and the excuse was
-self-inconsistent besides, since the same chart header covers Lk and Tz, which *are* emitted.
+self-inconsistent besides, since the same chart header covers Lk and Tz, which _are_ emitted.
 Climate codes now reach non-mainworlds too: Chart D is for "the Mainworld **and other worlds in
 the system**," and only the mainworld had been getting them.
 
@@ -91,7 +97,7 @@ in the engine; this is a roll plus string assembly. It's the literal next worldg
 
 **3. Importance Extension {Ix}** — _B3 pp. 18, 27 (Chart E)_ · extends worldgen · **S** · ✅ **done**
 Signed integer = additive DM table over starport, TL, trade classes (**Ag/Hi/In/Ri** — Pa is
-*not* on Chart E), Pop, and bases; "Important" at +4. Deterministic, no dice. Feeds Nobility,
+_not_ on Chart E), Pop, and bases; "Important" at +4. Deterministic, no dice. Feeds Nobility,
 capitals, trade routes, and Book 2 mail contracts. **(Implemented — PR #10.)**
 _Book conflict:_ the p.22 Regina example counts Pre-Ag **and** omits the Naval+Scout bonus that
 Regina plainly earns, reaching +4 by two errors cancelling. The code follows Chart E (p.27), which
@@ -119,7 +125,7 @@ A cluster of small per-world attributes. **Bases** (2D vs starport-class thresho
 region-scoped Naval **Depot** — 1 per 1000 worlds, sited in `survey` like a Way Station);
 **Nobility** (trade-class/Ix → noble-code string, golden-locked to Regina's `BcCeF`); **Native
 Status** (Pop×Atm×TL → status label, all twelve rows — an inhabited world is assumed TL 1+ per
-Chart F); **Travel Zone** (G/A/R from Gov+Law and starport — *population plays no part*, contrary to
+Chart F); **Travel Zone** (G/A/R from Gov+Law and starport — _population plays no part_, contrary to
 this entry's earlier wording, but it does drive the Da/Pz split, item 1); and **Allegiance**, which
 is referee-imposed per B3 p.23's checklist and so is a validated code (`Allegiance`,
 `ParseAllegiance`) defaulting to Imperial — a typed passthrough, not a table roll.
@@ -156,13 +162,22 @@ book's Regina line validates the whole Tier-1 stack.
 S= (space, 0–13) scales plus the lettered bands (Contact/Reading/Talking, Boarding) and the
 space-combat band letters (F1/F2/SR/AR/LR/DS), with the S = R−5 conversion and log sub-band
 interpolation. The most-reused new utility in B1 — Senses, Combat, Personals, and travel-time
-will sit on it. Tables golden-locked to the p.24/p.29 charts.
+sit on it. Audited against the p.24/p.29 charts: every distance, band count, combat letter, and the
+conversion are faithful; the one error was a descriptor placed one band off (the p.29 "Missile"
+descriptor belongs on S=7, not S=6), fixed and now golden-locked cell by cell across the whole
+space ladder.
 
 **10. Difficulty / Universal Task Format layer** — _B1 pp. 120–131_ · extends dice · **S–M** · 🟡 **partial**
 Built (`internal/task`): the Difficulty ladder (Easy 1D … Beyond Impossible 8D) with
 Hasty/Cautious pace over `task.Resolve`/`ResolveDice` (Target = Char+Skill+ΣMods → roll-low),
-and Spectacular via the dice engine. **Not built:** the Cooperative/Opposed/Uncertain task
-modes. Everything in Tier 4 (combat, senses, personals) is expressed in these terms.
+and Spectacular via the dice engine. All of that is audited correct against pp.122–131.
+**Not built** (the gap is larger than this entry once claimed): the book defines **four** special
+task modes, not three — **Cooperative** (p.125), **Opposed** (p.126), **Uncertain** (p.126), and
+**Arcane** (p.126, an owned-task mechanic) — none implemented; plus **Extra Hasty** (+2D, a third
+pace beyond Hasty/Cautious), the **Dangerous/Destructive** failure-consequence and mishap system
+(Flux+Reliability / Flux+Safety, p.126/p.131), and the smaller task-chapter rules (This-Is-Hard!,
+phantom C=7/S=3 placeholders, Tests & Certifications). Everything in Tier 4 (combat, senses,
+personals) is expressed in the built roll-low core.
 
 **11. Expose individual die faces + Many-Dice / Good-Bad Flux** — _B1 pp. 259–261_ · extends
 dice · **S** · ✅ **done** (PR #75)
@@ -171,14 +186,20 @@ classify three-1s/6s results; the four Many-Dice fast methods for 11D+ (reuse-10
 2D-subsample, ×3.5, 3.5-Flux) are implemented and golden-tested. Good/Bad Flux already
 existed in the engine.
 
-**12. Money · Value · Cost scales** — _B1 pp. 20, 36–37, 44–45_ · new primitive · **S** · ⬜ **not started**
-An integer credit type (avoid float), the Value tier↔credits log scale, production-cost
-divisors, and Flux-driven supply/demand & quality multipliers. Foundational for every economy
-system (land grants, trade, ship costs, muster-out).
+**12. Money · Value · Cost scales** — _B1 pp. 20 (Money), 44 (Costs), 45 (Value)_ · new primitive · **S** · ⬜ **not started**
+An integer credit type (avoid float), the p.45 Value tier↔credits log scale (Value 0–8 ↔ 10ⁿ Cr),
+the production-cost divisors (/10 /5 /3 /2), and the Flux-driven Typical-Cost and supply/demand
+multipliers. Foundational for every economy system (land grants, trade, ship costs, muster-out).
+Confirmed genuinely absent: `shipgen` and `trade` each carry their own ad-hoc `int` Cr with the
+Book 2 numbers, but none of #12's shared primitive — no Value type, no log scale, no divisors —
+exists. (The pp.36–37 this once cited are the Fame/Risk/Hot-Cold benchmark tables, item #31, not
+money.)
 
 **13. Imperial Calendar date type** — _B1 pp. 262–263_ · new primitive · **S** · ✅ **done**
-365-day year, named weeks + Holiday, day-of-year↔weekday, birthdate/age arithmetic. Small
-`calendar` package that chargen birthdates, aging ticks, and time-degradation effects all use.
+365-day year (1 Holiday + 52×7), named **days** (Wonday…Senday) + Holiday, day-of-year↔weekday,
+birthdate/age arithmetic, no leap days (Holiday is what makes 365 divide evenly). Audited correct
+against p.262–263, including all three of the book's worked birthdate examples. Small `calendar`
+package that chargen birthdates, aging ticks, and time-degradation effects all use.
 
 ---
 
