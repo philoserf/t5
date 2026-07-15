@@ -1,6 +1,7 @@
 package worldgen
 
 import (
+	"slices"
 	"strings"
 
 	"github.com/philoserf/t5/internal/ehex"
@@ -57,6 +58,58 @@ var tcRules = []tcRule{
 	{code: "Ri", atm: "68", pop: "678"},
 	// Secondary.
 	{code: "Re", pop: "01234", gov: "6", law: "045"}, // Reserve
+}
+
+// chartDOrder is every trade code in Book 3 Chart D (p.26) section order:
+// Planetary, Population, Economic, Climate, Secondary, Political, Special. A code's
+// position in this list is its canonical rank, which OrderTradeCodes sorts by — so
+// a world's codes render in the book's order however they were accumulated (base
+// codes at generation, zone codes appended after, climate and satellite codes at
+// placement, a capital code stamped by the region survey later still).
+var chartDOrder = []string{
+	// Planetary.
+	"As", "De", "Fl", "Ga", "He", "Ic", "Oc", "Va", "Wa", "Sa", "Lk",
+	// Population.
+	"Di", "Ba", "Lo", "Ni", "Ph", "Hi",
+	// Economic.
+	"Pa", "Ag", "Na", "Px", "Pi", "In", "Po", "Pr", "Ri",
+	// Climate.
+	"Fr", "Ho", "Co", "Tr", "Tu", "Tz",
+	// Secondary.
+	"Fa", "Mi", "Mr", "Pe", "Re",
+	// Political.
+	"Cp", "Cs", "Cx", "Cy",
+	// Special.
+	"Fo", "Pz", "Da", "Ab", "An",
+}
+
+// chartDRank maps a code to its Chart D position; a code not in the chart sorts
+// after every one that is (kept in its original relative order).
+var chartDRank = func() map[string]int {
+	m := make(map[string]int, len(chartDOrder))
+	for i, code := range chartDOrder {
+		m[code] = i
+	}
+	return m
+}()
+
+// OrderTradeCodes returns the codes sorted into Chart D order (Book 3 p.26). It
+// does not mutate the input, and it is what renderers call so a world's stored code
+// order — which follows the accumulation sequence, not the book's — never reaches a
+// record. Unknown codes keep their relative order, after the known ones.
+func OrderTradeCodes(tcs []string) []string {
+	out := slices.Clone(tcs)
+	slices.SortStableFunc(out, func(a, b string) int {
+		return rankOf(a) - rankOf(b)
+	})
+	return out
+}
+
+func rankOf(code string) int {
+	if r, ok := chartDRank[code]; ok {
+		return r
+	}
+	return len(chartDOrder)
 }
 
 // TradeClassifications returns the two-letter trade classification codes a

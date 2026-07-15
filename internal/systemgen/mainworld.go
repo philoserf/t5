@@ -43,7 +43,7 @@ func placeMainworld(r *dice.Roller, primary Star, mainworld *worldgen.World) (in
 		return -1, sat
 	}
 	orbit := max(hz+hzVar, 0)
-	if codes := worldgen.ClimateCodes(mainworld.Profile, orbit, hz); len(codes) > 0 {
+	if codes := worldgen.ClimateCodes(mainworld.Profile, orbit, hz, true); len(codes) > 0 {
 		mainworld.TradeCodes = append(mainworld.TradeCodes, codes...)
 	}
 	return orbit, sat
@@ -55,15 +55,20 @@ var (
 	farOrbitLetters   = [13]string{"En", "Oh", "Pee", "Que", "Arr", "Ess", "Tee", "Yu", "Vee", "Dub", "Ex", "Wye", "Zee"}
 )
 
-// rollMainworldSatellite rolls the mainworld type (Book 3 p.24 Chart C): a
-// Far Satellite (type Flux −5/−4), a Close Satellite (−3), or a Planet
-// (everything else). A satellite additionally rolls its orbit letter.
+// rollMainworldSatellite rolls the mainworld type (Book 3 p.24 Chart 2C): a
+// Far Satellite (Flux −5/−4), a Close Satellite (−3), or a Planet (everything
+// else). Chart 2C is a single row per Flux value — the same Flux that names the
+// type names the orbit letter in that row's Close or Far column — so it is one
+// roll, not two. Rolling the letter separately (as this once did) both consumed an
+// extra die, shifting the whole system's stream, and paired a satellite with a
+// letter from an unrelated row.
 func rollMainworldSatellite(r *dice.Roller) MainworldSatellite {
-	switch r.Flux() {
+	flux := r.Flux()
+	switch flux {
 	case -5, -4:
-		return MainworldSatellite{IsSatellite: true, Far: true, OrbitLetter: farOrbitLetters[dice.FluxIndex(r.Flux())]}
+		return MainworldSatellite{IsSatellite: true, Far: true, OrbitLetter: farOrbitLetters[dice.FluxIndex(flux)]}
 	case -3:
-		return MainworldSatellite{IsSatellite: true, OrbitLetter: closeOrbitLetters[dice.FluxIndex(r.Flux())]}
+		return MainworldSatellite{IsSatellite: true, OrbitLetter: closeOrbitLetters[dice.FluxIndex(flux)]}
 	default:
 		return MainworldSatellite{}
 	}

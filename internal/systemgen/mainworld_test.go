@@ -49,12 +49,13 @@ func TestPlaceMainworld(t *testing.T) {
 		t.Errorf("hot placement: orbit %d, codes %v, want orbit 3 + Tr", orbit2, mw2.TradeCodes)
 	}
 
-	// Far-satellite mainworld: type Flux -4 -> Far Satellite, orbit Flux -2 ->
-	// "Arr"; the mainworld earns Sa.
+	// Far-satellite mainworld: one Flux of -4 (Chart 2C) gives both the Far
+	// Satellite type and, from the same row's Far column, the orbit letter "Pee".
+	// It is one roll, not two, so no separate orbit Flux is consumed.
 	mw4 := worldgen.World{Profile: uwp.Profile{Size: 7, Atmosphere: 8, Hydrographics: 8}}
-	_, sat4 := placeMainworld(dice.NewScripted(4, 4 /*HZVar 0*/, 1, 5 /*type -4*/, 4, 6 /*orbit -2*/), primary, &mw4)
-	if !sat4.IsSatellite || !sat4.Far || sat4.OrbitLetter != "Arr" {
-		t.Errorf("far satellite = %+v, want Far/Arr", sat4)
+	_, sat4 := placeMainworld(dice.NewScripted(4, 4 /*HZVar 0*/, 1, 5 /*type -4*/), primary, &mw4)
+	if !sat4.IsSatellite || !sat4.Far || sat4.OrbitLetter != "Pee" {
+		t.Errorf("far satellite = %+v, want Far/Pee", sat4)
 	}
 	if !slices.Contains(mw4.TradeCodes, "Sa") {
 		t.Errorf("far-satellite mainworld should carry Sa: %v", mw4.TradeCodes)

@@ -4,14 +4,14 @@ package worldgen
 // imposed by the referee, not generated — the checklist on p.23 says so outright —
 // so this is a validated code with an Imperial default, not a table roll.
 //
-// The book lists Im (Imperial), Cs (Client State), Na (Non-Aligned), Va (Vargr),
-// As (Aslan), Zh (Zhodani), So (Solomani), Kk (K'kree), and Hv (Hiver), and adds
-// that "Other abbreviations are possible" — so Valid checks the shape of a code
-// (two letters), not membership in that list. Only Imperial has a named constant,
-// because it is the only one the code path uses (the default); the rest are named
-// where a referee supplies them. If per-world allegiance is ever generated or a
-// renderer needs the full polity names, the enumeration and a name table belong
-// here then, with a consumer.
+// The core rules Chart F lists two-letter codes — Im (Imperial), Cs (Client
+// State), Na (Non-Aligned), Va (Vargr), As (Aslan), Zh (Zhodani), So (Solomani),
+// Kk (K'kree), Hv (Hiver) — and add that "Other abbreviations are possible". The
+// Second Survey / T5SS convention also uses four-letter codes that name the
+// specific polity within a race (ImDd, the Domain of Deneb; NaHu, non-aligned
+// human). So Valid checks the shape of a code — two or four letters — not
+// membership in any list. Only Imperial has a named constant, because it is the
+// only one the code path uses (the default); the rest are supplied by the referee.
 type Allegiance string
 
 // Imperial is the default polity, used when the referee names none.
@@ -20,9 +20,10 @@ const (
 	DefaultAllegiance            = Imperial
 )
 
-// Valid reports whether the code is well-formed: exactly two characters. The book
-// permits codes beyond the nine it lists, so this checks shape, not membership.
-func (a Allegiance) Valid() bool { return len(a) == 2 }
+// Valid reports whether the code is well-formed: a two-letter Chart F code or a
+// four-letter Second Survey code. The book permits codes beyond the ones it lists,
+// so this checks shape, not membership.
+func (a Allegiance) Valid() bool { return len(a) == 2 || len(a) == 4 }
 
 // ParseAllegiance reads a referee-supplied allegiance code, defaulting an empty one
 // to Imperial. It reports whether the code was well-formed; a malformed one returns

@@ -112,3 +112,35 @@ func TestTradeClassificationsUWPCodes(t *testing.T) {
 		t.Errorf("Gov-5 world should not be Re: %v", got)
 	}
 }
+
+// TestOrderTradeCodes: codes render in Book 3 Chart D section order regardless of
+// the order they were accumulated in — Planetary (incl. Sa/Lk), Population,
+// Economic, Climate, Secondary, Political, Special. A moon's codes are built base →
+// climate → satellite → zone, which is not the book's order; OrderTradeCodes fixes
+// that at render.
+func TestOrderTradeCodes(t *testing.T) {
+	// As accumulated for a satellite: He (Planetary), a zone code, a climate code,
+	// then Sa (Planetary) last.
+	got := OrderTradeCodes([]string{"He", "Da", "Tz", "Sa"})
+	want := []string{"He", "Sa", "Tz", "Da"} // Planetary, Planetary, Climate, Special
+	if !slices.Equal(got, want) {
+		t.Errorf("OrderTradeCodes = %v, want %v", got, want)
+	}
+	// A capital (Political) sorts before the Special zone codes, wherever it was
+	// stamped in.
+	cap := OrderTradeCodes([]string{"Fo", "Cs", "Ni"})
+	if !slices.Equal(cap, []string{"Ni", "Cs", "Fo"}) { // Population, Political, Special
+		t.Errorf("capital ordering = %v, want [Ni Cs Fo]", cap)
+	}
+	// Regina's codes are already in order and stay put.
+	reg := OrderTradeCodes([]string{"Ph", "Pa", "Ri"})
+	if !slices.Equal(reg, []string{"Ph", "Pa", "Ri"}) {
+		t.Errorf("Regina order = %v, want [Ph Pa Ri]", reg)
+	}
+	// It does not mutate its input.
+	in := []string{"Da", "He"}
+	_ = OrderTradeCodes(in)
+	if !slices.Equal(in, []string{"Da", "He"}) {
+		t.Errorf("OrderTradeCodes mutated its input: %v", in)
+	}
+}

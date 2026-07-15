@@ -69,13 +69,16 @@ func Sector(r *dice.Roller, d sectorgen.Density) Survey {
 			System: systemgen.GenerateForMap(r, h.GasGiant, h.AsteroidMainworld),
 		}
 	}
-	// Capitals from base Importance, then routes, then Way Stations (which bump
-	// Importance) — a single pass; a Way Station's +1 does not re-trigger route
-	// or capital selection.
+	// Capitals and Naval Depots are placed from base Importance, then routes, then
+	// Way Stations (which bump Importance). Depots rank before Way Stations so they
+	// see the same base Importance the capitals did — a depot and a capital agree on
+	// which world is most Important, rather than the depot ranking on a +1 a Way
+	// Station happened to add first. A Way Station's +1 does not re-trigger route,
+	// capital, or depot selection.
 	markSectorCapitals(records)
+	placeNavalDepots(records)
 	links := route.Build(worldsOf(records), route.DefaultJump)
 	placeWayStations(records, links)
-	placeNavalDepots(records)
 	return Survey{Records: records, Routes: links}
 }
 
@@ -174,25 +177,38 @@ func markSectorCapitals(records []Record) {
 // Starport-A world among idxs, or -1 if none qualifies (Book 3 Chart D p.26).
 // A nil idxs considers every record; an empty (non-nil) one considers none.
 func bestCapital(records []Record, idxs []int) int {
-	best := -1
+	if ranked := starportAByImportance(records, idxs); len(ranked) > 0 {
+		return ranked[0]
+	}
+	return -1
+}
+
+// starportAByImportance ranks the Starport-A worlds among idxs by Importance, most
+// Important first, ties broken by CCRR order. A nil idxs ranks every record. It is
+// the one ranking that capital and Naval Depot placement share, so the two cannot
+// disagree about which world is "most Important". Records are generated in CCRR
+// order, so a stable sort by descending Importance keeps the lowest-CCRR world
+// first on ties without a separate tiebreak.
+func starportAByImportance(records []Record, idxs []int) []int {
+	var a []int
 	consider := func(i int) {
-		if records[i].System.Mainworld.Profile.Starport != 'A' {
-			return
-		}
-		if best < 0 || records[i].System.Mainworld.Importance > records[best].System.Mainworld.Importance {
-			best = i
+		if records[i].System.Mainworld.Profile.Starport == 'A' {
+			a = append(a, i)
 		}
 	}
 	if idxs == nil {
 		for i := range records {
 			consider(i)
 		}
-		return best
+	} else {
+		for _, i := range idxs {
+			consider(i)
+		}
 	}
-	for _, i := range idxs {
-		consider(i)
-	}
-	return best
+	sort.SliceStable(a, func(x, y int) bool {
+		return records[a[x]].System.Mainworld.Importance > records[a[y]].System.Mainworld.Importance
+	})
+	return a
 }
 
 // worldsPerNavalDepot is the Naval Depot frequency (Book 3 p.28 Chart F: "1 per
@@ -211,22 +227,8 @@ func placeNavalDepots(records []Record) {
 	if n == 0 {
 		return
 	}
-	// Rank the Starport-A worlds by Importance, most Important first (ties by CCRR
-	// order, so the selection is deterministic).
-	var starportA []int
-	for i := range records {
-		if records[i].System.Mainworld.Profile.Starport == 'A' {
-			starportA = append(starportA, i)
-		}
-	}
-	sort.Slice(starportA, func(a, b int) bool {
-		ia, ib := starportA[a], starportA[b]
-		if x, y := records[ia].System.Mainworld.Importance, records[ib].System.Mainworld.Importance; x != y {
-			return x > y
-		}
-		return beforeHex(records[ia].Hex, records[ib].Hex)
-	})
-	for _, i := range starportA[:min(n, len(starportA))] {
+	ranked := starportAByImportance(records, nil)
+	for _, i := range ranked[:min(n, len(ranked))] {
 		records[i].System.Mainworld.SetNavalDepot()
 	}
 }

@@ -22,22 +22,29 @@ import "github.com/philoserf/t5/internal/uwp"
 // is also Tropic — which is why these are not mutually exclusive cases. Ho and Co
 // were previously omitted on the grounds that "this edition's Chart B does not emit
 // the broader T5SS Hot/Cold pair"; Chart D, the chart this function implements,
-// defines both. Tz (Twilight Zone) is any world in orbit 0 or 1.
-func ClimateCodes(p uwp.Profile, orbit, hzOrbit int) []string {
+// defines both.
+//
+// Tz (Twilight Zone) is the exception that does not need a habitable zone at all:
+// Chart D defines it as "Orbit 0-1", full stop. So a world in orbit 0 or 1 of a
+// star with no habitable zone still earns Tz, even though hasHZ is false and the
+// offset codes above cannot be computed (there is no zone to offset from).
+func ClimateCodes(p uwp.Profile, orbit, hzOrbit int, hasHZ bool) []string {
 	var out []string
-	switch offset := orbit - hzOrbit; {
-	case offset == -1:
-		out = append(out, "Ho") // orbit alone
-		if tropicUWP(p) {
-			out = append(out, "Tr")
+	if hasHZ {
+		switch offset := orbit - hzOrbit; {
+		case offset == -1:
+			out = append(out, "Ho") // orbit alone
+			if tropicUWP(p) {
+				out = append(out, "Tr")
+			}
+		case offset == 1:
+			out = append(out, "Co") // orbit alone
+			if tropicUWP(p) {
+				out = append(out, "Tu")
+			}
+		case offset >= 2 && frozenUWP(p):
+			out = append(out, "Fr")
 		}
-	case offset == 1:
-		out = append(out, "Co") // orbit alone
-		if tropicUWP(p) {
-			out = append(out, "Tu")
-		}
-	case offset >= 2 && frozenUWP(p):
-		out = append(out, "Fr")
 	}
 	if orbit == 0 || orbit == 1 {
 		out = append(out, "Tz")

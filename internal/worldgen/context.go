@@ -59,10 +59,9 @@ func TradeClassificationsWithContext(p uwp.Profile, ctx WorldContext) []string {
 			allows("3456", p.Population) && allows("6", p.Government) && allows("6789", p.Law) {
 			tcs = append(tcs, "Pe")
 		}
-		// Climate codes from the orbit (Book 3 p.26 / Chart B).
-		if ctx.HasHZ {
-			tcs = append(tcs, ClimateCodes(p, ctx.Orbit, ctx.HZOrbit)...)
-		}
+		// Climate codes from the orbit (Book 3 p.26 / Chart B). Always called, even
+		// without a habitable zone: Tz (orbit 0-1) does not depend on one.
+		tcs = append(tcs, ClimateCodes(p, ctx.Orbit, ctx.HZOrbit, ctx.HasHZ)...)
 		// The satellite code: Sa for a far moon, Lk for a close (locked) one — pure
 		// "is this a moon, and how far" codes with no UWP constraints.
 		if ctx.Satellite {
