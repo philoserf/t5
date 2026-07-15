@@ -221,11 +221,29 @@ package that chargen birthdates, aging ticks, and time-degradation effects all u
 
 ## Tier 3 — The big generators (highest value, large effort)
 
-All four now built and audited against the book: **#14 chargen** and **#15 systemgen** page by
-page (this review), **#16 starship design** through the #146–160 build-and-review chain, and **#17
-Sophont creation**'s core spine (`internal/sophont`), golden-locked to the Human reference and the
-p.218/219 Ay fixtures and reviewed via `/simplify` + `/code-review`. #17's physical/flavor tier is
-deferred pending a consumer.
+All four generators are built and audited against the book: **#14 chargen** and **#15 systemgen**
+page by page, **#16 starship design** through the #146–160 build-and-review chain, and **#17
+Sophont creation**'s core spine (`internal/sophont`, PR #166), golden-locked to the Human reference
+and the p.218/219 Ay fixtures and reviewed via `/simplify` + `/code-review`.
+
+The tier's main arc is therefore complete; what remains is **deferred detail within each item, none
+of it blocking downstream tiers**:
+
+- **#17** — the whole physical/flavor tier (senses, body structure, manipulators, special abilities,
+  size-BFP body form, uniques, psionics) plus the caste/gender life-cycle sub-mechanics, the
+  Skilled-caste skill lists (Chart 12), sophont career service, and species-driven aging. This is
+  the **largest remaining Tier-3 piece**, and it is deferred pending a consumer (nothing in chargen
+  or the play tier reads a body-plan or sense suite yet).
+- **#16** — sensors, consoles/computers/crew/accommodations, Quality, batteries, world-surface
+  defenses, the pp.168–169 interference grid, QSP decode, and the non-jump interstellar drives
+  (Hop/Skip/NAFAL); the stage-effect-heavy Kinunir golden still awaits verification.
+- **#14** — essentially complete; only minor per-career flavor deferrals remain (see each career's
+  file header). The two items once listed here are resolved: "Double Benefits" is not
+  underspecified — the book (p.69) pins it as "twice the count of Benefits," which the code already
+  did — and the pension/retirement _recurring income_ is now modelled (`entitlement.go`: Cr/year
+  Retirement Pay and Citizen/Functionary Pensions, with the "Pension x2" doubling), leaving only the
+  Reserve and Professor pensions deferred (no Reserves; Scholar tenure unmodelled).
+- **#15** — complete; nothing outstanding.
 
 **14. Chargen careers** — _B1 pp. 63–99_ · extends chargen · **L** (the flagship piece) · ✅ **done**
 The full career life-cycle: 2D career selection, per-term Controlling-Characteristic rotation,
@@ -254,11 +272,16 @@ Risk & Reward against Education) as a _Begin_-retry target, and never implemente
 actually is. Removed the invented Begin retry (the Citizen fallback still prevents careerlessness)
 and correctly labelled the Scout's R&R retry as a genuinely underspecified, examined deferral. And
 **Characteristic Improvement** was clamped to 15 where the book says a benefit that would raise a
-characteristic above 15 is _lost_ (p.68) — fixed to drop it. Two deferrals remain, examined and
-justified: the disabled muster-out "Double Benefits" is underspecified (twice the rolls vs two
-benefits per roll — the code doubles the per-term rolls only, and guessing the rest risks a
-misread), and pension/retirement _recurring income_ is a play-time attribute, not a
-generation-time one, so it stays a benefit token on the sheet.
+characteristic above 15 is _lost_ (p.68) — fixed to drop it. A later pass then settled the two
+"deferrals" that were left: the disabled muster-out **"Double Benefits"** turned out not to be
+ambiguous at all — p.69 states it plainly, "Double Benefits is twice the count of Benefits (rather
+than two of each Benefit)," which is exactly what the code did (double the muster-roll count), so
+the "underspecified" label was wrong. And **pension/retirement recurring income** was then built
+(`entitlement.go`): Retirement Pay (armed forces, 4+ terms, Cr2,000/3,000 per term per year) and
+the Citizen/Functionary Pension (Cr5,000/15,000 per year from age 66), shown as Cr/year future
+benefits with the p.68 "Pension x2" doubling. The muster DM is now the book's optional/partial
+value (randomized 0–full for a generated character) and duplicate unusable benefits reroll (p.69).
+Still deferred: the Reserve Pension (no Reserves modelled) and Professor's Pension (no tenure).
 
 **15. Systemgen per-world detailing & placement** — _B3 pp. 20–29 (Chart G)_ · extends systemgen
 · **L** · ✅ **done**

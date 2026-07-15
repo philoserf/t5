@@ -112,6 +112,9 @@ func render(c chargen.Character) string {
 	if len(c.Benefits) > 0 {
 		field(&b, "Benefits", strings.Join(c.Benefits, ", "))
 	}
+	if len(c.Entitlements) > 0 {
+		field(&b, "Entitlements", entitlementsField(c))
+	}
 	return b.String()
 }
 
@@ -197,6 +200,21 @@ func field(b *strings.Builder, label, value string) {
 	for _, line := range lines[1:] {
 		fmt.Fprintf(b, "%s%s\n", pad, line)
 	}
+}
+
+// entitlementsField lists each recurring annual entitlement on its own line, as
+// "Source: CrN/year", noting the starting age for one that has not begun yet
+// (a pension the character will collect only at retirement).
+func entitlementsField(c chargen.Character) string {
+	lines := make([]string, len(c.Entitlements))
+	for i, e := range c.Entitlements {
+		line := fmt.Sprintf("%s: Cr%s/year", e.Source, commas(e.PerYear))
+		if e.FromAge > c.Age {
+			line += fmt.Sprintf(" (from age %d)", e.FromAge)
+		}
+		lines[i] = line
+	}
+	return strings.Join(lines, "\n")
 }
 
 // homeworldField is the homeworld's UWP and any trade classifications.

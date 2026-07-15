@@ -31,6 +31,8 @@ func charAward(ch Characteristic) Benefit { return Benefit{Kind: CharBump, Value
 func fameAward() Benefit                  { return Benefit{Kind: FameBump, Value: 1} }
 func named(name string) Benefit           { return Benefit{Kind: Named, Name: name} }
 func knighthood() Benefit                 { return Benefit{Kind: Knighted, Name: "Knighthood"} }
+func pensionX2() Benefit                  { return Benefit{Kind: PensionX2} }
+func retirementX2() Benefit               { return Benefit{Kind: RetirementX2} }
 func fameAwardN(n int) Benefit            { return Benefit{Kind: FameBump, Value: n} }
 
 // major and minor award the character's College Major/Minor (Book 1 p. 79
