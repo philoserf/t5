@@ -10,7 +10,6 @@ package survey
 
 import (
 	"fmt"
-	"slices"
 	"strings"
 
 	"github.com/philoserf/t5/internal/route"
@@ -106,16 +105,15 @@ func starOrbit(sl systemgen.StarSlot) string {
 	}
 }
 
-// capitalTitle names the capital a world is, if any.
+// capitalTitle names the capital a world is, if any. The names come from worldgen
+// (the one source of truth for the codes), so this cannot drift from what the
+// survey stamps — it once did, labelling a Sector Capital "Subsector" after the
+// codes were corrected here but not there.
 func capitalTitle(w worldgen.World) string {
-	switch {
-	case slices.Contains(w.TradeCodes, "Cx"):
-		return "   — Sector Capital"
-	case slices.Contains(w.TradeCodes, "Cs"):
-		return "   — Subsector Capital"
-	default:
-		return ""
+	if code := w.CapitalCode(); code != "" {
+		return "   — " + worldgen.CapitalName(code)
 	}
+	return ""
 }
 
 func orNone(items []string) string {

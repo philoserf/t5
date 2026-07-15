@@ -247,7 +247,11 @@ func (s *System) placeOrbits(r *dice.Roller) {
 			}
 			placed[gi].Satellites = append(placed[gi].Satellites, Satellite{
 				Far: far, OrbitLetter: letter, Type: wt, Profile: prof,
-				TradeCodes: satelliteTradeCodes(prof, placed[gi].Orbit, h.hz, h.hasHZ, far, mwIndustrial),
+				TradeCodes: worldgen.TradeClassificationsWithContext(prof, worldgen.WorldContext{
+					MainworldIndustrial: mwIndustrial,
+					Orbit:               placed[gi].Orbit, HZOrbit: h.hz, HasHZ: h.hasHZ,
+					Satellite: true, SatelliteFar: far,
+				}),
 			})
 			continue
 		}
@@ -258,16 +262,11 @@ func (s *System) placeOrbits(r *dice.Roller) {
 		wt := otherWorldType(o, h.hz, h.hasHZ, r.Die())
 		prof := worldgen.GenerateOtherWorld(r, wt, mwPop)
 		tcs := worldgen.TradeClassificationsWithContext(prof, worldgen.WorldContext{
-			InHZ:                h.hasHZ && o == h.hz,
 			MainworldIndustrial: mwIndustrial,
+			Orbit:               o,
+			HZOrbit:             h.hz,
+			HasHZ:               h.hasHZ,
 		})
-		// Chart D is for "the Mainworld AND other worlds in the system" (Book 3
-		// p.26), and a placed world's orbit and its star's habitable zone are both
-		// in hand right here — so it earns its climate codes like any other world.
-		// Only the mainworld used to get them.
-		if h.hasHZ {
-			tcs = append(tcs, worldgen.ClimateCodes(prof, o, h.hz)...)
-		}
 		placed = append(placed, PlacedOrbit{Host: h.label, Orbit: o, Kind: KindWorld, World: &OtherWorld{Type: wt, Profile: prof, TradeCodes: tcs}})
 	}
 
