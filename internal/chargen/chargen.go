@@ -52,6 +52,8 @@ type Character struct {
 	Dead   bool // set when aging (or a career mishap) kills the character
 
 	Homeworld        worldgen.World // the world the character was raised on (Book 1 p. 56)
+	Gender           string         // the individual's gender, for a non-human sophont (Book 3 p. 230); "" for a plain human
+	Caste            string         // the individual's caste, for a casted sophont (Book 3 p. 229); "" if none
 	Major            string         // College Major subject, if educated
 	Minor            string         // College Minor subject, if educated
 	Degrees          []string       // academic degrees earned (BA, …)
@@ -104,12 +106,17 @@ func (c Character) Score(ch Characteristic) int {
 	return c.scores[ch]
 }
 
-// UPP renders the six characteristics as an eHex string, e.g. "777777".
+// UPP renders the six characteristics as an eHex string, e.g. "777777". It is a
+// renderer, so it must be total: a sophont characteristic can exceed the eHex
+// range (an 8D Strength reaches 48), and String — an fmt.Stringer — must not
+// panic on it. ehex.Format renders such a value as "?"; the characteristic bounds
+// that keep a human in range are enforced in the mutation paths (the
+// maxCharacteristic clamps), not here. cmd/sophont carries a non-lossy renderer.
 func (c Character) UPP() string {
 	var b strings.Builder
 	b.Grow(count)
 	for _, v := range c.scores {
-		b.WriteByte(ehex.Digit(v))
+		b.WriteString(ehex.Format(v))
 	}
 	return b.String()
 }
