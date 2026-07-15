@@ -195,7 +195,6 @@ type Career struct {
 	ID               CareerID
 	Name             string
 	Qualify          Qualification
-	Retry            Qualification // the first career's Retry rolls against this; empty re-rolls Qualify
 	CCMode           CCMode
 	ControllingChars []Characteristic
 	Continue         ContinueRule
@@ -291,9 +290,10 @@ type careerRun struct {
 // School, or the College→Professors ladder), then attempt careers (D) and muster
 // out (E).
 //
-// The first career is attempted with a Retry (Book 1 p. 63): a failed Begin roll
-// is re-rolled once before the career is abandoned. Further careers (from
-// Policy.NextCareer) are attempted without Retry. A character refused by every
+// Each chosen career's Begin is rolled once (Book 1 p.65: "Some Careers allow
+// Retry", a per-career property shown on the career's own box — no career in this
+// edition grants a Begin retry, so none is offered; the code once gave the *first*
+// career a retry, which p.63/p.65 do not support). A character refused by every
 // chosen career falls back to the Citizen life, whose Begin is automatic — T5's
 // replacement for the classic draft, so no one ends up careerless.
 func GenerateCareered(r *dice.Roller, p Policy, homeworld worldgen.World, career Career) Character {
@@ -304,19 +304,19 @@ func GenerateCareered(r *dice.Roller, p Policy, homeworld worldgen.World, career
 		educate(r, p, &c)
 	}
 
-	entered := serveCareer(r, p, &c, career, true) // the first career retries a failed Begin
+	entered := serveCareer(r, p, &c, career)
 	// A character may serve more than one career (Book 1), so long as they live.
 	for !c.Dead {
 		next, ok := p.NextCareer(c)
 		if !ok {
 			break
 		}
-		if serveCareer(r, p, &c, next, false) {
+		if serveCareer(r, p, &c, next) {
 			entered = true
 		}
 	}
 	if !entered && !c.Dead {
-		serveCareer(r, p, &c, CitizenCareer, false) // fall back to the auto-begin Citizen life
+		serveCareer(r, p, &c, CitizenCareer) // fall back to the auto-begin Citizen life
 	}
 	return c
 }
@@ -324,8 +324,8 @@ func GenerateCareered(r *dice.Roller, p Policy, homeworld worldgen.World, career
 // serveCareer attempts one career on a character: on a successful (or automatic)
 // begin it runs the term loop and, unless the character died, musters out. It
 // reports whether the character entered the career.
-func serveCareer(r *dice.Roller, p Policy, c *Character, career Career, retry bool) bool {
-	if !beginCareer(r, c, career, retry) {
+func serveCareer(r *dice.Roller, p Policy, c *Character, career Career) bool {
+	if !beginCareer(r, c, career) {
 		return false
 	}
 	RunCareer(r, p, c, career)
@@ -337,28 +337,14 @@ func serveCareer(r *dice.Roller, p Policy, c *Character, career Career, retry bo
 
 // beginCareer resolves a career's Begin (Book 1 p. 63): an AutoBegin career (the
 // Citizen) enters unconditionally; otherwise the character rolls 2D at or under
-// the best qualifying characteristic. When retry is set, a failed roll is
-// attempted once more (against the career's Retry characteristic, if it declares
-// one) before the career is abandoned. The one-year cost of each failed attempt,
-// and the fact that only some careers grant a Retry at all, are not yet modelled.
-func beginCareer(r *dice.Roller, c *Character, career Career, retry bool) bool {
+// the best qualifying characteristic (Book 1 p.65). The roll is made once: Begin
+// retry is a per-career property ("Some Careers allow Retry", shown on the career's
+// box), and no career in this edition grants one, so none is offered.
+func beginCareer(r *dice.Roller, c *Character, career Career) bool {
 	if career.AutoBegin {
 		return true
 	}
-	if r.Resolve(dice.Check{Dice: 2, Target: career.Qualify.target(*c)}).Success {
-		return true
-	}
-	if !retry {
-		return false
-	}
-	// The Retry rolls against the career's Retry characteristic when it declares
-	// one (Book 1 p.63; the Scout retries vs Education, p.79); otherwise it
-	// re-rolls the qualify target.
-	retryTarget := career.Qualify.target(*c)
-	if len(career.Retry.Chars) > 0 {
-		retryTarget = career.Retry.target(*c)
-	}
-	return r.Resolve(dice.Check{Dice: 2, Target: retryTarget}).Success
+	return r.Resolve(dice.Check{Dice: 2, Target: career.Qualify.target(*c)}).Success
 }
 
 // RunCareer runs the term loop of one career on a character, appending a
@@ -1053,7 +1039,12 @@ func applyBenefit(c *Character, b Benefit, career Career, rec CareerRecord) {
 	case Cash:
 		c.Credits += b.Value
 	case CharBump:
-		c.scores[b.Char] = min(c.scores[b.Char]+b.Value, maxCharacteristic)
+		// A Characteristic Improvement that would raise a characteristic above 15 is
+		// lost, not clamped (Book 1 p.68: "If a benefit elevates a characteristic
+		// above 15, that benefit is lost"). Clamping quietly banked the partial gain.
+		if c.scores[b.Char]+b.Value <= maxCharacteristic {
+			c.scores[b.Char] += b.Value
+		}
 	case FameBump:
 		c.Fame += b.Value
 	case Named:

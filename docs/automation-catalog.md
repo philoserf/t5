@@ -238,10 +238,20 @@ fixed: the **Masters and Professors** programs under-awarded skills — p.60's "
 (Major+1 per Pass, Minor+1 per 2 Passes) is a single merged cell spanning **all five** higher-ed
 rows including Masters and Professors, but the code awarded Masters the Minor only and Professors
 nothing. The undergraduate Eneri golden never reaches the post-grad ladder, so nothing caught it —
-the systematic-misread blind spot. Known remaining gaps (documented deferrals, not bugs): per-career
-Retry is modelled per-attempt-order rather than per-career; pension/retirement entitlements are
-recorded as benefit tokens, not recurring income; and the disabled muster-out doubling covers the
-per-term rolls but not the commendation/fame bonus rolls.
+the systematic-misread blind spot.
+
+_Questioning the "deferrals" turned two of them into bug fixes:_ the **Begin-retry** handling was
+not a clean simplification but a three-part bug — the code gave the _first_ career a Begin retry
+(p.63/p.65 grant no such thing), misused the Scout's "Retry R&R C5" (a term-level retry of a failed
+Risk & Reward against Education) as a _Begin_-retry target, and never implemented the R&R retry it
+actually is. Removed the invented Begin retry (the Citizen fallback still prevents careerlessness)
+and correctly labelled the Scout's R&R retry as a genuinely underspecified, examined deferral. And
+**Characteristic Improvement** was clamped to 15 where the book says a benefit that would raise a
+characteristic above 15 is _lost_ (p.68) — fixed to drop it. Two deferrals remain, examined and
+justified: the disabled muster-out "Double Benefits" is underspecified (twice the rolls vs two
+benefits per roll — the code doubles the per-term rolls only, and guessing the rest risks a
+misread), and pension/retirement _recurring income_ is a play-time attribute, not a
+generation-time one, so it stays a benefit token on the sheet.
 
 **15. Systemgen per-world detailing & placement** — _B3 pp. 20–29 (Chart G)_ · extends systemgen
 · **L** · ✅ **done**
