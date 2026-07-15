@@ -38,7 +38,7 @@ func (rec Record) Sheet() string {
 
 	fmt.Fprintf(&b, "%s  %s%s\n%s\n", rec.Hex, rec.Name, capitalTitle(mw), rule)
 
-	field("Mainworld", "%s  %s", mw.Profile, strings.Join(mw.TradeCodes, " "))
+	field("Mainworld", "%s  %s", mw.Profile, strings.Join(worldgen.OrderTradeCodes(mw.TradeCodes), " "))
 	field("Extensions", "%s   RU %d", mw.Extensions(), mw.Economic.RU())
 	field("Traffic", "~%s/week", plural(route.ExpectedTraffic(mw.Importance), "ship", "ships"))
 	if mw.Nobility != "" {
@@ -51,7 +51,9 @@ func (rec Record) Sheet() string {
 	}
 	if f, ok := worldgen.PortFacilities(mw.Profile); ok {
 		field("Starport", "%c — %s", f.Class, f.Quality)
-		// Classes X and Y are no port at all and offer nothing to list.
+		// Most no-port worlds (X, Y) list nothing — but a class-X world with water or
+		// ice still offers local unrefined fuel (Book 3 p.24), so the guard is on the
+		// service list being non-empty, not on the class.
 		if svc := f.Services(); len(svc) > 0 {
 			fmt.Fprintf(&b, "              %s\n", strings.Join(svc, " · "))
 		}
@@ -162,7 +164,7 @@ func bodyLabel(o systemgen.PlacedOrbit, mainworld uwp.Profile) string {
 		return o.Kind.String() // systemgen names the kinds; do not restate them here
 	case o.World != nil:
 		s := fmt.Sprintf("%-14s %s", o.World.Type, o.World.Profile)
-		if tcs := strings.Join(o.World.TradeCodes, " "); tcs != "" {
+		if tcs := strings.Join(worldgen.OrderTradeCodes(o.World.TradeCodes), " "); tcs != "" {
 			s += "  " + tcs
 		}
 		return s
@@ -182,7 +184,7 @@ func moonLabel(m systemgen.Satellite) string {
 		orbit = "far"
 	}
 	s := fmt.Sprintf("moon %-5s %-12s %s", m.OrbitLetter, m.Type, m.Profile)
-	if tcs := strings.Join(m.TradeCodes, " "); tcs != "" {
+	if tcs := strings.Join(worldgen.OrderTradeCodes(m.TradeCodes), " "); tcs != "" {
 		s += " " + tcs
 	}
 	s += fmt.Sprintf("  (%s orbit)", orbit)

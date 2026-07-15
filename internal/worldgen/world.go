@@ -75,9 +75,10 @@ func generateWorld(r *dice.Roller, gasGiants, belts int, isCapital, belt bool) W
 }
 
 // SetCapital marks the world a capital carrying the given capital trade code —
-// Cs (subsector), Cx (sector), or Cp (Imperial) — and recomputes its nobility as
-// a capital (Book 3 Chart D p.26). Which world is the capital is a whole-region
-// decision the caller makes; this only encodes the result on the world.
+// Cp (Subsector Capital), Cs (Sector Capital), or Cx (Imperial Capital) — and
+// recomputes its nobility as a capital (Book 3 Chart D p.26). Which world is the
+// capital is a whole-region decision the caller makes; this only encodes the
+// result on the world.
 func (w *World) SetCapital(code string) {
 	if !slices.Contains(w.TradeCodes, code) {
 		w.TradeCodes = append(w.TradeCodes, code)
@@ -161,7 +162,7 @@ func hasCapitalCode(tcs []string) bool {
 func (w World) SecondSurvey() string {
 	fields := []string{
 		w.Profile.String(),
-		dashIfEmpty(strings.Join(w.TradeCodes, " ")),
+		dashIfEmpty(strings.Join(OrderTradeCodes(w.TradeCodes), " ")),
 		w.Extensions(),
 		w.Nobility,
 		dashIfEmpty(w.bases()),
