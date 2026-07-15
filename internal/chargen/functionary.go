@@ -9,8 +9,9 @@ package chargen
 // Slice scope: the "Total Terms x3" begin (Functionary is never a first career)
 // is deferred, so the career AutoBegins; the F7 UnderSecretary's 1D ordinal, the
 // prior-career-specific F6 titles (College President, etc.), the +1 skill per
-// promotion, the "Pension x2" muster pay (a named benefit), and the +Officer-Rank
-// muster Money DM (treated as +Terms) are also deferred.
+// promotion, and the +Officer-Rank muster Money DM (treated as +Terms) are also
+// deferred. The "Pension x2" muster pay doubles the Functionary's Cr15,000/year
+// pension (an entitlement; see entitlement.go).
 
 // FunctionaryCareer is the Functionary (Book 1 p. 87).
 var FunctionaryCareer = Career{
@@ -64,8 +65,8 @@ var FunctionaryCareer = Career{
 		7:  {Money: cash(25_000), Benefit: charAward(Intelligence)},
 		8:  {Money: cash(30_000), Benefit: named("Life Insurance")},
 		9:  {Money: cash(35_000), Benefit: named("TAS Fellowship")},
-		10: {Money: named("Pension"), Benefit: knighthood()},
-		11: {Money: named("Pension"), Benefit: named("Directorship")},
-		12: {Money: named("Pension"), Benefit: knighthood()},
+		10: {Money: pensionX2(), Benefit: knighthood()},
+		11: {Money: pensionX2(), Benefit: named("Directorship")},
+		12: {Money: pensionX2(), Benefit: knighthood()},
 	},
 }

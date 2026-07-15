@@ -22,6 +22,10 @@ type Policy interface {
 	Continue(c Character, rec CareerRecord) bool
 	// MusterColumn picks the Money or Benefit column for one muster-out roll.
 	MusterColumn(c Character, rec CareerRecord) MusterColumn
+	// RandomizeMusterDM reports whether the optional muster-out DM (Book 1 p.68:
+	// "any value from 0 to the total") is randomized per roll. False applies the
+	// full DM — the simplest deterministic choice, used by the tests.
+	RandomizeMusterDM() bool
 	// PursueEducation reports whether the character attends an educational
 	// institution before their career (Book 1 stage C).
 	PursueEducation(c Character) bool
@@ -156,6 +160,11 @@ func (DefaultPolicy) Continue(c Character, _ CareerRecord) bool {
 func (DefaultPolicy) MusterColumn(Character, CareerRecord) MusterColumn {
 	return BenefitColumn
 }
+
+// RandomizeMusterDM randomizes the optional muster-out DM (Book 1 p.68) rather
+// than always taking the full value, since a generated character has no reason
+// to steer the roll toward a preferred row.
+func (DefaultPolicy) RandomizeMusterDM() bool { return true }
 
 // PursueEducation sends a character into the education stage (College or, at Edu
 // 7+, University) when they meet the College prerequisite — education raises Edu

@@ -28,6 +28,7 @@ func (stopAfter) ChooseSkillColumn(Character, SkillGrid) int        { return 0 }
 func (stopAfter) ChooseSkill(_ Character, options []string) string  { return options[0] }
 func (s stopAfter) Continue(_ Character, rec CareerRecord) bool     { return rec.Terms < s.terms }
 func (stopAfter) MusterColumn(Character, CareerRecord) MusterColumn { return BenefitColumn }
+func (stopAfter) RandomizeMusterDM() bool                           { return false }
 func (stopAfter) PursueEducation(Character) bool                    { return false }
 func (stopAfter) ChooseTradeSchool(Character) bool                  { return false }
 func (stopAfter) PursueGraduateSchool(Character) bool               { return false }

@@ -318,6 +318,7 @@ func GenerateCareered(r *dice.Roller, p Policy, homeworld worldgen.World, career
 	if !entered && !c.Dead {
 		serveCareer(r, p, &c, CitizenCareer) // fall back to the auto-begin Citizen life
 	}
+	computeEntitlements(&c)
 	return c
 }
 
@@ -969,11 +970,13 @@ const (
 type BenefitKind int
 
 const (
-	Cash     BenefitKind = iota // Value credits
-	CharBump                    // +Value to characteristic Char
-	FameBump                    // +Value to Fame (the Entertainer's "Fame +1")
-	Named                       // a named benefit (Ship Share, TAS Fellowship, …)
-	Knighted                    // a Knighthood: raises Soc (Book 1 p.68); Name is still shown
+	Cash         BenefitKind = iota // Value credits
+	CharBump                        // +Value to characteristic Char
+	FameBump                        // +Value to Fame (the Entertainer's "Fame +1")
+	Named                           // a named benefit (Ship Share, TAS Fellowship, …)
+	Knighted                        // a Knighthood: raises Soc (Book 1 p.68); Name is still shown
+	PensionX2                       // doubles the character's Pension (Book 1 pp.68-69)
+	RetirementX2                    // doubles the character's Retirement Pay (Book 1 pp.68-69)
 )
 
 // A Benefit is one mustering-out award.
@@ -1003,17 +1006,64 @@ func MusterOut(r *dice.Roller, p Policy, c *Character, rec CareerRecord, career 
 	rolls := musterRollCount(*c, rec)
 	for range rolls {
 		col := p.MusterColumn(*c, rec)
-		dm := rec.Terms // Money column DM
+		fullDM := rec.Terms // Money column DM
 		if col == BenefitColumn {
-			dm = benefitDM(career.BenefitDM, *c, rec)
+			fullDM = benefitDM(career.BenefitDM, *c, rec)
 		}
-		row := min(max(r.Die()+dm, 1), 12)
-		award := career.MusterOut[row].Money
-		if col == BenefitColumn {
-			award = career.MusterOut[row].Benefit
+		award := rollMusterAward(r, p, career, col, fullDM)
+		// A result duplicating an unusable named benefit (a second Wafer Jack) may
+		// be rerolled until different (Book 1 p.69). The cap keeps a degenerate
+		// table from looping; if it is hit with the award still a duplicate, the
+		// roll grants nothing rather than a useless repeat.
+		for tries := 0; isDuplicateBenefit(*c, award) && tries < musterRerollCap; tries++ {
+			award = rollMusterAward(r, p, career, col, fullDM)
 		}
-		applyBenefit(c, award, career, rec)
+		if !isDuplicateBenefit(*c, award) {
+			applyBenefit(c, award, career, rec)
+		}
 	}
+}
+
+// musterRerollCap bounds duplicate-benefit rerolls (Book 1 p.69's "until a
+// different benefit is received") so a table of all-identical benefits cannot
+// loop forever.
+const musterRerollCap = 12
+
+// rollMusterAward rolls one mustering-out award: 1D plus a column DM, read off
+// the chosen column. The DM is optional and partial (Book 1 p.68), so a policy
+// that randomizes it selects any value from 0 to the full DM; otherwise the full
+// DM applies.
+func rollMusterAward(r *dice.Roller, p Policy, career Career, col MusterColumn, fullDM int) Benefit {
+	dm := fullDM
+	if fullDM > 0 && p.RandomizeMusterDM() {
+		dm = r.Index(fullDM + 1)
+	}
+	row := min(max(r.Die()+dm, 1), 12)
+	if col == BenefitColumn {
+		return career.MusterOut[row].Benefit
+	}
+	return career.MusterOut[row].Money
+}
+
+// rerollableDuplicates are the named benefits that are useless when held twice
+// (Book 1 p.69's "unwanted or unusable" examples — Wafer Jack, TAS Member — plus
+// Life Insurance). Others accumulate, so a repeat is kept, not rerolled: Ship
+// Share, Forbidden Knowledge, passages, and StarPass all stack, and a second
+// Knighthood still grants Soc +1 (p.68, applyKnighthood), so it too is applied
+// rather than rerolled. Deciding which benefits stack is a judgment the book,
+// which lists Knighthood as a reroll example yet gives it a repeat effect, leaves
+// genuinely open.
+var rerollableDuplicates = map[string]bool{
+	"Wafer Jack":     true,
+	"TAS Fellowship": true,
+	"Life Insurance": true,
+}
+
+// isDuplicateBenefit reports whether an award repeats a single-instance named
+// benefit the character already holds. Cash, characteristic bumps, Fame, and the
+// pension doublings carry no name and never count as duplicates.
+func isDuplicateBenefit(c Character, b Benefit) bool {
+	return rerollableDuplicates[b.Name] && slices.Contains(c.Benefits, b.Name)
 }
 
 // musterRollCount is the number of mustering-out rolls (Book 1 p.67): one per
@@ -1052,6 +1102,10 @@ func applyBenefit(c *Character, b Benefit, career Career, rec CareerRecord) {
 	case Knighted:
 		applyKnighthood(c, career, rec)
 		c.Benefits = append(c.Benefits, b.Name) // the title still shows on the sheet
+	case PensionX2:
+		c.pensionDoublings++
+	case RetirementX2:
+		c.retirementDoublings++
 	}
 }
 

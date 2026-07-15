@@ -61,6 +61,7 @@ type Character struct {
 	Careers          []CareerRecord // one record per career served
 	Credits          int            // cash mustered out
 	Benefits         []string       // named mustering-out benefits (Ship Share, TAS, …)
+	Entitlements     []Entitlement  // recurring annual income earned in careers (Book 1 p. 69)
 	WoundBadges      int            // career injuries survived
 	Medals           int            // awards earned on successful Reward rolls (armed forces)
 	Fame             int            // reputation, the Entertainer's measure of success (Book 1 p. 77)
@@ -73,7 +74,9 @@ type Character struct {
 	Discoveries      int            // valuable worlds or features the Scout has found (Book 1 p. 79)
 	ShipShares       int            // ownership shares the Merchant accumulates (Book 1 p. 80)
 
-	extremeAgings int // aging checks that zeroed 3+ characteristics; the 2nd is fatal
+	extremeAgings       int // aging checks that zeroed 3+ characteristics; the 2nd is fatal
+	pensionDoublings    int // "Pension x2" muster results; each adds one multiple (Book 1 p. 68)
+	retirementDoublings int // "Retirement x2" muster results; each adds one multiple
 }
 
 // startingAge is the age of a freshly generated character — Young Adult (Life
