@@ -133,6 +133,28 @@ Tooling (go, go-task, poppler's `pdftotext`) is pinned in `Brewfile`.
   R&R reward, the Rogue's Scheme mechanic, the armed-forces Branch/Operations R&R mods and
   commission/promotion skill eligibility, and each career's documented flavor deferrals (in its own
   file header). See the per-career `.go` files for the exact deferred pieces.
+- `internal/sophont/` — the Sophont Creation System (Book 3 pp. 217-239), the **core spine** that
+  makes chargen work for aliens. `Generate` composes Flux-driven sub-generators into a `Species`
+  template: a plausible homeworld (**reuses `worldgen`**, rerolled to Atm 2-9 / Pop 7+, rather than
+  a parallel world generator — the book blesses the substitution), the evolutionary `Environment`
+  (terrain → Environ DM, locomotion, ecological niche; p.227), the six-slot characteristic profile
+  (`CharSpec{Name, Dice}` — C1=Str/C4=Int fixed, C2/C3/C5/C6 rolled) and its `GeneticProfile`
+  string (p.228; `RollValue` applies the ≥4D "Rolling Higher" scaling `12+(n-2)D`), `Size` (weighted
+  physical-dice total × multiplier, Human=72) and a closed-form `Height` that reproduces the pp.236-237
+  grids, the `LifeCycle` (per-stage durations → lifespan, Human=74; p.231), the `Gender` structure +
+  determination table (p.230), and — only when C6 is Caste — the `Caste` generation table (p.229,
+  resolving the `=Gender`/`=Special`/Unique substitutions). Gender and caste each carry a
+  `map[string]Difference` (the C1-dice/C1-C5-flat adjustments a member takes on at assignment).
+  Golden-locked to the **Human reference** (`SDEIES`, all-2D, Size 72, lifespan 74) and the p.218/219
+  **Ay Flux-0 fixtures** — the book prints no dice-traced worked species, so dense-table interiors are
+  locked cell-by-cell in `tables_test.go` instead. The chargen bridge is `chargen.GenerateSophont`
+  (`internal/chargen/sophont.go`): it rolls an individual's six characteristics per the species' die
+  counts, assigns a gender (and caste, if any) by a 2D roll on the species tables, and applies their
+  `Difference`s (no upper cap — an 8D Str reaches 48, so `Character.UPP` now renders out-of-eHex-range
+  values as `?` via `ehex.Format`). Deferred until a consumer needs them: the physical/flavor tier
+  (senses, body structure, manipulators, special abilities, size-BFP body form, uniques, psionics),
+  the caste/gender life-cycle sub-mechanics (shift, assignment timing, caste-gender relation), the
+  Skilled-caste skill lists (Chart 12), sophont career service, and species-driven aging.
 - `internal/calendar/` — the Imperial Calendar (Book 1 Appendix 02, p. 262): a 365-day `Date` (day 1 is
   Holiday, then 52 weeks Wonday..Senday), with `Weekday`, `Add` (year rollover), and `String`
   (`001-1105`). Pure date math, no dice.
@@ -221,10 +243,10 @@ Tooling (go, go-task, poppler's `pdftotext`) is pinned in `Brewfile`.
 - `internal/senses/`, `internal/personals/`, `internal/combat/` — the play tier (Book 1): sense
   Actions, social Personals, and personal combat, all roll-low via `task.ResolveDice`.
 - `internal/rangeband/` — the world/space range ladder (Book 1 pp. 24-29), shared by the play tier.
-- `cmd/worldgen/`, `cmd/systemgen/`, `cmd/chargen/`, `cmd/sectorgen/`, `cmd/shipgen/` — CLIs
+- `cmd/worldgen/`, `cmd/systemgen/`, `cmd/chargen/`, `cmd/sectorgen/`, `cmd/shipgen/`, `cmd/sophont/` — CLIs
   (most take `-n` and `-seed`; sectorgen/shipgen take their own design flags), e.g.
   `go run ./cmd/shipgen -hull A -tl 12 -config L -structure shell -maneuver A -jump A
-  -weapon beamlaser:T1:orbit -defense blackglobe`.
+-weapon beamlaser:T1:orbit -defense blackglobe`.
   They follow one convention, owned by `internal/cli`: **generated records go to stdout, everything
   else to stderr**. Bad input is `cli.Fatalf` (exit 2, the code `flag` itself uses); a true-but-empty
   result is `cli.Note` (exit 0, still off stdout, so a piped record stream stays clean).
@@ -236,8 +258,10 @@ them with a golden test built from a worked example in the books.
 
 The world/system/character census is complete, and so is the starship tier: a sector can be
 surveyed, its worlds and systems detailed, characters generated to crew a ship, the ship designed
-and armed, and the ship flown into a fight. See `docs/automation-catalog.md` for what is built and
-what is next (`Sophont creation` (#17) is the largest open piece).
+and armed, and the ship flown into a fight. Sophont creation (#17) now has its **core spine**
+(`internal/sophont` + the `chargen.GenerateSophont` bridge), so chargen works for aliens; its
+physical/flavor tier is deferred. See `docs/automation-catalog.md` for what is built and what is
+next (the Tier-5 content makers are now the largest open pieces).
 
 - **Source of truth** for rules is `docs/pdf/` (T5 Core Rules Books 1–3 + Read Me). These PDFs
   are **git-ignored and not distributed** (copyrighted Far Future Enterprises material) — each

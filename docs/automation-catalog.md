@@ -58,8 +58,9 @@ core but a larger deferred tail than once recorded (four special task modes, Ext
 mishap system); and **Money/Value** (#12) is deferred by decision until its first consumer (a
 Tier-5 equipment maker) needs it, since it has none in the repo today. So the play side (senses,
 personals, combat) is unblocked. **Starship design (#16) is done**, armament and all, and `shipcombat` (#22) consumes it:
-a generated ship can be flown into a fight. The largest open pieces are now `Sophont creation`
-(#17, the last big Tier-3 generator) and the Tier-5 content makers, which are independent and can
+a generated ship can be flown into a fight. `Sophont creation` (#17) now has its **core spine
+built** — a species template that chargen consumes to make aliens — with the physical/flavor tier
+deferred. The largest open pieces are the Tier-5 content makers, which are independent and can
 follow in any order.
 
 ---
@@ -220,10 +221,11 @@ package that chargen birthdates, aging ticks, and time-degradation effects all u
 
 ## Tier 3 — The big generators (highest value, large effort)
 
-Three of four built and audited against the book: **#14 chargen** and **#15 systemgen** page by
-page (this review), **#16 starship design** through the #146–160 build-and-review chain. **#17
-Sophont creation** is the one unbuilt item — the last big Tier-3 generator, and what makes chargen
-work for aliens.
+All four now built and audited against the book: **#14 chargen** and **#15 systemgen** page by
+page (this review), **#16 starship design** through the #146–160 build-and-review chain, and **#17
+Sophont creation**'s core spine (`internal/sophont`), golden-locked to the Human reference and the
+p.218/219 Ay fixtures and reviewed via `/simplify` + `/code-review`. #17's physical/flavor tier is
+deferred pending a consumer.
 
 **14. Chargen careers** — _B1 pp. 63–99_ · extends chargen · **L** (the flagship piece) · ✅ **done**
 The full career life-cycle: 2D career selection, per-term Controlling-Characteristic rotation,
@@ -315,12 +317,21 @@ MCr2.5, the table prints 1.5), the missile catalogs' EMP (one lower than the eff
 same page), and p.155's catalog (does not derive from its own tables). The drive and weapon stage
 tables also genuinely differ in one cell: **Modified** costs a drive ×1 but a weapon /2.
 
-**17. Sophont (species) creation** — _B3 pp. 215–246_ · extends chargen · **L** · ⬜ **not started**
-A Flux-driven pipeline producing a non-human species template (homeworld, environment/niche,
-characteristics + genetic profile, caste & gender structures, life stages, senses, body
-structure, special abilities, size/height, uniques/metamorphosis, psionics, TL cap) that
-chargen then consumes. ~14 sub-generators, many sharing tables with BeastMaker (niche/body)
-and the `geom` size machinery. This is what makes chargen work for aliens.
+**17. Sophont (species) creation** — _B3 pp. 215–246_ · `internal/sophont` + `cmd/sophont`, bridges into chargen · **L** · 🟢 **core spine done**
+A Flux-driven pipeline producing a non-human species template that chargen consumes to make
+alien characters. The **core spine is built** (`internal/sophont`): homeworld (reuses `worldgen`,
+rerolled for plausibility) → evolutionary environment (terrain/Environ-DM, locomotion, ecological
+niche, B3 p.227) → the six-slot characteristics + Genetic Profile (p.228) → Size/Height (pp.236–237)
+→ life stages/lifespan (p.231) → gender structure + determination table (p.230) → caste generation
+table, conditional on a Caste C6 (p.229). `chargen.GenerateSophont` rolls an individual per the
+species' die counts and applies its assigned gender/caste characteristic differences; `cmd/sophont`
+renders species and members. Golden-locked to the Human reference (`SDEIES`, all-2D, Size 72,
+lifespan 74) and the p.218/219 Ay Flux-0 fixtures, since the book has no dice-traced worked species.
+**Deferred** (no consumer yet): the physical/flavor tier — senses, body structure, manipulators,
+special abilities, size-BFP body form, uniques/metamorphosis, psionics — plus the caste/gender
+life-cycle sub-mechanics (shift, assignment timing, caste-gender relation), the Skilled-caste skill
+lists (Chart 12), a sophont serving careers, and aging keyed to the species' own life stages. The
+deferred tables share niche/body/`geom` machinery with BeastMaker.
 
 ---
 
