@@ -38,6 +38,9 @@ func (rec Record) Sheet() string {
 
 	fmt.Fprintf(&b, "%s  %s%s\n%s\n", rec.Hex, rec.Name, capitalTitle(mw), rule)
 
+	// The mainworld's codes are finalized in phases (base+zone at generation, climate
+	// and satellite at placement, a capital in the region survey), so unlike a
+	// non-mainworld they are ordered here, at render, not at the source.
 	field("Mainworld", "%s  %s", mw.Profile, strings.Join(worldgen.OrderTradeCodes(mw.TradeCodes), " "))
 	field("Extensions", "%s   RU %d", mw.Extensions(), mw.Economic.RU())
 	field("Traffic", "~%s/week", plural(route.ExpectedTraffic(mw.Importance), "ship", "ships"))
@@ -164,7 +167,9 @@ func bodyLabel(o systemgen.PlacedOrbit, mainworld uwp.Profile) string {
 		return o.Kind.String() // systemgen names the kinds; do not restate them here
 	case o.World != nil:
 		s := fmt.Sprintf("%-14s %s", o.World.Type, o.World.Profile)
-		if tcs := strings.Join(worldgen.OrderTradeCodes(o.World.TradeCodes), " "); tcs != "" {
+		// A non-mainworld's codes are stored in Chart D order by the assembler
+		// (worldgen.TradeClassificationsWithContext), so they render as-is.
+		if tcs := strings.Join(o.World.TradeCodes, " "); tcs != "" {
 			s += "  " + tcs
 		}
 		return s
@@ -184,7 +189,8 @@ func moonLabel(m systemgen.Satellite) string {
 		orbit = "far"
 	}
 	s := fmt.Sprintf("moon %-5s %-12s %s", m.OrbitLetter, m.Type, m.Profile)
-	if tcs := strings.Join(worldgen.OrderTradeCodes(m.TradeCodes), " "); tcs != "" {
+	// Stored in Chart D order by the assembler, so no render-time sort here.
+	if tcs := strings.Join(m.TradeCodes, " "); tcs != "" {
 		s += " " + tcs
 	}
 	s += fmt.Sprintf("  (%s orbit)", orbit)

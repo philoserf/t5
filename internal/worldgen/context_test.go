@@ -57,3 +57,24 @@ func TestSatelliteCodes(t *testing.T) {
 		t.Errorf("a non-moon = %v, want no satellite code", planet)
 	}
 }
+
+// TestAssemblerReturnsChartDOrder: the assembler sorts its output into Chart D
+// order, so a caller stores and renders it directly — no renderer has to remember
+// to sort. The codes accumulate out of order (a satellite appends its Planetary
+// Sa/Lk code after the climate codes), so this is a real reordering, not a no-op.
+func TestAssemblerReturnsChartDOrder(t *testing.T) {
+	// A far satellite one orbit inside the HZ: earns a climate code (Ho, Climate
+	// section) and Sa (Planetary section). Accumulation puts Ho before Sa; Chart D
+	// puts the Planetary Sa first.
+	p := uwp.Profile{Size: 7, Atmosphere: 6, Hydrographics: 5}
+	got := TradeClassificationsWithContext(p, WorldContext{
+		Orbit: 3, HZOrbit: 4, HasHZ: true, Satellite: true, SatelliteFar: true,
+	})
+	if i, j := slices.Index(got, "Sa"), slices.Index(got, "Ho"); i < 0 || j < 0 || i > j {
+		t.Errorf("codes not in Chart D order: %v (Sa must precede Ho)", got)
+	}
+	// The result is exactly what OrderTradeCodes would produce.
+	if !slices.Equal(got, OrderTradeCodes(got)) {
+		t.Errorf("assembler output is not fully ordered: %v", got)
+	}
+}
