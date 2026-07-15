@@ -11,6 +11,9 @@
 /docs/pdf/*.pdf
 /docs/reference/
 
+# Local planning/status doc — a working backlog kept per-clone, not versioned
+/docs/automation-catalog.md
+
 # stray CLI build artifacts (go build ./cmd/foo drops the binary in cwd)
 /chargen
 /worldgen
