@@ -45,8 +45,8 @@ type Survey struct {
 
 // Sector surveys an entire sector (all 1280 hexes) at the given density: every
 // present hex gets a full generated system and name, each subsector's highest-
-// Importance Starport-A world is marked its capital (Cs) and the region's is the
-// sector capital (Cx), then trade routes are laid among the Important worlds and
+// Importance Starport-A world is marked its subsector capital (Cp) and the region's
+// is the sector capital (Cs), then trade routes are laid among the Important worlds and
 // Scout Way Stations sited along them. The coarse gas-giant and asteroid map
 // symbols constrain the full generation, so the long-range preview and the
 // detailed system agree.

@@ -34,6 +34,7 @@ type Satellite struct {
 // pass after placement so it never perturbs the orbit map's dice.
 func (s *System) rollSatellites(r *dice.Roller) {
 	mwPop := s.Mainworld.Profile.Population
+	mwIndustrial := s.mainworldIndustrial() // invariant for the system; hoisted, like placeOrbits
 	for i := range s.Orbits {
 		o := &s.Orbits[i]
 		hz, hasHZ := HZOrbit(s.hostStar(o.Host))
@@ -59,32 +60,14 @@ func (s *System) rollSatellites(r *dice.Roller) {
 				Type:         wt,
 				Profile:      prof,
 				DoublePlanet: double,
-				TradeCodes:   satelliteTradeCodes(prof, o.Orbit, hz, hasHZ, far, s.mainworldIndustrial()),
+				TradeCodes: worldgen.TradeClassificationsWithContext(prof, worldgen.WorldContext{
+					MainworldIndustrial: mwIndustrial,
+					Orbit:               o.Orbit, HZOrbit: hz, HasHZ: hasHZ,
+					Satellite: true, SatelliteFar: far,
+				}),
 			})
 		}
 	}
-}
-
-// satelliteTradeCodes is a moon's trade classifications. It gets the context codes
-// like any other non-mainworld (climate, Fa/Mi/Pe, zone), plus the one code the
-// mainworld's own satellite already earned but ordinary moons never did: Sa for a
-// Far satellite, Lk for a close (locked) one (Book 3 Chart D p.26 — both are pure
-// "is this a satellite, and how far" codes, with no UWP constraints). Chart D asks
-// for TCs on "the Mainworld and other worlds in the system," and a moon is one.
-func satelliteTradeCodes(p uwp.Profile, orbit, hz int, hasHZ, far, mwIndustrial bool) []string {
-	tcs := worldgen.TradeClassificationsWithContext(p, worldgen.WorldContext{
-		InHZ:                hasHZ && orbit == hz,
-		MainworldIndustrial: mwIndustrial,
-	})
-	if hasHZ {
-		tcs = append(tcs, worldgen.ClimateCodes(p, orbit, hz)...)
-	}
-	if far {
-		tcs = append(tcs, "Sa") // Far Satellite
-	} else {
-		tcs = append(tcs, "Lk") // Close (Locked) Satellite
-	}
-	return tcs
 }
 
 // mainworldIndustrial reports whether the system mainworld carries In, which the

@@ -56,7 +56,7 @@ func GenerateBeltWorld(r *dice.Roller, gasGiants, belts int, isCapital bool) Wor
 
 func generateWorld(r *dice.Roller, gasGiants, belts int, isCapital, belt bool) World {
 	p := generate(r, belt)
-	tcs := append(TradeClassifications(p), ZoneCodes(p)...)
+	tcs := TradeClassificationsWithContext(p, WorldContext{IsMainworld: true})
 	naval, scout := RollBases(r, p.Starport)
 	ix := Importance(p, tcs, naval, scout, false)
 	return World{
@@ -109,10 +109,39 @@ func (w *World) SetWayStation() {
 	w.Nobility = Nobility(w.TradeCodes, w.Importance, hasCapitalCode(w.TradeCodes))
 }
 
-// hasCapitalCode reports whether the trade codes already mark the world a
-// capital (Cs subsector, Cx sector, or Cp Imperial).
+// capitalNames maps each capital trade code to the office it marks (Book 3 Chart D
+// p.26). This is the one source of truth for the codes, so a renderer and the
+// nobility check cannot disagree about which is which — they did once, when the
+// codes were corrected in markSectorCapitals but the sheet's labels were not.
+var capitalNames = map[string]string{
+	"Cp": "Subsector Capital",
+	"Cs": "Sector Capital",
+	"Cx": "Imperial Capital",
+}
+
+// CapitalName returns the office a capital trade code marks, or "" if the code is
+// not a capital.
+func CapitalName(code string) string { return capitalNames[code] }
+
+// CapitalCode returns the capital code the world carries, or "" if it is not a
+// capital.
+func (w World) CapitalCode() string {
+	for _, tc := range w.TradeCodes {
+		if _, ok := capitalNames[tc]; ok {
+			return tc
+		}
+	}
+	return ""
+}
+
+// hasCapitalCode reports whether the trade codes already mark the world a capital.
 func hasCapitalCode(tcs []string) bool {
-	return slices.Contains(tcs, "Cs") || slices.Contains(tcs, "Cx") || slices.Contains(tcs, "Cp")
+	for _, tc := range tcs {
+		if _, ok := capitalNames[tc]; ok {
+			return true
+		}
+	}
+	return false
 }
 
 // SecondSurvey renders the world portion of the Second Survey record:
@@ -147,8 +176,6 @@ func (w World) Extensions() string {
 	return importance(w.Importance) + w.Economic.String() + w.Cultural.String()
 }
 
-func isEmpty(s string) bool { return s == "" }
-
 // importance renders the Importance Extension {Ix}. It is signed when non-zero
 // but bare at zero, matching the book's Importance table (0, +4, -2).
 func importance(ix int) string {
@@ -168,22 +195,25 @@ func (w World) BaseNames() []string {
 	return out
 }
 
-// baseList is the world's bases as (record code, display name) pairs, in Chart F
-// order (Book 3 p.28). The code is not the name's initial: a Naval Depot's code is
-// "D", not "N", and it would otherwise collide with the Naval Base.
-func (w World) baseList() []struct{ code, name string } {
-	var out []struct{ code, name string }
+// A baseEntry pairs a base's record code with its display name (Book 3 Chart F,
+// p.28). The code is not the name's initial: a Naval Depot's code is "D", not "N",
+// and it would otherwise collide with the Naval Base.
+type baseEntry struct{ code, name string }
+
+// baseList is the world's bases in Chart F order.
+func (w World) baseList() []baseEntry {
+	var out []baseEntry
 	if w.NavalBase {
-		out = append(out, struct{ code, name string }{"N", "Naval"})
+		out = append(out, baseEntry{"N", "Naval"})
 	}
 	if w.ScoutBase {
-		out = append(out, struct{ code, name string }{"S", "Scout"})
+		out = append(out, baseEntry{"S", "Scout"})
 	}
 	if w.NavalDepot {
-		out = append(out, struct{ code, name string }{"D", "Naval Depot"})
+		out = append(out, baseEntry{"D", "Naval Depot"})
 	}
 	if w.WayStation {
-		out = append(out, struct{ code, name string }{"W", "Way Station"})
+		out = append(out, baseEntry{"W", "Way Station"})
 	}
 	return out
 }
