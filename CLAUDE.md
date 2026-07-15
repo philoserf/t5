@@ -260,8 +260,9 @@ The world/system/character census is complete, and so is the starship tier: a se
 surveyed, its worlds and systems detailed, characters generated to crew a ship, the ship designed
 and armed, and the ship flown into a fight. Sophont creation (#17) now has its **core spine**
 (`internal/sophont` + the `chargen.GenerateSophont` bridge), so chargen works for aliens; its
-physical/flavor tier is deferred. See `docs/automation-catalog.md` for what is built and what is
-next (the Tier-5 content makers are now the largest open pieces).
+physical/flavor tier is deferred. The Tier-5 content makers are now the largest open pieces. A
+local working backlog with the full per-item status lives at `docs/automation-catalog.md` — it is
+git-ignored (a per-clone planning doc), so it may be absent in a fresh clone.
 
 - **Source of truth** for rules is `docs/pdf/` (T5 Core Rules Books 1–3 + Read Me). These PDFs
   are **git-ignored and not distributed** (copyrighted Far Future Enterprises material) — each
