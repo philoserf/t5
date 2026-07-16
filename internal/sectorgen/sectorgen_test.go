@@ -161,7 +161,7 @@ func TestGenerateSectorDeterministicAndDense(t *testing.T) {
 	// Denser regions hold more systems than sparser ones.
 	sparse := len(GenerateSector(dice.NewWithSeed(42), Sparse))
 	core := len(GenerateSector(dice.NewWithSeed(42), Core))
-	if !(sparse < len(a) && len(a) < core) {
+	if sparse >= len(a) || len(a) >= core {
 		t.Errorf("density ordering wrong: sparse %d, standard %d, core %d", sparse, len(a), core)
 	}
 }
