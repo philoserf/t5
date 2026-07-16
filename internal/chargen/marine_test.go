@@ -51,7 +51,8 @@ func TestGoldenMarine(t *testing.T) {
 	if c.Medals != 2 {
 		t.Errorf("Medals = %d, want 2", c.Medals)
 	}
-	if c.Skills.Level("Fighter") != 1 || c.Skills.Level("Leader") != 1 || c.Skills.Level("Vacc Suit") != 10 {
+	if c.Skills.Level("Fighter") != 1 || c.Skills.Level("Leader") != 1 ||
+		c.Skills.Level("Vacc Suit") != 10 {
 		t.Errorf("skills: Fighter=%d Leader=%d Vacc Suit=%d, want 1/1/10",
 			c.Skills.Level("Fighter"), c.Skills.Level("Leader"), c.Skills.Level("Vacc Suit"))
 	}
@@ -60,7 +61,11 @@ func TestGoldenMarine(t *testing.T) {
 		t.Errorf("record = %+v, want Marine/2 terms/MusteredOut", rec)
 	}
 	if !rec.Officer || rec.Rank != 1 {
-		t.Errorf("rank = %d officer %v, want officer rank 1 (2nd Lieutenant)", rec.Rank, rec.Officer)
+		t.Errorf(
+			"rank = %d officer %v, want officer rank 1 (2nd Lieutenant)",
+			rec.Rank,
+			rec.Officer,
+		)
 	}
 	if len(c.Benefits) != 1 || c.Benefits[0] != "Wafer Jack" {
 		t.Errorf("Benefits = %v, want [Wafer Jack]", c.Benefits)

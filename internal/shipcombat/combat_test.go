@@ -29,16 +29,34 @@ func TestMountModsDiffer(t *testing.T) {
 		{shipgen.QuadTurret, 1, 4},
 	} {
 		// The Mining Laser has no Mod of its own, so its attack Mod is the mount's.
-		w := shipgen.DesignWeapon(shipgen.WeaponSpec{Model: shipgen.MiningLaser, Mount: c.mount, Stage: std, Range: shipgen.VDistant})
+		w := shipgen.DesignWeapon(
+			shipgen.WeaponSpec{
+				Model: shipgen.MiningLaser,
+				Mount: c.mount,
+				Stage: std,
+				Range: shipgen.VDistant,
+			},
+		)
 		if w.Mod != c.attack {
 			t.Errorf("%v attacking = %+d, want %+d", c.mount, w.Mod, c.attack)
 		}
-		d := shipgen.DesignDefense(shipgen.DefenseSpec{Model: shipgen.NuclearDamper, Mount: c.mount, Stage: std, Range: shipgen.VDistant})
+		d := shipgen.DesignDefense(
+			shipgen.DefenseSpec{
+				Model: shipgen.NuclearDamper,
+				Mount: c.mount,
+				Stage: std,
+				Range: shipgen.VDistant,
+			},
+		)
 		if d.Mod != c.defend {
 			t.Errorf("%v defending = %+d, want %+d", c.mount, d.Mod, c.defend)
 		}
 		if w.Mod == d.Mod {
-			t.Errorf("%v attacks and defends at the same Mod (%+d) — the two tables differ", c.mount, w.Mod)
+			t.Errorf(
+				"%v attacks and defends at the same Mod (%+d) — the two tables differ",
+				c.mount,
+				w.Mod,
+			)
 		}
 	}
 }
@@ -49,7 +67,13 @@ func TestMountModsDiffer(t *testing.T) {
 func TestAttackWithDesignedWeapon(t *testing.T) {
 	// A Beam Laser in a Single Turret: TL 10, Mod +0 (the turret's -2, the laser's
 	// own +2). Target = 10 + C+S+K 12 + 0 = 22 — the Murphy's number below.
-	w := shipgen.DesignWeapon(shipgen.WeaponSpec{Model: shipgen.BeamLaser, Mount: shipgen.SingleTurret, Range: shipgen.VDistant})
+	w := shipgen.DesignWeapon(
+		shipgen.WeaponSpec{
+			Model: shipgen.BeamLaser,
+			Mount: shipgen.SingleTurret,
+			Range: shipgen.VDistant,
+		},
+	)
 	if got := SpaceWeaponTarget(w.TL, 12, w.Mod); got != 22 {
 		t.Errorf("designed Beam Laser target = %d, want 22", got)
 	}
@@ -61,7 +85,13 @@ func TestAttackWithDesignedWeapon(t *testing.T) {
 	}
 
 	// The same laser in a Quad Turret aims better (+1) and hits harder (4D vs 1D).
-	quad := shipgen.DesignWeapon(shipgen.WeaponSpec{Model: shipgen.BeamLaser, Mount: shipgen.QuadTurret, Range: shipgen.VDistant})
+	quad := shipgen.DesignWeapon(
+		shipgen.WeaponSpec{
+			Model: shipgen.BeamLaser,
+			Mount: shipgen.QuadTurret,
+			Range: shipgen.VDistant,
+		},
+	)
 	if quad.Mod != 3 || quad.Hits != 4 {
 		t.Errorf("quad Beam Laser = Mod %+d, %dD; want +3, 4D", quad.Mod, quad.Hits)
 	}
@@ -71,7 +101,13 @@ func TestAttackWithDesignedWeapon(t *testing.T) {
 // hand-numbered. A Meson Screen (TL 13) in its Bolt-In (+3) against a Meson Gun-12
 // is target 13 - 12 + 3 = 4, the book's own number (Book 2 p.196).
 func TestDefendWithDesignedDefense(t *testing.T) {
-	d := shipgen.DesignDefense(shipgen.DefenseSpec{Model: shipgen.MesonScreen, Mount: shipgen.BoltIn, Range: shipgen.VDistant})
+	d := shipgen.DesignDefense(
+		shipgen.DefenseSpec{
+			Model: shipgen.MesonScreen,
+			Mount: shipgen.BoltIn,
+			Range: shipgen.VDistant,
+		},
+	)
 	if d.TL != 13 || d.Mod != 3 {
 		t.Fatalf("Meson Screen = TL %d Mod %+d, want TL 13 Mod +3", d.TL, d.Mod)
 	}

@@ -7,8 +7,14 @@ func TestEvenDist1to9(t *testing.T) {
 	cases := []struct {
 		row, col, want int
 	}{
-		{1, 1, 1}, {1, 6, 3}, {2, 2, 5}, {3, 6, 9},
-		{4, 1, 1}, {5, 5, 5}, {6, 4, 7}, {6, 6, 9},
+		{1, 1, 1},
+		{1, 6, 3},
+		{2, 2, 5},
+		{3, 6, 9},
+		{4, 1, 1},
+		{5, 5, 5},
+		{6, 4, 7},
+		{6, 6, 9},
 	}
 	for _, c := range cases {
 		got := scripted(c.row, c.col).EvenDist1to9()
@@ -31,8 +37,13 @@ func TestEvenDist0to9(t *testing.T) {
 	cases := []struct {
 		row, col, want int
 	}{
-		{1, 1, 0}, {1, 4, 1}, {2, 3, 2}, {2, 6, 3},
-		{3, 1, 4}, {4, 4, 7}, {5, 6, 9},
+		{1, 1, 0},
+		{1, 4, 1},
+		{2, 3, 2},
+		{2, 6, 3},
+		{3, 1, 4},
+		{4, 4, 7},
+		{5, 6, 9},
 	}
 	for _, c := range cases {
 		got := scripted(c.row, c.col).EvenDist0to9()
@@ -84,7 +95,13 @@ func TestIndex(t *testing.T) {
 		expected := draws / n
 		for v, c := range counts {
 			if c < expected*3/4 || c > expected*5/4 {
-				t.Errorf("Index(%d) value %d appeared %d times, want ~%d (uneven)", n, v, c, expected)
+				t.Errorf(
+					"Index(%d) value %d appeared %d times, want ~%d (uneven)",
+					n,
+					v,
+					c,
+					expected,
+				)
 			}
 		}
 	}

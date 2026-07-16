@@ -16,10 +16,18 @@ func humanSpecies() sophont.Species {
 	}
 	return sophont.Species{
 		Chars: [6]sophont.CharSpec{
-			{Name: sophont.Str, Dice: 2}, {Name: sophont.Dex, Dice: 2}, {Name: sophont.End, Dice: 2},
-			{Name: sophont.Int, Dice: 2}, {Name: sophont.Edu, Dice: 2}, {Name: sophont.Soc, Dice: 2},
+			{Name: sophont.Str, Dice: 2},
+			{Name: sophont.Dex, Dice: 2},
+			{Name: sophont.End, Dice: 2},
+			{Name: sophont.Int, Dice: 2},
+			{Name: sophont.Edu, Dice: 2},
+			{Name: sophont.Soc, Dice: 2},
 		},
-		Gender: sophont.Gender{Structure: sophont.Solitaire, Genders: []string{"Solo"}, Table: table},
+		Gender: sophont.Gender{
+			Structure: sophont.Solitaire,
+			Genders:   []string{"Solo"},
+			Table:     table,
+		},
 	}
 }
 

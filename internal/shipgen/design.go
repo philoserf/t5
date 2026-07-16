@@ -44,15 +44,25 @@ func Design(spec ShipSpec) Ship {
 	// computed since the first commit and read by nothing, so a Cluster with a huge
 	// maneuver drive designed clean and then flew at 8G in a fight.
 	if ship.Maneuver != nil && ship.Maneuver.Potential > h.MaxG {
-		problems = append(problems, fmt.Sprintf("maneuver drive rated %dG but a %s hull is capped at %dG",
-			ship.Maneuver.Potential, h.Config, h.MaxG))
+		problems = append(
+			problems,
+			fmt.Sprintf("maneuver drive rated %dG but a %s hull is capped at %dG",
+				ship.Maneuver.Potential, h.Config, h.MaxG),
+		)
 	}
 
 	switch {
 	case powered > 0 && ship.Power == nil:
 		problems = append(problems, "drives require a power plant")
 	case ship.Power != nil && ship.Power.Potential < powered:
-		problems = append(problems, fmt.Sprintf("power plant potential %d is below the drives it feeds (%d)", ship.Power.Potential, powered))
+		problems = append(
+			problems,
+			fmt.Sprintf(
+				"power plant potential %d is below the drives it feeds (%d)",
+				ship.Power.Potential,
+				powered,
+			),
+		)
 	}
 
 	ship.Fuel = fuel(h.Tons, ship.Jump, ship.Power, spec.FuelScoop, spec.FuelPurifier)

@@ -78,7 +78,12 @@ func TestAgingCheckResetsZeroToOne(t *testing.T) {
 	// Str rolls 4 (ages), Dex and End roll 12 (safe).
 	AgingCheck(dice.NewScripted(2, 2, 6, 6, 6, 6), &c)
 	if c.scores[Strength] != 1 || c.Dead || c.extremeAgings != 0 {
-		t.Fatalf("reset case = %v dead=%v extreme=%d, want Str 1, alive, 0 extreme", c.scores, c.Dead, c.extremeAgings)
+		t.Fatalf(
+			"reset case = %v dead=%v extreme=%d, want Str 1, alive, 0 extreme",
+			c.scores,
+			c.Dead,
+			c.extremeAgings,
+		)
 	}
 }
 

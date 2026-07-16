@@ -108,7 +108,11 @@ func classify(typeFlux, sizeFlux, decimal int, pickB bool) Star {
 // 1D-1, size = primarySize + 1D+2). It returns the star and the Flux values a
 // companion would build on. A BD short-circuits: its decimal, size, and OB
 // selection are not rolled.
-func rollStar(r *dice.Roller, primary bool, primaryType, primarySize int) (star Star, typeFlux, sizeFlux int) {
+func rollStar(
+	r *dice.Roller,
+	primary bool,
+	primaryType, primarySize int,
+) (star Star, typeFlux, sizeFlux int) {
 	if primary {
 		typeFlux = r.Flux()
 	} else {

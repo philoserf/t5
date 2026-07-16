@@ -57,15 +57,27 @@ func TestGrantCascadeKKS(t *testing.T) {
 	var s Set
 	s.GrantCascade("Pilot", "Small Craft") // 1: knowledge 1, skill 0
 	if s.KnowledgeLevel("Pilot", "Small Craft") != 1 || s.Level("Pilot") != 0 {
-		t.Fatalf("after 1st: K=%d S=%d, want 1/0", s.KnowledgeLevel("Pilot", "Small Craft"), s.Level("Pilot"))
+		t.Fatalf(
+			"after 1st: K=%d S=%d, want 1/0",
+			s.KnowledgeLevel("Pilot", "Small Craft"),
+			s.Level("Pilot"),
+		)
 	}
 	s.GrantCascade("Pilot", "Small Craft") // 2: knowledge 2
 	if s.KnowledgeLevel("Pilot", "Small Craft") != 2 || s.Level("Pilot") != 0 {
-		t.Fatalf("after 2nd: K=%d S=%d, want 2/0", s.KnowledgeLevel("Pilot", "Small Craft"), s.Level("Pilot"))
+		t.Fatalf(
+			"after 2nd: K=%d S=%d, want 2/0",
+			s.KnowledgeLevel("Pilot", "Small Craft"),
+			s.Level("Pilot"),
+		)
 	}
 	s.GrantCascade("Pilot", "Small Craft") // 3: skill 1
 	if s.KnowledgeLevel("Pilot", "Small Craft") != 2 || s.Level("Pilot") != 1 {
-		t.Fatalf("after 3rd: K=%d S=%d, want 2/1", s.KnowledgeLevel("Pilot", "Small Craft"), s.Level("Pilot"))
+		t.Fatalf(
+			"after 3rd: K=%d S=%d, want 2/1",
+			s.KnowledgeLevel("Pilot", "Small Craft"),
+			s.Level("Pilot"),
+		)
 	}
 	s.GrantCascade("Pilot", "Small Craft") // 4: skill 2
 	if s.Level("Pilot") != 2 {

@@ -40,9 +40,18 @@ func TestDriveTonsBase(t *testing.T) {
 		ord  int
 		tons int
 	}{
-		{Maneuver, 1, 2}, {Maneuver, 24, 47}, {Maneuver, 26, 50}, {Maneuver, 48, 94},
-		{Jump, 1, 10}, {Jump, 24, 125}, {Jump, 26, 140}, {Jump, 48, 250},
-		{Power, 1, 4}, {Power, 24, 73}, {Power, 26, 80}, {Power, 48, 146},
+		{Maneuver, 1, 2},
+		{Maneuver, 24, 47},
+		{Maneuver, 26, 50},
+		{Maneuver, 48, 94},
+		{Jump, 1, 10},
+		{Jump, 24, 125},
+		{Jump, 26, 140},
+		{Jump, 48, 250},
+		{Power, 1, 4},
+		{Power, 24, 73},
+		{Power, 26, 80},
+		{Power, 48, 146},
 	}
 	for _, c := range cases {
 		if got := driveTonsBase(c.kind, c.ord); got != c.tons {
@@ -57,9 +66,16 @@ func TestAvailabilityMax(t *testing.T) {
 		tl   int
 		max  int
 	}{
-		{Maneuver, 8, 0}, {Maneuver, 12, 7}, {Maneuver, 13, 9}, {Maneuver, 20, 9},
-		{Jump, 9, 1}, {Jump, 12, 3}, {Jump, 18, 9},
-		{Power, 8, 1}, {Power, 12, 5}, {Power, 16, 9},
+		{Maneuver, 8, 0},
+		{Maneuver, 12, 7},
+		{Maneuver, 13, 9},
+		{Maneuver, 20, 9},
+		{Jump, 9, 1},
+		{Jump, 12, 3},
+		{Jump, 18, 9},
+		{Power, 8, 1},
+		{Power, 12, 5},
+		{Power, 16, 9},
 	}
 	for _, c := range cases {
 		if got := availabilityMax(c.kind, c.tl); got != c.max {

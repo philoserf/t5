@@ -9,10 +9,18 @@ func TestHullCostLinear(t *testing.T) {
 		config  Config
 		mcr     int
 	}{
-		{1, Lifting, 16}, {2, Lifting, 28}, {24, Lifting, 292}, // Murphy is Lifting-A = 16
-		{1, Cluster, 2}, {24, Cluster, 48},
-		{1, Streamlined, 8}, {2, Streamlined, 14}, {24, Streamlined, 146},
-		{1, Airframe, 9}, {1, Unstreamlined, 5}, {1, Braced, 3}, {1, Planetoid, 1},
+		{1, Lifting, 16},
+		{2, Lifting, 28},
+		{24, Lifting, 292}, // Murphy is Lifting-A = 16
+		{1, Cluster, 2},
+		{24, Cluster, 48},
+		{1, Streamlined, 8},
+		{2, Streamlined, 14},
+		{24, Streamlined, 146},
+		{1, Airframe, 9},
+		{1, Unstreamlined, 5},
+		{1, Braced, 3},
+		{1, Planetoid, 1},
 	}
 	for _, c := range cases {
 		if got := hullCostMCr(c.ordinal, c.config); got != c.mcr {

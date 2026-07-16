@@ -33,7 +33,16 @@ func TestRollGasGiants(t *testing.T) {
 	// Four gas giants, sized 2D each: SGG (23), LGG (27), SGG (25), SGG (23).
 	// Every second Small Gas Giant becomes an Ice Giant, so the 3rd (the 2nd
 	// Small) converts: SGG, LGG, IG, SGG.
-	r := dice.NewScripted(2, 2 /*2D=4 -> 23*/, 4, 4 /*2D=8 -> 27*/, 3, 3 /*2D=6 -> 25*/, 2, 2 /*2D=4 -> 23*/)
+	r := dice.NewScripted(
+		2,
+		2, /*2D=4 -> 23*/
+		4,
+		4, /*2D=8 -> 27*/
+		3,
+		3, /*2D=6 -> 25*/
+		2,
+		2, /*2D=4 -> 23*/
+	)
 	giants := rollGasGiants(r, 4)
 	want := []struct {
 		size  int

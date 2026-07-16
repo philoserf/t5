@@ -94,7 +94,17 @@ func (s Species) Human() bool {
 func (s Species) String() string {
 	var b strings.Builder
 	fmt.Fprintf(&b, "%s %s", s.GeneticProfile, s.Homeworld.Profile)
-	fmt.Fprintf(&b, " %s/%s/%s %s Size %d Lifespan %d %s", s.Environment.Terrain, s.Environment.Locomotion, s.Environment.Class, s.Environment.Niche, s.Size, s.LifeCycle.Lifespan, s.Gender.Structure)
+	fmt.Fprintf(
+		&b,
+		" %s/%s/%s %s Size %d Lifespan %d %s",
+		s.Environment.Terrain,
+		s.Environment.Locomotion,
+		s.Environment.Class,
+		s.Environment.Niche,
+		s.Size,
+		s.LifeCycle.Lifespan,
+		s.Gender.Structure,
+	)
 	if s.Caste != nil {
 		fmt.Fprintf(&b, " %s-caste", s.Caste.Structure)
 	}

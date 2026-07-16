@@ -61,11 +61,17 @@ func TestNicheTablesTranscription(t *testing.T) {
 		flux  int
 		want  string
 	}{
-		{"Carnivore", -6, "Pouncer"}, {"Carnivore", 0, "Chaser"}, {"Carnivore", 4, "Trapper"},
-		{"Carnivore", 5, "Siren"}, {"Carnivore", 6, "Killer"},
-		{"Omnivore", -1, "Gatherer"}, {"Omnivore", 6, "Eater"},
-		{"Scavenger", -3, "Hijacker"}, {"Scavenger", 5, "Reducer"},
-		{"Herbivore", -3, "Intermittent"}, {"Herbivore", 6, "Filter"},
+		{"Carnivore", -6, "Pouncer"},
+		{"Carnivore", 0, "Chaser"},
+		{"Carnivore", 4, "Trapper"},
+		{"Carnivore", 5, "Siren"},
+		{"Carnivore", 6, "Killer"},
+		{"Omnivore", -1, "Gatherer"},
+		{"Omnivore", 6, "Eater"},
+		{"Scavenger", -3, "Hijacker"},
+		{"Scavenger", 5, "Reducer"},
+		{"Herbivore", -3, "Intermittent"},
+		{"Herbivore", 6, "Filter"},
 		{"Producer", 0, "Basker"},
 	}
 	for _, c := range subs {
@@ -99,9 +105,15 @@ func TestCasteColumnsTranscription(t *testing.T) {
 		flux      int
 		want      string
 	}{
-		{Body, -5, "Healer"}, {Body, -3, "Antibody"}, {Body, 3, "Voice"}, {Body, 5, "Claw"},
-		{Military, -5, "Medic"}, {Military, -2, "Scout"}, {Military, 2, "Warrior"},
-		{Economic, 5, "Entrepreneur"}, {Social, 3, "Patron"},
+		{Body, -5, "Healer"},
+		{Body, -3, "Antibody"},
+		{Body, 3, "Voice"},
+		{Body, 5, "Claw"},
+		{Military, -5, "Medic"},
+		{Military, -2, "Scout"},
+		{Military, 2, "Warrior"},
+		{Economic, 5, "Entrepreneur"},
+		{Social, 3, "Patron"},
 	}
 	for _, c := range cases {
 		if got := casteColumns[c.structure][idx5(c.flux)]; got != c.want {
@@ -131,10 +143,17 @@ func TestGenderColumnsTranscription(t *testing.T) {
 		flux      int
 		want      string
 	}{
-		{Dual, -1, "Male"}, {Dual, 0, "Female"}, {Dual, 4, "Female"}, {Dual, 5, "Male"},
-		{EAB, -2, "Activator"}, {EAB, 1, "Bearer"},
-		{FMN, 1, "Neuter"}, {FMN, 4, "Male"},
-		{Group, -1, "Two"}, {Group, 0, "One"}, {Group, 5, "Six"},
+		{Dual, -1, "Male"},
+		{Dual, 0, "Female"},
+		{Dual, 4, "Female"},
+		{Dual, 5, "Male"},
+		{EAB, -2, "Activator"},
+		{EAB, 1, "Bearer"},
+		{FMN, 1, "Neuter"},
+		{FMN, 4, "Male"},
+		{Group, -1, "Two"},
+		{Group, 0, "One"},
+		{Group, 5, "Six"},
 	}
 	for _, c := range cases {
 		if got := genderColumns[c.structure][idx5(c.flux)]; got != c.want {

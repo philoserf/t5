@@ -35,19 +35,54 @@ var RogueCareer = Career{
 	BenefitDM:        DMTerms,
 	Skills: SkillGrid{
 		// Col 0 — Personal.
-		{bump(Strength), bump(Dexterity), bump(Endurance), bump(Intelligence), bump(Education), bump(Social)},
+		{
+			bump(Strength),
+			bump(Dexterity),
+			bump(Endurance),
+			bump(Intelligence),
+			bump(Education),
+			bump(Social),
+		},
 		// Col 1 — Academic (Major/Minor lost without the education stage).
 		{choose(sciences...), major, minor, choose(oneArt...), choose(theTrades...), sk("Gambler")},
 		// Col 2 — World Travel.
-		{sk("Driver"), sk("Flyer"), sk("Hostile Environ"), sk("High-G"), sk("Vacc Suit"), sk("Navigation")},
+		{
+			sk("Driver"),
+			sk("Flyer"),
+			sk("Hostile Environ"),
+			sk("High-G"),
+			sk("Vacc Suit"),
+			sk("Navigation"),
+		},
 		// Col 3 — Space Travel ("Astrogator" on p. 84 is the Astrogation skill).
-		{choose(starshipSkls...), sk("Pilot"), sk("Engineer"), sk("Zero-G"), sk("Vacc Suit"), sk("Astrogation")},
+		{
+			choose(starshipSkls...),
+			sk("Pilot"),
+			sk("Engineer"),
+			sk("Zero-G"),
+			sk("Vacc Suit"),
+			sk("Astrogation"),
+		},
 		// Col 4 — Business.
 		{sk("Trader"), sk("Broker"), sk("Computer"), sk("JOT"), sk("Teacher"), sk("Fighter")},
 		// Col 5 — Vocation.
-		{sk("Advocate"), sk("Counsellor"), cascade("Language", languages...), sk("Leader"), sk("Streetwise"), sk("Comms")},
+		{
+			sk("Advocate"),
+			sk("Counsellor"),
+			cascade("Language", languages...),
+			sk("Leader"),
+			sk("Streetwise"),
+			sk("Comms"),
+		},
 		// Col 6 — Avocation.
-		{choose(oneArt...), choose(sciences...), sk("Athlete"), choose(soldierSkls...), choose(starshipSkls...), choose(theTrades...)},
+		{
+			choose(oneArt...),
+			choose(sciences...),
+			sk("Athlete"),
+			choose(soldierSkls...),
+			choose(starshipSkls...),
+			choose(theTrades...),
+		},
 	},
 	// Muster-out (Book 1 p. 84), indexed 1-12 by (1D + DM). Money-column passages
 	// are recorded at their standard cash value.

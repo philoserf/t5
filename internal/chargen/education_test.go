@@ -92,7 +92,11 @@ func TestEducateSelectsUniversity(t *testing.T) {
 	seq := []int{3, 4, 3, 4, 3, 4, 3, 4, 3, 4} // apply + four passes, each 7 <= Edu 7
 	educate(dice.NewScripted(seq...), &eduPolicy{picks: []string{"Physics", "History"}}, &c)
 	if c.Score(Education) != 9 || len(c.Degrees) != 1 {
-		t.Errorf("University graduation: Edu = %d degrees %v, want 9 / [BA]", c.Score(Education), c.Degrees)
+		t.Errorf(
+			"University graduation: Edu = %d degrees %v, want 9 / [BA]",
+			c.Score(Education),
+			c.Degrees,
+		)
 	}
 }
 
@@ -170,12 +174,28 @@ func (gradPolicy) PursueGraduateSchool(Character) bool { return true }
 func TestGraduateLadder(t *testing.T) {
 	c := Character{scores: [count]int{7, 7, 7, 8, 6, 7}} // Int 8, Edu 6 -> College
 	seq := []int{
-		3, 4, // College apply Check Int(8): 7 <= 8, admitted
-		3, 4, 3, 4, 3, 4, 3, 4, // 4 College years pass -> Psychology-4, Robotics-2, BA, Edu 8
-		3, 4, // Masters apply (best of Int 8/Edu 8): 7 <= 8, admitted
-		3, 4, 3, 4, // 2 Masters years pass -> Major +2 (Psych 4->6), Minor +1 (Robotics 2->3), MA, Edu 9
-		3, 4, // Professors apply (best of Int 8/Edu 9): 7 <= 9, admitted
-		3, 4, 3, 4, // 2 Professors years pass -> Major +2 (Psych 6->8), Minor +1 (Robotics 3->4), Edu 12
+		3,
+		4, // College apply Check Int(8): 7 <= 8, admitted
+		3,
+		4,
+		3,
+		4,
+		3,
+		4,
+		3,
+		4, // 4 College years pass -> Psychology-4, Robotics-2, BA, Edu 8
+		3,
+		4, // Masters apply (best of Int 8/Edu 8): 7 <= 8, admitted
+		3,
+		4,
+		3,
+		4, // 2 Masters years pass -> Major +2 (Psych 4->6), Minor +1 (Robotics 2->3), MA, Edu 9
+		3,
+		4, // Professors apply (best of Int 8/Edu 9): 7 <= 9, admitted
+		3,
+		4,
+		3,
+		4, // 2 Professors years pass -> Major +2 (Psych 6->8), Minor +1 (Robotics 3->4), Edu 12
 	}
 	educate(dice.NewScripted(seq...), gradPolicy{}, &c)
 	// All five higher-ed programs award Major+1/pass and Minor+1/2-passes (p.60's
@@ -238,7 +258,11 @@ func TestProfessorsNeedsMasters(t *testing.T) {
 	c := Character{scores: [count]int{7, 7, 7, 9, 9, 7}, Degrees: []string{"BA"}}
 	attendAcademic(dice.NewScripted(1, 1, 1, 1, 1, 1), DefaultPolicy{}, &c, professors)
 	if c.hasDegree("Professor") || c.Score(Education) != 9 {
-		t.Errorf("Professors admitted without an MA: degrees %v Edu %d", c.Degrees, c.Score(Education))
+		t.Errorf(
+			"Professors admitted without an MA: degrees %v Edu %d",
+			c.Degrees,
+			c.Score(Education),
+		)
 	}
 }
 

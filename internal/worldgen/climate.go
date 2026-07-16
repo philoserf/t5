@@ -55,7 +55,8 @@ func ClimateCodes(p uwp.Profile, orbit, hzOrbit int, hasHZ bool) []string {
 // tropicUWP reports the temperate-band shape Tr/Tu share (Book 3 p.26): a
 // mid-to-large world with a breathable-ish atmosphere and moderate hydrographics.
 func tropicUWP(p uwp.Profile) bool {
-	return allows("6789", p.Size) && allows("456789", p.Atmosphere) && allows("34567", p.Hydrographics)
+	return allows("6789", p.Size) && allows("456789", p.Atmosphere) &&
+		allows("34567", p.Hydrographics)
 }
 
 // frozenUWP reports the Frozen shape (Book 3 p.26): any sized world that still

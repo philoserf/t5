@@ -307,7 +307,10 @@ func (s System) Stars() []StarSlot {
 		{"Far Companion", s.FarCompanion, -1, true},
 	} {
 		if e.star != nil {
-			slots = append(slots, StarSlot{Label: e.label, Star: *e.star, Orbit: e.orbit, Companion: e.companion})
+			slots = append(
+				slots,
+				StarSlot{Label: e.label, Star: *e.star, Orbit: e.orbit, Companion: e.companion},
+			)
 		}
 	}
 	return slots

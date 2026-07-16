@@ -41,7 +41,12 @@ func (rec Record) Sheet() string {
 	// The mainworld's codes are finalized in phases (base+zone at generation, climate
 	// and satellite at placement, a capital in the region survey), so unlike a
 	// non-mainworld they are ordered here, at render, not at the source.
-	field("Mainworld", "%s  %s", mw.Profile, strings.Join(worldgen.OrderTradeCodes(mw.TradeCodes), " "))
+	field(
+		"Mainworld",
+		"%s  %s",
+		mw.Profile,
+		strings.Join(worldgen.OrderTradeCodes(mw.TradeCodes), " "),
+	)
 	field("Extensions", "%s   RU %d", mw.Extensions(), mw.Economic.RU())
 	field("Traffic", "~%s/week", plural(route.ExpectedTraffic(mw.Importance), "ship", "ships"))
 	if mw.Nobility != "" {

@@ -55,7 +55,8 @@ func TestArmorLayersAndStructures(t *testing.T) {
 		t.Errorf("single-layer armor should be free, got %dt", a.Tons)
 	}
 	// Structure armor values (Book 2 p.75 B).
-	if structureAV(FeNi, 12) != 20 || structureAV(Charged, 12) != 24 || structureAV(FramePlate, 12) != 12 {
+	if structureAV(FeNi, 12) != 20 || structureAV(Charged, 12) != 24 ||
+		structureAV(FramePlate, 12) != 12 {
 		t.Errorf("structure AV wrong")
 	}
 }

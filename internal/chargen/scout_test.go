@@ -130,7 +130,11 @@ func TestScoutCourierDuty(t *testing.T) {
 	// goldenPolicy picks column 3 (Exploration); die 1 -> Survey.
 	got := runTerm(dice.NewScripted(1, 1, 1, 1), courierPolicy{}, &c, &run, ScoutCareer)
 	if got != Ongoing || c.WoundBadges != 0 {
-		t.Errorf("Courier duty: outcome %v wounds %d, want Ongoing/0 (no Risk & Reward)", got, c.WoundBadges)
+		t.Errorf(
+			"Courier duty: outcome %v wounds %d, want Ongoing/0 (no Risk & Reward)",
+			got,
+			c.WoundBadges,
+		)
 	}
 	if c.Skills.Level("Survey") != 4 {
 		t.Errorf("Survey = %d, want 4 (Courier grants 4 skills, not 8)", c.Skills.Level("Survey"))

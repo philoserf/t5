@@ -92,7 +92,8 @@ func TestSheetRendersOrbitTree(t *testing.T) {
 			break
 		}
 	}
-	if withMoon == "" || !strings.Contains(withMoon, "moon ") && !strings.Contains(withMoon, "Ring") {
+	if withMoon == "" ||
+		!strings.Contains(withMoon, "moon ") && !strings.Contains(withMoon, "Ring") {
 		t.Errorf("a system with satellites rendered no moon or ring:\n%s", withMoon)
 	}
 	if withGiant == "" || !strings.Contains(withGiant, "Gas Giant") {

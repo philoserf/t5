@@ -51,7 +51,8 @@ func TradeClassificationsWithContext(p uwp.Profile, ctx WorldContext) []string {
 		// base classifier emitted before considering Pe below.
 		tcs = slices.DeleteFunc(tcs, func(code string) bool { return code == "Px" })
 		// Fa Farming: in the habitable zone, Atm 4-9, Hyd 4-8, Pop 2-6.
-		if inHZ && allows("456789", p.Atmosphere) && allows("45678", p.Hydrographics) && allows("23456", p.Population) {
+		if inHZ && allows("456789", p.Atmosphere) && allows("45678", p.Hydrographics) &&
+			allows("23456", p.Population) {
 			tcs = append(tcs, "Fa")
 		}
 		// Mi Mining: Pop 2-6 and the system mainworld is Industrial.

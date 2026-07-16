@@ -30,7 +30,18 @@ func TestPortFacilities(t *testing.T) {
 		refuel   string
 	}{
 		{'A', 7, "Excellent", "Starships", Overhaul, RefinedFuel, true, false, true, "2D"},
-		{'A', 6, "Excellent", "Starships", Overhaul, RefinedFuel, true, false, false, "2D"}, // Pop below highport threshold
+		{
+			'A',
+			6,
+			"Excellent",
+			"Starships",
+			Overhaul,
+			RefinedFuel,
+			true,
+			false,
+			false,
+			"2D",
+		}, // Pop below highport threshold
 		{'B', 8, "Good", "Spacecraft", Overhaul, RefinedFuel, true, false, true, "2D"},
 		{'C', 9, "Routine", "", MajorRepairs, UnrefinedFuel, true, false, true, "4D"},
 		{'C', 8, "Routine", "", MajorRepairs, UnrefinedFuel, true, false, false, "4D"},
@@ -60,10 +71,12 @@ func TestPortFacilities(t *testing.T) {
 }
 
 func TestFuelAndRepairStrings(t *testing.T) {
-	if RefinedFuel.String() != "Refined+Unrefined" || UnrefinedFuel.String() != "Unrefined" || NoFuel.String() != "None" {
+	if RefinedFuel.String() != "Refined+Unrefined" || UnrefinedFuel.String() != "Unrefined" ||
+		NoFuel.String() != "None" {
 		t.Errorf("FuelKind.String mismatch")
 	}
-	if Overhaul.String() != "Overhaul" || MajorRepairs.String() != "Major" || NoRepairs.String() != "None" {
+	if Overhaul.String() != "Overhaul" || MajorRepairs.String() != "Major" ||
+		NoRepairs.String() != "None" {
 		t.Errorf("RepairLevel.String mismatch")
 	}
 }

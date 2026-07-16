@@ -31,16 +31,27 @@ func TestGoldenCraftsman(t *testing.T) {
 
 	// goldenPolicy (scout_test.go) picks skill column 3; for the Craftsman grid
 	// that column is General (Animals at row 1).
-	c := GenerateCareered(dice.NewScripted(seq...), goldenPolicy{}, worldgen.World{}, CraftsmanCareer)
+	c := GenerateCareered(
+		dice.NewScripted(seq...),
+		goldenPolicy{},
+		worldgen.World{},
+		CraftsmanCareer,
+	)
 
 	if got := c.UPP(); got != "877777" {
 		t.Errorf("UPP = %q, want %q (Str 7 +1 muster benefit)", got, "877777")
 	}
 	if c.Masterpieces != 0 {
-		t.Errorf("Masterpieces = %d, want 0 (a fresh Craftsman cannot reach 40 Master Points)", c.Masterpieces)
+		t.Errorf(
+			"Masterpieces = %d, want 0 (a fresh Craftsman cannot reach 40 Master Points)",
+			c.Masterpieces,
+		)
 	}
 	if c.Skills.Level("Craftsman") != 2 {
-		t.Errorf("Craftsman = %d, want 2 (+1 per term from failed attempts)", c.Skills.Level("Craftsman"))
+		t.Errorf(
+			"Craftsman = %d, want 2 (+1 per term from failed attempts)",
+			c.Skills.Level("Craftsman"),
+		)
 	}
 	if c.Skills.Level("Animals") != 10 {
 		t.Errorf("Animals = %d, want 10 (5 skills x 2 terms)", c.Skills.Level("Animals"))
@@ -69,6 +80,9 @@ func TestCraftsmanMasterpiece(t *testing.T) {
 		t.Errorf("MasterpieceValue = %d, want 230000", c.MasterpieceValue)
 	}
 	if c.Skills.Level("Craftsman") != 11 {
-		t.Errorf("Craftsman = %d, want 11 (+1 from the successful term)", c.Skills.Level("Craftsman"))
+		t.Errorf(
+			"Craftsman = %d, want 11 (+1 from the successful term)",
+			c.Skills.Level("Craftsman"),
+		)
 	}
 }

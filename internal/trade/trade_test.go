@@ -59,7 +59,11 @@ func TestCostChartExample(t *testing.T) {
 	if got := Cost(8, []string{"De", "Hi", "In", "Na", "Po"}); got != 1800 {
 		t.Errorf("cost = %d, want 1800", got)
 	}
-	if got := CargoID(8, []string{"De", "Hi", "In", "Na", "Po"}, ""); got != "8-De Hi In Na Po Cr1,800" {
+	if got := CargoID(
+		8,
+		[]string{"De", "Hi", "In", "Na", "Po"},
+		"",
+	); got != "8-De Hi In Na Po Cr1,800" {
 		t.Errorf("Cargo ID = %q, want %q", got, "8-De Hi In Na Po Cr1,800")
 	}
 }

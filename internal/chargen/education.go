@@ -46,10 +46,42 @@ type academicProgram struct {
 }
 
 var (
-	college    = academicProgram{name: "College", years: 4, awardsMajor: true, awardsMinor: true, preReqEdu: 5, gradEdu: 8, degree: "BA"}
-	university = academicProgram{name: "University", years: 4, awardsMajor: true, awardsMinor: true, preReqEdu: 7, gradEdu: 9, degree: "BA"}
-	masters    = academicProgram{name: "Masters", years: 2, awardsMajor: true, awardsMinor: true, preReqDegree: "BA", gradEdu: 9, degree: "MA"}
-	professors = academicProgram{name: "Professors", years: 2, awardsMajor: true, awardsMinor: true, preReqDegree: "MA", gradEdu: 12, degree: "Professor"}
+	college = academicProgram{
+		name:        "College",
+		years:       4,
+		awardsMajor: true,
+		awardsMinor: true,
+		preReqEdu:   5,
+		gradEdu:     8,
+		degree:      "BA",
+	}
+	university = academicProgram{
+		name:        "University",
+		years:       4,
+		awardsMajor: true,
+		awardsMinor: true,
+		preReqEdu:   7,
+		gradEdu:     9,
+		degree:      "BA",
+	}
+	masters = academicProgram{
+		name:         "Masters",
+		years:        2,
+		awardsMajor:  true,
+		awardsMinor:  true,
+		preReqDegree: "BA",
+		gradEdu:      9,
+		degree:       "MA",
+	}
+	professors = academicProgram{
+		name:         "Professors",
+		years:        2,
+		awardsMajor:  true,
+		awardsMinor:  true,
+		preReqDegree: "MA",
+		gradEdu:      12,
+		degree:       "Professor",
+	}
 )
 
 // academicMajors is a representative list of College Major/Minor subjects (the

@@ -63,19 +63,61 @@ var MarineCareer = Career{
 	},
 	Skills: SkillGrid{
 		// Col 0 — Personal.
-		{bump(Strength), bump(Dexterity), bump(Endurance), bump(Intelligence), bump(Education), bump(Social)},
+		{
+			bump(Strength),
+			bump(Dexterity),
+			bump(Endurance),
+			bump(Intelligence),
+			bump(Education),
+			bump(Social),
+		},
 		// Col 1 — Garrison (Major/Minor lost without the education stage).
 		{choose(theTrades...), major, minor, sk("Gambler"), sk("Athlete"), choose(theTrades...)},
 		// Col 2 — Combat.
-		{sk("Fighter"), sk("Fighter"), choose(soldierSkls...), choose(soldierSkls...), sk("Leader"), sk("Tactics")},
+		{
+			sk("Fighter"),
+			sk("Fighter"),
+			choose(soldierSkls...),
+			choose(soldierSkls...),
+			sk("Leader"),
+			sk("Tactics"),
+		},
 		// Col 3 — Peacekeeper.
-		{sk("Vacc Suit"), sk("Fighter"), sk("Hostile Environ"), sk("Stealth"), sk("Leader"), sk("Tactics")},
+		{
+			sk("Vacc Suit"),
+			sk("Fighter"),
+			sk("Hostile Environ"),
+			sk("Stealth"),
+			sk("Leader"),
+			sk("Tactics"),
+		},
 		// Col 4 — Occupation.
-		{sk("Fighter"), sk("Fighter"), sk("Flyer"), sk("Stealth"), sk("Leader"), sk("Heavy Weapons")},
+		{
+			sk("Fighter"),
+			sk("Fighter"),
+			sk("Flyer"),
+			sk("Stealth"),
+			sk("Leader"),
+			sk("Heavy Weapons"),
+		},
 		// Col 5 — Mission.
-		{choose(soldierSkls...), sk("Survival"), cascade("Language", languages...), sk("Gunner"), sk("Leader"), sk("Fighter")},
+		{
+			choose(soldierSkls...),
+			sk("Survival"),
+			cascade("Language", languages...),
+			sk("Gunner"),
+			sk("Leader"),
+			sk("Fighter"),
+		},
 		// Col 6 — Technical.
-		{choose(oneArt...), choose(sciences...), sk("Explosives"), sk("Medic"), sk("Seafarer"), choose(theTrades...)},
+		{
+			choose(oneArt...),
+			choose(sciences...),
+			sk("Explosives"),
+			sk("Medic"),
+			sk("Seafarer"),
+			choose(theTrades...),
+		},
 	},
 	// Muster-out (Book 1 p. 86), indexed 1-12 by (1D + DM). Money passages are
 	// recorded at cash value; "Retire x2" is a named retirement benefit. Rows 11

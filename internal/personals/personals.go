@@ -119,7 +119,12 @@ const (
 // Resolve resolves a Personal Interaction (Book 1 p.184): Target = strategyValue
 // × tacticMult + lawMod + the situational mods; the Purpose's dice are rolled at
 // or under the Target. A tacticMult of 1 means no Tactic multiplier is applied.
-func Resolve(r *dice.Roller, purpose Purpose, strategyValue, tacticMult, lawMod int, mods ...int) dice.CheckResult {
+func Resolve(
+	r *dice.Roller,
+	purpose Purpose,
+	strategyValue, tacticMult, lawMod int,
+	mods ...int,
+) dice.CheckResult {
 	return task.ResolveDice(r, purpose.Dice(), strategyValue*tacticMult+lawMod, mods...)
 }
 

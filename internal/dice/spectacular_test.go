@@ -60,7 +60,11 @@ func TestCheckResultSpectacular(t *testing.T) {
 		t.Errorf("Spectacular() = %v, want SpectacularFailure", got)
 	}
 	// A 2D check can never be spectacular.
-	if got := scripted(1, 1).Resolve(Check{Dice: 2, Target: 12}).Spectacular(); got != NotSpectacular {
+	if got := scripted(
+		1,
+		1,
+	).Resolve(Check{Dice: 2, Target: 12}).
+		Spectacular(); got != NotSpectacular {
 		t.Errorf("2D Spectacular() = %v, want NotSpectacular", got)
 	}
 }

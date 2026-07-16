@@ -24,19 +24,25 @@ package chargen
 
 // ScholarCareer is the Scholar (Book 1 p. 76).
 var ScholarCareer = Career{
-	ID:               Scholar,
-	Name:             "Scholar",
-	Qualify:          Qualification{Chars: []Characteristic{Education}}, // an Amateur (Edu <8) rolls 2D <= Edu to Begin
-	PromoteEduMin:    8,                                                 // Edu 8+ auto-begins at Scholar1 and may promote; else an Amateur (rank 0)
+	ID:   Scholar,
+	Name: "Scholar",
+	Qualify: Qualification{
+		Chars: []Characteristic{Education},
+	}, // an Amateur (Edu <8) rolls 2D <= Edu to Begin
+	PromoteEduMin:    8, // Edu 8+ auto-begins at Scholar1 and may promote; else an Amateur (rank 0)
 	CCMode:           RotateCC,
 	ControllingChars: []Characteristic{Strength, Dexterity, Endurance, Intelligence}, // C1 C2 C3 C4
-	Continue:         ContinueRule{UseChar: true, Char: Education, PubsMod: true},    // Edu, Mod +Pubs
-	Advance:          RollLow,
-	EligPerTerm:      4,
-	BenefitDM:        DMTerms,
-	RewardKind:       RewardPublication,
-	EnlistedPromote:  PromotionRule{Char: Intelligence, PubsMod: true}, // Int, Mod +Pubs
-	Tenure:           &TenureRule{Rank: 3, EduMin: 10, PubsMult: 3},    // Scholar3, Edu 10+, Pub×3
+	Continue: ContinueRule{
+		UseChar: true,
+		Char:    Education,
+		PubsMod: true,
+	}, // Edu, Mod +Pubs
+	Advance:         RollLow,
+	EligPerTerm:     4,
+	BenefitDM:       DMTerms,
+	RewardKind:      RewardPublication,
+	EnlistedPromote: PromotionRule{Char: Intelligence, PubsMod: true}, // Int, Mod +Pubs
+	Tenure:          &TenureRule{Rank: 3, EduMin: 10, PubsMult: 3},    // Scholar3, Edu 10+, Pub×3
 	// A single rank ladder (Book 1 p. 76): rank 1 is Lecturer. No auto-skills.
 	EnlistedRanks: []Rank{
 		{Title: "Lecturer"},
@@ -48,19 +54,54 @@ var ScholarCareer = Career{
 	},
 	Skills: SkillGrid{
 		// Col 0 — Personal.
-		{bump(Strength), bump(Dexterity), bump(Endurance), bump(Intelligence), bump(Education), bump(Social)},
+		{
+			bump(Strength),
+			bump(Dexterity),
+			bump(Endurance),
+			bump(Intelligence),
+			bump(Education),
+			bump(Social),
+		},
 		// Col 1 — Academic.
 		{major, major, minor, minor, choose(theTrades...), choose(theTrades...)},
 		// Col 2 — Travel.
-		{sk("Seafarer"), sk("Navigation"), sk("Hostile Environ"), sk("Flyer"), sk("Driver"), sk("Vacc Suit")},
+		{
+			sk("Seafarer"),
+			sk("Navigation"),
+			sk("Hostile Environ"),
+			sk("Flyer"),
+			sk("Driver"),
+			sk("Vacc Suit"),
+		},
 		// Col 3 — General.
-		{sk("Survey"), sk("Astrogation"), sk("Hostile Environ"), sk("Survival"), sk("Animals"), sk("Bureaucrat")},
+		{
+			sk("Survey"),
+			sk("Astrogation"),
+			sk("Hostile Environ"),
+			sk("Survival"),
+			sk("Animals"),
+			sk("Bureaucrat"),
+		},
 		// Col 4 — Conflict.
 		{sk("Fighter"), sk("Fighter"), sk("Stealth"), sk("Flyer"), sk("Gunner"), sk("Sensors")},
 		// Col 5 — Vocation.
-		{sk("Admin"), cascade("Language", languages...), choose(sciences...), sk("Comms"), choose(starshipSkls...), sk("Bureaucrat")},
+		{
+			sk("Admin"),
+			cascade("Language", languages...),
+			choose(sciences...),
+			sk("Comms"),
+			choose(starshipSkls...),
+			sk("Bureaucrat"),
+		},
 		// Col 6 — Avocation.
-		{sk("Seafarer"), choose(oneArt...), choose(sciences...), sk("Athlete"), sk("Medic"), choose(theTrades...)},
+		{
+			sk("Seafarer"),
+			choose(oneArt...),
+			choose(sciences...),
+			sk("Athlete"),
+			sk("Medic"),
+			choose(theTrades...),
+		},
 	},
 	// Muster-out (Book 1 p. 76), indexed 1-12 by (1D + DM). Money passages are
 	// recorded at cash value. Row 12 repeats row 11 (the printed table ends at 11).

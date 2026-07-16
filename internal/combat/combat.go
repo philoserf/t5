@@ -52,7 +52,11 @@ func TargetSize(size, rng int, stance Stance) int {
 // "This Is Hard!" rule) at or under the Shooting Number + target size + mods.
 // Success is a hit. A target size below zero (Size minus Range) means the target
 // cannot be attacked, and the attack automatically fails (Book 1 p.203).
-func Ranged(r *dice.Roller, shootingNumber, weaponSkill, targetSize, rng int, mods ...int) dice.CheckResult {
+func Ranged(
+	r *dice.Roller,
+	shootingNumber, weaponSkill, targetSize, rng int,
+	mods ...int,
+) dice.CheckResult {
 	if targetSize < 0 {
 		return dice.CheckResult{} // Size - Range below zero: the target cannot be attacked
 	}

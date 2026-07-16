@@ -43,13 +43,30 @@ func TestTradeGoodsDetail(t *testing.T) {
 		{[]string{"Fl", "He", "Hi"}, "Fl", "Fl", "Strange"}, // He precedes Hi in chart order
 		{[]string{"Ri"}, "Ri", "Ri", ""},                    // the only class chose the column
 		{[]string{"Hi"}, "Xx", "Fl", "Processed"},           // goods not from the In column
-		{[]string{"Hi"}, "Xx", "In", ""},                    // Hi's Processed omitted for In-column goods
-		{[]string{"Va"}, "Xx", "Ic", "Exotic"},              // goods not from the As column
-		{[]string{"Va"}, "Xx", "As", ""},                    // Va's Exotic omitted for As-column goods
+		{
+			[]string{"Hi"},
+			"Xx",
+			"In",
+			"",
+		}, // Hi's Processed omitted for In-column goods
+		{[]string{"Va"}, "Xx", "Ic", "Exotic"}, // goods not from the As column
+		{
+			[]string{"Va"},
+			"Xx",
+			"As",
+			"",
+		}, // Va's Exotic omitted for As-column goods
 	}
 	for _, c := range cases {
 		if got := tradeGoodsDetail(c.tcs, c.sourceTC, c.col); got != c.want {
-			t.Errorf("tradeGoodsDetail(%v, %q, col %q) = %q, want %q", c.tcs, c.sourceTC, c.col, got, c.want)
+			t.Errorf(
+				"tradeGoodsDetail(%v, %q, col %q) = %q, want %q",
+				c.tcs,
+				c.sourceTC,
+				c.col,
+				got,
+				c.want,
+			)
 		}
 	}
 }
@@ -96,7 +113,14 @@ func TestSelectGoodsColumnDefault(t *testing.T) {
 }
 
 func TestColumnFor(t *testing.T) {
-	cases := map[string]string{"Ga": "Ag-1", "Fa": "Ag-2", "Cp": "CpCsCx", "Cx": "CpCsCx", "Fl": "Fl", "Ri": "Ri"}
+	cases := map[string]string{
+		"Ga": "Ag-1",
+		"Fa": "Ag-2",
+		"Cp": "CpCsCx",
+		"Cx": "CpCsCx",
+		"Fl": "Fl",
+		"Ri": "Ri",
+	}
 	for tc, want := range cases {
 		if got := columnFor(tc); got != want {
 			t.Errorf("columnFor(%q) = %q, want %q", tc, got, want)

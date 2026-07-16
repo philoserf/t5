@@ -33,12 +33,18 @@ func TestGoldenFunctionary(t *testing.T) {
 
 	// goldenPolicy (scout_test.go) picks skill column 3; for the Functionary grid
 	// that column is General (One Trade -> Biologics at row 1).
-	c := GenerateCareered(dice.NewScripted(seq...), goldenPolicy{}, worldgen.World{}, FunctionaryCareer)
+	c := GenerateCareered(
+		dice.NewScripted(seq...),
+		goldenPolicy{},
+		worldgen.World{},
+		FunctionaryCareer,
+	)
 
 	if got := c.UPP(); got != "797887" {
 		t.Errorf("UPP = %q, want %q (Dex 8 +1 muster benefit)", got, "797887")
 	}
-	if c.Skills.Level("Bureaucrat") != 1 || c.Skills.Level("Admin") != 1 || c.Skills.Level("Biologics") != 10 {
+	if c.Skills.Level("Bureaucrat") != 1 || c.Skills.Level("Admin") != 1 ||
+		c.Skills.Level("Biologics") != 10 {
 		t.Errorf("skills: Bureaucrat=%d Admin=%d Biologics=%d, want 1/1/10",
 			c.Skills.Level("Bureaucrat"), c.Skills.Level("Admin"), c.Skills.Level("Biologics"))
 	}
@@ -47,7 +53,11 @@ func TestGoldenFunctionary(t *testing.T) {
 		t.Errorf("record = %+v, want Functionary/2 terms/MusteredOut", rec)
 	}
 	if rec.Officer || rec.Rank != 3 {
-		t.Errorf("rank = %d officer %v, want single-ladder rank 3 (Senior Supervisor)", rec.Rank, rec.Officer)
+		t.Errorf(
+			"rank = %d officer %v, want single-ladder rank 3 (Senior Supervisor)",
+			rec.Rank,
+			rec.Officer,
+		)
 	}
 }
 
@@ -57,11 +67,22 @@ func TestOfficePoliticsRiskFailureEndsCareer(t *testing.T) {
 	c := Character{scores: [count]int{7, 7, 7, 7, 7, 7}}
 	run := careerRun{rank: 1}
 	// Risk 12 fails vs Dex 7; Reward 12 fails too; then 4 skill rolls.
-	got := runPoliticsTerm(dice.NewScripted(6, 6, 6, 6, 1, 1, 1, 1), DefaultPolicy{}, &c, &run, FunctionaryCareer, Dexterity)
+	got := runPoliticsTerm(
+		dice.NewScripted(6, 6, 6, 6, 1, 1, 1, 1),
+		DefaultPolicy{},
+		&c,
+		&run,
+		FunctionaryCareer,
+		Dexterity,
+	)
 	if got != MusteredOut {
 		t.Errorf("outcome = %v, want MusteredOut (job loss)", got)
 	}
 	if c.WoundBadges != 0 || run.rank != 1 {
-		t.Errorf("job loss should not injure or promote: wounds %d rank %d", c.WoundBadges, run.rank)
+		t.Errorf(
+			"job loss should not injure or promote: wounds %d rank %d",
+			c.WoundBadges,
+			run.rank,
+		)
 	}
 }

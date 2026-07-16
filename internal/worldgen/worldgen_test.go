@@ -7,7 +7,18 @@ import (
 )
 
 func TestStarport(t *testing.T) {
-	cases := map[int]byte{2: 'A', 4: 'A', 5: 'B', 6: 'B', 7: 'C', 8: 'C', 9: 'D', 10: 'E', 11: 'E', 12: 'X'}
+	cases := map[int]byte{
+		2:  'A',
+		4:  'A',
+		5:  'B',
+		6:  'B',
+		7:  'C',
+		8:  'C',
+		9:  'D',
+		10: 'E',
+		11: 'E',
+		12: 'X',
+	}
 	for roll, want := range cases {
 		if got := starport(roll); got != want {
 			t.Errorf("starport(%d) = %q, want %q", roll, got, want)
@@ -41,7 +52,14 @@ func TestHydrographics(t *testing.T) {
 	}
 	for _, c := range cases {
 		if got := hydrographics(c.flux, c.atm, c.size); got != c.want {
-			t.Errorf("hydrographics(flux=%d,atm=%d,size=%d) = %d, want %d", c.flux, c.atm, c.size, got, c.want)
+			t.Errorf(
+				"hydrographics(flux=%d,atm=%d,size=%d) = %d, want %d",
+				c.flux,
+				c.atm,
+				c.size,
+				got,
+				c.want,
+			)
 		}
 	}
 }

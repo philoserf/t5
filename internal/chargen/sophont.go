@@ -41,7 +41,12 @@ func GenerateSophont(r *dice.Roller, species sophont.Species) Character {
 // table and applies the resulting trait's characteristic differences. The base
 // gender and the Common caste carry no difference (they are absent from the map);
 // a Skilled caste has an empty table and assigns nothing.
-func rollTrait(r *dice.Roller, c *Character, table [13]string, diffs map[string]sophont.Difference) string {
+func rollTrait(
+	r *dice.Roller,
+	c *Character,
+	table [13]string,
+	diffs map[string]sophont.Difference,
+) string {
 	name := table[r.Dice(2)]
 	if diff, ok := diffs[name]; ok {
 		applyDifference(r, c, diff)

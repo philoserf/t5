@@ -44,9 +44,12 @@ var SpacerCareer = Career{
 	BenefitDM:        DMOfficerRank,
 	RewardKind:       RewardMedal,
 	BranchOps:        &spacerBranchOps,
-	Commission:       PromotionRule{Char: Dexterity},                        // C2
-	EnlistedPromote:  PromotionRule{Char: Dexterity, MedalsAndWounds: true}, // C2* (Rating Promotion)
-	OfficerPromote:   PromotionRule{Char: Social, MedalsAndWounds: true},    // Soc*
+	Commission:       PromotionRule{Char: Dexterity}, // C2
+	EnlistedPromote: PromotionRule{
+		Char:            Dexterity,
+		MedalsAndWounds: true,
+	}, // C2* (Rating Promotion)
+	OfficerPromote: PromotionRule{Char: Social, MedalsAndWounds: true}, // Soc*
 	EnlistedRanks: []Rank{
 		{Title: "Spacehand", Skill: "Fighter"},
 		{Title: "Able Spacer"},
@@ -66,19 +69,61 @@ var SpacerCareer = Career{
 	},
 	Skills: SkillGrid{
 		// Col 0 — Personal.
-		{bump(Strength), bump(Dexterity), bump(Endurance), bump(Intelligence), bump(Education), bump(Social)},
+		{
+			bump(Strength),
+			bump(Dexterity),
+			bump(Endurance),
+			bump(Intelligence),
+			bump(Education),
+			bump(Social),
+		},
 		// Col 1 — Shore Duty (Major/Minor lost without the education stage).
 		{major, major, minor, minor, choose(theTrades...), choose(theTrades...)},
 		// Col 2 — Battle.
-		{sk("Fighter"), sk("Fleet Tactics"), sk("Pilot"), choose(starshipSkls...), sk("Gunner"), sk("Sensors")},
+		{
+			sk("Fighter"),
+			sk("Fleet Tactics"),
+			sk("Pilot"),
+			choose(starshipSkls...),
+			sk("Gunner"),
+			sk("Sensors"),
+		},
 		// Col 3 — Patrol/Strike.
-		{sk("Astrogation"), sk("Fleet Tactics"), sk("Computer"), choose(starshipSkls...), sk("Gunner"), sk("Sensors")},
+		{
+			sk("Astrogation"),
+			sk("Fleet Tactics"),
+			sk("Computer"),
+			choose(starshipSkls...),
+			sk("Gunner"),
+			sk("Sensors"),
+		},
 		// Col 4 — Siege.
-		{sk("Computer"), sk("Strategy"), sk("Counsellor"), sk("Gunner"), sk("Gunner"), sk("Sensors")},
+		{
+			sk("Computer"),
+			sk("Strategy"),
+			sk("Counsellor"),
+			sk("Gunner"),
+			sk("Gunner"),
+			sk("Sensors"),
+		},
 		// Col 5 — Mission.
-		{sk("Diplomat"), sk("Admin"), cascade("Language", languages...), choose(starshipSkls...), sk("Liaison"), sk("Comms")},
+		{
+			sk("Diplomat"),
+			sk("Admin"),
+			cascade("Language", languages...),
+			choose(starshipSkls...),
+			sk("Liaison"),
+			sk("Comms"),
+		},
 		// Col 6 — Technical.
-		{choose(oneArt...), choose(sciences...), sk("Athlete"), sk("Medic"), sk("Zero-G"), choose(theTrades...)},
+		{
+			choose(oneArt...),
+			choose(sciences...),
+			sk("Athlete"),
+			sk("Medic"),
+			sk("Zero-G"),
+			choose(theTrades...),
+		},
 	},
 	// Muster-out (Book 1 p. 81), indexed 1-12 by (1D + DM). Money passages are
 	// recorded at cash value; "Retire x2" is a named retirement benefit. Row 12

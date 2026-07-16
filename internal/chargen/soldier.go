@@ -65,19 +65,54 @@ var SoldierCareer = Career{
 	},
 	Skills: SkillGrid{
 		// Col 0 — Personal.
-		{bump(Strength), bump(Dexterity), bump(Endurance), bump(Intelligence), bump(Education), bump(Social)},
+		{
+			bump(Strength),
+			bump(Dexterity),
+			bump(Endurance),
+			bump(Intelligence),
+			bump(Education),
+			bump(Social),
+		},
 		// Col 1 — Base (Major/Minor lost without the education stage).
 		{major, major, minor, minor, choose(theTrades...), choose(theTrades...)},
 		// Col 2 — Combat.
 		{sk("Fighter"), sk("Vacc Suit"), sk("Fighter"), sk("Stealth"), sk("Leader"), sk("Tactics")},
 		// Col 3 — Peacekeeper.
-		{sk("Admin"), sk("Fighter"), sk("Hostile Environ"), sk("Animals"), sk("Liaison"), sk("Navigation")},
+		{
+			sk("Admin"),
+			sk("Fighter"),
+			sk("Hostile Environ"),
+			sk("Animals"),
+			sk("Liaison"),
+			sk("Navigation"),
+		},
 		// Col 4 — Occupation.
-		{sk("Fighter"), sk("Vacc Suit"), sk("Driver"), sk("Stealth"), sk("Heavy Weapons"), sk("Sensors")},
+		{
+			sk("Fighter"),
+			sk("Vacc Suit"),
+			sk("Driver"),
+			sk("Stealth"),
+			sk("Heavy Weapons"),
+			sk("Sensors"),
+		},
 		// Col 5 — Mission.
-		{choose(soldierSkls...), sk("Liaison"), cascade("Language", languages...), choose(soldierSkls...), sk("Computer"), sk("Tactics")},
+		{
+			choose(soldierSkls...),
+			sk("Liaison"),
+			cascade("Language", languages...),
+			choose(soldierSkls...),
+			sk("Computer"),
+			sk("Tactics"),
+		},
 		// Col 6 — Technical.
-		{choose(oneArt...), choose(sciences...), sk("Explosives"), sk("Medic"), sk("Seafarer"), choose(theTrades...)},
+		{
+			choose(oneArt...),
+			choose(sciences...),
+			sk("Explosives"),
+			sk("Medic"),
+			sk("Seafarer"),
+			choose(theTrades...),
+		},
 	},
 	// Muster-out (Book 1 p. 82), indexed 1-12 by (1D + DM). Money passages are
 	// recorded at cash value; "Retire x2" is a named retirement benefit. Rows 11

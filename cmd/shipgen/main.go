@@ -26,16 +26,26 @@ func main() {
 	hull := flag.String("hull", "", "hull size letter A-Z (blank = random ship)")
 	tl := flag.Int("tl", 12, "tech level")
 	configLetter := flag.String("config", "S", "hull config letter C/B/P/U/S/A/L")
-	structure := flag.String("structure", "plate", "hull structure (plate/shell/polymer/feni/organic/charged)")
+	structure := flag.String(
+		"structure",
+		"plate",
+		"hull structure (plate/shell/polymer/feni/organic/charged)",
+	)
 	armorLayers := flag.Int("armor", 1, "armor layers")
 	maneuver := flag.String("maneuver", "A", "maneuver drive letter (blank = none)")
 	jump := flag.String("jump", "A", "jump drive letter (blank = none)")
 	power := flag.String("power", "A", "power plant letter (blank = none)")
 	mission := flag.String("mission", "X", "QSP mission code")
-	weapons := flag.String("weapon", "",
-		`weapon(s) to mount, comma-separated, each "name[:mount[:range]]" (e.g. "beamlaser:T1:orbit,sandcaster")`)
-	defenses := flag.String("defense", "",
-		`defense(s) to install, comma-separated, each "name[:mount[:range]]" (e.g. "blackglobe,nucleardamper")`)
+	weapons := flag.String(
+		"weapon",
+		"",
+		`weapon(s) to mount, comma-separated, each "name[:mount[:range]]" (e.g. "beamlaser:T1:orbit,sandcaster")`,
+	)
+	defenses := flag.String(
+		"defense",
+		"",
+		`defense(s) to install, comma-separated, each "name[:mount[:range]]" (e.g. "blackglobe,nucleardamper")`,
+	)
 	n, r := cli.SeededRoller("ships")
 
 	if *hull == "" {
@@ -82,7 +92,10 @@ type flags struct {
 func specFromFlags(f flags) (shipgen.ShipSpec, error) {
 	hullOrd := letterOrdinal(f.hull)
 	if hullOrd == 0 {
-		return shipgen.ShipSpec{}, fmt.Errorf("invalid hull %q (want a letter A-Z, no I or O)", f.hull)
+		return shipgen.ShipSpec{}, fmt.Errorf(
+			"invalid hull %q (want a letter A-Z, no I or O)",
+			f.hull,
+		)
 	}
 	config, ok := shipgen.ConfigByLetter(f.config)
 	if !ok {
@@ -90,7 +103,10 @@ func specFromFlags(f flags) (shipgen.ShipSpec, error) {
 	}
 	structure, ok := shipgen.StructureByName(f.structure)
 	if !ok {
-		return shipgen.ShipSpec{}, fmt.Errorf("invalid structure %q (want plate/shell/polymer/feni/organic/charged)", f.structure)
+		return shipgen.ShipSpec{}, fmt.Errorf(
+			"invalid structure %q (want plate/shell/polymer/feni/organic/charged)",
+			f.structure,
+		)
 	}
 	weapons, err := weaponSpecs(f.weapons)
 	if err != nil {
@@ -145,7 +161,11 @@ func parseInstallations(list, kind string) ([]installation, error) {
 	for _, entry := range strings.Split(list, ",") {
 		parts := strings.Split(strings.TrimSpace(entry), ":")
 		if len(parts) > 3 {
-			return nil, fmt.Errorf("%s %q has too many fields (want name[:mount[:range]])", kind, entry)
+			return nil, fmt.Errorf(
+				"%s %q has too many fields (want name[:mount[:range]])",
+				kind,
+				entry,
+			)
 		}
 		inst := installation{name: parts[0]}
 		if len(parts) > 1 && parts[1] != "" {

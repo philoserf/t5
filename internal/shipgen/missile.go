@@ -118,22 +118,54 @@ var missileRows = [...]struct {
 	tonsEach int // tons per round (0 when many fit in a ton)
 }{
 	{SlugThrower, 2, "Slug", []Guidance{UnGuided}, []MissileType{Slug, Explosive}, 0, 0},
-	{SalvoRack, 3, "Vsmall Missile", []Guidance{UnGuided, HardWired},
-		[]MissileType{Slug, Explosive, EMP, Decoy, SensorPkg}, 3000, 0},
-	{MissileLauncher, 4, "Small Missile", []Guidance{UnGuided, HardWired, OperatorGuided},
-		[]MissileType{Explosive, EMP, Decoy, SensorPkg}, 400, 0},
-	{AMMissile, 4, "Small Missile", []Guidance{SelfAware, DownLoaded},
-		[]MissileType{Deadfall, AntiMatter, Decoy, SensorPkg}, 400, 0},
-	{MissileLauncher, 5, "Missile", []Guidance{HardWired, OperatorGuided, SelfAware, DownLoaded},
-		[]MissileType{Explosive, EMP, Nuke, Decoy, SensorPkg}, 50, 0},
-	{Ortillery, 5, "Missile", []Guidance{UnGuided, HardWired, OperatorGuided},
-		[]MissileType{Deadfall, Decoy, SensorPkg}, 50, 0},
-	{MissileLauncher, 6, "Small Craft", []Guidance{HardWired, OperatorGuided, SelfAware, DownLoaded},
-		[]MissileType{Explosive, Decoy, SensorPkg}, 0, 5},
-	{RailGun, 6, "Small Craft", []Guidance{UnGuided, HardWired, OperatorGuided, SelfAware, DownLoaded},
-		[]MissileType{Deadfall, Decoy, SensorPkg}, 0, 5},
-	{KKMissile, 7, "Ship", []Guidance{SelfAware, DownLoaded},
-		[]MissileType{Kinetic, Decoy, SensorPkg}, 0, 100},
+	{
+		SalvoRack, 3, "Vsmall Missile",
+		[]Guidance{UnGuided, HardWired},
+		[]MissileType{Slug, Explosive, EMP, Decoy, SensorPkg},
+		3000, 0,
+	},
+	{
+		MissileLauncher, 4, "Small Missile",
+		[]Guidance{UnGuided, HardWired, OperatorGuided},
+		[]MissileType{Explosive, EMP, Decoy, SensorPkg},
+		400, 0,
+	},
+	{
+		AMMissile, 4, "Small Missile",
+		[]Guidance{SelfAware, DownLoaded},
+		[]MissileType{Deadfall, AntiMatter, Decoy, SensorPkg},
+		400, 0,
+	},
+	{
+		MissileLauncher, 5, "Missile",
+		[]Guidance{HardWired, OperatorGuided, SelfAware, DownLoaded},
+		[]MissileType{Explosive, EMP, Nuke, Decoy, SensorPkg},
+		50, 0,
+	},
+	{
+		Ortillery, 5, "Missile",
+		[]Guidance{UnGuided, HardWired, OperatorGuided},
+		[]MissileType{Deadfall, Decoy, SensorPkg},
+		50, 0,
+	},
+	{
+		MissileLauncher, 6, "Small Craft",
+		[]Guidance{HardWired, OperatorGuided, SelfAware, DownLoaded},
+		[]MissileType{Explosive, Decoy, SensorPkg},
+		0, 5,
+	},
+	{
+		RailGun, 6, "Small Craft",
+		[]Guidance{UnGuided, HardWired, OperatorGuided, SelfAware, DownLoaded},
+		[]MissileType{Deadfall, Decoy, SensorPkg},
+		0, 5,
+	},
+	{
+		KKMissile, 7, "Ship",
+		[]Guidance{SelfAware, DownLoaded},
+		[]MissileType{Kinetic, Decoy, SensorPkg},
+		0, 100,
+	},
 }
 
 // missileEffects is the MISSILE TYPES AND EFFECTS grid (Book 2 p.170), keyed by
@@ -247,8 +279,11 @@ func DesignMissile(launcher Weapon, spec MissileSpec) Missile {
 			spec.Size, row.name, spec.Guidance))
 	} else if !spec.Guidance.Available(spec.Size, launcher.TL) {
 		d := guidanceData[spec.Guidance]
-		m.Problems = append(m.Problems, fmt.Sprintf("%s guidance needs Size %d at TL %d (this is Size %d at TL %d)",
-			spec.Guidance, d.minSize, d.minTL, spec.Size, launcher.TL))
+		m.Problems = append(
+			m.Problems,
+			fmt.Sprintf("%s guidance needs Size %d at TL %d (this is Size %d at TL %d)",
+				spec.Guidance, d.minSize, d.minTL, spec.Size, launcher.TL),
+		)
 	}
 	return m
 }

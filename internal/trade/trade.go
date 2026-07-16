@@ -27,7 +27,22 @@ const (
 // valueClasses are the trade classifications that affect Cost and Price (Book 2
 // p.221), in the chart order used to render a Cargo ID. Every other trade code
 // may influence availability but never value.
-var valueClasses = []string{"Ag", "As", "Ba", "De", "Fl", "Hi", "Ic", "In", "Lo", "Na", "Ni", "Po", "Ri", "Va"}
+var valueClasses = []string{
+	"Ag",
+	"As",
+	"Ba",
+	"De",
+	"Fl",
+	"Hi",
+	"Ic",
+	"In",
+	"Lo",
+	"Na",
+	"Ni",
+	"Po",
+	"Ri",
+	"Va",
+}
 
 // costMod is each value class's per-ton cost modifier at the source world (Book 2
 // p.221 A); Ic and Na are members of the value set but move the cost by zero.

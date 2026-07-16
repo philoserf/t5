@@ -20,7 +20,11 @@ func TestApplyHomeworldSkills(t *testing.T) {
 	// Deep Space grants two skills.
 	ds := grant("Ds")
 	if ds.level("Vacc Suit") != 1 || ds.level("Zero-G") != 1 {
-		t.Errorf("Ds -> Vacc Suit/Zero-G = %d/%d, want 1/1", ds.level("Vacc Suit"), ds.level("Zero-G"))
+		t.Errorf(
+			"Ds -> Vacc Suit/Zero-G = %d/%d, want 1/1",
+			ds.level("Vacc Suit"),
+			ds.level("Zero-G"),
+		)
 	}
 	// Industrial and Rich are player choices; DefaultPolicy takes the first option.
 	if got := grant("In").level(theTrades[0]); got != 1 {

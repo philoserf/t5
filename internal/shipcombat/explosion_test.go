@@ -5,11 +5,17 @@ import "testing"
 // TestMissileMassiveExplosion golden-locks the Book 2 p.197 Sz+1D proximity table.
 func TestMissileMassiveExplosion(t *testing.T) {
 	// 6 or less: Direct Hit, Vaporized (100D).
-	if e := MissileMassiveExplosion(6); !e.Vaporized || e.Blast != 100 || e.Proximity != "Direct Hit" {
+	if e := MissileMassiveExplosion(
+		6,
+	); !e.Vaporized || e.Blast != 100 ||
+		e.Proximity != "Direct Hit" {
 		t.Errorf("MissileMassiveExplosion(6) = %+v, want Direct Hit / Vaporized / 100D", e)
 	}
 	// 7: a Hit — Blast 90D, BFE 20D, Rad 10D, Burn 30D.
-	if e := MissileMassiveExplosion(7); e.Blast != 90 || e.BFE != 20 || e.Rad != 10 || e.Burn != 30 || e.Vaporized {
+	if e := MissileMassiveExplosion(
+		7,
+	); e.Blast != 90 || e.BFE != 20 || e.Rad != 10 || e.Burn != 30 ||
+		e.Vaporized {
 		t.Errorf("MissileMassiveExplosion(7) = %+v, want 90/20/10/30", e)
 	}
 	// 11: a Far Miss — 5D / 1D / 1D / 1D.

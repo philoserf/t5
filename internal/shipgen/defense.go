@@ -204,7 +204,10 @@ func DesignDefense(spec DefenseSpec) Defense {
 		problems = append(problems, fmt.Sprintf("%s is a %s device and cannot be built for %s",
 			dev.name, scaleName(dev.scale), rng.name))
 	} else if !rng.defenseOK {
-		problems = append(problems, fmt.Sprintf("a defense cannot be built for %s (Vdistant is the furthest)", rng.name))
+		problems = append(
+			problems,
+			fmt.Sprintf("a defense cannot be built for %s (Vdistant is the furthest)", rng.name),
+		)
 	}
 	if spec.Weapon != nil {
 		w := weaponData[*spec.Weapon]

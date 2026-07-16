@@ -36,7 +36,11 @@ func TestArmorLayersDoesNotDivide(t *testing.T) {
 		Maneuver: &shipgen.DriveSpec{Letter: 1}, Power: &shipgen.DriveSpec{Letter: 1},
 	})
 	if got := ArmorLayers(four); got[0] < layers[0] {
-		t.Errorf("a 4-layer ship has thinner layers (%d) than a 2-layer one (%d)", got[0], layers[0])
+		t.Errorf(
+			"a 4-layer ship has thinner layers (%d) than a 2-layer one (%d)",
+			got[0],
+			layers[0],
+		)
 	}
 }
 
@@ -45,14 +49,22 @@ func TestArmorLayersDoesNotDivide(t *testing.T) {
 // at whatever the drive said, which for a big drive on a small hull was 8G.
 func TestShipAgilityRespectsTheHull(t *testing.T) {
 	cluster := shipgen.Design(shipgen.ShipSpec{
-		TL: 15, HullLetter: 1, Config: shipgen.Cluster, Structure: shipgen.FramePlate, ArmorLayers: 1,
-		Maneuver: &shipgen.DriveSpec{Letter: 4}, Power: &shipgen.DriveSpec{Letter: 4},
+		TL:          15,
+		HullLetter:  1,
+		Config:      shipgen.Cluster,
+		Structure:   shipgen.FramePlate,
+		ArmorLayers: 1,
+		Maneuver:    &shipgen.DriveSpec{Letter: 4},
+		Power:       &shipgen.DriveSpec{Letter: 4},
 	})
 	if cluster.Hull.MaxG != 1 {
 		t.Fatalf("a Cluster hull is capped at 1G, got %d", cluster.Hull.MaxG)
 	}
 	if cluster.Maneuver.Potential <= cluster.Hull.MaxG {
-		t.Fatalf("this test needs a drive that outruns the hull, got %dG", cluster.Maneuver.Potential)
+		t.Fatalf(
+			"this test needs a drive that outruns the hull, got %dG",
+			cluster.Maneuver.Potential,
+		)
 	}
 	// Design says so...
 	if len(cluster.Problems) == 0 {

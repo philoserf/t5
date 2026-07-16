@@ -20,25 +20,63 @@ var CraftsmanCareer = Career{
 	AutoBegin:        true,
 	Masterpiece:      true,
 	ControllingChars: []Characteristic{Strength, Dexterity, Endurance, Intelligence}, // C1 C2 C3 C4
-	Continue:         ContinueRule{UseSkill: "Craftsman", SkillMult: 2},              // Craftsman x2
-	Advance:          RollLow,
-	EligPerTerm:      4,
-	BenefitDM:        DMTerms,
+	Continue: ContinueRule{
+		UseSkill:  "Craftsman",
+		SkillMult: 2,
+	}, // Craftsman x2
+	Advance:     RollLow,
+	EligPerTerm: 4,
+	BenefitDM:   DMTerms,
 	Skills: SkillGrid{
 		// Col 0 — Personal.
-		{bump(Strength), bump(Dexterity), bump(Endurance), bump(Intelligence), bump(Education), bump(Social)},
+		{
+			bump(Strength),
+			bump(Dexterity),
+			bump(Endurance),
+			bump(Intelligence),
+			bump(Education),
+			bump(Social),
+		},
 		// Col 1 — Academic (Major/Minor lost without the education stage).
 		{major, major, minor, minor, choose(theTrades...), choose(theTrades...)},
 		// Col 2 — Travel.
-		{sk("Seafarer"), sk("Navigation"), sk("Hostile Environ"), sk("Flyer"), sk("Driver"), sk("Vacc Suit")},
+		{
+			sk("Seafarer"),
+			sk("Navigation"),
+			sk("Hostile Environ"),
+			sk("Flyer"),
+			sk("Driver"),
+			sk("Vacc Suit"),
+		},
 		// Col 3 — General.
-		{sk("Animals"), sk("Comms"), sk("Computer"), sk("Designer"), sk("Designer"), sk("Designer")},
+		{
+			sk("Animals"),
+			sk("Comms"),
+			sk("Computer"),
+			sk("Designer"),
+			sk("Designer"),
+			sk("Designer"),
+		},
 		// Col 4 — Business.
 		{sk("Liaison"), sk("Comms"), sk("Bureaucrat"), sk("Diplomat"), sk("Leader"), sk("Trader")},
 		// Col 5 — Vocation ("New Trade" is a representative trade choice).
-		{sk("Naval Architect"), choose(oneArt...), choose(theTrades...), choose(theTrades...), choose(theTrades...), choose(theTrades...)},
+		{
+			sk("Naval Architect"),
+			choose(oneArt...),
+			choose(theTrades...),
+			choose(theTrades...),
+			choose(theTrades...),
+			choose(theTrades...),
+		},
 		// Col 6 — Avocation.
-		{sk("Animals"), choose(oneArt...), choose(sciences...), sk("Athlete"), sk("Medic"), choose(theTrades...)},
+		{
+			sk("Animals"),
+			choose(oneArt...),
+			choose(sciences...),
+			sk("Athlete"),
+			sk("Medic"),
+			choose(theTrades...),
+		},
 	},
 	// Muster-out (Book 1 p. 75), indexed 1-12 by (1D + DM). Money passages are
 	// recorded at cash value.

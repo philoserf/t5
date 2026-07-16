@@ -29,13 +29,21 @@ import (
 func main() {
 	densityName := flag.String("density", "standard", "stellar density (extragalactic…core)")
 	subsector := flag.String("subsector", "A", "subsector letter A-P")
-	sector := flag.Bool("sector", false, "survey the whole sector, with trade routes and way stations")
+	sector := flag.Bool(
+		"sector",
+		false,
+		"survey the whole sector, with trade routes and way stations",
+	)
 	hex := flag.String("hex", "", "print the full system sheet for one hex, e.g. 0436")
 	r := cli.Roller()
 
 	d, ok := sectorgen.DensityByName(*densityName)
 	if !ok {
-		cli.Fatalf("unknown density %q (known: %s)", *densityName, strings.Join(sectorgen.DensityNames(), ", "))
+		cli.Fatalf(
+			"unknown density %q (known: %s)",
+			*densityName,
+			strings.Join(sectorgen.DensityNames(), ", "),
+		)
 	}
 
 	switch {

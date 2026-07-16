@@ -536,7 +536,10 @@ func branchOpsMod(r *dice.Roller, c *Character, run *careerRun, career Career) i
 	}
 	best := 0
 	for range 4 {
-		best = max(best, career.BranchOps.OpsMods[min(max(r.Die()+run.branchOpsDM+eduBonus(*c), 1), 9)])
+		best = max(
+			best,
+			career.BranchOps.OpsMods[min(max(r.Die()+run.branchOpsDM+eduBonus(*c), 1), 9)],
+		)
 	}
 	return run.branchMod + best
 }
@@ -551,7 +554,14 @@ var citizenJobs = []string{
 // Risk & Reward: a benign 2D roll at or under the Controlling Characteristic —
 // success grants a Job or Hobby skill, failure does nothing (no injury). The
 // character always survives the career step; only aging can end it.
-func runCitizenTerm(r *dice.Roller, p Policy, c *Character, run *careerRun, career Career, cc Characteristic) TermOutcome {
+func runCitizenTerm(
+	r *dice.Roller,
+	p Policy,
+	c *Character,
+	run *careerRun,
+	career Career,
+	cc Characteristic,
+) TermOutcome {
 	if r.Resolve(dice.Check{Dice: 2, Target: c.Score(cc)}).Success {
 		awardCitizenLife(p, c, run)
 	}
@@ -563,7 +573,13 @@ func runCitizenTerm(r *dice.Roller, p Policy, c *Character, run *careerRun, care
 // term, events shift Fame by a Flux roll; if Fame increases the character gains
 // Talent +1 and two extra skill rolls. There is no injury; only aging can end
 // the career. (The optional second and third Flux rolls are deferred.)
-func runFameTerm(r *dice.Roller, p Policy, c *Character, run *careerRun, career Career) TermOutcome {
+func runFameTerm(
+	r *dice.Roller,
+	p Policy,
+	c *Character,
+	run *careerRun,
+	career Career,
+) TermOutcome {
 	elig := career.EligPerTerm
 	// Term 1 keeps the initial 2D Fame/Talent; the "+F" Flux begins at Term 2
 	// (Book 1 p.77). run.terms is 0 on the first served term.
@@ -605,8 +621,23 @@ const courierElig = 4
 // Masterpiece; otherwise the attempt fails. Either way the Craftsman skill rises
 // +1 (learning); success grants three extra skill rolls, failure one. There is
 // no injury.
-func runCraftsmanTerm(r *dice.Roller, p Policy, c *Character, career Career, cc Characteristic) TermOutcome {
-	points := c.Score(cc) + c.Skills.Level("Craftsman") + c.Skills.TopLevels(5, 6, "Craftsman", "Language")
+func runCraftsmanTerm(
+	r *dice.Roller,
+	p Policy,
+	c *Character,
+	career Career,
+	cc Characteristic,
+) TermOutcome {
+	points := c.Score(
+		cc,
+	) + c.Skills.Level(
+		"Craftsman",
+	) + c.Skills.TopLevels(
+		5,
+		6,
+		"Craftsman",
+		"Language",
+	)
 	elig := career.EligPerTerm
 	if points >= masterpieceMinimum && r.Dice(9) <= points {
 		c.Masterpieces++
@@ -625,10 +656,18 @@ func runCraftsmanTerm(r *dice.Roller, p Policy, c *Character, career Career, cc 
 // Characteristic: a failed Risk ends the career (job loss — the character
 // musters out normally, uninjured), and a successful Reward is a promotion. It
 // returns MusteredOut on a lost job, otherwise Ongoing.
-func runPoliticsTerm(r *dice.Roller, p Policy, c *Character, run *careerRun, career Career, cc Characteristic) TermOutcome {
+func runPoliticsTerm(
+	r *dice.Roller,
+	p Policy,
+	c *Character,
+	run *careerRun,
+	career Career,
+	cc Characteristic,
+) TermOutcome {
 	riskKept := r.Resolve(dice.Check{Dice: 2, Target: c.Score(cc)}).Success
 	elig := career.EligPerTerm
-	if r.Resolve(dice.Check{Dice: 2, Target: c.Score(cc)}).Success && run.rank < len(career.EnlistedRanks) {
+	if r.Resolve(dice.Check{Dice: 2, Target: c.Score(cc)}).Success &&
+		run.rank < len(career.EnlistedRanks) {
 		promoteRank(c, run, career.EnlistedRanks)
 		elig++ // one extra skill on promotion (Book 1 p. 82)
 	}
@@ -644,7 +683,14 @@ func runPoliticsTerm(r *dice.Roller, p Policy, c *Character, run *careerRun, car
 // ends the Exile); one not in Exile rolls Intrigue (failure begins an Exile;
 // success offers an Elevation — a roll-high check of 2D at or over Social
 // Standing that, on success, raises Soc by 1 and awards a Land Grant).
-func runIntrigueTerm(r *dice.Roller, p Policy, c *Character, run *careerRun, career Career, cc Characteristic) TermOutcome {
+func runIntrigueTerm(
+	r *dice.Roller,
+	p Policy,
+	c *Character,
+	run *careerRun,
+	career Career,
+	cc Characteristic,
+) TermOutcome {
 	elevated := false
 	if run.exiled {
 		if r.Resolve(dice.Check{Dice: 2, Target: c.Score(cc)}).Success {
@@ -716,7 +762,14 @@ const (
 // is simplified to "any positive sentence costs the following term"), the ±1
 // Flux modification, and selecting a previous career in place of the roll. The
 // Scheme carries no injury — only aging can end the career.
-func runRogueTerm(r *dice.Roller, p Policy, c *Character, run *careerRun, career Career, cc Characteristic) TermOutcome {
+func runRogueTerm(
+	r *dice.Roller,
+	p Policy,
+	c *Character,
+	run *careerRun,
+	career Career,
+	cc Characteristic,
+) TermOutcome {
 	if run.inPrison {
 		run.inPrison = false
 		awardPrisonSkills(r, p, c, career, roguePrisonElig)
@@ -943,7 +996,13 @@ func awardSkillsN(r *dice.Roller, p Policy, c *Character, career Career, n int) 
 	for range n {
 		col := p.ChooseSkillColumn(*c, career.Skills)
 		if col < 0 || col >= len(career.Skills) {
-			panic(fmt.Sprintf("chargen: skill column %d out of range 0-%d", col, len(career.Skills)-1))
+			panic(
+				fmt.Sprintf(
+					"chargen: skill column %d out of range 0-%d",
+					col,
+					len(career.Skills)-1,
+				),
+			)
 		}
 		applyCell(p, c, career.Skills[col][r.Die()-1])
 	}
@@ -1090,7 +1149,13 @@ const musterRerollCap = 12
 // the chosen column. The DM is optional and partial (Book 1 p.68), so a policy
 // that randomizes it selects any value from 0 to the full DM; otherwise the full
 // DM applies.
-func rollMusterAward(r *dice.Roller, p Policy, career Career, col MusterColumn, fullDM int) Benefit {
+func rollMusterAward(
+	r *dice.Roller,
+	p Policy,
+	career Career,
+	col MusterColumn,
+	fullDM int,
+) Benefit {
 	dm := fullDM
 	if fullDM > 0 && p.RandomizeMusterDM() {
 		dm = r.Index(fullDM + 1)
@@ -1234,7 +1299,14 @@ func selectCC(p Policy, c Character, run *careerRun, career Career) Characterist
 // another term (Mandatory Continue); otherwise the character continues only if
 // the policy wishes to and the 2D Continue roll succeeds. A UseCC rule targets
 // the career's fixed Controlling Characteristic (Book 1 p. 84, the Rogue).
-func continues(r *dice.Roller, p Policy, c Character, career Career, rec CareerRecord, run *careerRun) bool {
+func continues(
+	r *dice.Roller,
+	p Policy,
+	c Character,
+	career Career,
+	rec CareerRecord,
+	run *careerRun,
+) bool {
 	target := career.Continue.target(c)
 	if career.Continue.UseCC {
 		target = c.Score(run.fixed) + career.Continue.Mod
@@ -1243,7 +1315,9 @@ func continues(r *dice.Roller, p Policy, c Character, career Career, rec CareerR
 		target = c.Fame + career.Continue.Mod
 	}
 	if career.Continue.UseSkill != "" {
-		target = c.Skills.Level(career.Continue.UseSkill)*career.Continue.SkillMult + career.Continue.Mod
+		target = c.Skills.Level(
+			career.Continue.UseSkill,
+		)*career.Continue.SkillMult + career.Continue.Mod
 	}
 	if career.Continue.TermsMod {
 		target += rec.Terms // more experience makes staying in easier (Book 1 p. 83, Agent)

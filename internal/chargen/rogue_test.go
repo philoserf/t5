@@ -80,11 +80,21 @@ func TestRogueSchemeInfamy(t *testing.T) {
 		5, 1, // prison Flux = +4 -> positive sentence -> prison next term
 		2, 2, 2, // Failed Scheme = 3 skill rolls, Space Travel (col 3) row 2 = Pilot
 	}
-	if out := runRogueTerm(dice.NewScripted(seq...), goldenPolicy{}, &c, &run, RogueCareer, Strength); out != Ongoing {
+	if out := runRogueTerm(
+		dice.NewScripted(seq...),
+		goldenPolicy{},
+		&c,
+		&run,
+		RogueCareer,
+		Strength,
+	); out != Ongoing {
 		t.Fatalf("failure term outcome = %v, want Ongoing (a Scheme carries no injury)", out)
 	}
 	if c.Credits != 250_000 {
-		t.Errorf("Credits = %d, want 250000 (Cr500,000 payoff halved by the failed Risk)", c.Credits)
+		t.Errorf(
+			"Credits = %d, want 250000 (Cr500,000 payoff halved by the failed Risk)",
+			c.Credits,
+		)
 	}
 	if c.Fame != 1 {
 		t.Errorf("Fame = %d, want 1 (Infamy from the failed Scheme)", c.Fame)
@@ -99,7 +109,14 @@ func TestRogueSchemeInfamy(t *testing.T) {
 	// Prison term: only 2 In-Prison skills. This Rogue is uneducated, so Academic
 	// (col 1) is unproductive and prison draws from Personal (col 0): row 6 = Soc
 	// bump, twice, Soc 7 -> 9. No Scheme payoff, and the prison flag clears.
-	if out := runRogueTerm(dice.NewScripted(6, 6), goldenPolicy{}, &c, &run, RogueCareer, Strength); out != Ongoing {
+	if out := runRogueTerm(
+		dice.NewScripted(6, 6),
+		goldenPolicy{},
+		&c,
+		&run,
+		RogueCareer,
+		Strength,
+	); out != Ongoing {
 		t.Fatalf("prison term outcome = %v, want Ongoing", out)
 	}
 	if run.inPrison {

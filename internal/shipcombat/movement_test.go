@@ -24,15 +24,28 @@ func TestRangeChangeRounds(t *testing.T) {
 	cases := []struct {
 		band, gs, want int
 	}{
-		{8, 1, 18}, {8, 6, 7}, {8, 9, 6}, // 7-9G share the last column
-		{7, 1, 15}, {6, 1, 5}, {6, 4, 2},
-		{5, 1, 2}, {5, 2, 1},
-		{4, 3, 1}, {1, 1, 1},
+		{8, 1, 18},
+		{8, 6, 7},
+		{8, 9, 6}, // 7-9G share the last column
+		{7, 1, 15},
+		{6, 1, 5},
+		{6, 4, 2},
+		{5, 1, 2},
+		{5, 2, 1},
+		{4, 3, 1},
+		{1, 1, 1},
 	}
 	for _, c := range cases {
 		got, tactical := RangeChangeRounds(c.band, c.gs)
 		if !tactical || got != c.want {
-			t.Errorf("RangeChangeRounds(band %d, %dG) = %d,%v, want %d,true", c.band, c.gs, got, tactical, c.want)
+			t.Errorf(
+				"RangeChangeRounds(band %d, %dG) = %d,%v, want %d,true",
+				c.band,
+				c.gs,
+				got,
+				tactical,
+				c.want,
+			)
 		}
 	}
 	// Deep-space and long bands transit in hours/days, not tactical rounds.

@@ -21,7 +21,16 @@ var hzOrbits = map[string][8]int{
 }
 
 // hzSizeIndex orders the luminosity sizes as the hzOrbits columns.
-var hzSizeIndex = map[string]int{"Ia": 0, "Ib": 1, "II": 2, "III": 3, "IV": 4, "V": 5, "VI": 6, "D": 7}
+var hzSizeIndex = map[string]int{
+	"Ia":  0,
+	"Ib":  1,
+	"II":  2,
+	"III": 3,
+	"IV":  4,
+	"V":   5,
+	"VI":  6,
+	"D":   7,
+}
 
 // HZOrbit returns a star's habitable-zone orbit (Book 3 p.29) and whether it has
 // one — false for a brown dwarf and for the table's "-" cells (e.g. size VI on an

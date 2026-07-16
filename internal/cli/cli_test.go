@@ -16,7 +16,10 @@ func TestFatalf(t *testing.T) {
 		Fatalf("unknown density %q", "bogus")
 		return // not reached
 	}
-	cmd := exec.Command(os.Args[0], "-test.run=TestFatalf") //nolint:gosec // re-runs this test binary
+	cmd := exec.Command(
+		os.Args[0],
+		"-test.run=TestFatalf",
+	) //nolint:gosec // re-runs this test binary
 	cmd.Env = append(os.Environ(), "CLI_TEST_FATAL=1")
 	var stdout, stderr strings.Builder
 	cmd.Stdout = &stdout

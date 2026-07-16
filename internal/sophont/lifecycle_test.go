@@ -26,15 +26,30 @@ func TestLifeStageDuration(t *testing.T) {
 	cases := []struct {
 		flux, stage, want int
 	}{
-		{-5, 1, 1}, {-5, 2, 0}, {-5, 5, 1}, {-5, 4, 0}, {-5, 9, 1}, // short-lived row
-		{-4, 3, 1}, {-2, 7, 1},
-		{-1, 4, 2}, {0, 6, 2}, {1, 2, 2},
-		{2, 8, 3}, {3, 1, 3},
-		{4, 5, 4}, {5, 9, 6},
+		{-5, 1, 1},
+		{-5, 2, 0},
+		{-5, 5, 1},
+		{-5, 4, 0},
+		{-5, 9, 1}, // short-lived row
+		{-4, 3, 1},
+		{-2, 7, 1},
+		{-1, 4, 2},
+		{0, 6, 2},
+		{1, 2, 2},
+		{2, 8, 3},
+		{3, 1, 3},
+		{4, 5, 4},
+		{5, 9, 6},
 	}
 	for _, c := range cases {
 		if got := lifeStageDuration(c.flux, c.stage); got != c.want {
-			t.Errorf("lifeStageDuration(flux %+d, stage %d) = %d, want %d", c.flux, c.stage, got, c.want)
+			t.Errorf(
+				"lifeStageDuration(flux %+d, stage %d) = %d, want %d",
+				c.flux,
+				c.stage,
+				got,
+				c.want,
+			)
 		}
 	}
 }

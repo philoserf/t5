@@ -37,8 +37,12 @@ func TestMailContractBid(t *testing.T) {
 	cases := []struct {
 		twoD, roundTrips, want int
 	}{
-		{2, 10, 8_000}, {7, 10, 15_000}, {12, 10, 24_000},
-		{2, 5, 4_000}, {7, 5, 15_000}, {12, 5, 30_000},
+		{2, 10, 8_000},
+		{7, 10, 15_000},
+		{12, 10, 24_000},
+		{2, 5, 4_000},
+		{7, 5, 15_000},
+		{12, 5, 30_000},
 	}
 	for _, c := range cases {
 		if got := MailContractBid(c.twoD, c.roundTrips); got != c.want {

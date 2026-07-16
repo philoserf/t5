@@ -296,7 +296,11 @@ func mountName(m Mount) string {
 // It lives in one place because it is one rule. The two builders differ in what
 // they do with the Mod, the damage dice, and what they refuse to build — not in
 // this arithmetic.
-func install(deviceTL, deviceCost, mountTons, mountCost int, rng Range, stage Stage) (tl int, tons Tonnage, cost, band int) {
+func install(
+	deviceTL, deviceCost, mountTons, mountCost int,
+	rng Range,
+	stage Stage,
+) (tl int, tons Tonnage, cost, band int) {
 	r := rangeData[rng]
 	st := stageCostData[stageIndex(stage)]
 	return deviceTL + r.tlMod + stageTL(stage),

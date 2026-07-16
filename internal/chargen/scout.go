@@ -79,19 +79,61 @@ var ScoutCareer = Career{
 	BenefitDM:        DMFameHalf,
 	Skills: SkillGrid{
 		// Col 0 — Personal.
-		{bump(Strength), bump(Dexterity), bump(Endurance), bump(Intelligence), bump(Education), bump(Social)},
+		{
+			bump(Strength),
+			bump(Dexterity),
+			bump(Endurance),
+			bump(Intelligence),
+			bump(Education),
+			bump(Social),
+		},
 		// Col 1 — Academic: Major, Major, Minor, Minor, One Trade, One Trade.
 		{major, major, minor, minor, choose(theTrades...), choose(theTrades...)},
 		// Col 2 — Courier.
-		{sk("Comms"), cascade("Language", languages...), sk("Computer"), sk("JOT"), sk("Gunner"), choose(starshipSkls...)},
+		{
+			sk("Comms"),
+			cascade("Language", languages...),
+			sk("Computer"),
+			sk("JOT"),
+			sk("Gunner"),
+			choose(starshipSkls...),
+		},
 		// Col 3 — Exploration.
-		{sk("Survey"), sk("Survival"), sk("Hostile Environ"), sk("Animals"), sk("Vacc Suit"), sk("Navigation")},
+		{
+			sk("Survey"),
+			sk("Survival"),
+			sk("Hostile Environ"),
+			sk("Animals"),
+			sk("Vacc Suit"),
+			sk("Navigation"),
+		},
 		// Col 4 — Business.
-		{sk("Diplomat"), sk("Sensors"), sk("Trader"), sk("Teacher"), sk("Fighter"), sk("Streetwise")},
+		{
+			sk("Diplomat"),
+			sk("Sensors"),
+			sk("Trader"),
+			sk("Teacher"),
+			sk("Fighter"),
+			sk("Streetwise"),
+		},
 		// Col 5 — Vocation.
-		{sk("Survey"), sk("Flyer"), cascade("Language", languages...), choose(starshipSkls...), sk("Engineer"), sk("Comms")},
+		{
+			sk("Survey"),
+			sk("Flyer"),
+			cascade("Language", languages...),
+			choose(starshipSkls...),
+			sk("Engineer"),
+			sk("Comms"),
+		},
 		// Col 6 — Avocation.
-		{choose(oneArt...), choose(sciences...), sk("Seafarer"), sk("Athlete"), sk("Medic"), choose(theTrades...)},
+		{
+			choose(oneArt...),
+			choose(sciences...),
+			sk("Seafarer"),
+			sk("Athlete"),
+			sk("Medic"),
+			choose(theTrades...),
+		},
 	},
 	// Muster-out (Book 1 p. 79), indexed 1-12 by (1D + DM). Money-column passages
 	// are recorded at their standard cash value.

@@ -141,7 +141,11 @@ func TestWeaponAboveShipTL(t *testing.T) {
 		t.Errorf("problems should name the TL overrun, got %v", over.Problems)
 	}
 	// The same laser at the standard range is TL 10 and builds fine.
-	if ok := armedScout(WeaponSpec{BeamLaser, SingleTurret, Standard, VDistant}); len(ok.Problems) > 0 {
+	if ok := armedScout(
+		WeaponSpec{BeamLaser, SingleTurret, Standard, VDistant},
+	); len(
+		ok.Problems,
+	) > 0 {
 		t.Errorf("a TL-10 weapon on a TL-12 ship is fine, got %v", ok.Problems)
 	}
 }

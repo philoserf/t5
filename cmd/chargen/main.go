@@ -22,7 +22,11 @@ import (
 )
 
 func main() {
-	careerName := flag.String("career", "", `career(s) to run, comma-separated for a sequence (e.g. "scout" or "scout,merchant"); empty prints UPP only`)
+	careerName := flag.String(
+		"career",
+		"",
+		`career(s) to run, comma-separated for a sequence (e.g. "scout" or "scout,merchant"); empty prints UPP only`,
+	)
 	n, r := cli.SeededRoller("characters")
 
 	if *careerName == "" {
@@ -138,7 +142,13 @@ func summaryLine(c chargen.Character) string {
 		if rec.Outcome == chargen.Died {
 			deceased = "" // "died" already conveys it
 		}
-		return fmt.Sprintf("%s — age %d, %s%s\n", chargen.CareerByID(rec.Career).Name, c.Age, detail, deceased)
+		return fmt.Sprintf(
+			"%s — age %d, %s%s\n",
+			chargen.CareerByID(rec.Career).Name,
+			c.Age,
+			detail,
+			deceased,
+		)
 	default:
 		return fmt.Sprintf("%s — age %d%s\n", careerNames(c), c.Age, deceased)
 	}
@@ -148,7 +158,12 @@ func summaryLine(c chargen.Character) string {
 func serviceField(c chargen.Character) string {
 	var lines []string
 	for _, rec := range c.Careers {
-		s := fmt.Sprintf("%s: %s, %s", chargen.CareerByID(rec.Career).Name, plural(rec.Terms, "term"), outcomePhrase(rec.Outcome))
+		s := fmt.Sprintf(
+			"%s: %s, %s",
+			chargen.CareerByID(rec.Career).Name,
+			plural(rec.Terms, "term"),
+			outcomePhrase(rec.Outcome),
+		)
 		if rank := rankOf(c, rec); rank != "" {
 			s += " as " + rank
 		}
@@ -171,7 +186,11 @@ func renderAchievements(b *strings.Builder, c chargen.Character) {
 		field(b, "Reputation", strings.Join(parts, ", "))
 	}
 	if c.Masterpieces > 0 {
-		field(b, "Masterpieces", fmt.Sprintf("%d (Cr%s)", c.Masterpieces, commas(c.MasterpieceValue)))
+		field(
+			b,
+			"Masterpieces",
+			fmt.Sprintf("%d (Cr%s)", c.Masterpieces, commas(c.MasterpieceValue)),
+		)
 	}
 	// Plain counted awards, each a labeled line only when non-zero.
 	for _, a := range []struct {

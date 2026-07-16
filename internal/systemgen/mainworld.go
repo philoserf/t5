@@ -21,7 +21,11 @@ type MainworldSatellite struct {
 // Close satellite mainworld earns Sa/Lk, and its climate codes (Tr/Tu/Fr/Tz)
 // are appended. It returns the mainworld orbit (−1 when the primary has no HZ)
 // and the satellite record.
-func placeMainworld(r *dice.Roller, primary Star, mainworld *worldgen.World) (int, MainworldSatellite) {
+func placeMainworld(
+	r *dice.Roller,
+	primary Star,
+	mainworld *worldgen.World,
+) (int, MainworldSatellite) {
 	// An asteroid-belt mainworld (Size 0) is placed using the Belt column of the
 	// P2 chart without regard to the habitable zone (Book 3 p.21): no HZ variance,
 	// no gas-giant-satellite roll, and no climate codes — and it is placed even
@@ -51,8 +55,36 @@ func placeMainworld(r *dice.Roller, primary Star, mainworld *worldgen.World) (in
 
 // satellite orbit-letter names by Flux −6..+6 (Book 3 p.24 Chart C).
 var (
-	closeOrbitLetters = [13]string{"Ay", "Bee", "Cee", "Dee", "Ee", "Eff", "Gee", "Aitch", "Eye", "Jay", "Kay", "Ell", "Em"}
-	farOrbitLetters   = [13]string{"En", "Oh", "Pee", "Que", "Arr", "Ess", "Tee", "Yu", "Vee", "Dub", "Ex", "Wye", "Zee"}
+	closeOrbitLetters = [13]string{
+		"Ay",
+		"Bee",
+		"Cee",
+		"Dee",
+		"Ee",
+		"Eff",
+		"Gee",
+		"Aitch",
+		"Eye",
+		"Jay",
+		"Kay",
+		"Ell",
+		"Em",
+	}
+	farOrbitLetters = [13]string{
+		"En",
+		"Oh",
+		"Pee",
+		"Que",
+		"Arr",
+		"Ess",
+		"Tee",
+		"Yu",
+		"Vee",
+		"Dub",
+		"Ex",
+		"Wye",
+		"Zee",
+	}
 )
 
 // rollMainworldSatellite rolls the mainworld type (Book 3 p.24 Chart 2C): a
@@ -66,9 +98,16 @@ func rollMainworldSatellite(r *dice.Roller) MainworldSatellite {
 	flux := r.Flux()
 	switch flux {
 	case -5, -4:
-		return MainworldSatellite{IsSatellite: true, Far: true, OrbitLetter: farOrbitLetters[dice.FluxIndex(flux)]}
+		return MainworldSatellite{
+			IsSatellite: true,
+			Far:         true,
+			OrbitLetter: farOrbitLetters[dice.FluxIndex(flux)],
+		}
 	case -3:
-		return MainworldSatellite{IsSatellite: true, OrbitLetter: closeOrbitLetters[dice.FluxIndex(flux)]}
+		return MainworldSatellite{
+			IsSatellite: true,
+			OrbitLetter: closeOrbitLetters[dice.FluxIndex(flux)],
+		}
 	default:
 		return MainworldSatellite{}
 	}

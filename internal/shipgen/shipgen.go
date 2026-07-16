@@ -72,7 +72,14 @@ const (
 	Charged // x2 cost
 )
 
-var structureNames = [...]string{"Frame-and-Plate", "Shell", "Polymer", "FeNi", "Organic", "Charged"}
+var structureNames = [...]string{
+	"Frame-and-Plate",
+	"Shell",
+	"Polymer",
+	"FeNi",
+	"Organic",
+	"Charged",
+}
 
 func (s Structure) String() string {
 	if s < FramePlate || s > Charged {
@@ -258,10 +265,16 @@ func (s Ship) String() string {
 
 	drives := make([]string, 0, 3)
 	if s.Maneuver != nil {
-		drives = append(drives, fmt.Sprintf("Maneuver-%s %dG", driveLabel(s.Maneuver.Letter), s.Maneuver.Potential))
+		drives = append(
+			drives,
+			fmt.Sprintf("Maneuver-%s %dG", driveLabel(s.Maneuver.Letter), s.Maneuver.Potential),
+		)
 	}
 	if s.Jump != nil {
-		drives = append(drives, fmt.Sprintf("Jump-%s J-%d", driveLabel(s.Jump.Letter), s.Jump.Potential))
+		drives = append(
+			drives,
+			fmt.Sprintf("Jump-%s J-%d", driveLabel(s.Jump.Letter), s.Jump.Potential),
+		)
 	}
 	if s.Power != nil {
 		drives = append(drives, fmt.Sprintf("Power-%s", driveLabel(s.Power.Letter)))
@@ -287,7 +300,13 @@ func (s Ship) String() string {
 		}
 		fmt.Fprintf(&b, "%s %s\n", label, d.LongName())
 	}
-	fmt.Fprintf(&b, "Fuel:    %dt · Cost %s · Payload %dt", s.Fuel.Tons, mcr(s.Cost), s.Tonnage.Payload)
+	fmt.Fprintf(
+		&b,
+		"Fuel:    %dt · Cost %s · Payload %dt",
+		s.Fuel.Tons,
+		mcr(s.Cost),
+		s.Tonnage.Payload,
+	)
 	for _, p := range s.Problems {
 		fmt.Fprintf(&b, "\n! %s", p)
 	}

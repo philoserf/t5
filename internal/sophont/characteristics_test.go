@@ -46,10 +46,20 @@ func TestNameSlots(t *testing.T) {
 		slot, flux, mod int
 		want            CharName
 	}{
-		{2, -5, 0, Agi}, {2, 0, 0, Dex}, {2, 5, 0, Gra}, {2, 0, -2, Agi}, // Flyer favors Agi
-		{3, -3, 0, Sta}, {3, 0, 0, End}, {3, 3, 0, Vig},
-		{5, -5, 0, Ins}, {5, 0, 0, Edu}, {5, 5, 0, Tra},
-		{6, -5, 0, Cas}, {6, -2, 0, Soc}, {6, 0, 0, Soc}, {6, 5, 0, Cha},
+		{2, -5, 0, Agi},
+		{2, 0, 0, Dex},
+		{2, 5, 0, Gra},
+		{2, 0, -2, Agi}, // Flyer favors Agi
+		{3, -3, 0, Sta},
+		{3, 0, 0, End},
+		{3, 3, 0, Vig},
+		{5, -5, 0, Ins},
+		{5, 0, 0, Edu},
+		{5, 5, 0, Tra},
+		{6, -5, 0, Cas},
+		{6, -2, 0, Soc},
+		{6, 0, 0, Soc},
+		{6, 5, 0, Cha},
 	}
 	for _, c := range cases {
 		r := dice.NewScripted(fluxSeq(c.flux)...)

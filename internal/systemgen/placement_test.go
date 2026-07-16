@@ -56,7 +56,8 @@ func TestP2Chart(t *testing.T) {
 	}
 	// ggOffset picks the class column.
 	row := p2(1)
-	if row.ggOffset(LargeGasGiant) != -4 || row.ggOffset(SmallGasGiant) != -3 || row.ggOffset(IceGiant) != 0 {
+	if row.ggOffset(LargeGasGiant) != -4 || row.ggOffset(SmallGasGiant) != -3 ||
+		row.ggOffset(IceGiant) != 0 {
 		t.Errorf("p2(1) ggOffset LGG/SGG/IG = %d/%d/%d, want -4/-3/0",
 			row.ggOffset(LargeGasGiant), row.ggOffset(SmallGasGiant), row.ggOffset(IceGiant))
 	}

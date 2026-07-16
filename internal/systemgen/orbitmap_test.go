@@ -70,7 +70,16 @@ func TestPlaceOrbitsMultiStar(t *testing.T) {
 	for i, w := range want {
 		o := s.Orbits[i]
 		if o.Host != w.host || o.Orbit != w.orbit || o.Kind != w.kind {
-			t.Errorf("orbit %d = {%s %d %s}, want {%s %d %s}", i, o.Host, o.Orbit, o.Kind, w.host, w.orbit, w.kind)
+			t.Errorf(
+				"orbit %d = {%s %d %s}, want {%s %d %s}",
+				i,
+				o.Host,
+				o.Orbit,
+				o.Kind,
+				w.host,
+				w.orbit,
+				w.kind,
+			)
 		}
 		if o.Giant == nil || o.Giant.Size != w.size {
 			t.Errorf("orbit %d giant = %v, want size %d", i, o.Giant, w.size)
@@ -128,7 +137,11 @@ func TestPlaceOrbitsWorldCapturedByGiant(t *testing.T) {
 	s.placeOrbits(dice.NewScripted(4, 4, 5, 6, 5, 3, 3, 3, 3, 3, 3, 4, 2, 3, 3, 3))
 
 	if len(s.Orbits) != 2 {
-		t.Fatalf("got %d orbits, want 2 (mainworld + giant, no standalone world): %+v", len(s.Orbits), s.Orbits)
+		t.Fatalf(
+			"got %d orbits, want 2 (mainworld + giant, no standalone world): %+v",
+			len(s.Orbits),
+			s.Orbits,
+		)
 	}
 	for _, o := range s.Orbits {
 		if o.Kind == KindWorld {
@@ -140,7 +153,11 @@ func TestPlaceOrbitsWorldCapturedByGiant(t *testing.T) {
 		t.Fatalf("expected the giant at orbit 8: %+v", giant)
 	}
 	if len(giant.Satellites) != 1 {
-		t.Fatalf("giant should have 1 captured moon, has %d: %+v", len(giant.Satellites), giant.Satellites)
+		t.Fatalf(
+			"giant should have 1 captured moon, has %d: %+v",
+			len(giant.Satellites),
+			giant.Satellites,
+		)
 	}
 	m := giant.Satellites[0]
 	if m.Type != worldgen.RadWorld || m.OrbitLetter != "Gee" || m.DoublePlanet {
@@ -151,14 +168,28 @@ func TestPlaceOrbitsWorldCapturedByGiant(t *testing.T) {
 func TestOtherWorldType(t *testing.T) {
 	hz := 4
 	// Inner/HZ table (orbit <= hz+1): rolls 1..6.
-	inner := map[int]string{1: "Inferno", 2: "Inner World", 3: "Big World", 4: "Storm World", 5: "Rad World", 6: "Hospitable"}
+	inner := map[int]string{
+		1: "Inferno",
+		2: "Inner World",
+		3: "Big World",
+		4: "Storm World",
+		5: "Rad World",
+		6: "Hospitable",
+	}
 	for roll, want := range inner {
 		if got := otherWorldType(hz, hz, true, roll).String(); got != want {
 			t.Errorf("otherWorldType(HZ, roll %d) = %q, want %q", roll, got, want)
 		}
 	}
 	// Outer table (orbit > hz+1): rolls 1..6.
-	outer := map[int]string{1: "Worldlet", 2: "Iceworld", 3: "Big World", 4: "Iceworld", 5: "Rad World", 6: "Iceworld"}
+	outer := map[int]string{
+		1: "Worldlet",
+		2: "Iceworld",
+		3: "Big World",
+		4: "Iceworld",
+		5: "Rad World",
+		6: "Iceworld",
+	}
 	for roll, want := range outer {
 		if got := otherWorldType(hz+3, hz, true, roll).String(); got != want {
 			t.Errorf("otherWorldType(outer, roll %d) = %q, want %q", roll, got, want)
@@ -192,7 +223,9 @@ func TestPlaceOrbits(t *testing.T) {
 	// (outer) a type 1D=2 gives an Iceworld, then GenerateOtherWorld rolls its
 	// UWP (size 2D-2=2, atm/hyd 2, pop 2D-6=6, F spaceport, TL 6) -> F222666-6.
 	// That UWP (Atm 2, Hyd 2, Pop 6, Gov 6, Law 6) earns Pe on a non-mainworld.
-	s.placeOrbits(dice.NewScripted(3, 3, 4, 4, 2, 2, 5, 5, 2, 2, 2, 3, 3, 3, 3, 6, 6, 3, 3, 3, 3, 2, 3))
+	s.placeOrbits(
+		dice.NewScripted(3, 3, 4, 4, 2, 2, 5, 5, 2, 2, 2, 3, 3, 3, 3, 6, 6, 3, 3, 3, 3, 2, 3),
+	)
 
 	want := []struct {
 		orbit int

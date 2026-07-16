@@ -39,10 +39,17 @@ func TestGoldenNoble(t *testing.T) {
 		t.Errorf("UPP = %q, want %q (Soc 10 -> 11 by Elevation, Dex +1 muster)", got, "79788B")
 	}
 	if c.Score(Social) != 11 || c.LandGrants != 1 {
-		t.Errorf("Soc = %d, LandGrants = %d, want 11 / 1 (one Elevation)", c.Score(Social), c.LandGrants)
+		t.Errorf(
+			"Soc = %d, LandGrants = %d, want 11 / 1 (one Elevation)",
+			c.Score(Social),
+			c.LandGrants,
+		)
 	}
 	if c.Skills.Level("Advocate") != 10 {
-		t.Errorf("Advocate = %d, want 10 (6 elevated term 1 + 4 term 2)", c.Skills.Level("Advocate"))
+		t.Errorf(
+			"Advocate = %d, want 10 (6 elevated term 1 + 4 term 2)",
+			c.Skills.Level("Advocate"),
+		)
 	}
 	rec := c.Careers[0]
 	if rec.Career != Noble || rec.Terms != 2 || rec.Outcome != MusteredOut {
@@ -59,12 +66,31 @@ func TestIntrigueFailureExiles(t *testing.T) {
 	c := Character{scores: [count]int{7, 7, 7, 7, 7, 10}}
 	run := careerRun{}
 	// Intrigue 12 fails vs Dex 7 -> Exile; then 4 skill rolls.
-	runIntrigueTerm(dice.NewScripted(6, 6, 1, 1, 1, 1), goldenPolicy{}, &c, &run, NobleCareer, Dexterity)
+	runIntrigueTerm(
+		dice.NewScripted(6, 6, 1, 1, 1, 1),
+		goldenPolicy{},
+		&c,
+		&run,
+		NobleCareer,
+		Dexterity,
+	)
 	if !run.exiled || c.Score(Social) != 10 || c.WoundBadges != 0 {
-		t.Fatalf("failed Intrigue: exiled %v Soc %d wounds %d, want exiled/10/0", run.exiled, c.Score(Social), c.WoundBadges)
+		t.Fatalf(
+			"failed Intrigue: exiled %v Soc %d wounds %d, want exiled/10/0",
+			run.exiled,
+			c.Score(Social),
+			c.WoundBadges,
+		)
 	}
 	// In Exile, a successful Return (7 <= Dex 7) ends it.
-	runIntrigueTerm(dice.NewScripted(3, 4, 1, 1, 1, 1), goldenPolicy{}, &c, &run, NobleCareer, Dexterity)
+	runIntrigueTerm(
+		dice.NewScripted(3, 4, 1, 1, 1, 1),
+		goldenPolicy{},
+		&c,
+		&run,
+		NobleCareer,
+		Dexterity,
+	)
 	if run.exiled {
 		t.Error("successful Return should end the Exile")
 	}

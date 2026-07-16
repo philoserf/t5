@@ -116,7 +116,12 @@ func TestGenerateWorld(t *testing.T) {
 			t.Fatalf("seed %d not reproducible", seed)
 		}
 		if a.Profile.Population > 0 && (a.PopulationDigit < 1 || a.PopulationDigit > 9) {
-			t.Fatalf("seed %d: pop digit %d invalid for pop %d", seed, a.PopulationDigit, a.Profile.Population)
+			t.Fatalf(
+				"seed %d: pop digit %d invalid for pop %d",
+				seed,
+				a.PopulationDigit,
+				a.Profile.Population,
+			)
 		}
 		if a.Profile.Population == 0 && a.PopulationDigit != 0 {
 			t.Fatalf("seed %d: pop-0 world has pop digit %d", seed, a.PopulationDigit)

@@ -23,50 +23,92 @@ func TestTypicalWeapons(t *testing.T) {
 		spec WeaponSpec
 		want string
 	}{
-		{WeaponSpec{MissileLauncher, SingleTurret, Standard, AttackRange},
-			"Standard Attack Range Single Turret Missile-7 Mod=-2. 1 ton. MCr2.2. Hits= 1D. S=07."},
-		{WeaponSpec{MiningLaser, SingleTurret, Standard, Orbit},
-			"Standard Orbit Single Turret Mining Laser-9 Mod=-2. 2 tons. MCr1.1. Hits= 1D. R=08."},
-		{WeaponSpec{CommCaster, SingleTurret, Standard, AttackRange},
-			"Standard Attack Range Single Turret CommCaster-8 Mod=-2. 1 ton. MCr5.2. Hits= 1D. S=07."},
-		{WeaponSpec{PulseLaser, SingleTurret, Standard, Orbit},
-			"Standard Orbit Single Turret Pulse Laser-10 Mod=-2. 2 tons. MCr0.9. Hits= 2D. R=08."},
-		{WeaponSpec{SlugThrower, SingleTurret, Standard, Orbit},
-			"Standard Orbit Single Turret Slug Thrower-10 Mod=-2. 2 tons. MCr0.8. Hits= 1D. R=08."},
-		{WeaponSpec{SandCaster, SingleTurret, Standard, Orbit},
-			"Standard Orbit Single Turret SandCaster-10 Mod=-2. 2 tons. MCr0.7. Hits= 1D. R=08."},
+		{
+			WeaponSpec{MissileLauncher, SingleTurret, Standard, AttackRange},
+			"Standard Attack Range Single Turret Missile-7 Mod=-2. 1 ton. MCr2.2. Hits= 1D. S=07.",
+		},
+		{
+			WeaponSpec{MiningLaser, SingleTurret, Standard, Orbit},
+			"Standard Orbit Single Turret Mining Laser-9 Mod=-2. 2 tons. MCr1.1. Hits= 1D. R=08.",
+		},
+		{
+			WeaponSpec{CommCaster, SingleTurret, Standard, AttackRange},
+			"Standard Attack Range Single Turret CommCaster-8 Mod=-2. 1 ton. MCr5.2. Hits= 1D. S=07.",
+		},
+		{
+			WeaponSpec{PulseLaser, SingleTurret, Standard, Orbit},
+			"Standard Orbit Single Turret Pulse Laser-10 Mod=-2. 2 tons. MCr0.9. Hits= 2D. R=08.",
+		},
+		{
+			WeaponSpec{SlugThrower, SingleTurret, Standard, Orbit},
+			"Standard Orbit Single Turret Slug Thrower-10 Mod=-2. 2 tons. MCr0.8. Hits= 1D. R=08.",
+		},
+		{
+			WeaponSpec{SandCaster, SingleTurret, Standard, Orbit},
+			"Standard Orbit Single Turret SandCaster-10 Mod=-2. 2 tons. MCr0.7. Hits= 1D. R=08.",
+		},
 		// The Beam Laser's own +2 cancels the Single Turret's -2.
-		{WeaponSpec{BeamLaser, SingleTurret, Standard, Orbit},
-			"Standard Orbit Single Turret Beam Laser-11 Mod=+0. 2 tons. MCr1.1. Hits= 1D. R=08."},
-		{WeaponSpec{SalvoRack, Bay, Standard, Orbit},
-			"Standard Orbit Bay Salvo Rack-11 Mod=+5. 100 tons. MCr25. Hits= 20D. R=08."},
-		{WeaponSpec{KKMissile, Bay, Standard, AttackRange},
-			"Standard Attack Range Bay KK Missile-10 Mod=+5. 50 tons. MCr8. Hits= 20D. S=07."},
-		{WeaponSpec{DataCaster, SingleTurret, Standard, Orbit},
-			"Standard Orbit Single Turret DataCaster-11 Mod=-2. 2 tons. MCr1.6. Hits= 1D. R=08."},
+		{
+			WeaponSpec{BeamLaser, SingleTurret, Standard, Orbit},
+			"Standard Orbit Single Turret Beam Laser-11 Mod=+0. 2 tons. MCr1.1. Hits= 1D. R=08.",
+		},
+		{
+			WeaponSpec{SalvoRack, Bay, Standard, Orbit},
+			"Standard Orbit Bay Salvo Rack-11 Mod=+5. 100 tons. MCr25. Hits= 20D. R=08.",
+		},
+		{
+			WeaponSpec{KKMissile, Bay, Standard, AttackRange},
+			"Standard Attack Range Bay KK Missile-10 Mod=+5. 50 tons. MCr8. Hits= 20D. S=07.",
+		},
+		{
+			WeaponSpec{DataCaster, SingleTurret, Standard, Orbit},
+			"Standard Orbit Single Turret DataCaster-11 Mod=-2. 2 tons. MCr1.6. Hits= 1D. R=08.",
+		},
 		// The Hybrid is dual-scale, and p.167 builds it on the world ladder.
-		{WeaponSpec{HybridSLM, TripleTurret, Standard, Orbit},
-			"Standard Orbit Triple Turret Hybrid SLM-11 Mod=+0. 2 tons. MCr4. Hits= 3D. R=08."},
-		{WeaponSpec{PlasmaGun, SingleBarbette, Standard, Orbit},
-			"Standard Orbit Barbette Plasma Gun-12 Mod=+2. 6 tons. MCr10. Hits= 5D. R=08."},
-		{WeaponSpec{ParticleAccel, SingleBarbette, Standard, AttackRange},
-			"Standard Attack Range Barbette PA-11 Mod=+2. 3 tons. MCr5.5. Hits= 5D. S=07."},
-		{WeaponSpec{FusionGun, SingleBarbette, Standard, Orbit},
-			"Standard Orbit Barbette Fusion Gun-13 Mod=+2. 6 tons. MCr10.5. Hits= 5D. R=08."},
-		{WeaponSpec{RailGun, Bay, Standard, AttackRange},
-			"Standard Attack Range Bay Rail Gun-12 Mod=+5. 50 tons. MCr17. Hits= 20D. S=07."},
-		{WeaponSpec{Ortillery, Bay, Standard, Orbit},
-			"Standard Orbit Bay Ortillery-13 Mod=+5. 100 tons. MCr30. Hits= 20D. R=08."},
-		{WeaponSpec{MesonGun, Main, Standard, AttackRange},
-			"Standard Attack Range Main Meson Gun-13 Mod=+10. 200 tons. MCr25. Hits= 100D. S=07."},
-		{WeaponSpec{JumpDamper, SingleBarbette, Standard, Orbit},
-			"Standard Orbit Barbette Jump Damper-15 Mod=+2. 6 tons. MCr24. Hits= 5D. R=08."},
-		{WeaponSpec{TractorPressor, SingleBarbette, Standard, Orbit},
-			"Standard Orbit Barbette Tractor Pressor-17 Mod=+2. 6 tons. MCr14. Hits= 5D. R=08."},
-		{WeaponSpec{Inducer, SingleTurret, Standard, Orbit},
-			"Standard Orbit Single Turret Inducer-18 Mod=-2. 2 tons. MCr1.6. Hits= 1D. R=08."},
-		{WeaponSpec{Stasis, SingleTurret, Standard, AttackRange},
-			"Standard Attack Range Single Turret Stasis-21 Mod=-2. 1 ton. MCr5.2. Hits= 1D. S=07."},
+		{
+			WeaponSpec{HybridSLM, TripleTurret, Standard, Orbit},
+			"Standard Orbit Triple Turret Hybrid SLM-11 Mod=+0. 2 tons. MCr4. Hits= 3D. R=08.",
+		},
+		{
+			WeaponSpec{PlasmaGun, SingleBarbette, Standard, Orbit},
+			"Standard Orbit Barbette Plasma Gun-12 Mod=+2. 6 tons. MCr10. Hits= 5D. R=08.",
+		},
+		{
+			WeaponSpec{ParticleAccel, SingleBarbette, Standard, AttackRange},
+			"Standard Attack Range Barbette PA-11 Mod=+2. 3 tons. MCr5.5. Hits= 5D. S=07.",
+		},
+		{
+			WeaponSpec{FusionGun, SingleBarbette, Standard, Orbit},
+			"Standard Orbit Barbette Fusion Gun-13 Mod=+2. 6 tons. MCr10.5. Hits= 5D. R=08.",
+		},
+		{
+			WeaponSpec{RailGun, Bay, Standard, AttackRange},
+			"Standard Attack Range Bay Rail Gun-12 Mod=+5. 50 tons. MCr17. Hits= 20D. S=07.",
+		},
+		{
+			WeaponSpec{Ortillery, Bay, Standard, Orbit},
+			"Standard Orbit Bay Ortillery-13 Mod=+5. 100 tons. MCr30. Hits= 20D. R=08.",
+		},
+		{
+			WeaponSpec{MesonGun, Main, Standard, AttackRange},
+			"Standard Attack Range Main Meson Gun-13 Mod=+10. 200 tons. MCr25. Hits= 100D. S=07.",
+		},
+		{
+			WeaponSpec{JumpDamper, SingleBarbette, Standard, Orbit},
+			"Standard Orbit Barbette Jump Damper-15 Mod=+2. 6 tons. MCr24. Hits= 5D. R=08.",
+		},
+		{
+			WeaponSpec{TractorPressor, SingleBarbette, Standard, Orbit},
+			"Standard Orbit Barbette Tractor Pressor-17 Mod=+2. 6 tons. MCr14. Hits= 5D. R=08.",
+		},
+		{
+			WeaponSpec{Inducer, SingleTurret, Standard, Orbit},
+			"Standard Orbit Single Turret Inducer-18 Mod=-2. 2 tons. MCr1.6. Hits= 1D. R=08.",
+		},
+		{
+			WeaponSpec{Stasis, SingleTurret, Standard, AttackRange},
+			"Standard Attack Range Single Turret Stasis-21 Mod=-2. 1 ton. MCr5.2. Hits= 1D. S=07.",
+		},
 	}
 	for _, c := range cases {
 		w := DesignWeapon(c.spec)
@@ -88,16 +130,26 @@ func TestWorkedWeaponExamples(t *testing.T) {
 		spec WeaponSpec
 		want string
 	}{
-		{WeaponSpec{MiningLaser, SingleTurret, Standard, VDistant},
-			"Standard Vdistant Single Turret Mining Laser-8 Mod=-2. 1 ton. MCr0.7. Hits= 1D. R=07."},
-		{WeaponSpec{PulseLaser, SingleTurret, Standard, VDistant},
-			"Standard Vdistant Single Turret Pulse Laser-9 Mod=-2. 1 ton. MCr0.5. Hits= 2D. R=07."},
-		{WeaponSpec{BeamLaser, SingleTurret, Standard, VDistant},
-			"Standard Vdistant Single Turret Beam Laser-10 Mod=+0. 1 ton. MCr0.7. Hits= 1D. R=07."},
-		{WeaponSpec{PlasmaGun, SingleBarbette, Standard, VDistant},
-			"Standard Vdistant Barbette Plasma Gun-11 Mod=+2. 3 tons. MCr4. Hits= 5D. R=07."},
-		{WeaponSpec{FusionGun, SingleBarbette, Standard, VDistant},
-			"Standard Vdistant Barbette Fusion Gun-12 Mod=+2. 3 tons. MCr4.5. Hits= 5D. R=07."},
+		{
+			WeaponSpec{MiningLaser, SingleTurret, Standard, VDistant},
+			"Standard Vdistant Single Turret Mining Laser-8 Mod=-2. 1 ton. MCr0.7. Hits= 1D. R=07.",
+		},
+		{
+			WeaponSpec{PulseLaser, SingleTurret, Standard, VDistant},
+			"Standard Vdistant Single Turret Pulse Laser-9 Mod=-2. 1 ton. MCr0.5. Hits= 2D. R=07.",
+		},
+		{
+			WeaponSpec{BeamLaser, SingleTurret, Standard, VDistant},
+			"Standard Vdistant Single Turret Beam Laser-10 Mod=+0. 1 ton. MCr0.7. Hits= 1D. R=07.",
+		},
+		{
+			WeaponSpec{PlasmaGun, SingleBarbette, Standard, VDistant},
+			"Standard Vdistant Barbette Plasma Gun-11 Mod=+2. 3 tons. MCr4. Hits= 5D. R=07.",
+		},
+		{
+			WeaponSpec{FusionGun, SingleBarbette, Standard, VDistant},
+			"Standard Vdistant Barbette Fusion Gun-12 Mod=+2. 3 tons. MCr4.5. Hits= 5D. R=07.",
+		},
 	}
 	for _, c := range cases {
 		if got := DesignWeapon(c.spec).LongName(); got != c.want {
@@ -172,8 +224,12 @@ func TestWeaponStageEffects(t *testing.T) {
 		}
 		// The stage never changes the mount's tonnage.
 		if w.Tons != std.Tons {
-			t.Errorf("%s changed tonnage to %s (want %s — stages apply to the weapon, not the mount)",
-				c.stage, w.Tons, std.Tons)
+			t.Errorf(
+				"%s changed tonnage to %s (want %s — stages apply to the weapon, not the mount)",
+				c.stage,
+				w.Tons,
+				std.Tons,
+			)
 		}
 	}
 
@@ -202,11 +258,18 @@ func TestWeaponProblems(t *testing.T) {
 		t.Errorf("a Mining Laser in a Bay is legal, got %v", w.Problems)
 	}
 	// A world-range weapon cannot be built for a space range.
-	if w := DesignWeapon(WeaponSpec{MiningLaser, SingleTurret, Standard, DeepSpace}); len(w.Problems) == 0 {
+	if w := DesignWeapon(
+		WeaponSpec{MiningLaser, SingleTurret, Standard, DeepSpace},
+	); len(
+		w.Problems,
+	) == 0 {
 		t.Errorf("a world-range Mining Laser built for Deep Space should be a problem")
 	}
 	// An unknown model does not panic.
-	if w := DesignWeapon(WeaponSpec{Model: WeaponID(99)}); len(w.Problems) == 0 || w.LongName() != "?" {
+	if w := DesignWeapon(
+		WeaponSpec{Model: WeaponID(99)},
+	); len(w.Problems) == 0 ||
+		w.LongName() != "?" {
 		t.Errorf("an unknown weapon should be reported, got %+v", w)
 	}
 }

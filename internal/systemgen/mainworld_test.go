@@ -32,10 +32,21 @@ func TestPlaceMainworld(t *testing.T) {
 
 	// A temperate planet: HZ-variance Flux 0 -> orbit 4; type Flux +2 -> Planet
 	// (not a satellite), so no climate/satellite code beyond the given Ph.
-	mw := worldgen.World{Profile: uwp.Profile{Size: 7, Atmosphere: 8, Hydrographics: 8}, TradeCodes: []string{"Ph"}}
-	orbit, sat := placeMainworld(dice.NewScripted(4, 4 /*HZVar 0*/, 5, 3 /*type Flux +2 -> Planet*/), primary, &mw)
+	mw := worldgen.World{
+		Profile:    uwp.Profile{Size: 7, Atmosphere: 8, Hydrographics: 8},
+		TradeCodes: []string{"Ph"},
+	}
+	orbit, sat := placeMainworld(
+		dice.NewScripted(4, 4 /*HZVar 0*/, 5, 3 /*type Flux +2 -> Planet*/),
+		primary,
+		&mw,
+	)
 	if orbit != 4 || sat.IsSatellite {
-		t.Errorf("Regina placement: orbit %d satellite %v, want orbit 4, planet", orbit, sat.IsSatellite)
+		t.Errorf(
+			"Regina placement: orbit %d satellite %v, want orbit 4, planet",
+			orbit,
+			sat.IsSatellite,
+		)
 	}
 	if !slices.Equal(mw.TradeCodes, []string{"Ph"}) {
 		t.Errorf("temperate planet gained an extra code: %v", mw.TradeCodes)
@@ -73,6 +84,11 @@ func TestPlaceMainworld(t *testing.T) {
 	mw5 := worldgen.World{Profile: uwp.Profile{Size: 0}}
 	orbit5, sat5 := placeMainworld(dice.NewScripted(3, 4 /*2D=7*/), primary, &mw5)
 	if orbit5 != 4 || sat5.IsSatellite || len(mw5.TradeCodes) != 0 {
-		t.Errorf("belt mainworld: orbit %d sat %v codes %v, want orbit 4, planet, no codes", orbit5, sat5.IsSatellite, mw5.TradeCodes)
+		t.Errorf(
+			"belt mainworld: orbit %d sat %v codes %v, want orbit 4, planet, no codes",
+			orbit5,
+			sat5.IsSatellite,
+			mw5.TradeCodes,
+		)
 	}
 }

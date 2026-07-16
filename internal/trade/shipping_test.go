@@ -9,10 +9,18 @@ func TestPassageFare(t *testing.T) {
 		demand int
 		want   int
 	}{
-		{High, 0, 10_000}, {Mid, 0, 8_000}, {Low, 0, 1_000},
-		{High, 5, 15_000}, {Mid, 5, 13_000}, {Low, 5, 1_500},
-		{High, -5, 5_000}, {Mid, -5, 3_000}, {Low, -5, 500},
-		{High, 3, 13_000}, {Mid, 3, 11_000}, {Low, 3, 1_300},
+		{High, 0, 10_000},
+		{Mid, 0, 8_000},
+		{Low, 0, 1_000},
+		{High, 5, 15_000},
+		{Mid, 5, 13_000},
+		{Low, 5, 1_500},
+		{High, -5, 5_000},
+		{Mid, -5, 3_000},
+		{Low, -5, 500},
+		{High, 3, 13_000},
+		{Mid, 3, 11_000},
+		{Low, 3, 1_300},
 	}
 	for _, c := range cases {
 		if got := c.class.Fare(c.demand); got != c.want {

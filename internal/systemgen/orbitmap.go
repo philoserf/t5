@@ -164,7 +164,11 @@ func (s *System) placeOrbits(r *dice.Roller) {
 				mw.Giant = &giants[0]
 				giants = giants[1:]
 			default:
-				prof := worldgen.GenerateOtherWorld(r, worldgen.BigWorld, s.Mainworld.Profile.Population)
+				prof := worldgen.GenerateOtherWorld(
+					r,
+					worldgen.BigWorld,
+					s.Mainworld.Profile.Population,
+				)
 				mw.Parent = &OtherWorld{Type: worldgen.BigWorld, Profile: prof}
 			}
 		}
@@ -207,7 +211,10 @@ func (s *System) placeOrbits(r *dice.Roller) {
 		g := &giants[i]
 		h := ggRotate()
 		if o, ok := h.claim(anchor(h) + p2(r.Dice(2)).ggOffset(g.Class)); ok {
-			placed = append(placed, PlacedOrbit{Host: h.label, Orbit: o, Kind: KindGasGiant, Giant: g})
+			placed = append(
+				placed,
+				PlacedOrbit{Host: h.label, Orbit: o, Kind: KindGasGiant, Giant: g},
+			)
 		}
 	}
 
@@ -267,7 +274,15 @@ func (s *System) placeOrbits(r *dice.Roller) {
 			HZOrbit:             h.hz,
 			HasHZ:               h.hasHZ,
 		})
-		placed = append(placed, PlacedOrbit{Host: h.label, Orbit: o, Kind: KindWorld, World: &OtherWorld{Type: wt, Profile: prof, TradeCodes: tcs}})
+		placed = append(
+			placed,
+			PlacedOrbit{
+				Host:  h.label,
+				Orbit: o,
+				Kind:  KindWorld,
+				World: &OtherWorld{Type: wt, Profile: prof, TradeCodes: tcs},
+			},
+		)
 	}
 
 	sort.Slice(placed, func(i, j int) bool {

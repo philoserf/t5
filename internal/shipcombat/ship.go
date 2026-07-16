@@ -34,8 +34,18 @@ func Attack(r *dice.Roller, w shipgen.Weapon, rangeBands, csk int, mods ...int) 
 // second asset: a hardwired brain is worth a flat 5, an operator-guided one is
 // worth as much as the gunner flying it, and a self-aware one is worth whatever
 // mind it rolled at launch (C = 6+1D, S = 1D, plus Flux — pass it as brainCSK).
-func AttackWithMissile(r *dice.Roller, m shipgen.Missile, rangeBands, gunnerCSK, brainCSK int, mods ...int) dice.CheckResult {
-	return ResolveMissile(r, rangeBands, m.TL, guidanceAsset(m.Spec.Guidance, gunnerCSK, brainCSK), mods...)
+func AttackWithMissile(
+	r *dice.Roller,
+	m shipgen.Missile,
+	rangeBands, gunnerCSK, brainCSK int,
+	mods ...int,
+) dice.CheckResult {
+	return ResolveMissile(
+		r,
+		rangeBands,
+		m.TL,
+		guidanceAsset(m.Spec.Guidance, gunnerCSK, brainCSK),
+		mods...)
 }
 
 // guidanceAsset is what a missile's brain is worth on the Missile Attack Task

@@ -45,7 +45,14 @@ var MerchantCareer = Career{
 	},
 	Skills: SkillGrid{
 		// Col 0 — Personal.
-		{bump(Strength), bump(Dexterity), bump(Endurance), bump(Intelligence), bump(Education), bump(Social)},
+		{
+			bump(Strength),
+			bump(Dexterity),
+			bump(Endurance),
+			bump(Intelligence),
+			bump(Education),
+			bump(Social),
+		},
 		// Col 1 — Academic (Major/Minor lost without the education stage).
 		{major, major, minor, minor, choose(theTrades...), choose(theTrades...)},
 		// Col 2 — Space Travel.
@@ -55,9 +62,23 @@ var MerchantCareer = Career{
 		// Col 4 — Business.
 		{sk("Computer"), sk("Trader"), sk("Driver"), sk("Advocate"), sk("Steward"), sk("Comms")},
 		// Col 5 — Vocation.
-		{sk("Broker"), sk("Admin"), cascade("Language", languages...), choose(starshipSkls...), sk("JOT"), sk("Vacc Suit")},
+		{
+			sk("Broker"),
+			sk("Admin"),
+			cascade("Language", languages...),
+			choose(starshipSkls...),
+			sk("JOT"),
+			sk("Vacc Suit"),
+		},
 		// Col 6 — Technical.
-		{choose(oneArt...), choose(sciences...), sk("Computer"), sk("Comms"), sk("Medic"), choose(theTrades...)},
+		{
+			choose(oneArt...),
+			choose(sciences...),
+			sk("Computer"),
+			sk("Comms"),
+			sk("Medic"),
+			choose(theTrades...),
+		},
 	},
 	// Muster-out (Book 1 p. 80), indexed 1-12 by (1D + DM). Passages are recorded
 	// at cash value.

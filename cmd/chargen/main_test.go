@@ -30,11 +30,19 @@ func TestRankOf(t *testing.T) {
 		// Private after 1 term" says nothing "after 1 term" hasn't already said.
 		{"entry enlisted rank is silent", served(soldier(1, false)), soldier(1, false), ""},
 		{"promoted enlisted", served(soldier(3, false)), soldier(3, false), "Sergeant"},
-		{"officer track reads the other ladder", served(soldier(1, true)), soldier(1, true), "2nd Lieutenant"},
+		{
+			"officer track reads the other ladder",
+			served(soldier(1, true)),
+			soldier(1, true),
+			"2nd Lieutenant",
+		},
 		{"officer promoted", served(soldier(3, true)), soldier(3, true), "Captain"},
 		// A rankless career has no ladder to read at all.
-		{"rankless career", served(chargen.CareerRecord{Career: chargen.Scout, Rank: 0}),
-			chargen.CareerRecord{Career: chargen.Scout, Rank: 0}, ""},
+		{
+			"rankless career", served(chargen.CareerRecord{Career: chargen.Scout, Rank: 0}),
+			chargen.CareerRecord{Career: chargen.Scout, Rank: 0},
+			"",
+		},
 		// A rank past the end of the ladder must not index out of bounds.
 		{"rank past the ladder", served(soldier(99, false)), soldier(99, false), ""},
 	}
@@ -57,10 +65,17 @@ func TestRankOf(t *testing.T) {
 // the deceased suffix it must not double up.
 func TestSummaryLine(t *testing.T) {
 	// No career at all.
-	if got := summaryLine(chargen.Character{Age: 18}); got != "Age 18 — did not qualify for a career\n" {
+	if got := summaryLine(
+		chargen.Character{Age: 18},
+	); got != "Age 18 — did not qualify for a career\n" {
 		t.Errorf("careerless = %q", got)
 	}
-	if got := summaryLine(chargen.Character{Age: 18, Dead: true}); !strings.Contains(got, ", deceased") {
+	if got := summaryLine(
+		chargen.Character{Age: 18, Dead: true},
+	); !strings.Contains(
+		got,
+		", deceased",
+	) {
 		t.Errorf("a dead careerless character should say so: %q", got)
 	}
 
@@ -106,10 +121,16 @@ func TestEducationField(t *testing.T) {
 		{"uneducated", chargen.Character{}, ""},
 		{"degree only", chargen.Character{Degrees: []string{"BA"}}, "BA"},
 		{"trade school: a major, no degree", chargen.Character{Major: "Trader"}, "Trader (major)"},
-		{"degree and subjects", chargen.Character{Degrees: []string{"BA"}, Major: "History", Minor: "Art"},
-			"BA — History (major), Art (minor)"},
-		{"a major with no minor", chargen.Character{Degrees: []string{"BA", "MA"}, Major: "History"},
-			"BA, MA — History (major)"},
+		{
+			"degree and subjects",
+			chargen.Character{Degrees: []string{"BA"}, Major: "History", Minor: "Art"},
+			"BA — History (major), Art (minor)",
+		},
+		{
+			"a major with no minor",
+			chargen.Character{Degrees: []string{"BA", "MA"}, Major: "History"},
+			"BA, MA — History (major)",
+		},
 	}
 	for _, c := range cases {
 		if got := educationField(c.c); got != c.want {
@@ -134,11 +155,13 @@ func TestRenderOmitsEmptyFields(t *testing.T) {
 
 	// Given the things, it shows them — including Service, which appears only
 	// for a life of more than one career.
-	rich := chargen.Character{Age: 40, Credits: 50000, Benefits: []string{"TAS"}, Publications: 2,
+	rich := chargen.Character{
+		Age: 40, Credits: 50000, Benefits: []string{"TAS"}, Publications: 2,
 		Careers: []chargen.CareerRecord{
 			{Career: chargen.Scholar, Terms: 2, Outcome: chargen.MusteredOut},
 			{Career: chargen.Citizen, Terms: 1, Outcome: chargen.MusteredOut},
-		}}
+		},
+	}
 	out = render(rich)
 	for _, want := range []string{"Service", "Publications", "Wealth", "Cr50,000", "Benefits", "TAS"} {
 		if !strings.Contains(out, want) {

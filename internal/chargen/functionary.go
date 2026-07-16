@@ -15,15 +15,22 @@ package chargen
 
 // FunctionaryCareer is the Functionary (Book 1 p. 87).
 var FunctionaryCareer = Career{
-	ID:               Functionary,
-	Name:             "Functionary",
-	AutoBegin:        true,
-	OfficePolitics:   true,
-	ControllingChars: []Characteristic{Dexterity, Endurance, Intelligence, Education}, // C2 C3 C4 C5
-	Continue:         ContinueRule{Fixed: 15},                                         // Office Politics decides continuation; the policy chooses
-	Advance:          RollLow,
-	EligPerTerm:      4,
-	BenefitDM:        DMRank,
+	ID:             Functionary,
+	Name:           "Functionary",
+	AutoBegin:      true,
+	OfficePolitics: true,
+	ControllingChars: []Characteristic{
+		Dexterity,
+		Endurance,
+		Intelligence,
+		Education,
+	}, // C2 C3 C4 C5
+	Continue: ContinueRule{
+		Fixed: 15,
+	}, // Office Politics decides continuation; the policy chooses
+	Advance:     RollLow,
+	EligPerTerm: 4,
+	BenefitDM:   DMRank,
 	// The F0-F8 rank ladder (Book 1 p. 87); rank 1 is Clerk (F0).
 	EnlistedRanks: []Rank{
 		{Title: "Clerk", Skill: "Bureaucrat"},
@@ -38,19 +45,61 @@ var FunctionaryCareer = Career{
 	},
 	Skills: SkillGrid{
 		// Col 0 — Personal.
-		{bump(Strength), bump(Dexterity), bump(Endurance), bump(Intelligence), bump(Education), bump(Social)},
+		{
+			bump(Strength),
+			bump(Dexterity),
+			bump(Endurance),
+			bump(Intelligence),
+			bump(Education),
+			bump(Social),
+		},
 		// Col 1 — Academic (Major/Minor lost without the education stage).
 		{major, major, minor, minor, choose(theTrades...), choose(theTrades...)},
 		// Col 2 — World Travel.
-		{sk("High-G"), sk("Vacc Suit"), sk("Driver"), sk("Flyer"), sk("Navigation"), sk("Seafarer")},
+		{
+			sk("High-G"),
+			sk("Vacc Suit"),
+			sk("Driver"),
+			sk("Flyer"),
+			sk("Navigation"),
+			sk("Seafarer"),
+		},
 		// Col 3 — General ("Any Skill" is a representative Citizen-job choice).
-		{choose(theTrades...), choose(oneArt...), choose(sciences...), choose(citizenJobs...), sk("Bureaucrat"), sk("Leader")},
+		{
+			choose(theTrades...),
+			choose(oneArt...),
+			choose(sciences...),
+			choose(citizenJobs...),
+			sk("Bureaucrat"),
+			sk("Leader"),
+		},
 		// Col 4 — Business.
-		{sk("Advocate"), sk("Broker"), sk("Trader"), sk("Teacher"), choose(theTrades...), sk("Driver")},
+		{
+			sk("Advocate"),
+			sk("Broker"),
+			sk("Trader"),
+			sk("Teacher"),
+			choose(theTrades...),
+			sk("Driver"),
+		},
 		// Col 5 — Vocation.
-		{sk("Advocate"), sk("Comms"), cascade("Language", languages...), sk("Admin"), sk("Bureaucrat"), sk("Comms")},
+		{
+			sk("Advocate"),
+			sk("Comms"),
+			cascade("Language", languages...),
+			sk("Admin"),
+			sk("Bureaucrat"),
+			sk("Comms"),
+		},
 		// Col 6 — Avocation.
-		{choose(oneArt...), choose(sciences...), sk("Athlete"), sk("Designer"), sk("Seafarer"), choose(theTrades...)},
+		{
+			choose(oneArt...),
+			choose(sciences...),
+			sk("Athlete"),
+			sk("Designer"),
+			sk("Seafarer"),
+			choose(theTrades...),
+		},
 	},
 	// Muster-out, indexed 1-12 by (1D + DM). The career page (p. 87) prints 11
 	// rows; row 12 (Pension x2 | Knighthood) comes from the consolidated

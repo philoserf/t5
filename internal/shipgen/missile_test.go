@@ -79,12 +79,22 @@ func TestMissileGuidanceReach(t *testing.T) {
 		t.Errorf("TL-12 Size-5 guidance = %q", m.LongName())
 	}
 	// DownLoaded needs TL 13.
-	if dl := DesignMissile(hi, MissileSpec{Size: 5, Type: Explosive, Guidance: DownLoaded}); len(dl.Problems) == 0 {
+	if dl := DesignMissile(
+		hi,
+		MissileSpec{Size: 5, Type: Explosive, Guidance: DownLoaded},
+	); len(
+		dl.Problems,
+	) == 0 {
 		t.Errorf("DownLoaded guidance needs TL 13; a TL-12 launcher cannot build one")
 	}
 	// And Self-Aware needs Size 5 — a Size-4 round has nowhere to put the brain,
 	// which is a size limit, not a tech one.
-	if small := DesignMissile(hi, MissileSpec{Size: 4, Type: Explosive, Guidance: SelfAware}); len(small.Problems) == 0 {
+	if small := DesignMissile(
+		hi,
+		MissileSpec{Size: 4, Type: Explosive, Guidance: SelfAware},
+	); len(
+		small.Problems,
+	) == 0 {
 		t.Errorf("a Size-4 round is too small for a Self-Aware brain")
 	}
 }
@@ -95,17 +105,32 @@ func TestMissileLauncherLimits(t *testing.T) {
 	missile := launcherAtTL(MissileLauncher, Standard, AttackRange) // TL 7
 	// The Missile launcher throws Sizes 4, 5, and 6 — not 3 or 7.
 	for _, size := range []int{4, 5, 6} {
-		if m := DesignMissile(missile, MissileSpec{Size: size, Type: Explosive, Guidance: HardWired}); len(m.Problems) > 0 {
+		if m := DesignMissile(
+			missile,
+			MissileSpec{Size: size, Type: Explosive, Guidance: HardWired},
+		); len(
+			m.Problems,
+		) > 0 {
 			t.Errorf("a Missile launcher throws Size-%d: %v", size, m.Problems)
 		}
 	}
 	for _, size := range []int{3, 7} {
-		if m := DesignMissile(missile, MissileSpec{Size: size, Type: Explosive, Guidance: HardWired}); len(m.Problems) == 0 {
+		if m := DesignMissile(
+			missile,
+			MissileSpec{Size: size, Type: Explosive, Guidance: HardWired},
+		); len(
+			m.Problems,
+		) == 0 {
 			t.Errorf("a Missile launcher should not throw Size-%d", size)
 		}
 	}
 	// A Nuke is a Size-5 warhead. A Size-4 round cannot carry one.
-	if m := DesignMissile(missile, MissileSpec{Size: 4, Type: Nuke, Guidance: HardWired}); len(m.Problems) == 0 {
+	if m := DesignMissile(
+		missile,
+		MissileSpec{Size: 4, Type: Nuke, Guidance: HardWired},
+	); len(
+		m.Problems,
+	) == 0 {
 		t.Errorf("a Size-4 round carries no Nuke")
 	}
 	// The KK Missile throws only its 100-ton Size-7 kinetic round.
@@ -124,17 +149,29 @@ func TestMissileLauncherLimits(t *testing.T) {
 // weigh tons apiece (Book 2 p.170) — which is what a magazine is budgeted from.
 func TestMissileMagazine(t *testing.T) {
 	rack := launcherAtTL(SalvoRack, Standard, VDistant)
-	if m := DesignMissile(rack, MissileSpec{Size: 3, Type: Explosive, Guidance: HardWired}); m.PerTon != 3000 {
+	if m := DesignMissile(
+		rack,
+		MissileSpec{Size: 3, Type: Explosive, Guidance: HardWired},
+	); m.PerTon != 3000 {
 		t.Errorf("Vsmall Missiles are %d/ton, want 3000", m.PerTon)
 	}
 	missile := launcherAtTL(MissileLauncher, Standard, AttackRange)
-	if m := DesignMissile(missile, MissileSpec{Size: 4, Type: Explosive, Guidance: HardWired}); m.PerTon != 400 {
+	if m := DesignMissile(
+		missile,
+		MissileSpec{Size: 4, Type: Explosive, Guidance: HardWired},
+	); m.PerTon != 400 {
 		t.Errorf("Small Missiles are %d/ton, want 400", m.PerTon)
 	}
-	if m := DesignMissile(missile, MissileSpec{Size: 5, Type: Explosive, Guidance: HardWired}); m.PerTon != 50 {
+	if m := DesignMissile(
+		missile,
+		MissileSpec{Size: 5, Type: Explosive, Guidance: HardWired},
+	); m.PerTon != 50 {
 		t.Errorf("Missiles are %d/ton, want 50", m.PerTon)
 	}
-	if m := DesignMissile(missile, MissileSpec{Size: 6, Type: Explosive, Guidance: HardWired}); m.TonsEach != 5 {
+	if m := DesignMissile(
+		missile,
+		MissileSpec{Size: 6, Type: Explosive, Guidance: HardWired},
+	); m.TonsEach != 5 {
 		t.Errorf("a Small Craft round is %d tons, want 5", m.TonsEach)
 	}
 }

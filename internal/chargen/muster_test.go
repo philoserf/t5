@@ -48,7 +48,12 @@ func TestMusterRollCount(t *testing.T) {
 		{"plus commendations", Character{}, CareerRecord{Terms: 3, Commendations: 2}, 5},
 		{"plus fame 19", Character{Fame: 19}, base, 4},
 		{"below fame 19", Character{Fame: 18}, base, 3},
-		{"disabled doubles terms, plus this career's commendations", Character{}, CareerRecord{Terms: 2, Commendations: 1, Outcome: Disabled}, 5},
+		{
+			"disabled doubles terms, plus this career's commendations",
+			Character{},
+			CareerRecord{Terms: 2, Commendations: 1, Outcome: Disabled},
+			5,
+		},
 	}
 	for _, tc := range cases {
 		if got := musterRollCount(tc.c, tc.rec); got != tc.want {
@@ -72,9 +77,20 @@ func TestCharBumpLostOverCap(t *testing.T) {
 	}
 	for _, c := range cases {
 		ch := Character{scores: [count]int{c.start, 7, 7, 7, 7, 7}}
-		applyBenefit(&ch, Benefit{Kind: CharBump, Char: Strength, Value: c.bump}, Career{}, CareerRecord{})
+		applyBenefit(
+			&ch,
+			Benefit{Kind: CharBump, Char: Strength, Value: c.bump},
+			Career{},
+			CareerRecord{},
+		)
 		if got := ch.Score(Strength); got != c.want {
-			t.Errorf("Str %d + %d = %d, want %d (over-15 is lost, not clamped)", c.start, c.bump, got, c.want)
+			t.Errorf(
+				"Str %d + %d = %d, want %d (over-15 is lost, not clamped)",
+				c.start,
+				c.bump,
+				got,
+				c.want,
+			)
 		}
 	}
 }

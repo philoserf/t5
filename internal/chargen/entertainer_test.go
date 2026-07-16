@@ -31,13 +31,22 @@ func TestGoldenEntertainer(t *testing.T) {
 
 	// goldenPolicy (scout_test.go) picks skill column 3; for the Entertainer grid
 	// that column is General (Survey at row 1).
-	c := GenerateCareered(dice.NewScripted(seq...), goldenPolicy{}, worldgen.World{}, EntertainerCareer)
+	c := GenerateCareered(
+		dice.NewScripted(seq...),
+		goldenPolicy{},
+		worldgen.World{},
+		EntertainerCareer,
+	)
 
 	if got := c.UPP(); got != "887777" {
 		t.Errorf("UPP = %q, want %q (Str 7 +1 muster benefit)", got, "887777")
 	}
 	if c.Fame != 9 || c.Talent != 8 {
-		t.Errorf("Fame/Talent = %d/%d, want 9/8 (start 7, no Flux term1, +2 Flux term2; Talent +1 on the rise)", c.Fame, c.Talent)
+		t.Errorf(
+			"Fame/Talent = %d/%d, want 9/8 (start 7, no Flux term1, +2 Flux term2; Talent +1 on the rise)",
+			c.Fame,
+			c.Talent,
+		)
 	}
 	if c.Skills.Level("Survey") != 10 {
 		t.Errorf("Survey = %d, want 10 (6 skills term1 + 4 skills term2)", c.Skills.Level("Survey"))
@@ -57,7 +66,13 @@ func TestFameFallDoesNotBonus(t *testing.T) {
 	c := Character{Fame: 8, Talent: 8}
 	// A later term (run.terms > 0) applies Flux: 1-6 = -5 lowers Fame; then 4 base
 	// skill rolls (Survey).
-	runFameTerm(dice.NewScripted(1, 6, 1, 1, 1, 1), goldenPolicy{}, &c, &careerRun{terms: 1}, EntertainerCareer)
+	runFameTerm(
+		dice.NewScripted(1, 6, 1, 1, 1, 1),
+		goldenPolicy{},
+		&c,
+		&careerRun{terms: 1},
+		EntertainerCareer,
+	)
 	if c.Fame != 3 || c.Talent != 8 {
 		t.Errorf("Fame/Talent = %d/%d, want 3/8 (fall grants no Talent)", c.Fame, c.Talent)
 	}

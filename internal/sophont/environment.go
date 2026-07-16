@@ -105,11 +105,81 @@ var nicheClasses = []string{
 
 // nicheCols holds the sub-niche columns of chart 05C, each indexed by Flux+6.
 var nicheCols = map[string][]string{
-	"Herbivore": {"Grazer", "Grazer", "Grazer", "Intermittent", "Intermittent", "Intermittent", "Intermittent", "Grazer", "Grazer", "Grazer", "Grazer", "Grazer", "Filter"},
-	"Omnivore":  {"Hunter", "Hunter", "Hunter", "Hunter", "Hunter", "Gatherer", "H/G", "Gatherer", "Gatherer", "Gatherer", "Gatherer", "Gatherer", "Eater"},
-	"Carnivore": {"Pouncer", "Pouncer", "Pouncer", "Pouncer", "Pouncer", "Pouncer", "Chaser", "Chaser", "Chaser", "Chaser", "Trapper", "Siren", "Killer"},
-	"Scavenger": {"Carrion-Eater", "Carrion-Eater", "Carrion-Eater", "Hijacker", "Hijacker", "Hijacker", "Intimidator", "Intimidator", "Intimidator", "Intimidator", "Intimidator", "Reducer", "Reducer"},
-	"Producer":  {"Collector", "Collector", "Collector", "Collector", "Collector", "Collector", "Basker", "Basker", "Basker", "Basker", "Basker", "Basker", "Basker"},
+	"Herbivore": {
+		"Grazer",
+		"Grazer",
+		"Grazer",
+		"Intermittent",
+		"Intermittent",
+		"Intermittent",
+		"Intermittent",
+		"Grazer",
+		"Grazer",
+		"Grazer",
+		"Grazer",
+		"Grazer",
+		"Filter",
+	},
+	"Omnivore": {
+		"Hunter",
+		"Hunter",
+		"Hunter",
+		"Hunter",
+		"Hunter",
+		"Gatherer",
+		"H/G",
+		"Gatherer",
+		"Gatherer",
+		"Gatherer",
+		"Gatherer",
+		"Gatherer",
+		"Eater",
+	},
+	"Carnivore": {
+		"Pouncer",
+		"Pouncer",
+		"Pouncer",
+		"Pouncer",
+		"Pouncer",
+		"Pouncer",
+		"Chaser",
+		"Chaser",
+		"Chaser",
+		"Chaser",
+		"Trapper",
+		"Siren",
+		"Killer",
+	},
+	"Scavenger": {
+		"Carrion-Eater",
+		"Carrion-Eater",
+		"Carrion-Eater",
+		"Hijacker",
+		"Hijacker",
+		"Hijacker",
+		"Intimidator",
+		"Intimidator",
+		"Intimidator",
+		"Intimidator",
+		"Intimidator",
+		"Reducer",
+		"Reducer",
+	},
+	"Producer": {
+		"Collector",
+		"Collector",
+		"Collector",
+		"Collector",
+		"Collector",
+		"Collector",
+		"Basker",
+		"Basker",
+		"Basker",
+		"Basker",
+		"Basker",
+		"Basker",
+		"Basker",
+	},
 }
 
 // rollEnvironment rolls a species' evolutionary environment from its homeworld
@@ -118,7 +188,13 @@ func rollEnvironment(r *dice.Roller, home uwp.Profile) Environment {
 	dm := clamp(r.Flux(), -5, 5)
 	loco := rollLocomotion(r, dm, home)
 	class, niche := rollNiche(r, dm)
-	return Environment{Terrain: terrainNames[dm+5], EnvironDM: dm, Locomotion: loco, Class: class, Niche: niche}
+	return Environment{
+		Terrain:    terrainNames[dm+5],
+		EnvironDM:  dm,
+		Locomotion: loco,
+		Class:      class,
+		Niche:      niche,
+	}
 }
 
 // rollLocomotion rolls 1D on the terrain row, shifting the column by the

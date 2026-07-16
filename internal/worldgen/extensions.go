@@ -143,6 +143,13 @@ func RollCultural(r *dice.Roller, p uwp.Profile, ix int) Cultural {
 
 // String renders the extension as "[HASS]", e.g. "[9C6D]".
 func (c Cultural) String() string {
-	return fmt.Sprintf("[%s%s%s%s]",
-		ehex.Format(c.Heterogeneity), ehex.Format(c.Acceptance), ehex.Format(c.Strangeness), ehex.Format(c.Symbols))
+	return fmt.Sprintf(
+		"[%s%s%s%s]",
+		ehex.Format(
+			c.Heterogeneity,
+		),
+		ehex.Format(c.Acceptance),
+		ehex.Format(c.Strangeness),
+		ehex.Format(c.Symbols),
+	)
 }

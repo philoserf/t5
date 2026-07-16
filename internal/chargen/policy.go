@@ -71,7 +71,11 @@ func (DefaultPolicy) RiskMod(Character, int) int { return 0 }
 func (DefaultPolicy) ChooseSkillColumn(c Character, grid SkillGrid) int {
 	best, bestLevel := -1, 0
 	for col := 1; col < len(grid); col++ {
-		if productive, level := columnScore(c, grid[col]); productive && (best < 0 || level < bestLevel) {
+		if productive, level := columnScore(
+			c,
+			grid[col],
+		); productive &&
+			(best < 0 || level < bestLevel) {
 			best, bestLevel = col, level
 		}
 	}

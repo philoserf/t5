@@ -23,11 +23,30 @@ func reginaSystem() System {
 		Belts:          0,
 		Worlds:         8,
 		Mainworld: worldgen.World{
-			Profile:         uwp.Profile{Starport: 'A', Size: 7, Atmosphere: 8, Hydrographics: 8, Population: 8, Government: 9, Law: 9, TechLevel: 12},
-			TradeCodes:      []string{"Ph", "Pa", "Ri"},
-			Importance:      4,
-			Economic:        worldgen.Economic{Resources: 13, Labor: 7, Infrastructure: 14, Efficiency: 4},
-			Cultural:        worldgen.Cultural{Heterogeneity: 9, Acceptance: 12, Strangeness: 6, Symbols: 13},
+			Profile: uwp.Profile{
+				Starport:      'A',
+				Size:          7,
+				Atmosphere:    8,
+				Hydrographics: 8,
+				Population:    8,
+				Government:    9,
+				Law:           9,
+				TechLevel:     12,
+			},
+			TradeCodes: []string{"Ph", "Pa", "Ri"},
+			Importance: 4,
+			Economic: worldgen.Economic{
+				Resources:      13,
+				Labor:          7,
+				Infrastructure: 14,
+				Efficiency:     4,
+			},
+			Cultural: worldgen.Cultural{
+				Heterogeneity: 9,
+				Acceptance:    12,
+				Strangeness:   6,
+				Symbols:       13,
+			},
 			Nobility:        "BcCeF",
 			NavalBase:       true,
 			ScoutBase:       true,
@@ -190,12 +209,22 @@ func TestGenerateForMap(t *testing.T) {
 			t.Errorf("seed %d: no gas giant but count = %d", seed, s.GasGiants)
 		}
 		if s := GenerateForMap(dice.NewWithSeed(seed), false, true); s.Mainworld.Profile.Size != 0 {
-			t.Errorf("seed %d: asteroid symbol but mainworld size = %d", seed, s.Mainworld.Profile.Size)
+			t.Errorf(
+				"seed %d: asteroid symbol but mainworld size = %d",
+				seed,
+				s.Mainworld.Profile.Size,
+			)
 		}
 	}
 	// The unconstrained Generate is unchanged: same seed, same gas-giant count as
 	// the internal any-constraint path.
-	if a, b := Generate(dice.NewWithSeed(9)).GasGiants, generate(dice.NewWithSeed(9), ggAny, false).GasGiants; a != b {
+	if a, b := Generate(
+		dice.NewWithSeed(9),
+	).GasGiants, generate(
+		dice.NewWithSeed(9),
+		ggAny,
+		false,
+	).GasGiants; a != b {
 		t.Errorf("Generate diverged from ggAny: %d vs %d", a, b)
 	}
 }
@@ -231,7 +260,12 @@ func TestSecondaryStarOrbitsAreReserved(t *testing.T) {
 		}
 		for _, o := range s.Orbits {
 			if o.Host == "Primary" && taken[o.Orbit] {
-				t.Fatalf("seed %d: %s sits in orbit %d, which a secondary star occupies", seed, o.Kind, o.Orbit)
+				t.Fatalf(
+					"seed %d: %s sits in orbit %d, which a secondary star occupies",
+					seed,
+					o.Kind,
+					o.Orbit,
+				)
 			}
 		}
 	}

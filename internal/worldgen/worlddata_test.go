@@ -109,16 +109,40 @@ func TestNativeStatus(t *testing.T) {
 		{"Regina natives", regina, "Natives"},
 		{"corporate override", uwp.Profile{Government: 1, Population: 8}, "Corporate"},
 		{"colonists override", uwp.Profile{Government: 6, Population: 8}, "Colonists"},
-		{"exotic natives", uwp.Profile{Population: 8, Atmosphere: 11, TechLevel: 9}, "Exotic Natives"},
+		{
+			"exotic natives",
+			uwp.Profile{Population: 8, Atmosphere: 11, TechLevel: 9},
+			"Exotic Natives",
+		},
 		{"transplants", uwp.Profile{Population: 8, Atmosphere: 0, TechLevel: 9}, "Transplants"},
 		{"settlers", uwp.Profile{Population: 5, Atmosphere: 6, TechLevel: 7}, "Settlers"},
 		{"transients", uwp.Profile{Population: 2, Atmosphere: 6, TechLevel: 5}, "Transients"},
-		{"catastrophic XN", uwp.Profile{Population: 0, Atmosphere: 6, TechLevel: 5}, "Catastrophic XN"},
-		{"extinct natives", uwp.Profile{Population: 0, Atmosphere: 6, TechLevel: 0}, "Extinct Natives"},
-		{"catastrophic EXN", uwp.Profile{Population: 0, Atmosphere: 11, TechLevel: 3}, "Catastrophic EXN"},
-		{"vanished transplants", uwp.Profile{Population: 0, Atmosphere: 1, TechLevel: 5}, "Vanished Transplants"},
+		{
+			"catastrophic XN",
+			uwp.Profile{Population: 0, Atmosphere: 6, TechLevel: 5},
+			"Catastrophic XN",
+		},
+		{
+			"extinct natives",
+			uwp.Profile{Population: 0, Atmosphere: 6, TechLevel: 0},
+			"Extinct Natives",
+		},
+		{
+			"catastrophic EXN",
+			uwp.Profile{Population: 0, Atmosphere: 11, TechLevel: 3},
+			"Catastrophic EXN",
+		},
+		{
+			"vanished transplants",
+			uwp.Profile{Population: 0, Atmosphere: 1, TechLevel: 5},
+			"Vanished Transplants",
+		},
 		{"barren none", uwp.Profile{Population: 0, Atmosphere: 0, TechLevel: 0}, "None"},
-		{"pop-0 ignores gov override", uwp.Profile{Population: 0, Government: 1, Atmosphere: 6, TechLevel: 5}, "Catastrophic XN"},
+		{
+			"pop-0 ignores gov override",
+			uwp.Profile{Population: 0, Government: 1, Atmosphere: 6, TechLevel: 5},
+			"Catastrophic XN",
+		},
 	}
 	for _, c := range cases {
 		if got := NativeStatus(c.p); got != c.want {
@@ -170,11 +194,18 @@ func TestZoneCodes(t *testing.T) {
 		t.Errorf("red = %v, want [Fo]", got)
 	}
 	// A class-X starport is Red -> Fo.
-	if got := ZoneCodes(uwp.Profile{Starport: 'X', Population: 3}); !slices.Equal(got, []string{"Fo"}) {
+	if got := ZoneCodes(
+		uwp.Profile{Starport: 'X', Population: 3},
+	); !slices.Equal(
+		got,
+		[]string{"Fo"},
+	) {
 		t.Errorf("class-X = %v, want [Fo]", got)
 	}
 	// Green earns nothing.
-	if got := ZoneCodes(uwp.Profile{Starport: 'A', Government: 5, Law: 5, Population: 8}); got != nil {
+	if got := ZoneCodes(
+		uwp.Profile{Starport: 'A', Government: 5, Law: 5, Population: 8},
+	); got != nil {
 		t.Errorf("green = %v, want none", got)
 	}
 	// Regina (Gov 8, Law 9 -> 17) is Green, so the golden is untouched.

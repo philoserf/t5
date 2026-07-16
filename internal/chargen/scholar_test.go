@@ -51,7 +51,11 @@ func TestGoldenScholar(t *testing.T) {
 		t.Errorf("record = %+v, want Scholar/2 terms/MusteredOut", rec)
 	}
 	if rec.Officer || rec.Rank != 3 {
-		t.Errorf("rank = %d officer %v, want single-ladder rank 3 (Assistant Professor)", rec.Rank, rec.Officer)
+		t.Errorf(
+			"rank = %d officer %v, want single-ladder rank 3 (Assistant Professor)",
+			rec.Rank,
+			rec.Officer,
+		)
 	}
 	if len(c.Benefits) != 1 || c.Benefits[0] != "Wafer Jack" {
 		t.Errorf("Benefits = %v, want [Wafer Jack]", c.Benefits)
@@ -114,7 +118,9 @@ func TestResolveRankAmateur(t *testing.T) {
 // TestAwardWinningPublication: a Publication rolled 4 under the CC counts as two
 // (Book 1 p.76).
 func TestAwardWinningPublication(t *testing.T) {
-	c := &Character{scores: [count]int{10, 7, 7, 7, 6, 7}} // Str 10 (the term's CC), Edu 6 (Amateur, no promotion roll)
+	c := &Character{
+		scores: [count]int{10, 7, 7, 7, 6, 7},
+	} // Str 10 (the term's CC), Edu 6 (Amateur, no promotion roll)
 	run := &careerRun{ccPool: []Characteristic{Strength}}
 	// Risk 7 survives; Reward 2D=4 <= Str 10 and 4 <= Str-4=6 -> Award-Winning; 4 skills.
 	runTerm(dice.NewScripted(3, 4, 2, 2, 1, 1, 1, 1), goldenPolicy{}, c, run, ScholarCareer)

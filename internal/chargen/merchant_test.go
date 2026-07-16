@@ -36,7 +36,12 @@ func TestGoldenMerchant(t *testing.T) {
 
 	// goldenPolicy (scout_test.go) picks skill column 3; for the Merchant grid
 	// that column is Trade (Broker at row 1).
-	c := GenerateCareered(dice.NewScripted(seq...), goldenPolicy{}, worldgen.World{}, MerchantCareer)
+	c := GenerateCareered(
+		dice.NewScripted(seq...),
+		goldenPolicy{},
+		worldgen.World{},
+		MerchantCareer,
+	)
 
 	if got := c.UPP(); got != "888877" {
 		t.Errorf("UPP = %q, want %q (End 7 +1 muster benefit)", got, "888877")
@@ -45,13 +50,21 @@ func TestGoldenMerchant(t *testing.T) {
 		t.Errorf("ShipShares = %d, want 3 (escalating: 1 + 2)", c.ShipShares)
 	}
 	if c.Skills.Level("Broker") != 10 || c.Skills.Level("Steward") != 1 {
-		t.Errorf("skills: Broker=%d Steward=%d, want 10/1", c.Skills.Level("Broker"), c.Skills.Level("Steward"))
+		t.Errorf(
+			"skills: Broker=%d Steward=%d, want 10/1",
+			c.Skills.Level("Broker"),
+			c.Skills.Level("Steward"),
+		)
 	}
 	rec := c.Careers[0]
 	if rec.Career != Merchant || rec.Terms != 2 || rec.Outcome != MusteredOut {
 		t.Errorf("record = %+v, want Merchant/2 terms/MusteredOut", rec)
 	}
 	if !rec.Officer || rec.Rank != 1 {
-		t.Errorf("rank = %d officer %v, want officer rank 1 (Fourth Officer)", rec.Rank, rec.Officer)
+		t.Errorf(
+			"rank = %d officer %v, want officer rank 1 (Fourth Officer)",
+			rec.Rank,
+			rec.Officer,
+		)
 	}
 }

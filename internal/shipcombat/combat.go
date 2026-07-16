@@ -45,8 +45,16 @@ func SpaceWeaponTarget(weaponTL, csk, mods int) int {
 // ResolveSpaceWeapon rolls the Space Weapon Task (Book 2 p.195): (range-band)D
 // roll-low against weaponTL + C+S+K + mods. Used by most weapons and by missiles
 // at Range 5 or less.
-func ResolveSpaceWeapon(r *dice.Roller, rangeBands, weaponTL, csk int, mods ...int) dice.CheckResult {
-	return task.ResolveDice(r, SpaceWeaponDice(rangeBands, weaponTL), SpaceWeaponTarget(weaponTL, csk, 0), mods...)
+func ResolveSpaceWeapon(
+	r *dice.Roller,
+	rangeBands, weaponTL, csk int,
+	mods ...int,
+) dice.CheckResult {
+	return task.ResolveDice(
+		r,
+		SpaceWeaponDice(rangeBands, weaponTL),
+		SpaceWeaponTarget(weaponTL, csk, 0),
+		mods...)
 }
 
 // A missile's Guidance is a property of the round, chosen when it is designed, so
@@ -71,8 +79,16 @@ func MissileTarget(missileTL, guidanceValue, mods int) int {
 // ResolveMissile rolls the Missile Attack Task (Book 2 p.197): 5D (6D if the
 // missile TL is below the range) roll-low against missileTL + guidance + mods.
 // Used for missiles at Range 6 or more.
-func ResolveMissile(r *dice.Roller, rangeBands, missileTL, guidanceValue int, mods ...int) dice.CheckResult {
-	return task.ResolveDice(r, MissileDice(missileTL, rangeBands), MissileTarget(missileTL, guidanceValue, 0), mods...)
+func ResolveMissile(
+	r *dice.Roller,
+	rangeBands, missileTL, guidanceValue int,
+	mods ...int,
+) dice.CheckResult {
+	return task.ResolveDice(
+		r,
+		MissileDice(missileTL, rangeBands),
+		MissileTarget(missileTL, guidanceValue, 0),
+		mods...)
 }
 
 // DefensiveFireTarget is the Defensive Fire Task's target number (Book 2 p.196):

@@ -55,7 +55,10 @@ func TestGoldenAgent(t *testing.T) {
 		t.Errorf("Survey = %d, want 12 (6 rolls x 2 terms)", c.Skills.Level("Survey"))
 	}
 	if c.Skills.Level("Admin") != 2 {
-		t.Errorf("Admin = %d, want 2 (one Undercover skill borrowed from the Soldier each term)", c.Skills.Level("Admin"))
+		t.Errorf(
+			"Admin = %d, want 2 (one Undercover skill borrowed from the Soldier each term)",
+			c.Skills.Level("Admin"),
+		)
 	}
 	rec := c.Careers[0]
 	if rec.Career != Agent || rec.Terms != 2 || rec.Outcome != MusteredOut {
@@ -64,7 +67,8 @@ func TestGoldenAgent(t *testing.T) {
 	if rec.Rank != 0 || rec.Officer {
 		t.Errorf("rank = %d officer %v, want rankless (0, false)", rec.Rank, rec.Officer)
 	}
-	if got := c.Benefits; len(got) != 3 || got[0] != "Wafer Jack" || got[1] != "Ship Share" || got[2] != "Ship Share" {
+	if got := c.Benefits; len(got) != 3 || got[0] != "Wafer Jack" || got[1] != "Ship Share" ||
+		got[2] != "Ship Share" {
 		t.Errorf("Benefits = %v, want [Wafer Jack, Ship Share, Ship Share]", c.Benefits)
 	}
 }
@@ -93,7 +97,10 @@ func TestAwardUndercoverFailedMission(t *testing.T) {
 		t.Errorf("Admin = %d, want 1 (the borrowed Undercover skill)", c.Skills.Level("Admin"))
 	}
 	if c.Skills.Level("Survey") != 2 {
-		t.Errorf("Survey = %d, want 2 (Per Term 2, no Successful Mission bonus)", c.Skills.Level("Survey"))
+		t.Errorf(
+			"Survey = %d, want 2 (Per Term 2, no Successful Mission bonus)",
+			c.Skills.Level("Survey"),
+		)
 	}
 }
 

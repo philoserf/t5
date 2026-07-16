@@ -29,7 +29,9 @@ func TestDesignMurphy(t *testing.T) {
 		t.Errorf("hull = %+v", s.Hull)
 	}
 	// Drives: 2G / Jump-2 / power tier 2.
-	if s.Maneuver.Potential != 2 || s.Maneuver.Tons != 2 || s.Jump.Potential != 2 || s.Jump.Tons != 10 || s.Power.Potential != 2 {
+	if s.Maneuver.Potential != 2 || s.Maneuver.Tons != 2 || s.Jump.Potential != 2 ||
+		s.Jump.Tons != 10 ||
+		s.Power.Potential != 2 {
 		t.Errorf("drives wrong: %+v %+v %+v", s.Maneuver, s.Jump, s.Power)
 	}
 	// Fuel and armor.
@@ -62,7 +64,11 @@ func TestDesignBeowulf(t *testing.T) {
 		t.Errorf("QSP = %q, want A-BS11", got)
 	}
 	if s.Hull.Agility != -1 || s.Hull.Stability != 0 {
-		t.Errorf("overtonnage agility/stability = %d/%d, want -1/0", s.Hull.Agility, s.Hull.Stability)
+		t.Errorf(
+			"overtonnage agility/stability = %d/%d, want -1/0",
+			s.Hull.Agility,
+			s.Hull.Stability,
+		)
 	}
 	if s.Maneuver.Potential != 1 || s.Jump.Potential != 1 {
 		t.Errorf("potentials = %dG / J%d, want 1G / J1", s.Maneuver.Potential, s.Jump.Potential)
@@ -90,7 +96,11 @@ func TestDesignUnderpoweredPlant(t *testing.T) {
 		Maneuver: &DriveSpec{Letter: 7}, Power: &DriveSpec{Letter: 4},
 	})
 	if s.Maneuver.Potential != 4 || s.Power.Potential != 2 {
-		t.Fatalf("potentials = maneuver %d / power %d, want 4 / 2", s.Maneuver.Potential, s.Power.Potential)
+		t.Fatalf(
+			"potentials = maneuver %d / power %d, want 4 / 2",
+			s.Maneuver.Potential,
+			s.Power.Potential,
+		)
 	}
 	if !hasProblem(s, "power plant potential") {
 		t.Errorf("expected an underpowered-plant problem, got %v", s.Problems)
@@ -98,7 +108,15 @@ func TestDesignUnderpoweredPlant(t *testing.T) {
 }
 
 func TestDesignNeedsPowerPlant(t *testing.T) {
-	s := Design(ShipSpec{Mission: "X", TL: 12, HullLetter: 1, Config: Streamlined, Maneuver: &DriveSpec{Letter: 1}})
+	s := Design(
+		ShipSpec{
+			Mission:    "X",
+			TL:         12,
+			HullLetter: 1,
+			Config:     Streamlined,
+			Maneuver:   &DriveSpec{Letter: 1},
+		},
+	)
 	if !hasProblem(s, "require a power plant") {
 		t.Errorf("expected a missing-plant problem, got %v", s.Problems)
 	}

@@ -122,7 +122,12 @@ func (s Survey) Subsector(letter byte) []Record {
 func (s Survey) String() string {
 	var b strings.Builder
 	for _, rec := range s.Records {
-		fmt.Fprintf(&b, "%s  [~%d/wk]\n", rec.SecondSurvey(), route.ExpectedTraffic(rec.System.Mainworld.Importance))
+		fmt.Fprintf(
+			&b,
+			"%s  [~%d/wk]\n",
+			rec.SecondSurvey(),
+			route.ExpectedTraffic(rec.System.Mainworld.Importance),
+		)
 	}
 	if len(s.Routes) > 0 {
 		fmt.Fprintf(&b, "\nTrade Routes (%d):\n", len(s.Routes))
@@ -283,8 +288,26 @@ func beforeHex(a, b sectorgen.Hex) bool {
 // nameConsonants and nameVowels build simple pronounceable world names; T5 has
 // no name generator, so this supplies a placeholder until one exists.
 var (
-	nameConsonants = []string{"b", "c", "d", "f", "g", "h", "j", "k", "l", "m", "n", "p", "r", "s", "t", "v", "z"}
-	nameVowels     = []string{"a", "e", "i", "o", "u", "y", "ae", "ia"}
+	nameConsonants = []string{
+		"b",
+		"c",
+		"d",
+		"f",
+		"g",
+		"h",
+		"j",
+		"k",
+		"l",
+		"m",
+		"n",
+		"p",
+		"r",
+		"s",
+		"t",
+		"v",
+		"z",
+	}
+	nameVowels = []string{"a", "e", "i", "o", "u", "y", "ae", "ia"}
 )
 
 // worldName builds a two- or three-syllable pronounceable name.

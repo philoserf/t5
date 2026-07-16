@@ -69,8 +69,16 @@ func TestCivilPension(t *testing.T) {
 		careers []CareerRecord
 		want    []Entitlement
 	}{
-		{"Citizen", []CareerRecord{{Career: Citizen, Terms: 1}}, []Entitlement{{"Citizen's Pension", 5000, 66}}},
-		{"Functionary", []CareerRecord{{Career: Functionary, Terms: 1}}, []Entitlement{{"Functionary's Pension", 15000, 66}}},
+		{
+			"Citizen",
+			[]CareerRecord{{Career: Citizen, Terms: 1}},
+			[]Entitlement{{"Citizen's Pension", 5000, 66}},
+		},
+		{
+			"Functionary",
+			[]CareerRecord{{Career: Functionary, Terms: 1}},
+			[]Entitlement{{"Functionary's Pension", 15000, 66}},
+		},
 		{
 			"Functionary replaces Citizen",
 			[]CareerRecord{{Career: Citizen, Terms: 1}, {Career: Functionary, Terms: 1}},
@@ -110,7 +118,11 @@ func TestPensionX2Benefit(t *testing.T) {
 // military tables' Money rows 8-9): an officer Marine's Cr3,000/term x 4 terms
 // doubles to Cr24,000/year.
 func TestRetirementDoubling(t *testing.T) {
-	c := &Character{Age: 34, Careers: []CareerRecord{{Career: Marine, Terms: 4, Officer: true}}, retirementDoublings: 1}
+	c := &Character{
+		Age:                 34,
+		Careers:             []CareerRecord{{Career: Marine, Terms: 4, Officer: true}},
+		retirementDoublings: 1,
+	}
 	computeEntitlements(c)
 	if len(c.Entitlements) != 1 || c.Entitlements[0].PerYear != 24000 {
 		t.Errorf("doubled retirement = %+v, want Cr24,000/year (3,000 x 4 x 2)", c.Entitlements)
@@ -173,7 +185,10 @@ func TestProfessorsPension(t *testing.T) {
 	}
 
 	// It stacks with a Functionary pension (Book 1 p.69 allows duplicate entitlements).
-	c = &Character{Tenured: true, Careers: []CareerRecord{{Career: Functionary, Terms: 1}, {Career: Scholar, Terms: 4}}}
+	c = &Character{
+		Tenured: true,
+		Careers: []CareerRecord{{Career: Functionary, Terms: 1}, {Career: Scholar, Terms: 4}},
+	}
 	computeEntitlements(c)
 	want := []Entitlement{{"Functionary's Pension", 15000, 66}, {"Professor's Pension", 10000, 66}}
 	if !equalEntitlements(c.Entitlements, want) {

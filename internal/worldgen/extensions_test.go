@@ -8,7 +8,16 @@ import (
 )
 
 // regina is the canonical worked example, UWP A788899-C.
-var regina = uwp.Profile{Starport: 'A', Size: 7, Atmosphere: 8, Hydrographics: 8, Population: 8, Government: 9, Law: 9, TechLevel: 12}
+var regina = uwp.Profile{
+	Starport:      'A',
+	Size:          7,
+	Atmosphere:    8,
+	Hydrographics: 8,
+	Population:    8,
+	Government:    9,
+	Law:           9,
+	TechLevel:     12,
+}
 
 func TestImportanceRegina(t *testing.T) {
 	// Book 3: Starport A +1, TL +1, Rich +1, Naval & Scout bases +1 = +4.
@@ -79,7 +88,13 @@ func TestRollEconomicBands(t *testing.T) {
 		t.Errorf("Infrastructure = %d, want 6", ex.Infrastructure)
 	}
 	// Pop 0 -> Labor and Infrastructure floor at 0.
-	ex0 := RollEconomic(dice.NewScripted(4, 4, 3, 3), uwp.Profile{Population: 0, TechLevel: 5}, 5, 0, 0)
+	ex0 := RollEconomic(
+		dice.NewScripted(4, 4, 3, 3),
+		uwp.Profile{Population: 0, TechLevel: 5},
+		5,
+		0,
+		0,
+	)
 	if ex0.Labor != 0 || ex0.Infrastructure != 0 {
 		t.Errorf("pop-0 = %+v, want Labor 0 Infrastructure 0", ex0)
 	}
@@ -105,7 +120,11 @@ func TestRollCulturalClampAndZero(t *testing.T) {
 		t.Errorf("Strangeness = %d, want 1 (clamped)", cx.Strangeness)
 	}
 	// Pop 0 -> all zero.
-	if got := RollCultural(dice.NewScripted(1, 1), uwp.Profile{Population: 0}, 5); got != (Cultural{}) {
+	if got := RollCultural(
+		dice.NewScripted(1, 1),
+		uwp.Profile{Population: 0},
+		5,
+	); got != (Cultural{}) {
 		t.Fatalf("pop-0 Cultural = %+v, want all zero", got)
 	}
 }

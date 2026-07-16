@@ -64,8 +64,14 @@ func mountPoints(h Hull, weapons []Weapon, defenses []Defense) string {
 	if need <= h.Hardpoints {
 		return ""
 	}
-	return fmt.Sprintf("%s need %d mount blocks but a %dt hull has %d (one Hardpoint, or %d Firmpoints, per 100t)",
-		mountPhrase(hard, firm), need, h.Tons, h.Hardpoints, firmPointsPerBlock)
+	return fmt.Sprintf(
+		"%s need %d mount blocks but a %dt hull has %d (one Hardpoint, or %d Firmpoints, per 100t)",
+		mountPhrase(hard, firm),
+		need,
+		h.Tons,
+		h.Hardpoints,
+		firmPointsPerBlock,
+	)
 }
 
 // mountPhrase names what is being mounted, for the shortfall message.

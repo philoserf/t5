@@ -60,11 +60,22 @@ func TestCitizenLifeFailureIsHarmless(t *testing.T) {
 	c := Character{scores: [count]int{5, 5, 5, 5, 5, 5}}
 	run := careerRun{}
 	// Citizen Life vs Str 5 with a roll of 12 fails; no skills, no wound.
-	got := runCitizenTerm(dice.NewScripted(6, 6, 1, 1, 1, 1), DefaultPolicy{}, &c, &run, CitizenCareer, Strength)
+	got := runCitizenTerm(
+		dice.NewScripted(6, 6, 1, 1, 1, 1),
+		DefaultPolicy{},
+		&c,
+		&run,
+		CitizenCareer,
+		Strength,
+	)
 	if got != Ongoing {
 		t.Errorf("outcome = %v, want Ongoing", got)
 	}
 	if run.job != "" || c.WoundBadges != 0 {
-		t.Errorf("failed Citizen Life gave job %q or wounds %d, want none/0", run.job, c.WoundBadges)
+		t.Errorf(
+			"failed Citizen Life gave job %q or wounds %d, want none/0",
+			run.job,
+			c.WoundBadges,
+		)
 	}
 }

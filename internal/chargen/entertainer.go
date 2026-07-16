@@ -18,9 +18,11 @@ package chargen
 // EntertainerCareer is the Entertainer (Book 1 p. 77), modelled as the Actor
 // specialty.
 var EntertainerCareer = Career{
-	ID:          Entertainer,
-	Name:        "Entertainer",
-	Qualify:     Qualification{Chars: []Characteristic{Dexterity, Endurance}}, // Begin Actor: C2 or C3
+	ID:   Entertainer,
+	Name: "Entertainer",
+	Qualify: Qualification{
+		Chars: []Characteristic{Dexterity, Endurance},
+	}, // Begin Actor: C2 or C3
 	FameCareer:  true,
 	Continue:    ContinueRule{UseFame: true}, // Continue vs Fame
 	Advance:     RollLow,
@@ -28,19 +30,61 @@ var EntertainerCareer = Career{
 	BenefitDM:   DMTerms,
 	Skills: SkillGrid{
 		// Col 0 — Personal.
-		{bump(Strength), bump(Dexterity), bump(Endurance), bump(Intelligence), bump(Education), bump(Social)},
+		{
+			bump(Strength),
+			bump(Dexterity),
+			bump(Endurance),
+			bump(Intelligence),
+			bump(Education),
+			bump(Social),
+		},
 		// Col 1 — Academic (Major/Minor lost without the education stage).
 		{major, major, minor, minor, choose(theTrades...), choose(theTrades...)},
 		// Col 2 — Travel.
-		{sk("Zero-G"), sk("Vacc Suit"), sk("Pilot"), sk("Astrogation"), sk("Sensors"), choose(starshipSkls...)},
+		{
+			sk("Zero-G"),
+			sk("Vacc Suit"),
+			sk("Pilot"),
+			sk("Astrogation"),
+			sk("Sensors"),
+			choose(starshipSkls...),
+		},
 		// Col 3 — General.
-		{sk("Survey"), sk("Survival"), sk("Hostile Environ"), sk("Animals"), sk("Bureaucrat"), sk("Navigation")},
+		{
+			sk("Survey"),
+			sk("Survival"),
+			sk("Hostile Environ"),
+			sk("Animals"),
+			sk("Bureaucrat"),
+			sk("Navigation"),
+		},
 		// Col 4 — Business.
-		{sk("Broker"), sk("Trader"), sk("Advocate"), sk("Liaison"), sk("Diplomat"), sk("Bureaucrat")},
+		{
+			sk("Broker"),
+			sk("Trader"),
+			sk("Advocate"),
+			sk("Liaison"),
+			sk("Diplomat"),
+			sk("Bureaucrat"),
+		},
 		// Col 5 — Vocation.
-		{sk("Broker"), choose(oneArt...), cascade("Language", languages...), sk("Admin"), choose(oneArt...), sk("Bureaucrat")},
+		{
+			sk("Broker"),
+			choose(oneArt...),
+			cascade("Language", languages...),
+			sk("Admin"),
+			choose(oneArt...),
+			sk("Bureaucrat"),
+		},
 		// Col 6 — Avocation.
-		{choose(oneArt...), choose(oneArt...), choose(theTrades...), sk("Athlete"), sk("Medic"), choose(theTrades...)},
+		{
+			choose(oneArt...),
+			choose(oneArt...),
+			choose(theTrades...),
+			sk("Athlete"),
+			sk("Medic"),
+			choose(theTrades...),
+		},
 	},
 	// Muster-out (Book 1 p. 77), indexed 1-12 by (1D + DM). Money passages are
 	// recorded at cash value. Row 13 (TAS Life) is deferred (reachable only at

@@ -20,7 +20,11 @@ var AgentCareer = Career{
 	Qualify:          Qualification{Chars: []Characteristic{Endurance}}, // C3
 	CCMode:           RotateCC,
 	ControllingChars: []Characteristic{Strength, Dexterity, Endurance, Intelligence}, // C1 C2 C3 C4
-	Continue:         ContinueRule{UseChar: true, Char: Strength, TermsMod: true},    // Str, Mod +Terms
+	Continue: ContinueRule{
+		UseChar:  true,
+		Char:     Strength,
+		TermsMod: true,
+	}, // Str, Mod +Terms
 	Advance:          RollLow,
 	EligPerTerm:      2, // Per Term 2 (Undercover 1 and Successful Mission 4 are added in awardUndercover)
 	UndercoverCareer: true,
@@ -28,19 +32,61 @@ var AgentCareer = Career{
 	BenefitDM:        DMCommends,
 	Skills: SkillGrid{
 		// Col 0 — Personal.
-		{bump(Strength), bump(Dexterity), bump(Endurance), bump(Intelligence), bump(Education), bump(Social)},
+		{
+			bump(Strength),
+			bump(Dexterity),
+			bump(Endurance),
+			bump(Intelligence),
+			bump(Education),
+			bump(Social),
+		},
 		// Col 1 — Academic (Major/Minor lost without the education stage).
 		{major, major, minor, minor, choose(theTrades...), choose(theTrades...)},
 		// Col 2 — Travel.
-		{sk("Zero-G"), sk("Vacc Suit"), sk("Pilot"), choose(starshipSkls...), sk("Gunner"), sk("Sensors")},
+		{
+			sk("Zero-G"),
+			sk("Vacc Suit"),
+			sk("Pilot"),
+			choose(starshipSkls...),
+			sk("Gunner"),
+			sk("Sensors"),
+		},
 		// Col 3 — Mission.
-		{sk("Survey"), sk("Survival"), sk("Hostile Environ"), sk("Animals"), sk("Bureaucrat"), sk("Navigation")},
+		{
+			sk("Survey"),
+			sk("Survival"),
+			sk("Hostile Environ"),
+			sk("Animals"),
+			sk("Bureaucrat"),
+			sk("Navigation"),
+		},
 		// Col 4 — Conflict.
-		{sk("Fighter"), choose(soldierSkls...), sk("Flyer"), sk("Stealth"), sk("Gunner"), sk("Streetwise")},
+		{
+			sk("Fighter"),
+			choose(soldierSkls...),
+			sk("Flyer"),
+			sk("Stealth"),
+			sk("Gunner"),
+			sk("Streetwise"),
+		},
 		// Col 5 — Vocation ("Any Knowledge" is a representative academic choice).
-		{choose(academicMajors...), sk("Admin"), cascade("Language", languages...), choose(starshipSkls...), sk("Forensics"), sk("Comms")},
+		{
+			choose(academicMajors...),
+			sk("Admin"),
+			cascade("Language", languages...),
+			choose(starshipSkls...),
+			sk("Forensics"),
+			sk("Comms"),
+		},
 		// Col 6 — Avocation.
-		{choose(oneArt...), choose(sciences...), sk("Athlete"), sk("Medic"), sk("Seafarer"), choose(theTrades...)},
+		{
+			choose(oneArt...),
+			choose(sciences...),
+			sk("Athlete"),
+			sk("Medic"),
+			sk("Seafarer"),
+			choose(theTrades...),
+		},
 	},
 	// Muster-out (Book 1 p. 83), indexed 1-12 by (1D + DM). Money passages are
 	// recorded at cash value.

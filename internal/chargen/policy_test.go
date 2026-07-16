@@ -24,11 +24,17 @@ func TestChooseSkillLeastHeld(t *testing.T) {
 	c := Character{}
 	c.Skills.Raise("Biologics", 3)
 
-	if got := (DefaultPolicy{}).ChooseSkill(c, []string{"Biologics", "Craftsman"}); got != "Craftsman" {
+	if got := (DefaultPolicy{}).ChooseSkill(
+		c,
+		[]string{"Biologics", "Craftsman"},
+	); got != "Craftsman" {
 		t.Errorf("ChooseSkill = %q, want Craftsman (the least-held option)", got)
 	}
 	// With nothing held yet, the first option is fine.
-	if got := (DefaultPolicy{}).ChooseSkill(Character{}, []string{"Biologics", "Craftsman"}); got != "Biologics" {
+	if got := (DefaultPolicy{}).ChooseSkill(
+		Character{},
+		[]string{"Biologics", "Craftsman"},
+	); got != "Biologics" {
 		t.Errorf("ChooseSkill = %q, want Biologics (all options unheld)", got)
 	}
 }

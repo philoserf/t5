@@ -86,7 +86,11 @@ func TestPlaceWayStations(t *testing.T) {
 	records := []Record{recordWith(a, 'A', 4), recordWith(b, 'A', 4), recordWith(c, 'A', 4)}
 	// Total route length 100 pc -> 2 Way Stations. All three worlds have degree 2,
 	// so the tie breaks to the two lowest-CCRR hubs: A and B.
-	links := []route.Link{{From: a, To: b, Jump: 30}, {From: b, To: c, Jump: 40}, {From: a, To: c, Jump: 30}}
+	links := []route.Link{
+		{From: a, To: b, Jump: 30},
+		{From: b, To: c, Jump: 40},
+		{From: a, To: c, Jump: 30},
+	}
 	placeWayStations(records, links)
 
 	if !records[0].System.Mainworld.WayStation || !records[1].System.Mainworld.WayStation {
@@ -182,7 +186,12 @@ func TestViewsAgree(t *testing.T) {
 		for _, rec := range sv.Subsector(letter) {
 			selected++
 			if rec.Hex.Subsector() != letter {
-				t.Errorf("Subsector(%c) returned hex %s, which is in %c", letter, rec.Hex, rec.Hex.Subsector())
+				t.Errorf(
+					"Subsector(%c) returned hex %s, which is in %c",
+					letter,
+					rec.Hex,
+					rec.Hex.Subsector(),
+				)
 			}
 			// The same hex, reached the other way, is the same world.
 			byHex, found := sv.At(rec.Hex)

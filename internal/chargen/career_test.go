@@ -162,7 +162,12 @@ func TestRunTermWounded(t *testing.T) {
 	c := Character{scores: [count]int{7, 7, 7, 8, 8, 8}}
 	got := runOneTerm(dice.NewScripted(4, 4 /*risk 8, fail*/, 2, 3 /*flux -1*/), &c, Strength)
 	if got != Ongoing || c.scores[Strength] != 6 || c.WoundBadges != 1 {
-		t.Fatalf("wound: outcome %v Str %d badges %d, want Ongoing/6/1", got, c.scores[Strength], c.WoundBadges)
+		t.Fatalf(
+			"wound: outcome %v Str %d badges %d, want Ongoing/6/1",
+			got,
+			c.scores[Strength],
+			c.WoundBadges,
+		)
 	}
 }
 
@@ -194,7 +199,11 @@ func TestApplyCell(t *testing.T) {
 	// A cascade skill grants a knowledge (K-K-S).
 	applyCell(stopAfter{}, &c, Cell{Kind: AwardSkill, Skill: "Pilot", Knowledge: "Small Craft"})
 	if c.Skills.KnowledgeLevel("Pilot", "Small Craft") != 1 || c.Skills.Level("Pilot") != 0 {
-		t.Errorf("cascade award wrong: K=%d S=%d", c.Skills.KnowledgeLevel("Pilot", "Small Craft"), c.Skills.Level("Pilot"))
+		t.Errorf(
+			"cascade award wrong: K=%d S=%d",
+			c.Skills.KnowledgeLevel("Pilot", "Small Craft"),
+			c.Skills.Level("Pilot"),
+		)
 	}
 	// A choice picks the first option (DefaultPolicy/stopAfter).
 	applyCell(stopAfter{}, &c, Cell{Kind: AwardChoice, Options: []string{"Gambler", "Carousing"}})
@@ -202,7 +211,11 @@ func TestApplyCell(t *testing.T) {
 		t.Errorf("choice award = %d, want Gambler 1", c.Skills.Level("Gambler"))
 	}
 	// A cascade choice grants the chosen option as a knowledge under the parent.
-	applyCell(stopAfter{}, &c, Cell{Kind: AwardChoice, Skill: "Language", Options: []string{"Galanglic", "Vilani"}})
+	applyCell(
+		stopAfter{},
+		&c,
+		Cell{Kind: AwardChoice, Skill: "Language", Options: []string{"Galanglic", "Vilani"}},
+	)
 	if c.Skills.KnowledgeLevel("Language", "Galanglic") != 1 || c.Skills.Level("Language") != 0 {
 		t.Errorf("cascade choice wrong: K=%d S=%d, want 1/0",
 			c.Skills.KnowledgeLevel("Language", "Galanglic"), c.Skills.Level("Language"))
@@ -241,7 +254,10 @@ func TestChooseSkillColumnDependsOnEducation(t *testing.T) {
 	if uneducated != 2 {
 		t.Errorf("uneducated column = %d, want 2 (Courier)", uneducated)
 	}
-	graduate := DefaultPolicy{}.ChooseSkillColumn(Character{Major: "Psychology", Minor: "Robotics"}, ScoutCareer.Skills)
+	graduate := DefaultPolicy{}.ChooseSkillColumn(
+		Character{Major: "Psychology", Minor: "Robotics"},
+		ScoutCareer.Skills,
+	)
 	if graduate != 1 {
 		t.Errorf("graduate column = %d, want 1 (Academic)", graduate)
 	}
@@ -268,10 +284,21 @@ func TestAwardSkills(t *testing.T) {
 
 func TestRunTermAwardsSkillsOnSurvival(t *testing.T) {
 	c := Character{scores: [count]int{7, 7, 7, 8, 8, 8}}
-	career := Career{Name: "S", ControllingChars: []Characteristic{Strength}, EligPerTerm: 1, Skills: commsGrid()}
+	career := Career{
+		Name:             "S",
+		ControllingChars: []Characteristic{Strength},
+		EligPerTerm:      1,
+		Skills:           commsGrid(),
+	}
 	run := careerRun{ccPool: []Characteristic{Strength}}
 	// Risk 7 (survive), Reward 7, then one skill roll.
-	if got := runTerm(dice.NewScripted(3, 4, 3, 4, 5), stopAfter{}, &c, &run, career); got != Ongoing {
+	if got := runTerm(
+		dice.NewScripted(3, 4, 3, 4, 5),
+		stopAfter{},
+		&c,
+		&run,
+		career,
+	); got != Ongoing {
 		t.Fatalf("outcome = %v, want Ongoing", got)
 	}
 	if c.Skills.Level("Comms") != 1 {
@@ -281,10 +308,21 @@ func TestRunTermAwardsSkillsOnSurvival(t *testing.T) {
 
 func TestRunTermNoSkillsWhenDisabled(t *testing.T) {
 	c := Character{scores: [count]int{7, 7, 7, 8, 8, 8}}
-	career := Career{Name: "S", ControllingChars: []Characteristic{Strength}, EligPerTerm: 1, Skills: commsGrid()}
+	career := Career{
+		Name:             "S",
+		ControllingChars: []Characteristic{Strength},
+		EligPerTerm:      1,
+		Skills:           commsGrid(),
+	}
 	run := careerRun{ccPool: []Characteristic{Strength}}
 	// Risk fails (8 > 7), Flux -4 disables: no skills awarded.
-	if got := runTerm(dice.NewScripted(4, 4, 1, 5), stopAfter{}, &c, &run, career); got != Disabled {
+	if got := runTerm(
+		dice.NewScripted(4, 4, 1, 5),
+		stopAfter{},
+		&c,
+		&run,
+		career,
+	); got != Disabled {
 		t.Fatalf("outcome = %v, want Disabled", got)
 	}
 	if c.Skills.Level("Comms") != 0 {
@@ -341,7 +379,12 @@ func TestGenerateCareeredQualify(t *testing.T) {
 	// edition grants one), so the character falls straight back to the auto-begin
 	// Citizen life rather than getting a second roll or ending up careerless.
 	seqDraft := append(append([]int{}, upp...), 6, 6 /*qualify 12*/)
-	cDraft := GenerateCareered(dice.NewScripted(seqDraft...), stopAfter{1}, worldgen.World{}, testCareer)
+	cDraft := GenerateCareered(
+		dice.NewScripted(seqDraft...),
+		stopAfter{1},
+		worldgen.World{},
+		testCareer,
+	)
 	if len(cDraft.Careers) != 1 || cDraft.Careers[0].Career != Citizen {
 		t.Fatalf("a failed Begin should fall back to Citizen (no retry): %+v", cDraft.Careers)
 	}
@@ -364,7 +407,12 @@ func (p *twoCitizen) NextCareer(Character) (Career, bool) {
 func TestMultiCareer(t *testing.T) {
 	// The Citizen auto-begins, so a character serves two one-term Citizen careers
 	// in sequence regardless of the exact rolls.
-	c := GenerateCareered(dice.NewScripted(3, 4), &twoCitizen{stopAfter: stopAfter{1}}, worldgen.World{}, CitizenCareer)
+	c := GenerateCareered(
+		dice.NewScripted(3, 4),
+		&twoCitizen{stopAfter: stopAfter{1}},
+		worldgen.World{},
+		CitizenCareer,
+	)
 	if len(c.Careers) != 2 {
 		t.Fatalf("careers = %d, want 2 (a sequence of two)", len(c.Careers))
 	}

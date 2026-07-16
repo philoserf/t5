@@ -80,7 +80,12 @@ func GenerateOtherWorld(r *dice.Roller, t OtherWorldType, mwPop int) uwp.Profile
 		size := r.Dice(2)
 		atm := atmosphere(r.Flux(), size)
 		hyd := hydrographics(r.Flux(), atm, size)
-		return uwp.Profile{Starport: spaceport(-r.Die()), Size: size, Atmosphere: atm, Hydrographics: hyd}
+		return uwp.Profile{
+			Starport:      spaceport(-r.Die()),
+			Size:          size,
+			Atmosphere:    atm,
+			Hydrographics: hyd,
+		}
 
 	case Planetoids:
 		// St000PGL-T: a belt-like body — no size, atmosphere, or hydrographics.

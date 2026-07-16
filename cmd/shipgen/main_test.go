@@ -22,10 +22,20 @@ func TestSpecFromFlags(t *testing.T) {
 		t.Fatalf("the Murphy's own flags were rejected: %v", err)
 	}
 	if spec.HullLetter != 1 || spec.TL != 12 || spec.ArmorLayers != 2 {
-		t.Errorf("hull/TL/armor = %d/%d/%d, want 1/12/2", spec.HullLetter, spec.TL, spec.ArmorLayers)
+		t.Errorf(
+			"hull/TL/armor = %d/%d/%d, want 1/12/2",
+			spec.HullLetter,
+			spec.TL,
+			spec.ArmorLayers,
+		)
 	}
 	if spec.Maneuver == nil || spec.Jump == nil || spec.Power == nil {
-		t.Fatalf("all three drives were requested, got %+v/%+v/%+v", spec.Maneuver, spec.Jump, spec.Power)
+		t.Fatalf(
+			"all three drives were requested, got %+v/%+v/%+v",
+			spec.Maneuver,
+			spec.Jump,
+			spec.Power,
+		)
 	}
 	if spec.Maneuver.Letter != 1 {
 		t.Errorf("Maneuver-A ordinal = %d, want 1", spec.Maneuver.Letter)

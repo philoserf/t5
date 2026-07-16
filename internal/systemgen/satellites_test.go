@@ -26,12 +26,33 @@ func TestSatelliteCount(t *testing.T) {
 		{KindBelt, 4, 0},
 	}
 	for _, c := range cases {
-		if got, rings := satelliteCount(dice.NewScripted(6), c.kind, c.orbit, hz, true); got != c.want || rings != 0 {
-			t.Errorf("satelliteCount(%s, orbit %d) = %d moons, %d rings, want %d moons, 0 rings", c.kind, c.orbit, got, rings, c.want)
+		if got, rings := satelliteCount(
+			dice.NewScripted(6),
+			c.kind,
+			c.orbit,
+			hz,
+			true,
+		); got != c.want ||
+			rings != 0 {
+			t.Errorf(
+				"satelliteCount(%s, orbit %d) = %d moons, %d rings, want %d moons, 0 rings",
+				c.kind,
+				c.orbit,
+				got,
+				rings,
+				c.want,
+			)
 		}
 	}
 	// A negative roll is none (inner 1D-5 with 1D=1 -> -4 -> none).
-	if got, rings := satelliteCount(dice.NewScripted(1), KindWorld, 2, hz, true); got != 0 || rings != 0 {
+	if got, rings := satelliteCount(
+		dice.NewScripted(1),
+		KindWorld,
+		2,
+		hz,
+		true,
+	); got != 0 ||
+		rings != 0 {
 		t.Errorf("satelliteCount(inner, 1D=1) = %d moons, %d rings, want 0, 0", got, rings)
 	}
 	// No habitable zone treats every world as outer.
@@ -40,7 +61,14 @@ func TestSatelliteCount(t *testing.T) {
 	}
 	// A gas giant rolling exactly 0 (1D=1 -> 1D-1=0) yields a Ring, then re-rolls
 	// the count (1D=4 -> 3 moons).
-	if moons, rings := satelliteCount(dice.NewScripted(1, 4), KindGasGiant, 2, hz, true); moons != 3 || rings != 1 {
+	if moons, rings := satelliteCount(
+		dice.NewScripted(1, 4),
+		KindGasGiant,
+		2,
+		hz,
+		true,
+	); moons != 3 ||
+		rings != 1 {
 		t.Errorf("satelliteCount(GG ring) = %d moons, %d rings, want 3, 1", moons, rings)
 	}
 }
@@ -77,7 +105,11 @@ func TestRollSatellites(t *testing.T) {
 	s2 := newSys()
 	s2.rollSatellites(dice.NewWithSeed(4))
 	if len(s2.Orbits[0].Satellites) != len(moons) {
-		t.Errorf("non-deterministic satellite count: %d vs %d", len(s2.Orbits[0].Satellites), len(moons))
+		t.Errorf(
+			"non-deterministic satellite count: %d vs %d",
+			len(s2.Orbits[0].Satellites),
+			len(moons),
+		)
 	}
 }
 
@@ -85,7 +117,17 @@ func TestSatelliteType(t *testing.T) {
 	hz := 4
 	// Inner/HZ satellites match the other-world inner table exactly.
 	for roll := 1; roll <= 6; roll++ {
-		if got, want := satelliteType(hz, hz, true, roll), otherWorldType(hz, hz, true, roll); got != want {
+		if got, want := satelliteType(
+			hz,
+			hz,
+			true,
+			roll,
+		), otherWorldType(
+			hz,
+			hz,
+			true,
+			roll,
+		); got != want {
 			t.Errorf("inner satelliteType(roll %d) = %v, want %v", roll, got, want)
 		}
 	}

@@ -11,7 +11,16 @@ import (
 // TestTradeClassificationsRegina checks the canonical worked example: Regina
 // (A788899-C) is Pre-High, Pre-Agricultural, and Rich.
 func TestTradeClassificationsRegina(t *testing.T) {
-	regina := uwp.Profile{Starport: 'A', Size: 7, Atmosphere: 8, Hydrographics: 8, Population: 8, Government: 9, Law: 9, TechLevel: 12}
+	regina := uwp.Profile{
+		Starport:      'A',
+		Size:          7,
+		Atmosphere:    8,
+		Hydrographics: 8,
+		Population:    8,
+		Government:    9,
+		Law:           9,
+		TechLevel:     12,
+	}
 	got := TradeClassifications(regina)
 	want := []string{"Ph", "Pa", "Ri"}
 	if !reflect.DeepEqual(got, want) {
@@ -22,7 +31,9 @@ func TestTradeClassificationsRegina(t *testing.T) {
 func TestTradeClassificationsOutOfRangeSafe(t *testing.T) {
 	// A hand-built Profile with an out-of-range value must not panic; the
 	// value simply matches no constrained classification.
-	got := TradeClassifications(uwp.Profile{Size: 7, Atmosphere: 8, Hydrographics: 8, Population: 40})
+	got := TradeClassifications(
+		uwp.Profile{Size: 7, Atmosphere: 8, Hydrographics: 8, Population: 40},
+	)
 	for _, code := range got {
 		if code == "Ph" || code == "Hi" {
 			t.Fatalf("out-of-range population matched a population class: %v", got)
@@ -75,13 +86,29 @@ func TestTradeClassificationsUWPCodes(t *testing.T) {
 	has := func(codes []string, code string) bool { return slices.Contains(codes, code) }
 
 	// Di Dieback: Pop0/Gov0/Law0 with a working starport (A-D).
-	di := uwp.Profile{Starport: 'C', Size: 5, Atmosphere: 4, Hydrographics: 3, Population: 0, Government: 0, Law: 0}
+	di := uwp.Profile{
+		Starport:      'C',
+		Size:          5,
+		Atmosphere:    4,
+		Hydrographics: 3,
+		Population:    0,
+		Government:    0,
+		Law:           0,
+	}
 	if got := TradeClassifications(di); !has(got, "Di") || has(got, "Ba") {
 		t.Errorf("Dieback = %v, want Di and not Ba", got)
 	}
 	// Ba Barren: the same core with Starport E or X.
 	for _, sp := range []byte{'E', 'X'} {
-		ba := uwp.Profile{Starport: sp, Size: 5, Atmosphere: 4, Hydrographics: 3, Population: 0, Government: 0, Law: 0}
+		ba := uwp.Profile{
+			Starport:      sp,
+			Size:          5,
+			Atmosphere:    4,
+			Hydrographics: 3,
+			Population:    0,
+			Government:    0,
+			Law:           0,
+		}
 		if got := TradeClassifications(ba); !has(got, "Ba") || has(got, "Di") {
 			t.Errorf("Barren (starport %c) = %v, want Ba and not Di", sp, got)
 		}
@@ -95,11 +122,30 @@ func TestTradeClassificationsUWPCodes(t *testing.T) {
 	}
 
 	// Px Prison/Exile: Atm 2/3/A/B, Hyd 1-5, Pop 3-6, Law 6-9.
-	px := uwp.Profile{Starport: 'B', Atmosphere: 10, Hydrographics: 3, Population: 4, Government: 5, Law: 7}
+	px := uwp.Profile{
+		Starport:      'B',
+		Atmosphere:    10,
+		Hydrographics: 3,
+		Population:    4,
+		Government:    5,
+		Law:           7,
+	}
 	if got := TradeClassifications(px); !has(got, "Px") {
 		t.Errorf("Prison = %v, want Px", got)
 	}
-	if got := TradeClassifications(uwp.Profile{Starport: 'B', Atmosphere: 10, Hydrographics: 3, Population: 4, Government: 5, Law: 5}); has(got, "Px") {
+	if got := TradeClassifications(
+		uwp.Profile{
+			Starport:      'B',
+			Atmosphere:    10,
+			Hydrographics: 3,
+			Population:    4,
+			Government:    5,
+			Law:           5,
+		},
+	); has(
+		got,
+		"Px",
+	) {
 		t.Errorf("Law-5 world should not be Px: %v", got)
 	}
 
@@ -108,7 +154,12 @@ func TestTradeClassificationsUWPCodes(t *testing.T) {
 	if got := TradeClassifications(re); !has(got, "Re") {
 		t.Errorf("Reserve = %v, want Re", got)
 	}
-	if got := TradeClassifications(uwp.Profile{Starport: 'C', Population: 2, Government: 5, Law: 4}); has(got, "Re") {
+	if got := TradeClassifications(
+		uwp.Profile{Starport: 'C', Population: 2, Government: 5, Law: 4},
+	); has(
+		got,
+		"Re",
+	) {
 		t.Errorf("Gov-5 world should not be Re: %v", got)
 	}
 }

@@ -25,19 +25,54 @@ var CitizenCareer = Career{
 	BenefitDM:        DMTerms,
 	Skills: SkillGrid{
 		// Col 0 — Personal.
-		{bump(Strength), bump(Dexterity), bump(Endurance), bump(Intelligence), bump(Education), bump(Social)},
+		{
+			bump(Strength),
+			bump(Dexterity),
+			bump(Endurance),
+			bump(Intelligence),
+			bump(Education),
+			bump(Social),
+		},
 		// Col 1 — Academic (Major/Minor lost without the education stage).
 		{major, major, minor, minor, choose(theTrades...), choose(theTrades...)},
 		// Col 2 — Travel.
-		{sk("Seafarer"), sk("Navigation"), sk("Hostile Environ"), sk("Flyer"), sk("Driver"), sk("Vacc Suit")},
+		{
+			sk("Seafarer"),
+			sk("Navigation"),
+			sk("Hostile Environ"),
+			sk("Flyer"),
+			sk("Driver"),
+			sk("Vacc Suit"),
+		},
 		// Col 3 — General.
 		{sk("Admin"), sk("Broker"), sk("Computer"), sk("Animals"), sk("Bureaucrat"), sk("Trader")},
 		// Col 4 — Business.
-		{sk("Advocate"), sk("Broker"), sk("Trader"), sk("Liaison"), sk("Counsellor"), sk("Teacher")},
+		{
+			sk("Advocate"),
+			sk("Broker"),
+			sk("Trader"),
+			sk("Liaison"),
+			sk("Counsellor"),
+			sk("Teacher"),
+		},
 		// Col 5 — Vocation.
-		{choose(oneArt...), choose(sciences...), choose(theTrades...), sk("Driver"), sk("Bureaucrat"), sk("Computer")},
+		{
+			choose(oneArt...),
+			choose(sciences...),
+			choose(theTrades...),
+			sk("Driver"),
+			sk("Bureaucrat"),
+			sk("Computer"),
+		},
 		// Col 6 — Avocation.
-		{choose(oneArt...), choose(sciences...), sk("JOT"), sk("Athlete"), sk("Medic"), choose(theTrades...)},
+		{
+			choose(oneArt...),
+			choose(sciences...),
+			sk("JOT"),
+			sk("Athlete"),
+			sk("Medic"),
+			choose(theTrades...),
+		},
 	},
 	// Muster-out (Book 1 p. 78), indexed 1-12 by (1D + DM). Money passages are
 	// recorded at cash value. Row 12 repeats row 11 (the printed table ends at 11).
