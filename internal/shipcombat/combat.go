@@ -54,7 +54,8 @@ func ResolveSpaceWeapon(
 		r,
 		SpaceWeaponDice(rangeBands, weaponTL),
 		SpaceWeaponTarget(weaponTL, csk, 0),
-		mods...)
+		mods...,
+	)
 }
 
 // A missile's Guidance is a property of the round, chosen when it is designed, so
@@ -88,7 +89,8 @@ func ResolveMissile(
 		r,
 		MissileDice(missileTL, rangeBands),
 		MissileTarget(missileTL, guidanceValue, 0),
-		mods...)
+		mods...,
+	)
 }
 
 // DefensiveFireTarget is the Defensive Fire Task's target number (Book 2 p.196):

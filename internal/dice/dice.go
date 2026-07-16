@@ -93,7 +93,7 @@ func (r *Roller) DiceFaces(n int) []int {
 // identical in output to 2D-7 and to D-D. By convention the first (light) die
 // is positive and the second (dark) die is subtracted.
 func (r *Roller) Flux() int {
-	return r.d6() - r.d6()
+	return r.d6() - r.d6() //nolint:staticcheck // SA4000: d6 is stateful; two distinct rolls
 }
 
 // GoodFlux rolls two dice and subtracts the smaller from the larger, ranging

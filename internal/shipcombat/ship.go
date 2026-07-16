@@ -45,7 +45,8 @@ func AttackWithMissile(
 		rangeBands,
 		m.TL,
 		guidanceAsset(m.Spec.Guidance, gunnerCSK, brainCSK),
-		mods...)
+		mods...,
+	)
 }
 
 // guidanceAsset is what a missile's brain is worth on the Missile Attack Task
