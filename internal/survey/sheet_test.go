@@ -1,6 +1,7 @@
 package survey
 
 import (
+	"slices"
 	"strings"
 	"testing"
 
@@ -106,13 +107,11 @@ func TestSheetRendersOrbitTree(t *testing.T) {
 func TestSheetMarksCapital(t *testing.T) {
 	sv := Sector(dice.NewWithSeed(3), sectorgen.Dense)
 	for _, rec := range sv.Records {
-		for _, c := range rec.System.Mainworld.TradeCodes {
-			if c == "Cx" {
-				if !strings.Contains(rec.Sheet(), "Sector Capital") {
-					t.Errorf("the Cx world's sheet does not name it the sector capital")
-				}
-				return
+		if slices.Contains(rec.System.Mainworld.TradeCodes, "Cx") {
+			if !strings.Contains(rec.Sheet(), "Sector Capital") {
+				t.Errorf("the Cx world's sheet does not name it the sector capital")
 			}
+			return
 		}
 	}
 	t.Skip("no sector capital in this sector")

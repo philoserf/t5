@@ -52,7 +52,7 @@ func TestSelectCCRotation(t *testing.T) {
 	p := stopAfter{} // ChooseCC returns available[0]
 	// The pool drains as each is picked, then refills once exhausted.
 	seen := map[Characteristic]int{}
-	for i := 0; i < 8; i++ {
+	for range 8 {
 		seen[selectCC(p, c, &run, testCareer)]++
 	}
 	for _, ch := range testCareer.ControllingChars {
@@ -65,7 +65,7 @@ func TestSelectCCRotation(t *testing.T) {
 func TestSelectCCFixed(t *testing.T) {
 	fixed := Career{CCMode: FixedCC, ControllingChars: []Characteristic{Endurance}}
 	run := careerRun{}
-	for i := 0; i < 3; i++ {
+	for range 3 {
 		if got := selectCC(stopAfter{}, Character{}, &run, fixed); got != Endurance {
 			t.Fatalf("fixed CC = %v, want Endurance", got)
 		}

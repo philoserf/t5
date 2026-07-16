@@ -158,7 +158,7 @@ func parseInstallations(list, kind string) ([]installation, error) {
 		return nil, nil
 	}
 	var out []installation
-	for _, entry := range strings.Split(list, ",") {
+	for entry := range strings.SplitSeq(list, ",") {
 		parts := strings.Split(strings.TrimSpace(entry), ":")
 		if len(parts) > 3 {
 			return nil, fmt.Errorf(

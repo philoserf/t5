@@ -62,7 +62,7 @@ func applyDifference(r *dice.Roller, c *Character, d sophont.Difference) {
 	if d.C1Dice > 0 {
 		c.scores[Strength] += r.Dice(d.C1Dice)
 	}
-	for i := 0; i < 5; i++ {
+	for i := range 5 {
 		c.scores[i] = max(c.scores[i]+d.Mods[i], 0)
 	}
 }
