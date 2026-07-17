@@ -82,7 +82,7 @@ var MerchantCareer = Career{
 	},
 	// Muster-out (Book 1 p. 80), indexed 1-12 by (1D + DM). Passages are recorded
 	// at cash value.
-	MusterOut: MusterTable{
+	MusterOut: MusterTable{ //nolint:dupl // per-career muster-out table; parallel by design
 		1:  {Money: cash(40_000), Benefit: charAward(Strength)},
 		2:  {Money: cash(250_000), Benefit: charAward(Education)},    // StarPass
 		3:  {Money: cash(250_000), Benefit: named("Wafer Jack")},     // StarPass

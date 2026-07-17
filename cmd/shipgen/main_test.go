@@ -21,6 +21,7 @@ func TestSpecFromFlags(t *testing.T) {
 	if err != nil {
 		t.Fatalf("the Murphy's own flags were rejected: %v", err)
 	}
+
 	if spec.HullLetter != 1 || spec.TL != 12 || spec.ArmorLayers != 2 {
 		t.Errorf(
 			"hull/TL/armor = %d/%d/%d, want 1/12/2",
@@ -29,6 +30,7 @@ func TestSpecFromFlags(t *testing.T) {
 			spec.ArmorLayers,
 		)
 	}
+
 	if spec.Maneuver == nil || spec.Jump == nil || spec.Power == nil {
 		t.Fatalf(
 			"all three drives were requested, got %+v/%+v/%+v",
@@ -37,6 +39,7 @@ func TestSpecFromFlags(t *testing.T) {
 			spec.Power,
 		)
 	}
+
 	if spec.Maneuver.Letter != 1 {
 		t.Errorf("Maneuver-A ordinal = %d, want 1", spec.Maneuver.Letter)
 	}
@@ -51,13 +54,16 @@ func TestSpecFromFlags(t *testing.T) {
 func TestSpecFromFlagsOmittedDrives(t *testing.T) {
 	f := murphyFlags()
 	f.jump = ""
+
 	spec, err := specFromFlags(f)
 	if err != nil {
 		t.Fatalf("a blank jump drive is legal, got %v", err)
 	}
+
 	if spec.Jump != nil {
 		t.Errorf("blank -jump should give no jump drive, got %+v", spec.Jump)
 	}
+
 	if spec.Maneuver == nil {
 		t.Errorf("the other drives should survive an omitted jump drive")
 	}
@@ -79,6 +85,7 @@ func TestSpecFromFlagsRejects(t *testing.T) {
 	for name, mutate := range cases {
 		f := murphyFlags()
 		mutate(&f)
+
 		if _, err := specFromFlags(f); err == nil {
 			t.Errorf("%s: should be rejected, got a spec", name)
 		}

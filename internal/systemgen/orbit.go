@@ -40,13 +40,16 @@ func HZOrbit(star Star) (int, bool) {
 	if !ok {
 		return 0, false // BD or an unknown type: no habitable zone
 	}
+
 	col, ok := hzSizeIndex[star.Size]
 	if !ok {
 		return 0, false
 	}
+
 	if orbit := row[col]; orbit >= 0 {
 		return orbit, true
 	}
+
 	return 0, false
 }
 
@@ -62,5 +65,6 @@ func OrbitAU(orbit int) float64 {
 	if orbit < 0 || orbit >= len(orbitAU) {
 		return 0
 	}
+
 	return orbitAU[orbit]
 }

@@ -13,20 +13,25 @@ func TestSetCapital(t *testing.T) {
 	// the capital nobility (Duke, F).
 	w := World{TradeCodes: []string{"Ph", "Pa", "Ri"}, Importance: 4}
 	w.SetCapital("Cs")
+
 	if got := w.TradeCodes; got[len(got)-1] != "Cs" {
 		t.Errorf("TradeCodes = %v, want trailing Cs", got)
 	}
+
 	if w.Nobility != "BcCeF" {
 		t.Errorf("capital nobility = %q, want BcCeF", w.Nobility)
 	}
 	// Idempotent: a second call does not duplicate the code.
 	w.SetCapital("Cs")
+
 	count := 0
+
 	for _, c := range w.TradeCodes {
 		if c == "Cs" {
 			count++
 		}
 	}
+
 	if count != 1 {
 		t.Errorf("Cs appears %d times, want 1", count)
 	}
@@ -91,6 +96,7 @@ func TestTravelZone(t *testing.T) {
 	if got := TravelZone(uwp.Profile{Starport: 'A', Government: 11, Law: 9}); got != 'A' {
 		t.Errorf("Gov+Law 20 = %c, want A", got)
 	}
+
 	if got := TravelZone(uwp.Profile{Starport: 'A', Government: 11, Law: 11}); got != 'R' {
 		t.Errorf("Gov+Law 22 = %c, want R", got)
 	}
@@ -169,6 +175,7 @@ func TestBaseNames(t *testing.T) {
 	if got := w.bases(); got != "NSW" {
 		t.Errorf("bases() = %q, want NSW", got)
 	}
+
 	if got := (World{}).BaseNames(); len(got) != 0 {
 		t.Errorf("a world with no bases named %v", got)
 	}

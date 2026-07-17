@@ -16,6 +16,7 @@ func drivePotential(driveOrd, hullOrd int) int {
 	if driveOrd < 1 || hullOrd < 1 {
 		return 0
 	}
+
 	return min(2*driveOrd/hullOrd, 9)
 }
 
@@ -26,10 +27,12 @@ func DriveForPotential(potential, hullOrd int) int {
 	if potential < 1 || hullOrd < 1 {
 		return 0
 	}
+
 	ord := (potential*hullOrd + 1) / 2 // ceil(potential*hull/2)
 	if ord > 48 {
 		return 0
 	}
+
 	return ord
 }
 
@@ -51,13 +54,16 @@ func driveTonsBase(kind DriveKind, ord int) int {
 		if ord <= 24 {
 			return 5*ord + 5
 		}
+
 		return 5*ord + 10
 	case Power:
 		if ord <= 24 {
 			return 3*ord + 1
 		}
+
 		return 3*ord + 2
 	}
+
 	return 0
 }
 
@@ -67,6 +73,7 @@ func driveCrPerTon(kind DriveKind) int {
 	if kind == Maneuver {
 		return 2_000_000
 	}
+
 	return 1_000_000
 }
 
@@ -83,11 +90,13 @@ var driveAvail = map[DriveKind][]struct{ tl, max int }{
 // reach at the given tech level (Book 2 p.76 W); 0 if none is available.
 func availabilityMax(kind DriveKind, tl int) int {
 	m := 0
+
 	for _, bp := range driveAvail[kind] {
 		if tl >= bp.tl {
 			m = bp.max
 		}
 	}
+
 	return m
 }
 
@@ -96,6 +105,7 @@ func availabilityMax(kind DriveKind, tl int) int {
 // baseline (zero value).
 type Stage int
 
+// TL stages for a drive (Book 2 p. 76).
 const (
 	Standard Stage = iota
 	Experimental
@@ -136,6 +146,7 @@ func (s Stage) String() string {
 	if s < Standard || int(s) >= len(stageData) {
 		return "?"
 	}
+
 	return stageData[s].name
 }
 
@@ -161,6 +172,7 @@ func driveLabel(ord int) string {
 func designDrive(kind DriveKind, spec DriveSpec, hullOrd, tl int) (*Drive, string) {
 	st := stageData[spec.Stage]
 	raw := drivePotential(spec.Letter, hullOrd)
+
 	pot, problem := raw, ""
 	if capMax := availabilityMax(kind, tl+st.tlDelta); capMax < raw {
 		pot = capMax
@@ -172,6 +184,7 @@ func designDrive(kind DriveKind, spec DriveSpec, hullOrd, tl int) (*Drive, strin
 	if floor := driveTonsBase(kind, 1); tons < floor {
 		tons = floor // no drive is smaller than the class Drive-A (Book 2 p.77)
 	}
+
 	cost := tons * driveCrPerTon(kind) * st.costNum / st.costDen
 
 	return &Drive{

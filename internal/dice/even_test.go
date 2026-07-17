@@ -70,6 +70,7 @@ func TestEvenDist1to10(t *testing.T) {
 	if got := scripted(5, 6).EvenDist1to10(); got != 9 {
 		t.Fatalf("EvenDist1to10 = %d, want 9", got)
 	}
+
 	r := NewWithSeed(7)
 	for range 5000 {
 		if v := r.EvenDist1to10(); v < 1 || v > 10 {
@@ -83,6 +84,7 @@ func TestIndex(t *testing.T) {
 	// Every result is in range, and over many draws every value appears roughly
 	// evenly (the rejection sampling removes the base-6 modulo bias).
 	const draws = 12000
+
 	for _, n := range []int{2, 8, 17} {
 		counts := make([]int, n)
 		for range draws {
@@ -90,8 +92,10 @@ func TestIndex(t *testing.T) {
 			if v < 0 || v >= n {
 				t.Fatalf("Index(%d) = %d, out of [0,%d)", n, v, n)
 			}
+
 			counts[v]++
 		}
+
 		expected := draws / n
 		for v, c := range counts {
 			if c < expected*3/4 || c > expected*5/4 {
@@ -113,5 +117,6 @@ func TestIndexPanicsOnNonPositive(t *testing.T) {
 			t.Errorf("Index(0) should panic")
 		}
 	}()
+
 	NewWithSeed(1).Index(0)
 }

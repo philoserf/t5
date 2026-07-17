@@ -30,6 +30,7 @@ import "github.com/philoserf/t5/internal/uwp"
 // offset codes above cannot be computed (there is no zone to offset from).
 func ClimateCodes(p uwp.Profile, orbit, hzOrbit int, hasHZ bool) []string {
 	var out []string
+
 	if hasHZ {
 		switch offset := orbit - hzOrbit; {
 		case offset == -1:
@@ -46,9 +47,11 @@ func ClimateCodes(p uwp.Profile, orbit, hzOrbit int, hasHZ bool) []string {
 			out = append(out, "Fr")
 		}
 	}
+
 	if orbit == 0 || orbit == 1 {
 		out = append(out, "Tz")
 	}
+
 	return out
 }
 

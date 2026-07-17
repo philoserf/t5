@@ -28,6 +28,7 @@ const rule = "──────────────────────
 func (rec Record) Sheet() string {
 	var b strings.Builder
 	b.Grow(2048)
+
 	s := rec.System
 	mw := s.Mainworld
 
@@ -49,14 +50,18 @@ func (rec Record) Sheet() string {
 	)
 	field("Extensions", "%s   RU %d", mw.Extensions(), mw.Economic.RU())
 	field("Traffic", "~%s/week", plural(route.ExpectedTraffic(mw.Importance), "ship", "ships"))
+
 	if mw.Nobility != "" {
 		field("Nobility", "%s", mw.Nobility)
 	}
+
 	field("Bases", "%s", orNone(mw.BaseNames()))
 	field("Travel Zone", "%s", worldgen.ZoneName(mw.Zone))
+
 	if mw.NativeStatus != "" {
 		field("Natives", "%s", mw.NativeStatus)
 	}
+
 	if f, ok := worldgen.PortFacilities(mw.Profile); ok {
 		field("Starport", "%c — %s", f.Class, f.Quality)
 		// Most no-port worlds (X, Y) list nothing — but a class-X world with water or
@@ -68,6 +73,7 @@ func (rec Record) Sheet() string {
 	}
 
 	b.WriteString("\n  Stars\n")
+
 	for _, sl := range s.Stars() {
 		fmt.Fprintf(&b, "    %-18s %s%s\n", sl.Label, sl.Star, starOrbit(sl))
 	}
@@ -86,6 +92,7 @@ func plural(n int, one, many string) string {
 	if n == 1 {
 		return fmt.Sprintf("%d %s", n, one)
 	}
+
 	return fmt.Sprintf("%d %s", n, many)
 }
 
@@ -98,6 +105,7 @@ func writeUnplacedMainworld(b *strings.Builder, s systemgen.System) {
 			return
 		}
 	}
+
 	fmt.Fprintf(b, "    *  --  %-14s %s  — unplaced (the primary has no habitable zone)\n",
 		"Mainworld", s.Mainworld.Profile)
 }
@@ -123,6 +131,7 @@ func capitalTitle(w worldgen.World) string {
 	if code := w.CapitalCode(); code != "" {
 		return "   — " + worldgen.CapitalName(code)
 	}
+
 	return ""
 }
 
@@ -130,6 +139,7 @@ func orNone(items []string) string {
 	if len(items) == 0 {
 		return "none"
 	}
+
 	return strings.Join(items, ", ")
 }
 
@@ -142,11 +152,14 @@ func writeOrbits(b *strings.Builder, s systemgen.System) {
 			host = o.Host
 			fmt.Fprintf(b, "    [%s]\n", host)
 		}
+
 		marker := " "
 		if o.Kind == systemgen.KindMainworld {
 			marker = "*"
 		}
+
 		fmt.Fprintf(b, "   %s%3d  %s\n", marker, o.Orbit, bodyLabel(o, s.Mainworld.Profile))
+
 		for _, m := range o.Satellites {
 			fmt.Fprintf(b, "          · %s\n", moonLabel(m))
 		}
@@ -159,12 +172,14 @@ func bodyLabel(o systemgen.PlacedOrbit, mainworld uwp.Profile) string {
 	switch {
 	case o.Kind == systemgen.KindMainworld:
 		s := fmt.Sprintf("%-14s %s", "Mainworld", mainworld)
+
 		switch {
 		case o.Giant != nil:
 			s += fmt.Sprintf("  — moon of Gas Giant %s", o.Giant)
 		case o.Parent != nil:
 			s += fmt.Sprintf("  — moon of %s %s", o.Parent.Type, o.Parent.Profile)
 		}
+
 		return s
 	case o.Giant != nil:
 		return fmt.Sprintf("%-14s %s", "Gas Giant", o.Giant)
@@ -177,6 +192,7 @@ func bodyLabel(o systemgen.PlacedOrbit, mainworld uwp.Profile) string {
 		if tcs := strings.Join(o.World.TradeCodes, " "); tcs != "" {
 			s += "  " + tcs
 		}
+
 		return s
 	default:
 		return o.Kind.String()
@@ -189,18 +205,22 @@ func moonLabel(m systemgen.Satellite) string {
 	if m.Ring {
 		return "Ring"
 	}
+
 	orbit := "close"
 	if m.Far {
 		orbit = "far"
 	}
+
 	s := fmt.Sprintf("moon %-5s %-12s %s", m.OrbitLetter, m.Type, m.Profile)
 	// Stored in Chart D order by the assembler, so no render-time sort here.
 	if tcs := strings.Join(m.TradeCodes, " "); tcs != "" {
 		s += " " + tcs
 	}
+
 	s += fmt.Sprintf("  (%s orbit)", orbit)
 	if m.DoublePlanet {
 		s += "  [double planet]"
 	}
+
 	return s
 }

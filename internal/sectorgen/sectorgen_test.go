@@ -65,6 +65,7 @@ func TestHexDistance(t *testing.T) {
 		if d := c.a.Distance(c.b); d != c.want {
 			t.Errorf("%s-%s distance = %d, want %d", c.a, c.b, d, c.want)
 		}
+
 		if d := c.b.Distance(c.a); d != c.want {
 			t.Errorf("%s-%s distance = %d, want %d (asymmetric)", c.b, c.a, d, c.want)
 		}
@@ -84,9 +85,11 @@ func TestDensityByName(t *testing.T) {
 			t.Errorf("DensityByName(%q) = %v,%v, want %v", name, d, ok, want)
 		}
 	}
+
 	if _, ok := DensityByName("bogus"); ok {
 		t.Errorf("DensityByName(bogus) should not be found")
 	}
+
 	if names := DensityNames(); len(names) != 8 || names[0] != "Extra Galactic" ||
 		names[7] != "Core" {
 		t.Errorf("DensityNames() = %v", names)
@@ -98,6 +101,7 @@ func TestSystemPresent(t *testing.T) {
 	if !SystemPresent(dice.NewScripted(3), Standard) {
 		t.Errorf("Standard 1D=3 should be present")
 	}
+
 	if SystemPresent(dice.NewScripted(4), Standard) {
 		t.Errorf("Standard 1D=4 should be absent")
 	}
@@ -105,6 +109,7 @@ func TestSystemPresent(t *testing.T) {
 	if !SystemPresent(dice.NewScripted(4, 6), Core) {
 		t.Errorf("Core 2D=10 should be present")
 	}
+
 	if SystemPresent(dice.NewScripted(5, 6), Core) {
 		t.Errorf("Core 2D=11 should be absent")
 	}
@@ -116,6 +121,7 @@ func TestSystemPresent(t *testing.T) {
 	if SystemPresent(dice.NewScripted(1), Density(99)) {
 		t.Errorf("out-of-range density should report no system")
 	}
+
 	if GenerateSector(dice.NewScripted(1), Density(-1)) != nil {
 		t.Errorf("out-of-range density should generate no systems")
 	}
@@ -127,6 +133,7 @@ func TestRollContents(t *testing.T) {
 	if !sh.GasGiant || !sh.AsteroidMainworld || sh.Hex.String() != "0803" {
 		t.Errorf("contents = %+v, want GG + asteroid at 0803", sh)
 	}
+
 	sh2 := rollContents(dice.NewScripted(5, 4, 3, 4), Hex{1, 1}) // GG 2D=9 (no), Ast 2D=7 (no)
 	if sh2.GasGiant || sh2.AsteroidMainworld {
 		t.Errorf("contents = %+v, want no GG, no asteroid", sh2)
@@ -150,6 +157,7 @@ func TestParseSubsector(t *testing.T) {
 
 func TestGenerateSectorDeterministicAndDense(t *testing.T) {
 	a := GenerateSector(dice.NewWithSeed(42), Standard)
+
 	b := GenerateSector(dice.NewWithSeed(42), Standard)
 	if len(a) != len(b) {
 		t.Fatalf("same seed gave different counts: %d vs %d", len(a), len(b))
@@ -160,6 +168,7 @@ func TestGenerateSectorDeterministicAndDense(t *testing.T) {
 	}
 	// Denser regions hold more systems than sparser ones.
 	sparse := len(GenerateSector(dice.NewWithSeed(42), Sparse))
+
 	core := len(GenerateSector(dice.NewWithSeed(42), Core))
 	if sparse >= len(a) || len(a) >= core {
 		t.Errorf("density ordering wrong: sparse %d, standard %d, core %d", sparse, len(a), core)

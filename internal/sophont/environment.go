@@ -14,6 +14,7 @@ import (
 // A Locomotion is a sophont's natural mode of movement (chart 05B).
 type Locomotion int
 
+// Locomotion modes (Book 3 p. 227).
 const (
 	Walker Locomotion = iota
 	Amphibian
@@ -188,6 +189,7 @@ func rollEnvironment(r *dice.Roller, home uwp.Profile) Environment {
 	dm := clamp(r.Flux(), -5, 5)
 	loco := rollLocomotion(r, dm, home)
 	class, niche := rollNiche(r, dm)
+
 	return Environment{
 		Terrain:    terrainNames[dm+5],
 		EnvironDM:  dm,
@@ -205,23 +207,28 @@ func rollLocomotion(r *dice.Roller, dm int, home uwp.Profile) Locomotion {
 	if home.Atmosphere >= 8 {
 		col -= 2
 	}
+
 	if home.Size <= 5 {
 		col--
 	}
+
 	if home.Hydrographics >= 6 {
 		col++
 	}
+
 	if home.Hydrographics >= 9 {
 		col++
 	}
+
 	return locomotionGrid[dm+5][clamp(col, 0, 5)]
 }
 
 // rollNiche rolls the basic class, then a second Flux (plus the Environ DM) for
 // the sub-niche within that class column (chart 05C: the Environ DM modifies the
 // sub-niche columns but not the basic class).
-func rollNiche(r *dice.Roller, dm int) (class, niche string) {
-	class = nicheClasses[dice.FluxIndex(r.Flux())]
-	niche = nicheCols[class][dice.FluxIndex(r.Flux()+dm)]
+func rollNiche(r *dice.Roller, dm int) (string, string) {
+	class := nicheClasses[dice.FluxIndex(r.Flux())]
+	niche := nicheCols[class][dice.FluxIndex(r.Flux()+dm)]
+
 	return class, niche
 }

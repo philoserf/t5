@@ -53,8 +53,10 @@ func main() {
 			if i > 0 {
 				fmt.Println()
 			}
+
 			fmt.Println(shipgen.Generate(r))
 		}
+
 		return
 	}
 
@@ -68,10 +70,12 @@ func main() {
 	}
 	// The spec is fixed, so the ship is too: design it once and print it n times.
 	ship := shipgen.Design(spec)
+
 	for i := range n {
 		if i > 0 {
 			fmt.Println()
 		}
+
 		fmt.Println(ship)
 	}
 }
@@ -97,10 +101,12 @@ func specFromFlags(f flags) (shipgen.ShipSpec, error) {
 			f.hull,
 		)
 	}
+
 	config, ok := shipgen.ConfigByLetter(f.config)
 	if !ok {
 		return shipgen.ShipSpec{}, fmt.Errorf("invalid config %q (want C/B/P/U/S/A/L)", f.config)
 	}
+
 	structure, ok := shipgen.StructureByName(f.structure)
 	if !ok {
 		return shipgen.ShipSpec{}, fmt.Errorf(
@@ -108,14 +114,17 @@ func specFromFlags(f flags) (shipgen.ShipSpec, error) {
 			f.structure,
 		)
 	}
+
 	weapons, err := weaponSpecs(f.weapons)
 	if err != nil {
 		return shipgen.ShipSpec{}, err
 	}
+
 	defenseList, err := defenseSpecs(f.defenses)
 	if err != nil {
 		return shipgen.ShipSpec{}, err
 	}
+
 	return shipgen.ShipSpec{
 		Mission: f.mission, TL: f.tl, HullLetter: hullOrd, Config: config,
 		Structure: structure, ArmorLayers: f.armor,
@@ -157,7 +166,9 @@ func parseInstallations(list, kind string) ([]installation, error) {
 	if list == "" {
 		return nil, nil
 	}
+
 	var out []installation
+
 	for entry := range strings.SplitSeq(list, ",") {
 		parts := strings.Split(strings.TrimSpace(entry), ":")
 		if len(parts) > 3 {
@@ -167,6 +178,7 @@ func parseInstallations(list, kind string) ([]installation, error) {
 				entry,
 			)
 		}
+
 		inst := installation{name: parts[0]}
 		if len(parts) > 1 && parts[1] != "" {
 			m, ok := shipgen.MountByCode(parts[1])
@@ -174,18 +186,23 @@ func parseInstallations(list, kind string) ([]installation, error) {
 				return nil, fmt.Errorf("unknown mount %q (known: %s)",
 					parts[1], strings.Join(shipgen.MountCodes(), ", "))
 			}
+
 			inst.mount = Mount{set: true, value: m}
 		}
+
 		if len(parts) > 2 && parts[2] != "" {
 			r, ok := shipgen.RangeByName(parts[2])
 			if !ok {
 				return nil, fmt.Errorf("unknown range %q (known: %s)",
 					parts[2], strings.Join(shipgen.RangeNames(), ", "))
 			}
+
 			inst.rng = Range{set: true, value: r}
 		}
+
 		out = append(out, inst)
 	}
+
 	return out, nil
 }
 
@@ -200,22 +217,28 @@ func weaponSpecs(list string) ([]shipgen.WeaponSpec, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	var specs []shipgen.WeaponSpec
+
 	for _, e := range entries {
 		model, ok := shipgen.WeaponByName(e.name)
 		if !ok {
 			return nil, fmt.Errorf("unknown weapon %q (known: %s)",
 				e.name, strings.Join(shipgen.WeaponNames(), ", "))
 		}
+
 		spec := shipgen.DefaultWeapon(model)
 		if e.mount.set {
 			spec.Mount = e.mount.value
 		}
+
 		if e.rng.set {
 			spec.Range = e.rng.value
 		}
+
 		specs = append(specs, spec)
 	}
+
 	return specs, nil
 }
 
@@ -226,22 +249,28 @@ func defenseSpecs(list string) ([]shipgen.DefenseSpec, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	var specs []shipgen.DefenseSpec
+
 	for _, e := range entries {
 		model, ok := shipgen.DefenseByName(e.name)
 		if !ok {
 			return nil, fmt.Errorf("unknown defense %q (known: %s)",
 				e.name, strings.Join(shipgen.DefenseNames(), ", "))
 		}
+
 		spec := shipgen.DefaultDefense(model)
 		if e.mount.set {
 			spec.Mount = e.mount.value
 		}
+
 		if e.rng.set {
 			spec.Range = e.rng.value
 		}
+
 		specs = append(specs, spec)
 	}
+
 	return specs, nil
 }
 
@@ -250,6 +279,7 @@ func driveSpec(letter string) *shipgen.DriveSpec {
 	if ord := letterOrdinal(letter); ord != 0 {
 		return &shipgen.DriveSpec{Letter: ord}
 	}
+
 	return nil
 }
 
@@ -258,5 +288,6 @@ func letterOrdinal(s string) int {
 	if len(s) != 1 {
 		return 0
 	}
+
 	return shipgen.LetterOrdinal(s[0])
 }

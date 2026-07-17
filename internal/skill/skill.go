@@ -29,7 +29,7 @@ var cascades = map[string]bool{
 func IsCascade(name string) bool { return cascades[name] }
 
 // A Set is a character's skills and knowledges. The zero value is ready to use.
-type Set struct {
+type Set struct { //nolint:recvcheck // deliberate value-reader / pointer-mutator split
 	skills     map[string]int            // plain skill or cascade parent -> level
 	knowledges map[string]map[string]int // parent -> knowledge -> level
 }
@@ -50,27 +50,31 @@ func (s Set) TaskLevel(parent, knowledge string) int {
 	return s.Level(parent) + s.KnowledgeLevel(parent, knowledge)
 }
 
-// TopLevels returns the summed levels of the highest n skills at or above min,
-// skipping any skill named in exclude. Used for Craftsman Master Points (Book 1
-// p. 75: the Craftsman skill and up to five other skills at level 6+, not
+// TopLevels returns the summed levels of the highest n skills at or above
+// minLevel, skipping any skill named in exclude. Used for Craftsman Master Points
+// (Book 1 p. 75: the Craftsman skill and up to five other skills at level 6+, not
 // languages).
-func (s Set) TopLevels(n, min int, exclude ...string) int {
+func (s Set) TopLevels(n, minLevel int, exclude ...string) int {
 	skip := make(map[string]bool, len(exclude))
 	for _, name := range exclude {
 		skip[name] = true
 	}
+
 	levels := make([]int, 0, len(s.skills))
 	for name, lvl := range s.skills {
-		if lvl >= min && !skip[name] {
+		if lvl >= minLevel && !skip[name] {
 			levels = append(levels, lvl)
 		}
 	}
+
 	slices.Sort(levels)
 	slices.Reverse(levels)
+
 	sum := 0
 	for i := 0; i < n && i < len(levels); i++ {
 		sum += levels[i]
 	}
+
 	return sum
 }
 
@@ -80,6 +84,7 @@ func (s *Set) Raise(skill string, n int) {
 	if s.skills == nil {
 		s.skills = make(map[string]int)
 	}
+
 	s.skills[skill] = clamp(s.skills[skill]+n, 0, Max)
 }
 
@@ -90,15 +95,19 @@ func (s *Set) RaiseKnowledge(parent, knowledge string, n int) {
 	if s.skills == nil {
 		s.skills = make(map[string]int)
 	}
+
 	if _, ok := s.skills[parent]; !ok {
 		s.skills[parent] = 0
 	}
+
 	if s.knowledges == nil {
 		s.knowledges = make(map[string]map[string]int)
 	}
+
 	if s.knowledges[parent] == nil {
 		s.knowledges[parent] = make(map[string]int)
 	}
+
 	s.knowledges[parent][knowledge] = clamp(s.knowledges[parent][knowledge]+n, 0, KnowledgeMax)
 }
 
@@ -129,6 +138,7 @@ func (s Set) List() []string {
 			entries = append(entries, name+"/"+k+"-"+strconv.Itoa(s.knowledges[name][k]))
 		}
 	}
+
 	return entries
 }
 

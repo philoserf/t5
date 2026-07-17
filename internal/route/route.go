@@ -40,7 +40,7 @@ type Link struct {
 // nearest reachable Important world by a shortest hop-path through intermediate
 // worlds (each hop <= maxJump). A non-positive maxJump uses DefaultJump. Links
 // are returned de-duplicated, in stable CCRR order.
-func Build(worlds []World, maxJump int) []Link {
+func Build(worlds []World, maxJump int) []Link { //nolint:gocognit,cyclop // trade-route graph; irreducibly branchy
 	if maxJump <= 0 {
 		maxJump = DefaultJump
 	}
@@ -53,18 +53,22 @@ func Build(worlds []World, maxJump int) []Link {
 	// order since sorted is CCRR-ordered.
 	adj := make([][]int, len(sorted))
 	isImportant := make([]bool, len(sorted))
+
 	var importantIdx []int
+
 	for i, w := range sorted {
 		if w.Importance >= Important {
 			isImportant[i] = true
 			importantIdx = append(importantIdx, i)
 		}
 	}
+
 	for i := range sorted {
 		for j := range sorted {
 			if i == j {
 				continue
 			}
+
 			if d := sorted[i].Hex.Distance(sorted[j].Hex); d >= 1 && d <= maxJump {
 				adj[i] = append(adj[i], j)
 			}
@@ -80,6 +84,7 @@ func Build(worlds []World, maxJump int) []Link {
 
 	// Direct links among Important worlds within range.
 	connected := make([]bool, len(sorted))
+
 	for _, i := range importantIdx {
 		for _, j := range adj[i] {
 			if isImportant[j] {
@@ -96,6 +101,7 @@ func Build(worlds []World, maxJump int) []Link {
 		if connected[start] {
 			continue
 		}
+
 		addPath(shortestPathToImportant(start, adj, isImportant))
 	}
 
@@ -103,12 +109,15 @@ func Build(worlds []World, maxJump int) []Link {
 	for l := range links {
 		out = append(out, l)
 	}
+
 	sort.Slice(out, func(i, j int) bool {
 		if out[i].From != out[j].From {
 			return before(out[i].From, out[j].From)
 		}
+
 		return before(out[i].To, out[j].To)
 	})
+
 	return out
 }
 
@@ -121,16 +130,20 @@ func shortestPathToImportant(start int, adj [][]int, isImportant []bool) []int {
 	for queue := []int{start}; len(queue) > 0; {
 		cur := queue[0]
 		queue = queue[1:]
+
 		if cur != start && isImportant[cur] {
 			var path []int
 			for at := cur; at != -1; at = prev[at] {
 				path = append(path, at)
 			}
+
 			for l, r := 0, len(path)-1; l < r; l, r = l+1, r-1 {
 				path[l], path[r] = path[r], path[l]
 			}
+
 			return path
 		}
+
 		for _, n := range adj[cur] {
 			if _, seen := prev[n]; !seen {
 				prev[n] = cur
@@ -138,6 +151,7 @@ func shortestPathToImportant(start int, adj [][]int, isImportant []bool) []int {
 			}
 		}
 	}
+
 	return nil
 }
 
@@ -147,6 +161,7 @@ func orderedLink(a, b sectorgen.Hex) Link {
 	if before(b, a) {
 		a, b = b, a
 	}
+
 	return Link{From: a, To: b, Jump: a.Distance(b)}
 }
 
@@ -179,5 +194,6 @@ func before(a, b sectorgen.Hex) bool {
 	if a.Col != b.Col {
 		return a.Col < b.Col
 	}
+
 	return a.Row < b.Row
 }

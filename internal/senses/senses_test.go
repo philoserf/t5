@@ -13,6 +13,7 @@ func TestNoticeAtRangeReginaExample(t *testing.T) {
 	if res.Target != 18 {
 		t.Errorf("target = %d, want 18", res.Target)
 	}
+
 	if res.Roll != 12 || !res.Success {
 		t.Errorf("roll 12 vs 18 should succeed: %+v", res)
 	}
@@ -60,6 +61,7 @@ func TestAbsentSenseAlwaysFails(t *testing.T) {
 	if res := NoticeAtRange(dice.NewScripted(1), Awareness, 5, 1); res.Success {
 		t.Errorf("human Awareness should not succeed: %+v", res)
 	}
+
 	if res := NoticeInContact(dice.NewScripted(1, 1), Perception, 5); res.Success {
 		t.Errorf("human Perception should not succeed: %+v", res)
 	}

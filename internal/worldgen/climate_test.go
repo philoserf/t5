@@ -9,6 +9,7 @@ import (
 
 func TestClimateCodes(t *testing.T) {
 	temperate := uwp.Profile{Size: 7, Atmosphere: 6, Hydrographics: 5} // Tr/Tu shape
+
 	cases := []struct {
 		name    string
 		p       uwp.Profile

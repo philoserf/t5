@@ -31,6 +31,7 @@ func New() *Roller {
 // The same seed always produces the same sequence of rolls.
 func NewWithSeed(seed uint64) *Roller {
 	rng := rand.New(rand.NewPCG(seed, seed^0x9e3779b97f4a7c15))
+
 	return NewSource(func() int { return rng.IntN(6) + 1 })
 }
 
@@ -50,10 +51,13 @@ func NewScripted(faces ...int) *Roller {
 	if len(faces) == 0 {
 		panic("dice: NewScripted needs at least one face")
 	}
+
 	i := 0
+
 	return NewSource(func() int {
 		v := faces[i%len(faces)]
 		i++
+
 		return v
 	})
 }
@@ -70,6 +74,7 @@ func (r *Roller) Dice(n int) int {
 	for range n {
 		sum += r.d6()
 	}
+
 	return sum
 }
 
@@ -82,10 +87,12 @@ func (r *Roller) DiceFaces(n int) []int {
 	if n <= 0 {
 		return nil
 	}
+
 	faces := make([]int, n)
 	for i := range faces {
 		faces[i] = r.d6()
 	}
+
 	return faces
 }
 
@@ -100,6 +107,7 @@ func (r *Roller) Flux() int {
 // 0..+5 (0 when the dice are equal).
 func (r *Roller) GoodFlux() int {
 	a, b := r.d6(), r.d6()
+
 	return max(a, b) - min(a, b)
 }
 

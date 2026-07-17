@@ -57,14 +57,17 @@ func TestPortFacilities(t *testing.T) {
 		f, ok := PortFacilities(port(c.class, c.pop))
 		if !ok {
 			t.Errorf("PortFacilities(%c) not found", c.class)
+
 			continue
 		}
+
 		if f.Quality != c.quality || f.Shipyard != c.shipyard || f.Repairs != c.repairs ||
 			f.Fuel != c.fuel || f.Downport != c.downport || f.Beacon != c.beacon ||
 			f.Highport != c.highport || f.RefuelHours != c.refuel {
 			t.Errorf("PortFacilities(%c, pop %d) = %+v", c.class, c.pop, f)
 		}
 	}
+
 	if _, ok := PortFacilities(port('Z', 5)); ok {
 		t.Errorf("PortFacilities(Z) should be unknown")
 	}
@@ -75,6 +78,7 @@ func TestFuelAndRepairStrings(t *testing.T) {
 		NoFuel.String() != "None" {
 		t.Errorf("FuelKind.String mismatch")
 	}
+
 	if Overhaul.String() != "Overhaul" || MajorRepairs.String() != "Major" ||
 		NoRepairs.String() != "None" {
 		t.Errorf("RepairLevel.String mismatch")
@@ -87,6 +91,7 @@ func TestFuelAndRepairStrings(t *testing.T) {
 func TestServices(t *testing.T) {
 	a, _ := PortFacilities(port('A', 8))
 	got := strings.Join(a.Services(), " · ")
+
 	want := "builds Starships · repairs: Overhaul · fuel: Refined+Unrefined (2D hours) · downport · highport"
 	if got != want {
 		t.Errorf("class-A services =\n%q\nwant\n%q", got, want)
@@ -119,6 +124,7 @@ func TestExoticFuels(t *testing.T) {
 	for _, c := range cases {
 		p := port('A', 8)
 		p.TechLevel = c.tl
+
 		f, _ := PortFacilities(p)
 		if !slices.Equal(f.ExoticFuels, c.want) {
 			t.Errorf("class-A TL%d exotic fuels = %v, want %v", c.tl, f.ExoticFuels, c.want)
@@ -126,6 +132,7 @@ func TestExoticFuels(t *testing.T) {
 	}
 	// A class-C starport offers no exotic fuel, however high its tech level.
 	c := port('C', 9)
+
 	c.TechLevel = 18
 	if f, _ := PortFacilities(c); len(f.ExoticFuels) != 0 {
 		t.Errorf("class-C offers exotic fuel: %v", f.ExoticFuels)
@@ -139,10 +146,12 @@ func TestLocalFuel(t *testing.T) {
 	// A class-E frontier port with oceans: unrefined local fuel is available.
 	wet := port('E', 4)
 	wet.Hydrographics = 6
+
 	f, _ := PortFacilities(wet)
 	if !f.LocalFuel {
 		t.Errorf("a class-E port on a wet world should have local fuel")
 	}
+
 	if !slices.Contains(f.Services(), "fuel: Unrefined (local water/ice)") {
 		t.Errorf("local fuel not advertised: %v", f.Services())
 	}
@@ -160,10 +169,12 @@ func TestLocalFuel(t *testing.T) {
 // downport (Book 2 p.24).
 func TestBeltport(t *testing.T) {
 	belt := uwp.Profile{Starport: 'C', Size: 0, Population: 9, TechLevel: 5}
+
 	f, _ := PortFacilities(belt)
 	if !f.Beltport || f.Downport {
 		t.Errorf("an asteroid mainworld should have a beltport, not a downport: %+v", f)
 	}
+
 	if !slices.Contains(f.Services(), "beltport") {
 		t.Errorf("beltport not advertised: %v", f.Services())
 	}

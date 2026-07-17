@@ -48,6 +48,7 @@ func NoticeAtRange(r *dice.Roller, s Sense, objectSize, rng int, mods ...int) di
 	if s.Constant <= 0 {
 		return dice.CheckResult{} // an absent sense (e.g. human Awareness) never succeeds
 	}
+
 	return task.ResolveDice(r, rng, s.Constant+(objectSize-rng), mods...)
 }
 
@@ -58,6 +59,7 @@ func NoticeInContact(r *dice.Roller, s Sense, benchmark int, mods ...int) dice.C
 	if s.Constant <= 0 {
 		return dice.CheckResult{}
 	}
+
 	return task.ResolveDice(r, dice.Average, s.Constant+benchmark, mods...)
 }
 
@@ -69,5 +71,6 @@ func RangeBand(meters float64) int {
 	if !ok {
 		return 1 // the R and T reading/talking sub-bands both count as Range 1
 	}
+
 	return n
 }

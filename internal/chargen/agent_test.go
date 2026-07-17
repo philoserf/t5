@@ -45,28 +45,35 @@ func TestGoldenAgent(t *testing.T) {
 	if got := c.UPP(); got != "988777" {
 		t.Errorf("UPP = %q, want %q (Str 8 +1 muster benefit)", got, "988777")
 	}
+
 	if c.Medals != 0 {
 		t.Errorf("Medals = %d, want 0 (the Agent earns Commendations, not Medals)", c.Medals)
 	}
+
 	if c.Commendations != 2 {
 		t.Errorf("Commendations = %d, want 2 (a Reward success each term)", c.Commendations)
 	}
+
 	if c.Skills.Level("Survey") != 12 {
 		t.Errorf("Survey = %d, want 12 (6 rolls x 2 terms)", c.Skills.Level("Survey"))
 	}
+
 	if c.Skills.Level("Admin") != 2 {
 		t.Errorf(
 			"Admin = %d, want 2 (one Undercover skill borrowed from the Soldier each term)",
 			c.Skills.Level("Admin"),
 		)
 	}
+
 	rec := c.Careers[0]
 	if rec.Career != Agent || rec.Terms != 2 || rec.Outcome != MusteredOut {
 		t.Errorf("record = %+v, want Agent/2 terms/MusteredOut", rec)
 	}
+
 	if rec.Rank != 0 || rec.Officer {
 		t.Errorf("rank = %d officer %v, want rankless (0, false)", rec.Rank, rec.Officer)
 	}
+
 	if got := c.Benefits; len(got) != 3 || got[0] != "Wafer Jack" || got[1] != "Ship Share" ||
 		got[2] != "Ship Share" {
 		t.Errorf("Benefits = %v, want [Wafer Jack, Ship Share, Ship Share]", c.Benefits)
@@ -78,6 +85,7 @@ func TestUndercoverAssignment(t *testing.T) {
 	if got := undercoverAssignment(dice.NewScripted(1, 1)); got != Soldier {
 		t.Errorf("A1 B1 = %v, want Soldier", got)
 	}
+
 	if got := undercoverAssignment(dice.NewScripted(2, 3)); got != Entertainer {
 		t.Errorf("A2 B3 = %v, want Entertainer", got)
 	}
@@ -93,9 +101,11 @@ func TestAwardUndercoverFailedMission(t *testing.T) {
 	// Successful Mission 4. Undercover A=1,B=1 -> Soldier, borrow col 3 row 1 =
 	// Admin; then 2 Survey from the Agent's own Mission column.
 	awardUndercover(dice.NewScripted(1, 1, 1, 1), goldenPolicy{}, &c, AgentCareer, false)
+
 	if c.Skills.Level("Admin") != 1 {
 		t.Errorf("Admin = %d, want 1 (the borrowed Undercover skill)", c.Skills.Level("Admin"))
 	}
+
 	if c.Skills.Level("Survey") != 2 {
 		t.Errorf(
 			"Survey = %d, want 2 (Per Term 2, no Successful Mission bonus)",
@@ -110,6 +120,7 @@ func TestContinueTermsMod(t *testing.T) {
 	c := Character{scores: [count]int{6, 7, 7, 7, 7, 7}}
 	rule := ContinueRule{UseChar: true, Char: Strength, TermsMod: true}
 	career := Career{Continue: rule, Name: "T"}
+
 	rec := CareerRecord{Terms: 2}
 	if !continues(dice.NewScripted(3, 4), alwaysContinue{}, c, career, rec, &careerRun{}) {
 		t.Error("+Terms Continue should succeed at 7 vs target Str6 + 2 terms = 8")

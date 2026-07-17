@@ -61,6 +61,7 @@ type Survey struct {
 // redesign.)
 func Sector(r *dice.Roller, d sectorgen.Density) Survey {
 	hexes := sectorgen.GenerateSector(r, d)
+
 	records := make([]Record, len(hexes))
 	for i, h := range hexes {
 		records[i] = Record{
@@ -79,6 +80,7 @@ func Sector(r *dice.Roller, d sectorgen.Density) Survey {
 	placeNavalDepots(records)
 	links := route.Build(worldsOf(records), route.DefaultJump)
 	placeWayStations(records, links)
+
 	return Survey{Records: records, Routes: links}
 }
 
@@ -92,6 +94,7 @@ func (s Survey) At(hex sectorgen.Hex) (Record, bool) {
 			return rec, true
 		}
 	}
+
 	return Record{}, false
 }
 
@@ -108,12 +111,15 @@ func (s Survey) Subsector(letter byte) []Record {
 	if letter >= 'a' && letter <= 'z' {
 		letter -= 'a' - 'A'
 	}
+
 	var out []Record
+
 	for _, rec := range s.Records {
 		if rec.Hex.Subsector() == letter {
 			out = append(out, rec)
 		}
 	}
+
 	return out
 }
 
@@ -129,12 +135,15 @@ func (s Survey) String() string {
 			route.ExpectedTraffic(rec.System.Mainworld.Importance),
 		)
 	}
+
 	if len(s.Routes) > 0 {
 		fmt.Fprintf(&b, "\nTrade Routes (%d):\n", len(s.Routes))
+
 		for _, l := range s.Routes {
 			fmt.Fprintf(&b, "  %s-%s J%d\n", l.From, l.To, l.Jump)
 		}
 	}
+
 	return strings.TrimRight(b.String(), "\n")
 }
 
@@ -144,6 +153,7 @@ func worldsOf(records []Record) []route.World {
 	for i, rec := range records {
 		worlds[i] = route.World{Hex: rec.Hex, Importance: rec.System.Mainworld.Importance}
 	}
+
 	return worlds
 }
 
@@ -166,11 +176,14 @@ func markSectorCapitals(records []Record) {
 	if sectorCap >= 0 {
 		records[sectorCap].System.Mainworld.SetCapital("Cs")
 	}
+
 	bySub := map[byte][]int{}
+
 	for i := range records {
 		l := records[i].Hex.Subsector()
 		bySub[l] = append(bySub[l], i)
 	}
+
 	for _, idxs := range bySub {
 		if b := bestCapital(records, idxs); b >= 0 && b != sectorCap {
 			records[b].System.Mainworld.SetCapital("Cp")
@@ -185,6 +198,7 @@ func bestCapital(records []Record, idxs []int) int {
 	if ranked := starportAByImportance(records, idxs); len(ranked) > 0 {
 		return ranked[0]
 	}
+
 	return -1
 }
 
@@ -196,6 +210,7 @@ func bestCapital(records []Record, idxs []int) int {
 // first on ties without a separate tiebreak.
 func starportAByImportance(records []Record, idxs []int) []int {
 	var a []int
+
 	consider := func(i int) {
 		if records[i].System.Mainworld.Profile.Starport == 'A' {
 			a = append(a, i)
@@ -210,9 +225,11 @@ func starportAByImportance(records []Record, idxs []int) []int {
 			consider(i)
 		}
 	}
+
 	sort.SliceStable(a, func(x, y int) bool {
 		return records[a[x]].System.Mainworld.Importance > records[a[y]].System.Mainworld.Importance
 	})
+
 	return a
 }
 
@@ -232,6 +249,7 @@ func placeNavalDepots(records []Record) {
 	if n == 0 {
 		return
 	}
+
 	ranked := starportAByImportance(records, nil)
 	for _, i := range ranked[:min(n, len(ranked))] {
 		records[i].System.Mainworld.SetNavalDepot()
@@ -246,32 +264,40 @@ func placeNavalDepots(records []Record) {
 func placeWayStations(records []Record, links []route.Link) {
 	total := 0
 	degree := map[sectorgen.Hex]int{}
+
 	for _, l := range links {
 		total += l.Jump
 		degree[l.From]++
 		degree[l.To]++
 	}
+
 	n := total / wayStationSpacing
 	if n == 0 {
 		return
 	}
+
 	hubs := make([]sectorgen.Hex, 0, len(degree))
 	for h := range degree {
 		hubs = append(hubs, h)
 	}
+
 	sort.Slice(hubs, func(i, j int) bool {
 		if degree[hubs[i]] != degree[hubs[j]] {
 			return degree[hubs[i]] > degree[hubs[j]]
 		}
+
 		return beforeHex(hubs[i], hubs[j])
 	})
+
 	if n > len(hubs) {
 		n = len(hubs)
 	}
+
 	byHex := map[sectorgen.Hex]int{}
 	for i := range records {
 		byHex[records[i].Hex] = i
 	}
+
 	for _, h := range hubs[:n] {
 		records[byHex[h]].System.Mainworld.SetWayStation()
 	}
@@ -282,6 +308,7 @@ func beforeHex(a, b sectorgen.Hex) bool {
 	if a.Col != b.Col {
 		return a.Col < b.Col
 	}
+
 	return a.Row < b.Row
 }
 
@@ -317,6 +344,8 @@ func worldName(r *dice.Roller) string {
 		b.WriteString(nameConsonants[r.Index(len(nameConsonants))])
 		b.WriteString(nameVowels[r.Index(len(nameVowels))])
 	}
+
 	name := b.String()
+
 	return strings.ToUpper(name[:1]) + name[1:]
 }

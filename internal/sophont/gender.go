@@ -13,6 +13,7 @@ import "github.com/philoserf/t5/internal/dice"
 // A GenderStructure is one of the five reproductive structures (Book 3 p.230).
 type GenderStructure int
 
+// Gender structures (Book 3 p. 230).
 const (
 	Solitaire GenderStructure = iota // one gender, self-reproducing
 	Dual                             // Female/Male
@@ -144,12 +145,14 @@ func rollGender(r *dice.Roller) Gender {
 	col := genderColumns[structure]
 
 	var table [13]string
+
 	table[2] = genders[0]
 	if len(genders) > 1 {
 		table[3] = genders[1]
 	} else {
 		table[3] = genders[0]
 	}
+
 	for entry := 4; entry <= 12; entry++ {
 		table[entry] = col[clamp(r.Flux(), -5, 5)+5]
 	}
@@ -158,5 +161,6 @@ func rollGender(r *dice.Roller) Gender {
 	for _, g := range genders[1:] {
 		diffs[g] = genderDifference(r.Flux())
 	}
+
 	return Gender{Structure: structure, Genders: genders, Table: table, Differences: diffs}
 }

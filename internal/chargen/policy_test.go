@@ -10,6 +10,7 @@ func TestChooseSkillColumnSpreads(t *testing.T) {
 		grid[1][i] = sk("A") // column 1 raises A
 		grid[2][i] = sk("B") // column 2 raises B
 	}
+
 	c := Character{}
 	c.Skills.Raise("A", 5) // column 1 is already developed
 

@@ -9,9 +9,11 @@ func TestHitCompartment(t *testing.T) {
 	if got := HitCompartment(1, -6, span); got != -5 {
 		t.Errorf("round 1 = %d, want -5", got)
 	}
+
 	if got := HitCompartment(5, -6, span); got != -1 {
 		t.Errorf("round 2 = %d, want -1", got)
 	}
+
 	if got := HitCompartment(0, -6, span); got != -6 {
 		t.Errorf("round 3 = %d, want -6", got)
 	}
@@ -31,6 +33,7 @@ func TestPenetrate(t *testing.T) {
 	if pen, interior := Penetrate(6, []int{5}); !pen || interior != 1 {
 		t.Errorf("Penetrate(6,[5]) = %v,%d, want true,1", pen, interior)
 	}
+
 	if pen, _ := Penetrate(6, []int{10}); pen {
 		t.Errorf("Penetrate(6,[10]) should not penetrate")
 	}
@@ -59,12 +62,15 @@ func TestSeverity(t *testing.T) {
 	if s := Severity(1, 3); s != 4 || SeverityLabel(s) != "Formidable" || Destroyed(s) {
 		t.Errorf("Severity(1,+3) = %d (%s), want 4 Formidable", s, SeverityLabel(s))
 	}
+
 	if s := Severity(6, 3); s != 9 || !Destroyed(s) {
 		t.Errorf("Severity(6,+3) = %d, want 9 Destroyed", s)
 	}
+
 	if s := Severity(4, 3); s != 7 || SeverityLabel(s) != "Impossible" {
 		t.Errorf("Severity(4,+3) = %d (%s), want 7 Impossible", s, SeverityLabel(s))
 	}
+
 	if s := Severity(1, 0); s != 1 || SeverityLabel(s) != "Easy" {
 		t.Errorf("Severity(1,0) = %d (%s), want 1 Easy", s, SeverityLabel(s))
 	}

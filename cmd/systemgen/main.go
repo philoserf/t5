@@ -20,6 +20,7 @@ func main() {
 		if i > 0 {
 			fmt.Println()
 		}
+
 		fmt.Println(systemgen.Generate(r))
 	}
 }

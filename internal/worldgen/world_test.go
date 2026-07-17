@@ -16,6 +16,7 @@ func TestGenerateBeltWorld(t *testing.T) {
 	if w.Profile.Size != 0 || w.Profile.Atmosphere != 0 || w.Profile.Hydrographics != 0 {
 		t.Errorf("belt world = %s, want Size/Atm/Hyd 0", w.Profile)
 	}
+
 	if !slices.Contains(w.TradeCodes, "As") {
 		t.Errorf("belt world lacks the As trade code: %v", w.TradeCodes)
 	}
@@ -24,6 +25,7 @@ func TestGenerateBeltWorld(t *testing.T) {
 	rb, rn := dice.NewWithSeed(3), dice.NewWithSeed(3)
 	GenerateBeltWorld(rb, 0, 0, false)
 	GenerateWorld(rn, 0, 0, false)
+
 	if rb.Die() != rn.Die() {
 		t.Errorf("belt and normal generation consumed different dice counts")
 	}
@@ -42,6 +44,7 @@ func TestSecondSurveyRegina(t *testing.T) {
 		Zone:         'G',
 		NativeStatus: "Natives",
 	}
+
 	want := "A788899-C Ph Pa Ri {+4}(D7E+4)[9C6D] BcCeF NS -"
 	if got := w.SecondSurvey(); got != want {
 		t.Fatalf("SecondSurvey() =\n%q\nwant\n%q", got, want)
@@ -57,6 +60,7 @@ func TestSecondSurveyFieldEdges(t *testing.T) {
 		Zone:     'R',
 		Nobility: "B",
 	}
+
 	want := "A788899-C - {0}(000+0)[0000] B - R"
 	if got := w.SecondSurvey(); got != want {
 		t.Fatalf("SecondSurvey() edges =\n%q\nwant\n%q", got, want)
@@ -67,6 +71,7 @@ func TestSecondSurveyZeroImportance(t *testing.T) {
 	// Ix of zero renders as "{0}", not "{+0}" (the book's Importance table
 	// shows a bare 0).
 	w := World{Profile: regina, Importance: 0, Nobility: "B"}
+
 	want := "A788899-C - {0}(000+0)[0000] B - -"
 	if got := w.SecondSurvey(); got != want {
 		t.Fatalf("SecondSurvey() zero Ix =\n%q\nwant\n%q", got, want)
@@ -79,17 +84,21 @@ func TestSetWayStation(t *testing.T) {
 	w.Importance = base
 
 	w.SetWayStation()
+
 	if !w.WayStation {
 		t.Errorf("WayStation flag not set")
 	}
+
 	if w.Importance != base+1 {
 		t.Errorf("Importance = %d, want %d (base + Way Station bonus)", w.Importance, base+1)
 	}
+
 	if got := w.bases(); got != "W" {
 		t.Errorf("bases() = %q, want W", got)
 	}
 	// Idempotent: a second call does not bump Importance again.
 	w.SetWayStation()
+
 	if w.Importance != base+1 {
 		t.Errorf("second SetWayStation re-bumped Importance to %d", w.Importance)
 	}
@@ -99,6 +108,7 @@ func TestPopulationDigit(t *testing.T) {
 	if got := PopulationDigit(dice.NewScripted(1, 1), 0); got != 0 {
 		t.Errorf("PopulationDigit(pop 0) = %d, want 0", got)
 	}
+
 	r := dice.NewWithSeed(1)
 	for range 500 {
 		if d := PopulationDigit(r, 8); d < 1 || d > 9 {
@@ -115,6 +125,7 @@ func TestGenerateWorld(t *testing.T) {
 		if a.SecondSurvey() != b.SecondSurvey() {
 			t.Fatalf("seed %d not reproducible", seed)
 		}
+
 		if a.Profile.Population > 0 && (a.PopulationDigit < 1 || a.PopulationDigit > 9) {
 			t.Fatalf(
 				"seed %d: pop digit %d invalid for pop %d",
@@ -123,6 +134,7 @@ func TestGenerateWorld(t *testing.T) {
 				a.Profile.Population,
 			)
 		}
+
 		if a.Profile.Population == 0 && a.PopulationDigit != 0 {
 			t.Fatalf("seed %d: pop-0 world has pop digit %d", seed, a.PopulationDigit)
 		}
@@ -143,12 +155,14 @@ func TestSecondSurveyNoTradeCodes(t *testing.T) {
 	if tcs := TradeClassifications(p); len(tcs) != 0 {
 		t.Fatalf("this test needs a world with no trade codes; %s has %v", p, tcs)
 	}
+
 	w := World{Profile: p, Nobility: "B"}
 	got := w.SecondSurvey()
 	// Six fields, always: UWP, TCs, extensions, nobility, bases, zone.
 	if n := len(strings.Fields(got)); n != 6 {
 		t.Errorf("record has %d fields, want 6 — a dropped column shifts the rest:\n%s", n, got)
 	}
+
 	if !strings.HasPrefix(got, "C539700-8 - {") {
 		t.Errorf("an empty trade-code column should be dashed, got %q", got)
 	}
@@ -167,6 +181,7 @@ func TestBaseCodes(t *testing.T) {
 	if got := depot.bases(); got != "D" {
 		t.Errorf("a lone Naval Depot renders %q, want D", got)
 	}
+
 	if names := depot.BaseNames(); len(names) != 1 || names[0] != "Naval Depot" {
 		t.Errorf("BaseNames = %v, want [Naval Depot]", names)
 	}

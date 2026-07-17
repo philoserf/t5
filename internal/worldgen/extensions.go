@@ -23,35 +23,44 @@ var importanceTradeCodes = []string{"Ag", "Hi", "In", "Ri"}
 // codes (see TradeClassifications).
 func Importance(p uwp.Profile, tcs []string, navalBase, scoutBase, wayStation bool) int {
 	ix := 0
+
 	switch p.Starport {
 	case 'A', 'B':
 		ix++
 	case 'D', 'E', 'X':
 		ix--
 	}
+
 	if p.TechLevel >= 16 { // G
 		ix++
 	}
+
 	if p.TechLevel >= 10 { // A
 		ix++
 	}
+
 	if p.TechLevel <= 8 {
 		ix--
 	}
+
 	for _, code := range importanceTradeCodes {
 		if slices.Contains(tcs, code) {
 			ix++
 		}
 	}
+
 	if p.Population <= 6 {
 		ix--
 	}
+
 	if navalBase && scoutBase {
 		ix++
 	}
+
 	if wayStation {
 		ix++
 	}
+
 	return ix
 }
 
@@ -76,6 +85,7 @@ func RollEconomic(r *dice.Roller, p uwp.Profile, ix, gasGiants, belts int) Econo
 	}
 
 	var infrastructure int
+
 	switch {
 	case p.Population == 0:
 		infrastructure = 0
@@ -108,6 +118,7 @@ func nonZeroFactor(v int) int {
 	if v == 0 {
 		return 1
 	}
+
 	return v
 }
 
@@ -133,6 +144,7 @@ func RollCultural(r *dice.Roller, p uwp.Profile, ix int) Cultural {
 	if p.Population == 0 {
 		return Cultural{}
 	}
+
 	return Cultural{
 		Heterogeneity: max(p.Population+r.Flux(), 1),
 		Acceptance:    max(p.Population+ix, 1),

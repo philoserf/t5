@@ -90,7 +90,7 @@ var AgentCareer = Career{
 	},
 	// Muster-out (Book 1 p. 83), indexed 1-12 by (1D + DM). Money passages are
 	// recorded at cash value.
-	MusterOut: MusterTable{
+	MusterOut: MusterTable{ //nolint:dupl // per-career muster-out table; parallel by design
 		1:  {Money: cash(1_000), Benefit: named("Ship Share")},          // Low Passage
 		2:  {Money: cash(1_000), Benefit: named("Forbidden Knowledge")}, // Low Passage
 		3:  {Money: cash(8_000), Benefit: named("Wafer Jack")},          // Mid Passage

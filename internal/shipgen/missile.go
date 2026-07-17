@@ -24,6 +24,7 @@ import (
 // A MissileType is a warhead (Book 2 p.170), lettered S D X E N A K Y Z.
 type MissileType int
 
+// Missile warhead types.
 const (
 	Slug       MissileType = iota // S — a solid metal projectile
 	Deadfall                      // D — gravity-driven, against a world surface
@@ -54,6 +55,7 @@ func (m MissileType) String() string {
 	if m < 0 || int(m) >= len(missileTypeNames) {
 		return "?"
 	}
+
 	return missileTypeNames[m]
 }
 
@@ -63,6 +65,7 @@ func (m MissileType) String() string {
 // one the gunner's own Characteristic + Skill + Knowledge.
 type Guidance int
 
+// Missile guidance packages.
 const (
 	UnGuided       Guidance = iota // UG — launched, and then on its own
 	HardWired                      // HW — pre-programmed circuits
@@ -90,6 +93,7 @@ func (g Guidance) String() string {
 	if g < 0 || int(g) >= len(guidanceData) {
 		return "?"
 	}
+
 	return guidanceData[g].code
 }
 
@@ -99,7 +103,9 @@ func (g Guidance) Available(size, launcherTL int) bool {
 	if g < 0 || int(g) >= len(guidanceData) {
 		return false
 	}
+
 	d := guidanceData[g]
+
 	return size >= d.minSize && launcherTL >= d.minTL
 }
 
@@ -177,7 +183,7 @@ var missileRows = [...]struct {
 // EMP= 4, and "Size-5 EMP=4" where it says 5 — while their Explosive values match
 // the grid exactly. The grid is self-consistent (both Pen and EMP simply equal
 // the Size), so we follow it, as we follow the design tables everywhere else.
-func missileEffect(size int, t MissileType) (string, bool) {
+func missileEffect(size int, t MissileType) (string, bool) { //nolint:cyclop // warhead table, one branch per row
 	switch t {
 	case Slug:
 		if size >= 1 && size <= 3 {
@@ -222,6 +228,7 @@ func missileEffect(size int, t MissileType) (string, bool) {
 	case SensorPkg:
 		return "Sensor", true // carries a sensor, and uses the sensor rules
 	}
+
 	return "", false
 }
 
@@ -259,8 +266,10 @@ func DesignMissile(launcher Weapon, spec MissileSpec) Missile {
 	if !ok {
 		m.Problems = append(m.Problems, fmt.Sprintf("%s does not throw a Size-%d round",
 			launcher.Name(), spec.Size))
+
 		return m
 	}
+
 	row := missileRows[i]
 	m.PerTon, m.TonsEach = row.perTon, row.tonsEach
 
@@ -269,11 +278,13 @@ func DesignMissile(launcher Weapon, spec MissileSpec) Missile {
 		m.Problems = append(m.Problems, fmt.Sprintf("a Size-%d round carries no %s warhead",
 			spec.Size, spec.Type))
 	}
+
 	m.Effect = effect
 	if !slices.Contains(row.types, spec.Type) {
 		m.Problems = append(m.Problems, fmt.Sprintf("%s does not throw a %s round",
 			launcher.Name(), spec.Type))
 	}
+
 	if !slices.Contains(row.guidance, spec.Guidance) {
 		m.Problems = append(m.Problems, fmt.Sprintf("a Size-%d %s round cannot be %s",
 			spec.Size, row.name, spec.Guidance))
@@ -285,6 +296,7 @@ func DesignMissile(launcher Weapon, spec MissileSpec) Missile {
 				spec.Guidance, d.minSize, d.minTL, spec.Size, launcher.TL),
 		)
 	}
+
 	return m
 }
 
@@ -305,30 +317,37 @@ func (m Missile) LongName() string {
 		if len(can) > 0 {
 			fmt.Fprintf(&b, " Guidance: %s", guidanceList(can))
 		}
+
 		if len(cannot) > 0 {
 			fmt.Fprintf(&b, " (%s not available)", guidanceList(cannot))
 		}
 	}
+
 	return b.String()
 }
 
 // guidanceOptions splits the brains this round's launcher offers into those its
 // size and tech level allow, and those they do not.
-func (m Missile) guidanceOptions() (can, cannot []Guidance) {
+func (m Missile) guidanceOptions() ([]Guidance, []Guidance) {
 	i, ok := findMissileRow(m.Spec.Launcher, m.Spec.Size)
 	if !ok {
 		return nil, nil
 	}
+
+	var can, cannot []Guidance
+
 	for _, g := range missileRows[i].guidance {
 		if g == UnGuided {
 			continue // not a guidance system; it is the lack of one
 		}
+
 		if g.Available(m.Spec.Size, m.TL) {
 			can = append(can, g)
 		} else {
 			cannot = append(cannot, g)
 		}
 	}
+
 	return can, cannot
 }
 
@@ -344,6 +363,7 @@ func guidanceList(gs []Guidance) string {
 			codes = append(codes, g.String())
 		}
 	}
+
 	return strings.Join(codes, " ")
 }
 
@@ -353,5 +373,6 @@ func findMissileRow(launcher WeaponID, size int) (int, bool) {
 			return i, true
 		}
 	}
+
 	return 0, false
 }

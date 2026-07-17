@@ -6,6 +6,7 @@ package dice
 // Spectacularly Interesting. These override the ordinary pass/fail result.
 type Spectacular int
 
+// Spectacular classifications of a check (Book 1 p. 127).
 const (
 	NotSpectacular           Spectacular = iota
 	SpectacularSuccess                   // three or more ones
@@ -31,6 +32,7 @@ func (s Spectacular) String() string {
 // counted across all dice; fewer than three dice can never be spectacular.
 func Classify(faces []int) Spectacular {
 	ones, sixes := 0, 0
+
 	for _, f := range faces {
 		switch f {
 		case 1:
@@ -39,6 +41,7 @@ func Classify(faces []int) Spectacular {
 			sixes++
 		}
 	}
+
 	switch {
 	case ones >= 3 && sixes >= 3:
 		return SpectacularlyInteresting

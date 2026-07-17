@@ -249,7 +249,7 @@ Tooling (go, go-task, poppler's `pdftotext`) is pinned in `Brewfile`.
 -weapon beamlaser:T1:orbit -defense blackglobe`.
   They follow one convention, owned by `internal/cli`: **generated records go to stdout, everything
   else to stderr**. Bad input is `cli.Fatalf` (exit 2, the code `flag` itself uses); a true-but-empty
-  result is `cli.Note` (exit 0, still off stdout, so a piped record stream stays clean).
+  result is `cli.Notef` (exit 0, still off stdout, so a piped record stream stays clean).
 
 When adding a generator, transcribe the rule tables/formulas from `docs/reference/` and lock
 them with a golden test built from a worked example in the books.

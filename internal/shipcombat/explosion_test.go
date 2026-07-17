@@ -42,6 +42,7 @@ func TestWeaponsMassiveExplosion(t *testing.T) {
 			t.Errorf("WeaponsMassiveExplosion(%q) = %+v,%v, want %+v", option, got, ok, want)
 		}
 	}
+
 	if _, ok := WeaponsMassiveExplosion("Sandcaster"); ok {
 		t.Errorf("a non-explosive weapon should not be tabulated")
 	}

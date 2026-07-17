@@ -21,6 +21,7 @@ func lifeStage(age int) int {
 	if age < 2 {
 		return 0
 	}
+
 	return min((age-2)/8+1, 9)
 }
 
@@ -28,6 +29,7 @@ func lifeStage(age int) int {
 // aging check.
 type Illness int
 
+// Illness outcomes from an aging crisis (Book 1 p. 89).
 const (
 	NoIllness      Illness = iota
 	MajorIllness           // two characteristics zeroed: four weeks R&R
@@ -59,6 +61,7 @@ func AgingCheck(r *dice.Roller, c *Character) {
 	if c.Dead || c.Age < physicalAgingAge {
 		return
 	}
+
 	stage := lifeStage(c.Age)
 
 	chars := []Characteristic{Strength, Dexterity, Endurance}
@@ -67,6 +70,7 @@ func AgingCheck(r *dice.Roller, c *Character) {
 	}
 
 	zeroed := 0
+
 	for _, ch := range chars {
 		if r.Dice(2) < stage { // success ages the characteristic
 			if v := c.scores[ch] - 1; v <= 0 {
@@ -82,6 +86,7 @@ func AgingCheck(r *dice.Roller, c *Character) {
 	if illness == ExtremeIllness {
 		c.extremeAgings++
 	}
+
 	if dead {
 		c.Dead = true
 	}

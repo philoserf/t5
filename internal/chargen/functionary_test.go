@@ -43,15 +43,18 @@ func TestGoldenFunctionary(t *testing.T) {
 	if got := c.UPP(); got != "797887" {
 		t.Errorf("UPP = %q, want %q (Dex 8 +1 muster benefit)", got, "797887")
 	}
+
 	if c.Skills.Level("Bureaucrat") != 1 || c.Skills.Level("Admin") != 1 ||
 		c.Skills.Level("Biologics") != 10 {
 		t.Errorf("skills: Bureaucrat=%d Admin=%d Biologics=%d, want 1/1/10",
 			c.Skills.Level("Bureaucrat"), c.Skills.Level("Admin"), c.Skills.Level("Biologics"))
 	}
+
 	rec := c.Careers[0]
 	if rec.Career != Functionary || rec.Terms != 2 || rec.Outcome != MusteredOut {
 		t.Errorf("record = %+v, want Functionary/2 terms/MusteredOut", rec)
 	}
+
 	if rec.Officer || rec.Rank != 3 {
 		t.Errorf(
 			"rank = %d officer %v, want single-ladder rank 3 (Senior Supervisor)",
@@ -78,6 +81,7 @@ func TestOfficePoliticsRiskFailureEndsCareer(t *testing.T) {
 	if got != MusteredOut {
 		t.Errorf("outcome = %v, want MusteredOut (job loss)", got)
 	}
+
 	if c.WoundBadges != 0 || run.rank != 1 {
 		t.Errorf(
 			"job loss should not injure or promote: wounds %d rank %d",

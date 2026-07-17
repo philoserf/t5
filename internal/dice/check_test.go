@@ -24,6 +24,7 @@ func TestResolveModRaisesTarget(t *testing.T) {
 	if base.Success {
 		t.Fatalf("expected base failure, got %+v", base)
 	}
+
 	modded := scripted(5, 3).Resolve(Check{Target: 7, Mod: 2})
 	if !modded.Success || modded.Target != 9 {
 		t.Fatalf("Mod result = %+v, want success target 9", modded)

@@ -23,6 +23,7 @@ func TestDeliveryPremiums(t *testing.T) {
 	if got := AcceleratedDeliveryPremium(3000, 2); got != 600 {
 		t.Errorf("AcceleratedDeliveryPremium(3000,2) = %d, want 600", got)
 	}
+
 	if got := AcceleratedDeliveryPremium(3000, 0); got != 0 {
 		t.Errorf("AcceleratedDeliveryPremium(_,0) = %d, want 0", got)
 	}

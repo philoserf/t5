@@ -32,6 +32,7 @@ func SpaceWeaponDice(rangeBands, weaponTL int) int {
 	if weaponTL < rangeBands {
 		n++
 	}
+
 	return n
 }
 
@@ -68,6 +69,7 @@ func MissileDice(missileTL, rangeBands int) int {
 	if missileTL < rangeBands {
 		return 6
 	}
+
 	return 5
 }
 

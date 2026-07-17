@@ -32,6 +32,7 @@ func TestImportanceModifiers(t *testing.T) {
 	if got := Importance(regina, []string{"Ph", "Pa", "Ri"}, true, true, false); got != 4 {
 		t.Errorf("with both bases = %d, want 4", got)
 	}
+
 	if got := Importance(regina, []string{"Ph", "Pa", "Ri"}, true, false, false); got != 3 {
 		t.Errorf("with only naval base = %d, want 3 (needs both for the +1)", got)
 	}
@@ -52,13 +53,16 @@ func TestRollEconomicRegina(t *testing.T) {
 	// Resources 2D=10 (+GG 3 +Belts 0 = 13); Infrastructure 2D=10 (+Ix 4 = 14);
 	// Efficiency Flux = +4. Labor = Pop-1 = 7.
 	r := dice.NewScripted(5, 5 /*R*/, 5, 5 /*I*/, 6, 2 /*E=+4*/)
+
 	ex := RollEconomic(r, regina, 4, 3, 0)
 	if ex != (Economic{Resources: 13, Labor: 7, Infrastructure: 14, Efficiency: 4}) {
 		t.Fatalf("RollEconomic(Regina) = %+v", ex)
 	}
+
 	if got := ex.String(); got != "(D7E+4)" {
 		t.Fatalf("Economic.String() = %q, want (D7E+4)", got)
 	}
+
 	if got := ex.RU(); got != 13*7*14*4 {
 		t.Fatalf("RU() = %d, want %d", got, 13*7*14*4)
 	}
@@ -80,10 +84,12 @@ func TestRUZeroSubstitution(t *testing.T) {
 func TestRollEconomicBands(t *testing.T) {
 	// Low-TL world: gas giants/belts are NOT added to Resources.
 	lowTL := uwp.Profile{Population: 5, TechLevel: 5}
+
 	ex := RollEconomic(dice.NewScripted(3, 3 /*R=6*/, 4 /*I 1D=4*/, 3, 3 /*E=0*/), lowTL, 2, 4, 2)
 	if ex.Resources != 6 {
 		t.Errorf("low-TL Resources = %d, want 6 (no GG/belts)", ex.Resources)
 	}
+
 	if ex.Infrastructure != 6 { // Pop 4-6 -> 1D(4) + Ix(2)
 		t.Errorf("Infrastructure = %d, want 6", ex.Infrastructure)
 	}
@@ -103,10 +109,12 @@ func TestRollEconomicBands(t *testing.T) {
 func TestRollCulturalRegina(t *testing.T) {
 	// H = Pop+Flux(+1) = 9; A = Pop+Ix = 12; S = Flux(+1)+5 = 6; Sy = Flux(+1)+TL = 13.
 	r := dice.NewScripted(2, 1 /*H flux +1*/, 2, 1 /*S flux +1*/, 2, 1 /*Sy flux +1*/)
+
 	cx := RollCultural(r, regina, 4)
 	if cx != (Cultural{Heterogeneity: 9, Acceptance: 12, Strangeness: 6, Symbols: 13}) {
 		t.Fatalf("RollCultural(Regina) = %+v", cx)
 	}
+
 	if got := cx.String(); got != "[9C6D]" {
 		t.Fatalf("Cultural.String() = %q, want [9C6D]", got)
 	}

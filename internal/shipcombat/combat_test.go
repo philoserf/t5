@@ -40,6 +40,7 @@ func TestMountModsDiffer(t *testing.T) {
 		if w.Mod != c.attack {
 			t.Errorf("%v attacking = %+d, want %+d", c.mount, w.Mod, c.attack)
 		}
+
 		d := shipgen.DesignDefense(
 			shipgen.DefenseSpec{
 				Model: shipgen.NuclearDamper,
@@ -51,6 +52,7 @@ func TestMountModsDiffer(t *testing.T) {
 		if d.Mod != c.defend {
 			t.Errorf("%v defending = %+d, want %+d", c.mount, d.Mod, c.defend)
 		}
+
 		if w.Mod == d.Mod {
 			t.Errorf(
 				"%v attacks and defends at the same Mod (%+d) — the two tables differ",
@@ -77,9 +79,11 @@ func TestAttackWithDesignedWeapon(t *testing.T) {
 	if got := SpaceWeaponTarget(w.TL, 12, w.Mod); got != 22 {
 		t.Errorf("designed Beam Laser target = %d, want 22", got)
 	}
+
 	if !Attack(dice.NewScripted(3, 3, 3, 3, 3), w, 5, 12).Success {
 		t.Errorf("5D=15 should hit target 22")
 	}
+
 	if Attack(dice.NewScripted(6, 5, 5, 5, 4), w, 5, 12).Success {
 		t.Errorf("5D=25 should miss target 22")
 	}
@@ -111,12 +115,15 @@ func TestDefendWithDesignedDefense(t *testing.T) {
 	if d.TL != 13 || d.Mod != 3 {
 		t.Fatalf("Meson Screen = TL %d Mod %+d, want TL 13 Mod +3", d.TL, d.Mod)
 	}
+
 	if got := DefensiveFireTarget(d.TL, 12, d.Mod); got != 4 {
 		t.Errorf("Vanguard Meson Screen target = %d, want 4", got)
 	}
+
 	if !Defend(dice.NewScripted(4), d, 12).Success {
 		t.Errorf("1D=4 should deflect at target 4")
 	}
+
 	if Defend(dice.NewScripted(5), d, 12).Success {
 		t.Errorf("1D=5 should not deflect at target 4")
 	}
@@ -152,9 +159,11 @@ func TestSpaceWeaponMurphy(t *testing.T) {
 	if got := SpaceWeaponTarget(10, 12, 0); got != 22 {
 		t.Errorf("Murphy Console-12 target = %d, want 22", got)
 	}
+
 	if got := SpaceWeaponDice(7, 10); got != 7 { // R=7, weapon TL 10 not below range
 		t.Errorf("SpaceWeaponDice(R=7) = %d, want 7", got)
 	}
+
 	if got := SpaceWeaponDice(5, 10); got != 5 {
 		t.Errorf("SpaceWeaponDice(R=5) = %d, want 5", got)
 	}
@@ -170,6 +179,7 @@ func TestSpaceWeaponMurphy(t *testing.T) {
 	if !ResolveSpaceWeapon(dice.NewScripted(3, 3, 3, 3, 3), 5, 10, 12, 0).Success {
 		t.Errorf("5D=15 should hit target 22")
 	}
+
 	if ResolveSpaceWeapon(dice.NewScripted(6, 5, 5, 5, 4), 5, 10, 12, 0).Success {
 		t.Errorf("5D=25 should miss target 22")
 	}
@@ -182,6 +192,7 @@ func TestDefensiveFire(t *testing.T) {
 	if got := DefensiveFireTarget(13, 12, 3); got != 4 {
 		t.Errorf("Vanguard Meson Screen target = %d, want 4", got)
 	}
+
 	if got := DefensiveFireTarget(10, 12, 0); got != -2 {
 		t.Errorf("Gryphon SandCaster target = %d, want -2", got)
 	}
@@ -201,6 +212,7 @@ func TestMissileTask(t *testing.T) {
 	// brain, the gunner's own C+S+K for one they fly, and the missile's rolled mind
 	// for a self-aware one.
 	const gunner, brain = 8, 9
+
 	cases := map[shipgen.Guidance]int{
 		shipgen.UnGuided:       0,
 		shipgen.HardWired:      5,
@@ -213,6 +225,7 @@ func TestMissileTask(t *testing.T) {
 			t.Errorf("%v asset = %d, want %d", g, got, want)
 		}
 	}
+
 	if got := MissileTarget(10, 5, 1); got != 16 { // HardWired missile TL-10, mod +1
 		t.Errorf("MissileTarget = %d, want 16", got)
 	}

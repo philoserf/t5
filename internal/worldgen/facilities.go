@@ -11,6 +11,7 @@ import "github.com/philoserf/t5/internal/uwp"
 // FuelKind is the hydrogen fuel a port offers (Book 2 p.24).
 type FuelKind int
 
+// Starport fuel availability.
 const (
 	NoFuel        FuelKind = iota // none at the port
 	UnrefinedFuel                 // raw/unrefined only
@@ -44,6 +45,7 @@ var exoticFuelMinTL = []struct {
 // RepairLevel is the heaviest repair a port supports (Book 2 p.24).
 type RepairLevel int
 
+// Starport repair capability.
 const (
 	NoRepairs RepairLevel = iota
 	SuperficialRepairs
@@ -99,23 +101,28 @@ func (f Facilities) Services() []string {
 	if f.Shipyard != "" {
 		out = append(out, "builds "+f.Shipyard)
 	}
+
 	if f.Repairs != NoRepairs {
 		out = append(out, "repairs: "+f.Repairs.String())
 	}
+
 	if f.Fuel != NoFuel {
 		fuel := "fuel: " + f.Fuel.String()
 		if f.RefuelHours != "" {
 			fuel += " (" + f.RefuelHours + " hours)"
 		}
+
 		out = append(out, fuel)
 	} else if f.LocalFuel {
 		// No port fuel, but the world's own water or ice can be skimmed unrefined
 		// (Book 3 p.24, the ** note) — the difference between "stranded" and "slow".
 		out = append(out, "fuel: Unrefined (local water/ice)")
 	}
+
 	for _, e := range f.ExoticFuels {
 		out = append(out, "exotic fuel: "+e)
 	}
+
 	switch {
 	case f.Beltport:
 		out = append(out, "beltport")
@@ -124,9 +131,11 @@ func (f Facilities) Services() []string {
 	case f.Downport:
 		out = append(out, "downport")
 	}
+
 	if f.Highport {
 		out = append(out, "highport")
 	}
+
 	return out
 }
 
@@ -217,6 +226,7 @@ func PortFacilities(p uwp.Profile) (Facilities, bool) {
 	if !ok {
 		return Facilities{}, false
 	}
+
 	if threshold, gated := highportPop[p.Starport]; gated {
 		f.Highport = p.Population >= threshold
 	}
@@ -241,5 +251,6 @@ func PortFacilities(p uwp.Profile) (Facilities, bool) {
 	if p.Size == 0 && f.Downport {
 		f.Downport, f.Beltport = false, true
 	}
+
 	return f, true
 }

@@ -12,6 +12,7 @@ import (
 // Gas Giant in a system becomes. The class selects the P2 placement column.
 type GGClass int
 
+// Gas giant classes.
 const (
 	SmallGasGiant GGClass = iota // sizes L..R (Neptune/Saturn-class)
 	LargeGasGiant                // sizes S..Y (Jupiter-class and up)
@@ -76,10 +77,12 @@ var ggDetail = [...]struct {
 // Giants, the rest Large.
 func gasGiantDetail(size int) GasGiant {
 	d := ggDetail[size-ggMinSize]
+
 	class := SmallGasGiant
 	if size >= ggLargeSize {
 		class = LargeGasGiant
 	}
+
 	return GasGiant{Size: size, Diameter: d.diameter, SkimG: d.skimG, Class: class}
 }
 
@@ -89,6 +92,7 @@ func gasGiantDetail(size int) GasGiant {
 func rollGasGiants(r *dice.Roller, n int) []GasGiant {
 	giants := make([]GasGiant, n)
 	smalls := 0
+
 	for i := range giants {
 		g := gasGiantDetail(r.Dice(2) + ggMinSize - 1) // 2D -> size code 21..31
 		if g.Class == SmallGasGiant {
@@ -96,7 +100,9 @@ func rollGasGiants(r *dice.Roller, n int) []GasGiant {
 				g.Class = IceGiant
 			}
 		}
+
 		giants[i] = g
 	}
+
 	return giants
 }

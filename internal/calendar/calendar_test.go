@@ -32,6 +32,7 @@ func TestString(t *testing.T) {
 	if got := (Date{Year: 1105, Day: 1}).String(); got != "001-1105" {
 		t.Errorf("String() = %q, want 001-1105", got)
 	}
+
 	if got := (Date{Year: 1105, Day: 365}).String(); got != "365-1105" {
 		t.Errorf("String() = %q, want 365-1105", got)
 	}
@@ -41,6 +42,7 @@ func TestNew(t *testing.T) {
 	if _, err := New(1105, 1); err != nil {
 		t.Errorf("New(1105, 1) errored: %v", err)
 	}
+
 	for _, day := range []int{0, -1, 366} {
 		if _, err := New(1105, day); err == nil {
 			t.Errorf("New(1105, %d) should error", day)

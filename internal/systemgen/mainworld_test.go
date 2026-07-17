@@ -36,6 +36,7 @@ func TestPlaceMainworld(t *testing.T) {
 		Profile:    uwp.Profile{Size: 7, Atmosphere: 8, Hydrographics: 8},
 		TradeCodes: []string{"Ph"},
 	}
+
 	orbit, sat := placeMainworld(
 		dice.NewScripted(4, 4 /*HZVar 0*/, 5, 3 /*type Flux +2 -> Planet*/),
 		primary,
@@ -48,6 +49,7 @@ func TestPlaceMainworld(t *testing.T) {
 			sat.IsSatellite,
 		)
 	}
+
 	if !slices.Equal(mw.TradeCodes, []string{"Ph"}) {
 		t.Errorf("temperate planet gained an extra code: %v", mw.TradeCodes)
 	}
@@ -55,6 +57,7 @@ func TestPlaceMainworld(t *testing.T) {
 	// Hot placement: HZVar Flux -4 -> -1 -> orbit 3; type Flux +2 -> Planet;
 	// temperate-band UWP -> Tr.
 	mw2 := worldgen.World{Profile: uwp.Profile{Size: 7, Atmosphere: 6, Hydrographics: 5}}
+
 	orbit2, _ := placeMainworld(dice.NewScripted(1, 5 /*-4*/, 5, 3 /*Planet*/), primary, &mw2)
 	if orbit2 != 3 || !slices.Contains(mw2.TradeCodes, "Tr") {
 		t.Errorf("hot placement: orbit %d, codes %v, want orbit 3 + Tr", orbit2, mw2.TradeCodes)
@@ -64,16 +67,19 @@ func TestPlaceMainworld(t *testing.T) {
 	// Satellite type and, from the same row's Far column, the orbit letter "Pee".
 	// It is one roll, not two, so no separate orbit Flux is consumed.
 	mw4 := worldgen.World{Profile: uwp.Profile{Size: 7, Atmosphere: 8, Hydrographics: 8}}
+
 	_, sat4 := placeMainworld(dice.NewScripted(4, 4 /*HZVar 0*/, 1, 5 /*type -4*/), primary, &mw4)
 	if !sat4.IsSatellite || !sat4.Far || sat4.OrbitLetter != "Pee" {
 		t.Errorf("far satellite = %+v, want Far/Pee", sat4)
 	}
+
 	if !slices.Contains(mw4.TradeCodes, "Sa") {
 		t.Errorf("far-satellite mainworld should carry Sa: %v", mw4.TradeCodes)
 	}
 
 	// A primary with no habitable zone (size-VI O star): orbit -1.
 	mw3 := worldgen.World{Profile: uwp.Profile{Size: 7}}
+
 	orbit3, _ := placeMainworld(dice.NewScripted(4, 4, 5, 3), Star{Type: "O", Size: "VI"}, &mw3)
 	if orbit3 != -1 {
 		t.Errorf("no-HZ orbit = %d, want -1", orbit3)
@@ -82,6 +88,7 @@ func TestPlaceMainworld(t *testing.T) {
 	// An asteroid-belt mainworld (Size 0) is placed via the P2 Belt column
 	// without regard to HZ: 2D=7 -> Belt offset 4; no satellite, no codes.
 	mw5 := worldgen.World{Profile: uwp.Profile{Size: 0}}
+
 	orbit5, sat5 := placeMainworld(dice.NewScripted(3, 4 /*2D=7*/), primary, &mw5)
 	if orbit5 != 4 || sat5.IsSatellite || len(mw5.TradeCodes) != 0 {
 		t.Errorf(

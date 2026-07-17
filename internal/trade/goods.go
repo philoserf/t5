@@ -6,11 +6,11 @@ import (
 	"github.com/philoserf/t5/internal/dice"
 )
 
-// A TradeGood is a specific cargo produced by the Random Trade Goods chart (Book
+// A Good is a specific cargo produced by the Random Trade Goods chart (Book
 // 2 pp.218-219): its name, its type category, an optional Trade Good Detail
 // prefix, and — when it came from an Imbalance redirect — the trade class whose
 // oversupply produced it.
-type TradeGood struct {
+type Good struct {
 	Name      string
 	Type      string
 	Detail    string
@@ -18,10 +18,11 @@ type TradeGood struct {
 }
 
 // String renders the good with its detail prefix, e.g. "Processed Antibiotics".
-func (g TradeGood) String() string {
+func (g Good) String() string {
 	if g.Detail != "" {
 		return g.Detail + " " + g.Name
 	}
+
 	return g.Name
 }
 
@@ -29,10 +30,11 @@ func (g TradeGood) String() string {
 // pp.218-219): it picks a trade-classification column, rolls the type block and
 // the specific good, follows Imbalance redirects to another column, and applies
 // a Trade Good Detail prefix from the world's other trade classes.
-func RandomTradeGoods(r *dice.Roller, worldTCs []string) TradeGood {
+func RandomTradeGoods(r *dice.Roller, worldTCs []string) Good {
 	col, sourceTC := selectGoodsColumn(r, worldTCs)
 	g := rollGoodsColumn(r, col)
 	g.Detail = tradeGoodsDetail(worldTCs, sourceTC, col)
+
 	return g
 }
 
@@ -40,18 +42,20 @@ func RandomTradeGoods(r *dice.Roller, worldTCs []string) TradeGood {
 // world's column-eligible trade classes (defaulting to Non-Agricultural when
 // none qualify, and picking randomly among several), mapping Ag to Ag-1 or Ag-2
 // at random. It returns the column key and the trade class that chose it.
-func selectGoodsColumn(r *dice.Roller, worldTCs []string) (column, sourceTC string) {
+func selectGoodsColumn(r *dice.Roller, worldTCs []string) (string, string) {
 	eligible := make([]string, 0, len(worldTCs))
 	for _, tc := range worldTCs {
 		if goodsColumnEligible[tc] {
 			eligible = append(eligible, tc)
 		}
 	}
+
 	if len(eligible) == 0 {
 		return "Na", "Na"
 	}
 	// Index(1) consumes no dice, so a lone eligible class needs no special case.
 	tc := eligible[r.Index(len(eligible))]
+
 	return resolveColumn(r, tc), tc
 }
 
@@ -88,6 +92,7 @@ func resolveColumn(r *dice.Roller, tc string) string {
 	if tc == "Ag" && r.Die() > 3 {
 		return "Ag-2"
 	}
+
 	return columnFor(tc)
 }
 
@@ -98,17 +103,20 @@ func resolveColumn(r *dice.Roller, tc string) string {
 // redirect chain can cycle, so past maxImbalanceHops the block is re-rolled until
 // it yields real goods rather than another redirect: a trade class must never
 // escape as a cargo name.
-func rollGoodsColumn(r *dice.Roller, column string) TradeGood {
+func rollGoodsColumn(r *dice.Roller, column string) Good {
 	imbalance := ""
+
 	for hop := 0; ; hop++ {
 		blocks := tradeGoodsColumns[column]
+
 		block := blocks[r.Die()-1]
 		for hop >= maxImbalanceHops && block.Type == imbalancesBlock {
 			block = blocks[r.Die()-1]
 		}
+
 		entry := block.Goods[r.Die()-1]
 		if block.Type != imbalancesBlock {
-			return TradeGood{Name: entry, Type: block.Type, Imbalance: imbalance}
+			return Good{Name: entry, Type: block.Type, Imbalance: imbalance}
 		}
 		// The chain continues on the named class's column; the last redirect is
 		// the oversupply that actually produced the goods.
@@ -130,15 +138,19 @@ func tradeGoodsDetail(worldTCs []string, sourceTC, column string) string {
 		if tc == sourceTC || !slices.Contains(worldTCs, tc) {
 			continue
 		}
+
 		if tc == "Hi" && column == "In" {
 			continue
 		}
+
 		if tc == "Va" && column == "As" {
 			continue
 		}
+
 		if label, ok := tradeGoodsDetailLabel[tc]; ok {
 			return label
 		}
 	}
+
 	return ""
 }

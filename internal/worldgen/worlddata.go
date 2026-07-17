@@ -31,20 +31,24 @@ var nobleRanks = []struct {
 func Nobility(tcs []string, ix int, isCapital bool) string {
 	var b strings.Builder
 	b.WriteString("B") // Knight, always present
+
 	for _, rank := range nobleRanks {
 		for _, code := range rank.codes {
 			if slices.Contains(tcs, code) {
 				b.WriteString(rank.code)
+
 				break
 			}
 		}
 	}
+
 	switch {
 	case isCapital:
 		b.WriteString("F") // Duke of a capital
 	case ix >= 4:
 		b.WriteString("f") // Duke of an important, non-capital world
 	}
+
 	return b.String()
 }
 
@@ -52,13 +56,16 @@ func Nobility(tcs []string, ix int, isCapital bool) string {
 // 2D rolls at or under a starport-dependent threshold (Book 3 p. 28). Starports
 // C, E, and X support no Naval base; E and X support no Scout base. Naval Depot
 // and Way Station need region context and are not rolled here.
-func RollBases(r *dice.Roller, starport byte) (naval, scout bool) {
+func RollBases(r *dice.Roller, starport byte) (bool, bool) {
+	var naval, scout bool
+
 	switch starport {
 	case 'A':
 		naval = r.Dice(2) <= 6
 	case 'B':
 		naval = r.Dice(2) <= 5
 	}
+
 	switch starport {
 	case 'A':
 		scout = r.Dice(2) <= 4
@@ -69,6 +76,7 @@ func RollBases(r *dice.Roller, starport byte) (naval, scout bool) {
 	case 'D':
 		scout = r.Dice(2) <= 7
 	}
+
 	return naval, scout
 }
 
@@ -116,6 +124,7 @@ func ZoneCodes(p uwp.Profile) []string {
 		if p.Population <= 6 {
 			return []string{"Da"}
 		}
+
 		return []string{"Pz"}
 	case 'R':
 		return []string{"Fo"}
@@ -128,7 +137,7 @@ func ZoneCodes(p uwp.Profile) []string {
 // NIL), classified from Population, Atmosphere, Tech Level, and Government. A
 // Government of 1 or 6 overrides to Corporate or Colonists. Atmosphere is read
 // in three bands: thin (0–1), exotic (A–C), and standard (2–9, D–F).
-func NativeStatus(p uwp.Profile) string {
+func NativeStatus(p uwp.Profile) string { //nolint:cyclop // transcribes the p.28 native-status table
 	thinAtm := p.Atmosphere <= 1
 	exoticAtm := p.Atmosphere >= 10 && p.Atmosphere <= 12
 	developed := p.TechLevel >= 1
@@ -141,16 +150,19 @@ func NativeStatus(p uwp.Profile) string {
 			if developed {
 				return "Vanished Transplants"
 			}
+
 			return "None"
 		case exoticAtm:
 			if developed {
 				return "Catastrophic EXN"
 			}
+
 			return "Extinct Exotic Natives"
 		default:
 			if developed {
 				return "Catastrophic XN"
 			}
+
 			return "Extinct Natives"
 		}
 	}

@@ -60,9 +60,11 @@ func main() {
 func printSector(r *dice.Roller, d sectorgen.Density) {
 	sv := survey.Sector(r, d)
 	if len(sv.Records) == 0 {
-		cli.Note("no star systems in this sector at %s density", d)
+		cli.Notef("no star systems in this sector at %s density", d)
+
 		return
 	}
+
 	fmt.Println(sv)
 }
 
@@ -73,11 +75,14 @@ func printHex(r *dice.Roller, d sectorgen.Density, hex string) {
 		cli.Fatalf("invalid hex %q (want CCRR, columns 1-%d, rows 1-%d, e.g. 0436)",
 			hex, sectorgen.Columns, sectorgen.Rows)
 	}
+
 	rec, found := survey.Sector(r, d).At(h)
 	if !found {
-		cli.Note("hex %s holds no star system at %s density (try another hex or seed)", h, d)
+		cli.Notef("hex %s holds no star system at %s density (try another hex or seed)", h, d)
+
 		return
 	}
+
 	fmt.Println(rec.Sheet())
 }
 
@@ -89,11 +94,14 @@ func printSubsector(r *dice.Roller, d sectorgen.Density, subsector string) {
 	if !ok {
 		cli.Fatalf("invalid subsector %q (want a letter A-P)", subsector)
 	}
+
 	records := survey.Sector(r, d).Subsector(letter)
 	if len(records) == 0 {
-		cli.Note("no star systems in subsector %c at %s density", letter, d)
+		cli.Notef("no star systems in subsector %c at %s density", letter, d)
+
 		return
 	}
+
 	for _, rec := range records {
 		fmt.Println(rec.SecondSurvey())
 	}

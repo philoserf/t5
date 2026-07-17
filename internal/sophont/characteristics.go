@@ -19,6 +19,7 @@ import "github.com/philoserf/t5/internal/dice"
 // Human-standard names.
 type CharName int
 
+// The sophont characteristic slots C1..C6.
 const (
 	Str CharName = iota // C1, always
 	Dex                 // C2 Human
@@ -64,6 +65,7 @@ func (c CharName) String() string {
 	if info, ok := charInfo[c]; ok {
 		return info.abbrev
 	}
+
 	return "?"
 }
 
@@ -72,6 +74,7 @@ func (c CharName) gpLetter() byte {
 	if info, ok := charInfo[c]; ok {
 		return info.gp
 	}
+
 	return '?'
 }
 
@@ -113,6 +116,7 @@ var diceCols = map[CharName][]int{
 // until caste generation (a later phase) fixes it.
 func rollCharacteristics(r *dice.Roller, env Environment) ([6]CharSpec, string) {
 	var names [6]CharName
+
 	names[0] = Str // C1, always
 	names[1] = rollName(r, 2, env.locomotionMod())
 	names[2] = rollName(r, 3, env.locomotionMod())
@@ -121,17 +125,21 @@ func rollCharacteristics(r *dice.Roller, env Environment) ([6]CharSpec, string) 
 	names[5] = rollName(r, 6, 0) // C6 takes no locomotion DM
 
 	var chars [6]CharSpec
+
 	gp := make([]byte, 6)
+
 	for i, name := range names {
 		chars[i] = CharSpec{Name: name, Dice: rollDice(r, i, name, env)}
 		gp[i] = name.gpLetter()
 	}
+
 	return chars, string(gp)
 }
 
 // rollName rolls one variable name slot (2, 3, 5, or 6) with a name DM.
 func rollName(r *dice.Roller, slot, mod int) CharName {
 	idx := clamp(r.Flux()+mod, -5, 5) + 5
+
 	return nameCols[slot][idx]
 }
 
@@ -153,11 +161,13 @@ func rollDice(r *dice.Roller, i int, name CharName, env Environment) int {
 		if name == Ins {
 			return diceLookup(Edu, r.Flux())
 		}
+
 		return 2
 	default: // C6
 		if name == Cas {
 			return 2 // placeholder until caste generation
 		}
+
 		return diceLookup(Soc, r.Flux())
 	}
 }
@@ -177,5 +187,6 @@ func RollValue(r *dice.Roller, numDice int) int {
 	if numDice <= 3 {
 		return r.Dice(numDice)
 	}
+
 	return 12 + r.Dice(numDice-2)
 }

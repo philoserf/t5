@@ -46,9 +46,11 @@ func TestGoldenMerchant(t *testing.T) {
 	if got := c.UPP(); got != "888877" {
 		t.Errorf("UPP = %q, want %q (End 7 +1 muster benefit)", got, "888877")
 	}
+
 	if c.ShipShares != 3 {
 		t.Errorf("ShipShares = %d, want 3 (escalating: 1 + 2)", c.ShipShares)
 	}
+
 	if c.Skills.Level("Broker") != 10 || c.Skills.Level("Steward") != 1 {
 		t.Errorf(
 			"skills: Broker=%d Steward=%d, want 10/1",
@@ -56,10 +58,12 @@ func TestGoldenMerchant(t *testing.T) {
 			c.Skills.Level("Steward"),
 		)
 	}
+
 	rec := c.Careers[0]
 	if rec.Career != Merchant || rec.Terms != 2 || rec.Outcome != MusteredOut {
 		t.Errorf("record = %+v, want Merchant/2 terms/MusteredOut", rec)
 	}
+
 	if !rec.Officer || rec.Rank != 1 {
 		t.Errorf(
 			"rank = %d officer %v, want officer rank 1 (Fourth Officer)",

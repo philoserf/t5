@@ -14,14 +14,19 @@ import (
 func TestFatalf(t *testing.T) {
 	if os.Getenv("CLI_TEST_FATAL") == "1" {
 		Fatalf("unknown density %q", "bogus")
+
 		return // not reached
 	}
+
 	cmd := exec.Command(
 		os.Args[0],
 		"-test.run=TestFatalf",
-	) //nolint:gosec // re-runs this test binary
+	)
+
 	cmd.Env = append(os.Environ(), "CLI_TEST_FATAL=1")
+
 	var stdout, stderr strings.Builder
+
 	cmd.Stdout = &stdout
 	cmd.Stderr = &stderr
 	err := cmd.Run()
@@ -30,9 +35,11 @@ func TestFatalf(t *testing.T) {
 	if !errors.As(err, &exit) {
 		t.Fatalf("Fatalf should exit non-zero, got err %v", err)
 	}
+
 	if code := exit.ExitCode(); code != FailureCode {
 		t.Errorf("exit code = %d, want %d", code, FailureCode)
 	}
+
 	if !strings.Contains(stderr.String(), `unknown density "bogus"`) {
 		t.Errorf("message should reach stderr, got %q", stderr.String())
 	}

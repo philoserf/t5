@@ -21,9 +21,11 @@ func TestEnvironmentClean(t *testing.T) {
 	if env.EnvironDM != 0 || env.Terrain != "Clear" {
 		t.Errorf("terrain = %q (DM %d), want Clear (0)", env.Terrain, env.EnvironDM)
 	}
+
 	if env.Locomotion != Walker {
 		t.Errorf("locomotion = %v, want Walker", env.Locomotion)
 	}
+
 	if env.Class != "Omnivore" || env.Niche != "H/G" {
 		t.Errorf("niche = %s/%s, want Omnivore/H/G", env.Class, env.Niche)
 	}
@@ -35,8 +37,10 @@ func TestLocomotionDMs(t *testing.T) {
 	// Ocean terrain (Environ DM +4). Homeworld Atm 8 (-2) and Hyd 9 (+2) net 0,
 	// so die 6 -> column 5 -> Diver.
 	wet := uwp.Profile{Size: 8, Atmosphere: 8, Hydrographics: 9, Population: 8}
+
 	seq := append(fluxSeq(4), 6)
 	seq = append(seq, fluxSeq(0, 0)...)
+
 	env := rollEnvironment(dice.NewScripted(seq...), wet)
 	if env.Terrain != "Ocean" || env.Locomotion != Diver {
 		t.Errorf("got %s/%v, want Ocean/Diver", env.Terrain, env.Locomotion)
@@ -48,6 +52,7 @@ func TestLocomotionDMs(t *testing.T) {
 func TestNicheEnvironDM(t *testing.T) {
 	seq := append(fluxSeq(2), 3)        // Environ DM +2; locomotion die
 	seq = append(seq, fluxSeq(3, 0)...) // class Flux +3 -> Carnivore; sub Flux 0 (+2 DM)
+
 	env := rollEnvironment(dice.NewScripted(seq...), dryWorld)
 	if env.Class != "Carnivore" || env.Niche != "Chaser" {
 		t.Errorf("niche = %s/%s, want Carnivore/Chaser", env.Class, env.Niche)

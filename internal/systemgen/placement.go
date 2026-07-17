@@ -41,12 +41,14 @@ func surfaceOrbit(s Star) int {
 	if !ok {
 		return -1
 	}
+
 	idx := spectralIndex(s)
 	for _, b := range bands {
 		if idx <= b.maxIndex {
 			return b.surface
 		}
 	}
+
 	return bands[len(bands)-1].surface
 }
 

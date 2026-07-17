@@ -41,25 +41,32 @@ func TestGoldenRogue(t *testing.T) {
 	if got := c.UPP(); got != "778777" {
 		t.Errorf("UPP = %q, want %q (End 7 +1 muster benefit)", got, "778777")
 	}
+
 	if c.Age != 26 {
 		t.Errorf("Age = %d, want 26 (18 + 2 terms)", c.Age)
 	}
+
 	if got := c.Skills.Level("Pilot"); got != 12 {
 		t.Errorf("Pilot = %d, want 12 (6 Successful-Scheme rolls x 2 terms)", got)
 	}
+
 	if c.Credits != 300_000 {
 		t.Errorf("Credits = %d, want 300000 (Cr100,000 + Cr200,000 Scheme payoffs)", c.Credits)
 	}
+
 	if c.Fame != 0 {
 		t.Errorf("Fame = %d, want 0 (no failed Scheme, so no Infamy)", c.Fame)
 	}
+
 	if len(c.Careers) != 1 {
 		t.Fatalf("careers = %+v, want one record", c.Careers)
 	}
+
 	rec := c.Careers[0]
 	if rec.Career != Rogue || rec.Terms != 2 || rec.Outcome != MusteredOut {
 		t.Errorf("record = %+v, want Rogue/2 terms/MusteredOut", rec)
 	}
+
 	if len(c.Benefits) != 1 || c.Benefits[0] != "Life Insurance" {
 		t.Errorf("Benefits = %v, want [Life Insurance]", c.Benefits)
 	}
@@ -90,18 +97,22 @@ func TestRogueSchemeInfamy(t *testing.T) {
 	); out != Ongoing {
 		t.Fatalf("failure term outcome = %v, want Ongoing (a Scheme carries no injury)", out)
 	}
+
 	if c.Credits != 250_000 {
 		t.Errorf(
 			"Credits = %d, want 250000 (Cr500,000 payoff halved by the failed Risk)",
 			c.Credits,
 		)
 	}
+
 	if c.Fame != 1 {
 		t.Errorf("Fame = %d, want 1 (Infamy from the failed Scheme)", c.Fame)
 	}
+
 	if !run.inPrison {
 		t.Errorf("inPrison = false, want true (a positive sentence imprisons next term)")
 	}
+
 	if got := c.Skills.Level("Pilot"); got != 3 {
 		t.Errorf("Pilot = %d, want 3 (Failed Scheme eligibility)", got)
 	}
@@ -119,12 +130,15 @@ func TestRogueSchemeInfamy(t *testing.T) {
 	); out != Ongoing {
 		t.Fatalf("prison term outcome = %v, want Ongoing", out)
 	}
+
 	if run.inPrison {
 		t.Errorf("inPrison = true, want false (the sentence is served)")
 	}
+
 	if got := c.Score(Social); got != 9 {
 		t.Errorf("Soc = %d, want 9 (two In-Prison Personal bumps for an uneducated Rogue)", got)
 	}
+
 	if c.Credits != 250_000 {
 		t.Errorf("Credits = %d, want 250000 unchanged (no Scheme in prison)", c.Credits)
 	}
@@ -135,6 +149,7 @@ func TestRogueFixedCCChosenOnce(t *testing.T) {
 	// reused every term.
 	c := Character{scores: [count]int{6, 6, 9, 6, 6, 6}} // Endurance highest
 	run := careerRun{}
+
 	first := selectCC(DefaultPolicy{}, c, &run, RogueCareer)
 	if first != Endurance {
 		t.Fatalf("first CC = %v, want Endurance (highest)", first)

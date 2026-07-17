@@ -51,5 +51,6 @@ const SubCompartmentsPerCompartment = 6
 // (A=1 … Z=24) and whether the hull is tabulated (Book 2 p.95 Table H).
 func HullLocations(hullOrdinal int) (HullLocation, bool) {
 	h, ok := hullLocation[hullOrdinal]
+
 	return h, ok
 }

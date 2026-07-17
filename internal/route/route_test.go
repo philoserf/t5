@@ -13,11 +13,14 @@ func TestBuildDirectLinks(t *testing.T) {
 		{sectorgen.Hex{Col: 1, Row: 2}, 2},   // unimportant, ignored
 		{sectorgen.Hex{Col: 10, Row: 10}, 6}, // C: Important but far (> J-4) from A/B
 	}
+
 	links := Build(worlds, DefaultJump)
 	if len(links) != 1 {
 		t.Fatalf("got %d links, want 1: %+v", len(links), links)
 	}
+
 	got := links[0]
+
 	want := Link{From: sectorgen.Hex{Col: 1, Row: 1}, To: sectorgen.Hex{Col: 1, Row: 3}, Jump: 2}
 	if got != want {
 		t.Errorf("link = %+v, want %+v", got, want)
@@ -39,9 +42,11 @@ func TestBuildThresholdAndRange(t *testing.T) {
 	if d := near[0].Hex.Distance(near[1].Hex); d != 4 {
 		t.Fatalf("test fixture distance = %d, want 4", d)
 	}
+
 	if links := Build(near, 0); len(links) != 1 {
 		t.Errorf("J-4 pair not linked: %+v", links)
 	}
+
 	far := []World{{sectorgen.Hex{Col: 1, Row: 1}, 4}, {sectorgen.Hex{Col: 6, Row: 3}, 4}}
 	if links := Build(far, 0); len(links) != 0 {
 		t.Errorf("beyond-J-4 pair linked: %+v", links)
@@ -53,15 +58,19 @@ func TestBuildIntermediateHops(t *testing.T) {
 	// at the midpoint: no direct link, but a 2-hop route through the midpoint.
 	a := sectorgen.Hex{Col: 1, Row: 1}
 	mid := sectorgen.Hex{Col: 1, Row: 4}
+
 	b := sectorgen.Hex{Col: 1, Row: 7}
 	if d := a.Distance(b); d <= DefaultJump {
 		t.Fatalf("fixture A-B distance = %d, want > %d", d, DefaultJump)
 	}
+
 	worlds := []World{{a, 4}, {mid, 0}, {b, 5}}
+
 	links := Build(worlds, 0)
 	if len(links) != 2 {
 		t.Fatalf("got %d links, want 2 (A-mid, mid-B): %+v", len(links), links)
 	}
+
 	want := []Link{{From: a, To: mid, Jump: 3}, {From: mid, To: b, Jump: 3}}
 	for i, w := range want {
 		if links[i] != w {
@@ -92,10 +101,12 @@ func TestBuildStableOrder(t *testing.T) {
 		{sectorgen.Hex{Col: 1, Row: 1}, 4},
 		{sectorgen.Hex{Col: 2, Row: 1}, 4},
 	}
+
 	links := Build(worlds, 0)
 	if len(links) != 3 {
 		t.Fatalf("got %d links, want 3: %+v", len(links), links)
 	}
+
 	if links[0].From != (sectorgen.Hex{Col: 1, Row: 1}) || links[2].From.Col < links[1].From.Col {
 		t.Errorf("links not in CCRR order: %+v", links)
 	}

@@ -23,7 +23,7 @@ var marineBranchOps = BranchOps{
 		7: {"Technical", 0, 6},
 		8: {"Medical", 0, 4},
 	},
-	// Operations (1D + Branch OpsDM): Combat, Combat, Peace Keeper, Mission, ANM
+	// Operations (1D + Branch OpsDM): Combat, Peace Keeper, Mission, ANM
 	// School, Combat, Peace Keeper, Mission, Garrison.
 	OpsMods: [10]int{1: 2, 2: 2, 3: 1, 4: 2, 5: 0, 6: 3, 7: 1, 8: 2, 9: 0},
 }

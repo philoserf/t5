@@ -34,8 +34,10 @@ func lifeStageDuration(flux, stage int) int {
 		if stage == 1 || stage == 5 || stage == 9 {
 			return 1
 		}
+
 		return 0
 	}
+
 	return durationByFlux[flux+5]
 }
 
@@ -43,11 +45,14 @@ func lifeStageDuration(flux, stage int) int {
 // sums the traditional lifespan: a fixed 2-year infancy plus four years per term.
 func rollLifeCycle(r *dice.Roller) LifeCycle {
 	var lc LifeCycle
+
 	lc.Lifespan = 2 // stage 0: the automatic half-term infancy
+
 	for stage := 1; stage <= 9; stage++ {
 		terms := lifeStageDuration(r.Flux(), stage)
 		lc.Terms[stage] = terms
 		lc.Lifespan += terms * 4
 	}
+
 	return lc
 }

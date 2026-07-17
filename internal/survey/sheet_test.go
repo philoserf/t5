@@ -14,7 +14,9 @@ func TestSurveyAt(t *testing.T) {
 	if len(sv.Records) == 0 {
 		t.Fatal("expected a populated sector")
 	}
+
 	want := sv.Records[0].Hex
+
 	rec, ok := sv.At(want)
 	if !ok || rec.Hex != want {
 		t.Errorf("At(%s) = %v,%v, want that record", want, rec.Hex, ok)
@@ -24,18 +26,22 @@ func TestSurveyAt(t *testing.T) {
 	for _, rec := range sv.Records {
 		held[rec.Hex] = true
 	}
+
 	var empty sectorgen.Hex
 	for col := 1; col <= sectorgen.Columns && empty == (sectorgen.Hex{}); col++ {
 		for row := 1; row <= sectorgen.Rows; row++ {
 			if h := (sectorgen.Hex{Col: col, Row: row}); !held[h] {
 				empty = h
+
 				break
 			}
 		}
 	}
+
 	if empty == (sectorgen.Hex{}) {
 		t.Skip("this sector has a system in every hex")
 	}
+
 	if _, found := sv.At(empty); found {
 		t.Errorf("At(%s) found a record in an empty hex", empty)
 	}
@@ -61,6 +67,7 @@ func TestParseHexRoundTrip(t *testing.T) {
 // renderer emits.
 func TestSheetSurfacesHiddenDetail(t *testing.T) {
 	sv := Sector(dice.NewWithSeed(3), sectorgen.Dense)
+
 	sheet := sv.Records[0].Sheet()
 	for _, want := range []string{
 		"Mainworld", "Extensions", "RU ", "Traffic",
@@ -80,23 +87,28 @@ func TestSheetRendersOrbitTree(t *testing.T) {
 	sv := Sector(dice.NewWithSeed(3), sectorgen.Dense)
 
 	var withMoon, withGiant string
+
 	for _, rec := range sv.Records {
 		for _, o := range rec.System.Orbits {
 			if len(o.Satellites) > 0 && withMoon == "" {
 				withMoon = rec.Sheet()
 			}
+
 			if o.Giant != nil && withGiant == "" {
 				withGiant = rec.Sheet()
 			}
 		}
+
 		if withMoon != "" && withGiant != "" {
 			break
 		}
 	}
+
 	if withMoon == "" ||
 		!strings.Contains(withMoon, "moon ") && !strings.Contains(withMoon, "Ring") {
 		t.Errorf("a system with satellites rendered no moon or ring:\n%s", withMoon)
 	}
+
 	if withGiant == "" || !strings.Contains(withGiant, "Gas Giant") {
 		t.Errorf("a system with a gas giant did not render it:\n%s", withGiant)
 	}
@@ -111,8 +123,10 @@ func TestSheetMarksCapital(t *testing.T) {
 			if !strings.Contains(rec.Sheet(), "Sector Capital") {
 				t.Errorf("the Cx world's sheet does not name it the sector capital")
 			}
+
 			return
 		}
 	}
+
 	t.Skip("no sector capital in this sector")
 }

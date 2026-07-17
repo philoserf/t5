@@ -14,6 +14,7 @@ import (
 // harder. The ladder runs Easy (1D) through Beyond Impossible (8D).
 type Difficulty int
 
+// Task difficulties (Book 1 p. 120).
 const (
 	Easy Difficulty = iota
 	Average
@@ -52,6 +53,7 @@ func (d Difficulty) String() string {
 	if d < Easy || d > BeyondImpossible {
 		return "?"
 	}
+
 	return difficultyNames[d]
 }
 
@@ -76,5 +78,6 @@ func sum(xs []int) int {
 	for _, x := range xs {
 		total += x
 	}
+
 	return total
 }

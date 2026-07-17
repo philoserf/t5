@@ -26,11 +26,11 @@ func Fatalf(format string, args ...any) {
 	os.Exit(FailureCode)
 }
 
-// Note reports on stderr, prefixed with the command name, and returns — for a
+// Notef reports on stderr, prefixed with the command name, and returns — for a
 // true but empty result ("no star systems at this density"), which is a success
 // worth saying out loud rather than printing nothing at all. It stays off stdout
 // so it never lands in a piped record stream.
-func Note(format string, args ...any) {
+func Notef(format string, args ...any) {
 	fmt.Fprintf(os.Stderr, "%s: %s\n", commandName(), fmt.Sprintf(format, args...))
 }
 
@@ -47,17 +47,21 @@ func commandName() string {
 // parses the command line.
 func Roller() *dice.Roller {
 	seed := flag.Uint64("seed", 0, "random seed; if omitted, a fresh random seed is used")
+
 	flag.Parse()
 
 	seeded := false
+
 	flag.Visit(func(f *flag.Flag) {
 		if f.Name == "seed" {
 			seeded = true
 		}
 	})
+
 	if seeded {
 		return dice.NewWithSeed(*seed)
 	}
+
 	return dice.New()
 }
 
@@ -65,11 +69,13 @@ func Roller() *dice.Roller {
 // help text), parses, and returns the requested count and a roller (see Roller
 // for the seeding contract). A count below 1 is rejected rather than silently
 // generating nothing.
-func SeededRoller(item string) (n int, r *dice.Roller) {
+func SeededRoller(item string) (int, *dice.Roller) {
 	count := flag.Int("n", 1, fmt.Sprintf("number of %s to generate", item))
-	r = Roller() // parses the command line before we read *count
+	r := Roller() // parses the command line before we read *count
+
 	if *count < 1 {
 		Fatalf("-n must be at least 1, got %d", *count)
 	}
+
 	return *count, r
 }

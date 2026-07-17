@@ -21,6 +21,7 @@ func TestDesignMurphy(t *testing.T) {
 	if got := s.QSP(); got != "S-AL22" {
 		t.Errorf("QSP = %q, want S-AL22", got)
 	}
+
 	if len(s.Problems) != 0 {
 		t.Errorf("unexpected problems: %v", s.Problems)
 	}
@@ -63,6 +64,7 @@ func TestDesignBeowulf(t *testing.T) {
 	if got := s.QSP(); got != "A-BS11" {
 		t.Errorf("QSP = %q, want A-BS11", got)
 	}
+
 	if s.Hull.Agility != -1 || s.Hull.Stability != 0 {
 		t.Errorf(
 			"overtonnage agility/stability = %d/%d, want -1/0",
@@ -70,6 +72,7 @@ func TestDesignBeowulf(t *testing.T) {
 			s.Hull.Stability,
 		)
 	}
+
 	if s.Maneuver.Potential != 1 || s.Jump.Potential != 1 {
 		t.Errorf("potentials = %dG / J%d, want 1G / J1", s.Maneuver.Potential, s.Jump.Potential)
 	}
@@ -84,6 +87,7 @@ func TestDesignOverBudget(t *testing.T) {
 	if s.Tonnage.Payload >= 0 {
 		t.Errorf("payload = %d, want negative (over budget)", s.Tonnage.Payload)
 	}
+
 	if !hasProblem(s, "over budget") {
 		t.Errorf("expected an over-budget problem, got %v", s.Problems)
 	}
@@ -102,6 +106,7 @@ func TestDesignUnderpoweredPlant(t *testing.T) {
 			s.Power.Potential,
 		)
 	}
+
 	if !hasProblem(s, "power plant potential") {
 		t.Errorf("expected an underpowered-plant problem, got %v", s.Problems)
 	}
@@ -128,5 +133,6 @@ func hasProblem(s Ship, substr string) bool {
 			return true
 		}
 	}
+
 	return false
 }

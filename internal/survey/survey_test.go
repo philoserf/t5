@@ -65,6 +65,7 @@ func TestMarkSectorCapitals(t *testing.T) {
 	if !slices.Contains(tcs(0), "Cs") || slices.Contains(tcs(0), "Cp") {
 		t.Errorf("the sector's best world is its Sector Capital (Cs) only: %v", tcs(0))
 	}
+
 	if !slices.Contains(tcs(2), "Cp") {
 		t.Errorf("subsector-B's best world is a Subsector Capital (Cp): %v", tcs(2))
 	}
@@ -74,6 +75,7 @@ func TestMarkSectorCapitals(t *testing.T) {
 			t.Errorf("record %d was marked the Imperial Capital (Cx): %v", i, tcs(i))
 		}
 	}
+
 	if len(tcs(1)) != 0 {
 		t.Errorf("non-capital world should carry no capital code: %v", tcs(1))
 	}
@@ -96,6 +98,7 @@ func TestPlaceWayStations(t *testing.T) {
 	if !records[0].System.Mainworld.WayStation || !records[1].System.Mainworld.WayStation {
 		t.Errorf("expected Way Stations at hubs A and B")
 	}
+
 	if records[2].System.Mainworld.WayStation {
 		t.Errorf("C should not have a Way Station (only 2 stations for 100 pc)")
 	}
@@ -103,6 +106,7 @@ func TestPlaceWayStations(t *testing.T) {
 	// Under 50 pc of route: no Way Stations.
 	short := []Record{recordWith(a, 'A', 4), recordWith(b, 'A', 4)}
 	placeWayStations(short, []route.Link{{From: a, To: b, Jump: 4}})
+
 	if short[0].System.Mainworld.WayStation || short[1].System.Mainworld.WayStation {
 		t.Errorf("no Way Station expected under %d pc of route", wayStationSpacing)
 	}
@@ -110,6 +114,7 @@ func TestPlaceWayStations(t *testing.T) {
 
 func TestSectorDeterministic(t *testing.T) {
 	a := Sector(dice.NewWithSeed(3), sectorgen.Sparse)
+
 	b := Sector(dice.NewWithSeed(3), sectorgen.Sparse)
 	if len(a.Records) != len(b.Records) || len(a.Routes) != len(b.Routes) {
 		t.Fatalf("non-deterministic: records %d/%d, routes %d/%d",
@@ -120,6 +125,7 @@ func TestSectorDeterministic(t *testing.T) {
 	for _, rec := range a.Records {
 		present[rec.Hex] = true
 	}
+
 	for _, l := range a.Routes {
 		if !present[l.From] || !present[l.To] {
 			t.Errorf("route %s-%s references an unsurveyed hex", l.From, l.To)
@@ -129,6 +135,7 @@ func TestSectorDeterministic(t *testing.T) {
 
 func TestSurveyString(t *testing.T) {
 	sv := Sector(dice.NewWithSeed(5), sectorgen.Sparse)
+
 	out := sv.String()
 	if len(sv.Records) == 0 {
 		t.Fatal("expected a non-empty survey")
@@ -152,10 +159,12 @@ func TestSurveyString(t *testing.T) {
 // sector survey, so this covers what the subsector and single-hex views print.
 func TestSectorDeterministicAndSurveyed(t *testing.T) {
 	a := Sector(dice.NewWithSeed(7), sectorgen.Sparse)
+
 	b := Sector(dice.NewWithSeed(7), sectorgen.Sparse)
 	if len(a.Records) != len(b.Records) || len(a.Records) == 0 {
 		t.Fatalf("expected a stable, non-empty survey: %d vs %d", len(a.Records), len(b.Records))
 	}
+
 	for i, rec := range a.Records {
 		line := rec.SecondSurvey()
 		if line != b.Records[i].SecondSurvey() {
@@ -182,9 +191,11 @@ func TestViewsAgree(t *testing.T) {
 	}
 
 	selected := 0
+
 	for letter := byte('A'); letter <= 'P'; letter++ {
 		for _, rec := range sv.Subsector(letter) {
 			selected++
+
 			if rec.Hex.Subsector() != letter {
 				t.Errorf(
 					"Subsector(%c) returned hex %s, which is in %c",
@@ -212,6 +223,7 @@ func TestViewsAgree(t *testing.T) {
 	if len(sv.Subsector('a')) != len(sv.Subsector('A')) {
 		t.Errorf("Subsector('a') and Subsector('A') disagree")
 	}
+
 	if got := sv.Subsector('Q'); got != nil {
 		t.Errorf("Subsector('Q') selected %d records, want none", len(got))
 	}

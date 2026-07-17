@@ -20,6 +20,7 @@ func TestDice(t *testing.T) {
 	if got := r.Dice(3); got != 6 {
 		t.Fatalf("Dice(3) = %d, want 6", got)
 	}
+
 	if got := scripted(6).Dice(0); got != 0 {
 		t.Fatalf("Dice(0) = %d, want 0", got)
 	}
@@ -29,6 +30,7 @@ func TestFlux(t *testing.T) {
 	if got := scripted(2, 5).Flux(); got != -3 {
 		t.Fatalf("Flux() = %d, want -3", got)
 	}
+
 	if got := scripted(6, 1).Flux(); got != 5 {
 		t.Fatalf("Flux() = %d, want 5", got)
 	}
@@ -38,9 +40,11 @@ func TestGoodAndBadFlux(t *testing.T) {
 	if got := scripted(2, 5).GoodFlux(); got != 3 {
 		t.Fatalf("GoodFlux() = %d, want 3", got)
 	}
+
 	if got := scripted(4, 4).GoodFlux(); got != 0 {
 		t.Fatalf("GoodFlux() equal dice = %d, want 0", got)
 	}
+
 	if got := scripted(2, 5).BadFlux(); got != -3 {
 		t.Fatalf("BadFlux() = %d, want -3", got)
 	}
@@ -64,18 +68,23 @@ func TestPrimitiveRanges(t *testing.T) {
 		if v := r.Die(); v < 1 || v > 6 {
 			t.Fatalf("Die() out of range: %d", v)
 		}
+
 		if v := r.Dice(3); v < 3 || v > 18 {
 			t.Fatalf("Dice(3) out of range: %d", v)
 		}
+
 		if v := r.Flux(); v < -5 || v > 5 {
 			t.Fatalf("Flux() out of range: %d", v)
 		}
+
 		if v := r.GoodFlux(); v < 0 || v > 5 {
 			t.Fatalf("GoodFlux() out of range: %d", v)
 		}
+
 		if v := r.BadFlux(); v < -5 || v > 0 {
 			t.Fatalf("BadFlux() out of range: %d", v)
 		}
+
 		if v := r.HalfDie(); v < 1 || v > 3 {
 			t.Fatalf("HalfDie() out of range: %d", v)
 		}

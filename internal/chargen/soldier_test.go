@@ -47,21 +47,26 @@ func TestGoldenSoldier(t *testing.T) {
 	if got := c.UPP(); got != "9787A8" {
 		t.Errorf("UPP = %q, want %q (Str 8 +1 muster benefit, Edu 10)", got, "9787A8")
 	}
+
 	if c.Medals != 2 {
 		t.Errorf("Medals = %d, want 2 (a Reward success each term)", c.Medals)
 	}
+
 	if c.Skills.Level("Fighter") != 1 || c.Skills.Level("Leader") != 1 ||
 		c.Skills.Level("Admin") != 10 {
 		t.Errorf("skills: Fighter=%d Leader=%d Admin=%d, want 1/1/10",
 			c.Skills.Level("Fighter"), c.Skills.Level("Leader"), c.Skills.Level("Admin"))
 	}
+
 	if len(c.Careers) != 1 {
 		t.Fatalf("careers = %+v, want one record", c.Careers)
 	}
+
 	rec := c.Careers[0]
 	if rec.Career != Soldier || rec.Terms != 2 || rec.Outcome != MusteredOut {
 		t.Errorf("record = %+v, want Soldier/2 terms/MusteredOut", rec)
 	}
+
 	if !rec.Officer || rec.Rank != 1 {
 		t.Errorf(
 			"rank = %d officer %v, want officer rank 1 (2nd Lieutenant)",
@@ -69,6 +74,7 @@ func TestGoldenSoldier(t *testing.T) {
 			rec.Officer,
 		)
 	}
+
 	if len(c.Benefits) != 1 || c.Benefits[0] != "Wafer Jack" {
 		t.Errorf("Benefits = %v, want [Wafer Jack]", c.Benefits)
 	}
@@ -96,9 +102,11 @@ func TestResolveRankCommission(t *testing.T) {
 	if !resolveRank(dice.NewScripted(3, 4), &c, &run, SoldierCareer) {
 		t.Error("resolveRank should report true on a successful commission")
 	}
+
 	if !run.officer || run.rank != 1 {
 		t.Fatalf("after commission: officer %v rank %d, want officer rank 1", run.officer, run.rank)
 	}
+
 	if c.Skills.Level("Leader") != 1 {
 		t.Errorf("2nd Lieutenant auto-skill Leader = %d, want 1", c.Skills.Level("Leader"))
 	}

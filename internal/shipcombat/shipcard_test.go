@@ -23,6 +23,7 @@ func TestHullLocations(t *testing.T) {
 	if got, ok := HullLocations(24); !ok || got != (HullLocation{25, 12, 100, 17}) {
 		t.Errorf("HullLocations(24) = %+v,%v, want Z {25,12,100,17}", got, ok)
 	}
+
 	if _, ok := HullLocations(25); ok {
 		t.Errorf("ordinal 25 (beyond Z) should not be tabulated")
 	}

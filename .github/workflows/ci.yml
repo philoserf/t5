@@ -23,19 +23,13 @@ jobs:
         with:
           go-version-file: go.mod
 
-      # The pre-commit gate (Taskfile.yml `check`): formatting, vet, tests. The
-      # gofmt step fails on drift, where the local `gofmt -l` only lists files.
-      - name: gofmt
-        run: |
-          drift=$(gofmt -l .)
-          if [ -n "$drift" ]; then
-            echo "These files are not gofmt-clean:"
-            echo "$drift"
-            exit 1
-          fi
-
-      - name: vet
-        run: go vet ./...
+      # The pre-commit gate (Taskfile.yml `check`): golangci-lint subsumes
+      # formatting (gofumpt/goimports/golines drift is reported) and vet (the
+      # govet linter), so the lint step replaces the former gofmt + vet steps.
+      - name: lint
+        uses: golangci/golangci-lint-action@v8
+        with:
+          version: v2.12.2
 
       - name: test
         run: go test ./...

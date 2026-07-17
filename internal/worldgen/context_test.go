@@ -41,6 +41,7 @@ func TestTradeClassificationsWithContext(t *testing.T) {
 	) {
 		t.Errorf("Mi world (MW industrial) = %v, want Mi", got)
 	}
+
 	if got := TradeClassificationsWithContext(
 		mi,
 		WorldContext{MainworldIndustrial: false},
@@ -81,10 +82,12 @@ func TestTradeClassificationsWithContext(t *testing.T) {
 // they are the "is this a satellite, and how far" codes (Book 3 Chart D p.26).
 func TestSatelliteCodes(t *testing.T) {
 	p := uwp.Profile{Size: 3, Atmosphere: 0}
+
 	far := TradeClassificationsWithContext(p, WorldContext{Satellite: true, SatelliteFar: true})
 	if !slices.Contains(far, "Sa") || slices.Contains(far, "Lk") {
 		t.Errorf("a far moon = %v, want Sa (not Lk)", far)
 	}
+
 	near := TradeClassificationsWithContext(p, WorldContext{Satellite: true})
 	if !slices.Contains(near, "Lk") || slices.Contains(near, "Sa") {
 		t.Errorf("a close moon = %v, want Lk (not Sa)", near)
@@ -105,6 +108,7 @@ func TestAssemblerReturnsChartDOrder(t *testing.T) {
 	// section) and Sa (Planetary section). Accumulation puts Ho before Sa; Chart D
 	// puts the Planetary Sa first.
 	p := uwp.Profile{Size: 7, Atmosphere: 6, Hydrographics: 5}
+
 	got := TradeClassificationsWithContext(p, WorldContext{
 		Orbit: 3, HZOrbit: 4, HasHZ: true, Satellite: true, SatelliteFar: true,
 	})

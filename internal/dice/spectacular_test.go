@@ -9,15 +9,18 @@ func TestDiceFaces(t *testing.T) {
 	if got := scripted(1, 2, 3).DiceFaces(3); !slices.Equal(got, []int{1, 2, 3}) {
 		t.Errorf("DiceFaces(3) = %v, want [1 2 3]", got)
 	}
+
 	if got := scripted(1).DiceFaces(0); got != nil {
 		t.Errorf("DiceFaces(0) = %v, want nil", got)
 	}
 	// sum(DiceFaces(n)) == Dice(n) for the same scripted sequence.
 	faces := scripted(2, 3, 4).DiceFaces(3)
+
 	sum := 0
 	for _, f := range faces {
 		sum += f
 	}
+
 	if want := scripted(2, 3, 4).Dice(3); sum != want {
 		t.Errorf("sum(DiceFaces) = %d, want Dice = %d", sum, want)
 	}
@@ -51,6 +54,7 @@ func TestCheckResultSpectacular(t *testing.T) {
 	if res.Success {
 		t.Errorf("roll 3 vs target 0 should fail the ordinary check")
 	}
+
 	if got := res.Spectacular(); got != SpectacularSuccess {
 		t.Errorf("Spectacular() = %v, want SpectacularSuccess", got)
 	}

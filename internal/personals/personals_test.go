@@ -20,9 +20,11 @@ func TestStrategyValue(t *testing.T) {
 	if v, ok := StrategyValue(Persuade, Charming); !ok || v != 5 {
 		t.Errorf("Persuade/Charming = %d,%v, want 5,true", v, ok)
 	}
+
 	if v, ok := StrategyValue(Command, Charming); !ok || v != 4 {
 		t.Errorf("Command/Charming = %d,%v, want 4,true", v, ok)
 	}
+
 	if v, ok := StrategyValue(Carouse, AppealTo); !ok || v != 5 {
 		t.Errorf("Carouse/AppealTo = %d,%v, want 5,true", v, ok)
 	}
@@ -36,6 +38,7 @@ func TestLawMod(t *testing.T) {
 	if LawMod(Superiority, Command) != 3 || LawMod(Superiority, Carouse) != 0 {
 		t.Errorf("Superiority mods wrong")
 	}
+
 	if LawMod(Comfort, Carouse) != 2 || LawMod(Violence, Persuade) != 2 {
 		t.Errorf("Comfort/Violence mods wrong")
 	}
@@ -59,6 +62,7 @@ func TestResolveWorkedExample(t *testing.T) {
 	// Camaraderie-1 (+1) -> Target = 5*2 + 1 + 1 = 12 on 3D.
 	sv, _ := StrategyValue(Persuade, Charming)
 	law := LawMod(Similarity, Persuade)
+
 	var cam Camaraderie
 	cam.Gain() // one prior successful Carouse -> +1
 
@@ -66,6 +70,7 @@ func TestResolveWorkedExample(t *testing.T) {
 	if res.Target != 12 {
 		t.Errorf("target = %d, want 12", res.Target)
 	}
+
 	if res.Roll != 10 || !res.Success {
 		t.Errorf("roll 10 vs 12 should succeed: %+v", res)
 	}
@@ -80,6 +85,7 @@ func TestCamaraderieCap(t *testing.T) {
 	for range 10 {
 		c.Gain()
 	}
+
 	if c.Mod() != MaxCamaraderie {
 		t.Errorf("Camaraderie capped at %d, got %d", MaxCamaraderie, c.Mod())
 	}

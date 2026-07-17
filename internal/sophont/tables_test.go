@@ -56,6 +56,7 @@ func TestNicheTablesTranscription(t *testing.T) {
 			t.Errorf("niche class at Flux %+d = %q, want %q", c.flux, got, c.want)
 		}
 	}
+
 	subs := []struct {
 		class string
 		flux  int
@@ -120,6 +121,7 @@ func TestCasteColumnsTranscription(t *testing.T) {
 			t.Errorf("%v caste at Flux %+d = %q, want %q", c.structure, c.flux, got, c.want)
 		}
 	}
+
 	specials := []struct {
 		flux int
 		want string
@@ -129,6 +131,7 @@ func TestCasteColumnsTranscription(t *testing.T) {
 			t.Errorf("special caste at Flux %+d = %q, want %q", c.flux, got, c.want)
 		}
 	}
+
 	uniques := map[CasteStructure]string{Body: "Brain", Military: "General", Social: "Ruler"}
 	for structure, want := range uniques {
 		if got := casteUnique[structure]; got != want {

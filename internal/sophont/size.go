@@ -16,6 +16,7 @@ func physicalHalfDice(chars [6]CharSpec) int {
 	half := 2 * chars[0].Dice // C1 Str, full weight
 	half += c2HalfWeight(chars[1])
 	half += c3HalfWeight(chars[2])
+
 	return half
 }
 
@@ -23,6 +24,7 @@ func c2HalfWeight(c CharSpec) int {
 	if c.Name == Gra || c.Name == Agi {
 		return c.Dice // half of the full-weight 2*Dice
 	}
+
 	return 2 * c.Dice // Dex, full weight
 }
 
@@ -45,6 +47,7 @@ func sizeMultiplier(strDice int) int {
 	if strDice <= 3 {
 		return 12
 	}
+
 	return strDice * 12
 }
 

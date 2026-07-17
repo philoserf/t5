@@ -16,6 +16,7 @@ import "github.com/philoserf/t5/internal/dice"
 // A CasteStructure is one of the six caste organizations (Book 3 p.229).
 type CasteStructure int
 
+// Caste structures (Book 3 p. 229).
 const (
 	Body CasteStructure = iota
 	Economic
@@ -148,14 +149,20 @@ func rollCaste(r *dice.Roller, gender Gender) Caste {
 	if structure == Skilled {
 		return Caste{Structure: Skilled} // per-member skills deferred (Chart 12)
 	}
+
 	col := casteColumns[structure]
 	common := col[5] // the Flux-0 (Common) caste
 
-	var table [13]string
-	var distinct []string
+	var (
+		table    [13]string
+		distinct []string
+	)
+
 	seen := map[string]bool{}
+
 	for entry := 2; entry <= 12; entry++ {
 		var name string
+
 		switch entry {
 		case 7:
 			name = common
@@ -164,6 +171,7 @@ func rollCaste(r *dice.Roller, gender Gender) Caste {
 		default:
 			name = rollCasteCell(r, col, gender, entry)
 		}
+
 		table[entry] = name
 		if name != common && !seen[name] {
 			seen[name] = true
@@ -175,6 +183,7 @@ func rollCaste(r *dice.Roller, gender Gender) Caste {
 	for _, name := range distinct {
 		diffs[name] = casteDifference(r.Flux())
 	}
+
 	return Caste{Structure: structure, Table: table, Differences: diffs}
 }
 

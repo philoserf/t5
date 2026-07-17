@@ -9,21 +9,26 @@ import "fmt"
 // budget's Payload is the residual left for what the engine does not yet model —
 // accommodations and cargo — so a clean ship still lists that tonnage as Payload
 // rather than fully spent.
-func Design(spec ShipSpec) Ship {
+func Design(spec ShipSpec) Ship { //nolint:gocognit,cyclop,funlen // ship-design pipeline (Book 2 pp.30-95)
 	h := hull(spec.TL, spec.HullLetter, spec.Tons, spec.Config, spec.Structure)
 	ship := Ship{Spec: spec, Hull: h}
+
 	var problems []string
+
 	used := 0
 
 	addDrive := func(kind DriveKind, ds *DriveSpec) *Drive {
 		if ds == nil {
 			return nil
 		}
+
 		d, problem := designDrive(kind, *ds, h.Letter, spec.TL)
 		used += d.Tons
+
 		if problem != "" {
 			problems = append(problems, problem)
 		}
+
 		return d
 	}
 	ship.Maneuver = addDrive(Maneuver, spec.Maneuver)
@@ -36,6 +41,7 @@ func Design(spec ShipSpec) Ship {
 	if ship.Maneuver != nil {
 		powered = max(powered, ship.Maneuver.Potential)
 	}
+
 	if ship.Jump != nil {
 		powered = max(powered, ship.Jump.Potential)
 	}
@@ -66,10 +72,12 @@ func Design(spec ShipSpec) Ship {
 	}
 
 	ship.Fuel = fuel(h.Tons, ship.Jump, ship.Power, spec.FuelScoop, spec.FuelPurifier)
+
 	used += ship.Fuel.Tons
 	if spec.FuelScoop { // the scoop and purifier fittings are 1 ton each (Book 2 p.79)
 		used++
 	}
+
 	if spec.FuelPurifier {
 		used++
 	}
@@ -96,15 +104,18 @@ func Design(spec ShipSpec) Ship {
 	for _, ds := range spec.Defenses {
 		d := DesignDefense(ds)
 		ship.Defenses = append(ship.Defenses, d)
+
 		problems = append(problems, d.Problems...)
 		if d.TL > spec.TL {
 			problems = append(problems, fmt.Sprintf("%s is TL-%d, above the ship's TL-%d",
 				d.Name(), d.TL, spec.TL))
 		}
 	}
+
 	if p := mountPoints(h, ship.Weapons, ship.Defenses); p != "" {
 		problems = append(problems, p)
 	}
+
 	used += armamentTonnage(ship.Weapons, ship.Defenses)
 
 	ship.Tonnage = Budget{Hull: h.Tons, Used: used, Payload: h.Tons - used}
@@ -118,13 +129,16 @@ func Design(spec ShipSpec) Ship {
 			ship.Cost += d.Cost
 		}
 	}
+
 	for _, w := range ship.Weapons {
 		ship.Cost += w.Cost
 	}
+
 	for _, d := range ship.Defenses {
 		ship.Cost += d.Cost
 	}
 
 	ship.Problems = problems
+
 	return ship
 }

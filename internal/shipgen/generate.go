@@ -10,15 +10,18 @@ func ConfigByLetter(letter string) (Config, bool) {
 	if letter == "" {
 		return 0, false
 	}
+
 	b := letter[0]
 	if b >= 'a' && b <= 'z' {
 		b -= 'a' - 'A'
 	}
+
 	for c := Cluster; c <= Lifting; c++ {
 		if c.Letter() == b {
 			return c, true
 		}
 	}
+
 	return 0, false
 }
 
@@ -31,6 +34,7 @@ var structureByName = map[string]Structure{
 // StructureByName returns the Structure for a name and whether it was found.
 func StructureByName(name string) (Structure, bool) {
 	s, ok := structureByName[squash(name)]
+
 	return s, ok
 }
 
@@ -54,5 +58,6 @@ func Generate(r *dice.Roller) Ship {
 		Power:       &DriveSpec{Letter: DriveForPotential(max(targetG, targetJ), hullOrd)},
 		FuelScoop:   true,
 	}
+
 	return Design(spec)
 }

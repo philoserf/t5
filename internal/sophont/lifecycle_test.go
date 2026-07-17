@@ -13,6 +13,7 @@ func TestHumanLifespan(t *testing.T) {
 	if lc.Lifespan != 74 {
 		t.Errorf("Human lifespan = %d, want 74", lc.Lifespan)
 	}
+
 	for stage := 1; stage <= 9; stage++ {
 		if lc.Terms[stage] != 2 {
 			t.Errorf("stage %d terms = %d, want 2", stage, lc.Terms[stage])

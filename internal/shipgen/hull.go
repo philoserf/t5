@@ -38,6 +38,7 @@ var configAttr = [...]struct {
 // (Book 2 p.70). Structure multipliers are applied by hullCost.
 func hullCostMCr(ordinal int, config Config) int {
 	c := configCost[config]
+
 	return c.slope*ordinal + c.intercept
 }
 
@@ -45,12 +46,16 @@ func hullCostMCr(ordinal int, config Config) int {
 // (Organic x0.5, Charged x2; Book 2 p.52).
 func hullCost(ordinal int, config Config, structure Structure) int {
 	cr := hullCostMCr(ordinal, config) * 1_000_000
+
 	switch structure {
 	case Organic:
 		cr /= 2
 	case Charged:
 		cr *= 2
+	default:
+		// FramePlate, Shell, Polymer, and FeNi carry no cost multiplier.
 	}
+
 	return cr
 }
 
@@ -72,6 +77,7 @@ func hull(tl, ordinal, tons int, config Config, structure Structure) Hull {
 
 	attr := configAttr[config]
 	agility, stability := attr.agility, attr.stability
+
 	switch delta := tons - nominal; {
 	case delta >= 25:
 		agility -= 2

@@ -20,6 +20,7 @@ const termYears = 4
 // A CareerID names a career.
 type CareerID int
 
+// The implemented careers, in checklist order.
 const (
 	Scout       CareerID = iota // the first implemented career
 	Rogue                       // a fixed-CC career (Book 1 p. 84)
@@ -41,6 +42,7 @@ const (
 // (Rogue).
 type CCMode int
 
+// Controlling-Characteristic selection modes for the term engine.
 const (
 	RotateCC CCMode = iota
 	FixedCC
@@ -50,6 +52,7 @@ const (
 // default) or roll-high (Noble elevation).
 type AdvanceRule int
 
+// Advancement roll directions.
 const (
 	RollLow AdvanceRule = iota
 	RollHigh
@@ -70,6 +73,7 @@ func (q Qualification) target(c Character) int {
 	if len(q.Chars) == 0 {
 		panic("chargen: qualification has no characteristics")
 	}
+
 	return c.Score(bestChar(c, q.Chars...)) + q.Mod
 }
 
@@ -96,6 +100,7 @@ func (rule ContinueRule) target(c Character) int {
 	if rule.UseChar {
 		return c.Score(rule.Char) + rule.Mod
 	}
+
 	return rule.Fixed + rule.Mod
 }
 
@@ -128,6 +133,7 @@ type TenureRule struct {
 // to each 1D roll (Book 1 pp. 67-70, each career page's muster DM line).
 type MusterDM int
 
+// Sources of the muster-out Benefit-column die modifier.
 const (
 	DMNone        MusterDM = iota // no modifier (the zero value)
 	DMTerms                       // + terms served
@@ -146,6 +152,7 @@ func benefitDM(dm MusterDM, c Character, rec CareerRecord) int {
 		if rec.Officer {
 			return rec.Rank
 		}
+
 		return 0
 	case DMRank:
 		return rec.Rank
@@ -183,12 +190,14 @@ func eduBonus(c Character) int {
 	if c.Score(Education) >= 10 {
 		return 2
 	}
+
 	return 0
 }
 
 // A RewardKind is the token a successful Reward roll earns for a career.
 type RewardKind int
 
+// Reward tokens a career grants on a successful Reward roll.
 const (
 	RewardNone         RewardKind = iota // the reward benefit is deferred (Rogue via its Scheme, …)
 	RewardMedal                          // armed forces: a Medal
@@ -243,14 +252,15 @@ func (c Career) hasRanks() bool { return len(c.EnlistedRanks) > 0 }
 // amateur reports whether a character falls below the career's Education floor
 // for holding rank (Book 1 p.76's "Edu 8+"). An Amateur Scholar begins at rank 0
 // — the sentinel below the EnlistedRanks ladder — and cannot be promoted.
-func (career Career) amateur(c *Character) bool {
-	return career.PromoteEduMin > 0 && c.Score(Education) < career.PromoteEduMin
+func (c Career) amateur(ch *Character) bool {
+	return c.PromoteEduMin > 0 && ch.Score(Education) < c.PromoteEduMin
 }
 
 // A TermOutcome is the result of a term or of a whole career. Ongoing marks a
 // term the character survived; the others are how a character left a career.
 type TermOutcome int
 
+// Term outcomes from the term engine.
 const (
 	Ongoing     TermOutcome = iota // survived the term; the career continues
 	MusteredOut                    // left the career (voluntary or failed to continue)
@@ -319,6 +329,7 @@ func GenerateCareered(r *dice.Roller, p Policy, homeworld worldgen.World, career
 	c := Generate(r)
 	c.Homeworld = homeworld
 	ApplyHomeworldSkills(&c, homeworld, p)
+
 	if p.PursueEducation(c) {
 		educate(r, p, &c)
 	}
@@ -330,14 +341,18 @@ func GenerateCareered(r *dice.Roller, p Policy, homeworld worldgen.World, career
 		if !ok {
 			break
 		}
+
 		if serveCareer(r, p, &c, next) {
 			entered = true
 		}
 	}
+
 	if !entered && !c.Dead {
 		serveCareer(r, p, &c, CitizenCareer) // fall back to the auto-begin Citizen life
 	}
+
 	computeEntitlements(&c)
+
 	return c
 }
 
@@ -348,10 +363,13 @@ func serveCareer(r *dice.Roller, p Policy, c *Character, career Career) bool {
 	if !beginCareer(r, c, career) {
 		return false
 	}
+
 	RunCareer(r, p, c, career)
+
 	if rec := c.Careers[len(c.Careers)-1]; rec.Outcome != Died {
 		MusterOut(r, p, c, rec, career)
 	}
+
 	return true
 }
 
@@ -370,6 +388,7 @@ func beginCareer(r *dice.Roller, c *Character, career Career) bool {
 	if career.PromoteEduMin > 0 && c.Score(Education) >= career.PromoteEduMin {
 		return true
 	}
+
 	return r.Resolve(dice.Check{Dice: 2, Target: career.Qualify.target(*c)}).Success
 }
 
@@ -379,7 +398,9 @@ func RunCareer(r *dice.Roller, p Policy, c *Character, career Career) {
 	if len(career.ControllingChars) == 0 && !career.FameCareer {
 		panic("chargen: career " + career.Name + " has no controlling characteristics")
 	}
+
 	run := careerRun{ccPool: append([]Characteristic(nil), career.ControllingChars...)}
+
 	rec := CareerRecord{Career: career.ID}
 	if career.hasRanks() {
 		run.rank = 1 // armed forces begin at enlisted rank 1 (Book 1 p. 64)
@@ -389,13 +410,16 @@ func RunCareer(r *dice.Roller, p Policy, c *Character, career Career) {
 			grantRankSkill(c, career.EnlistedRanks, 1)
 		}
 	}
+
 	if career.FameCareer {
 		talent := r.Dice(2) // initial Talent (and starting Fame) are one 2D roll (Book 1 p. 77)
+
 		c.Talent = talent
 		if c.Fame == 0 {
 			c.Fame = talent // don't overwrite Fame carried in from a prior career
 		}
 	}
+
 	if career.BranchOps != nil {
 		b := career.BranchOps.Branches[min(r.Die()+eduBonus(*c), 8)] // Branch chosen once
 		run.branchMod, run.branchOpsDM = b.Mod, b.OpsDM
@@ -407,23 +431,32 @@ func RunCareer(r *dice.Roller, p Policy, c *Character, career Career) {
 		rec.Terms++
 		c.Age += termYears
 		AgingCheck(r, c) // no-op before age 34; may set c.Dead
+
 		if outcome == Died || c.Dead {
 			rec.Outcome = Died
+
 			break
 		}
+
 		if outcome == Disabled {
 			rec.Outcome = Disabled
+
 			break
 		}
+
 		if outcome == MusteredOut {
 			rec.Outcome = MusteredOut // a term forced the career to end (Office Politics job loss)
+
 			break
 		}
+
 		if !continues(r, p, *c, career, rec, &run) {
 			rec.Outcome = MusteredOut
+
 			break
 		}
 	}
+
 	rec.Rank = run.rank
 	rec.Officer = run.officer
 	rec.Commendations = run.commends
@@ -435,30 +468,40 @@ func RunCareer(r *dice.Roller, p Policy, c *Character, career Career) {
 // (2D <= CC - mod, mods flipped). A failed Risk injures the character; a
 // surviving armed-forces character then resolves rank. It returns Ongoing,
 // Disabled, or Died.
+//
+//nolint:cyclop,funlen // the term engine dispatches every career variant; irreducibly branchy
 func runTerm(r *dice.Roller, p Policy, c *Character, run *careerRun, career Career) TermOutcome {
 	if career.FameCareer {
 		return runFameTerm(r, p, c, run, career) // no CC — the Entertainer resolves Fame/Talent
 	}
+
 	cc := selectCC(p, *c, run, career)
 	if career.CitizenLife {
 		return runCitizenTerm(r, p, c, run, career, cc)
 	}
+
 	if career.Masterpiece {
 		return runCraftsmanTerm(r, p, c, career, cc)
 	}
+
 	if career.OfficePolitics {
 		return runPoliticsTerm(r, p, c, run, career, cc)
 	}
+
 	if career.ReturnIntrigue {
 		return runIntrigueTerm(r, p, c, run, career, cc)
 	}
+
 	if career.SchemeCareer {
 		return runRogueTerm(r, p, c, run, career, cc)
 	}
+
 	if career.ScoutDuty && !p.ChooseExplorerDuty(*c) {
 		awardSkillsN(r, p, c, career, courierElig) // Courier duty avoids Risk & Reward
+
 		return Ongoing
 	}
+
 	ccVal := c.Score(cc)
 	mod := p.RiskMod(*c, ccVal) // caution (+), bravery (-), or 0
 	bo := branchOpsMod(r, c, run, career)
@@ -470,6 +513,8 @@ func runTerm(r *dice.Roller, p Policy, c *Character, run *careerRun, career Care
 		// Survived. Reward roll; success earns the career's reward token.
 		if reward := r.Resolve(dice.Check{Dice: 2, Target: ccVal - mod + bo}); reward.Success {
 			switch career.RewardKind {
+			case RewardNone:
+				// the reward is deferred (e.g. the Rogue's Scheme); nothing to grant
 			case RewardMedal:
 				c.Medals++
 			case RewardPublication:
@@ -496,14 +541,19 @@ func runTerm(r *dice.Roller, p Policy, c *Character, run *careerRun, career Care
 		if mod < 0 {
 			negMods += -mod
 		}
+
 		injury, newVal := classifyInjury(ccVal, negMods, r.Flux())
 		switch injury {
+		case Unharmed:
+			// no injury; fall through to the skill award below
 		case Fatal:
 			c.scores[cc] = max(newVal, 0)
 			c.Dead = true
+
 			return Died
 		case Disabling:
 			c.scores[cc] = newVal
+
 			return Disabled
 		case Wounded:
 			c.scores[cc] = newVal
@@ -517,13 +567,17 @@ func runTerm(r *dice.Roller, p Policy, c *Character, run *careerRun, career Care
 	// he was promoted").
 	if career.UndercoverCareer {
 		awardUndercover(r, p, c, career, riskOK)
+
 		return Ongoing
 	}
+
 	elig := career.EligPerTerm
 	if resolveRank(r, c, run, career) {
 		elig++
 	}
+
 	awardSkillsN(r, p, c, career, elig)
+
 	return Ongoing
 }
 
@@ -534,6 +588,7 @@ func branchOpsMod(r *dice.Roller, c *Character, run *careerRun, career Career) i
 	if career.BranchOps == nil {
 		return 0
 	}
+
 	best := 0
 	for range 4 {
 		best = max(
@@ -541,6 +596,7 @@ func branchOpsMod(r *dice.Roller, c *Character, run *careerRun, career Career) i
 			career.BranchOps.OpsMods[min(max(r.Die()+run.branchOpsDM+eduBonus(*c), 1), 9)],
 		)
 	}
+
 	return run.branchMod + best
 }
 
@@ -565,7 +621,9 @@ func runCitizenTerm(
 	if r.Resolve(dice.Check{Dice: 2, Target: c.Score(cc)}).Success {
 		awardCitizenLife(p, c, run)
 	}
+
 	awardSkills(r, p, c, career)
+
 	return Ongoing
 }
 
@@ -585,13 +643,16 @@ func runFameTerm(
 	// (Book 1 p.77). run.terms is 0 on the first served term.
 	if run.terms > 0 {
 		before := c.Fame
+
 		c.Fame = max(c.Fame+r.Flux(), 0)
 		if c.Fame > before {
 			c.Talent++
 			elig += 2 // "If Fame Increases: 2 [skills] and Talent+1"
 		}
 	}
+
 	awardSkillsN(r, p, c, career, elig)
+
 	return Ongoing
 }
 
@@ -607,6 +668,7 @@ func masterpieceValue(points int) int {
 	if points >= 55 {
 		v *= 2
 	}
+
 	return v
 }
 
@@ -639,6 +701,7 @@ func runCraftsmanTerm(
 		"Language",
 	)
 	elig := career.EligPerTerm
+
 	if points >= masterpieceMinimum && r.Dice(9) <= points {
 		c.Masterpieces++
 		c.MasterpieceValue += masterpieceValue(points)
@@ -646,8 +709,10 @@ func runCraftsmanTerm(
 	} else {
 		elig++
 	}
+
 	c.Skills.Raise("Craftsman", 1) // learning from the work, success or failure
 	awardSkillsN(r, p, c, career, elig)
+
 	return Ongoing
 }
 
@@ -665,16 +730,21 @@ func runPoliticsTerm(
 	cc Characteristic,
 ) TermOutcome {
 	riskKept := r.Resolve(dice.Check{Dice: 2, Target: c.Score(cc)}).Success
+
 	elig := career.EligPerTerm
 	if r.Resolve(dice.Check{Dice: 2, Target: c.Score(cc)}).Success &&
 		run.rank < len(career.EnlistedRanks) {
 		promoteRank(c, run, career.EnlistedRanks)
+
 		elig++ // one extra skill on promotion (Book 1 p. 82)
 	}
+
 	awardSkillsN(r, p, c, career, elig)
+
 	if !riskKept {
 		return MusteredOut
 	}
+
 	return Ongoing
 }
 
@@ -692,24 +762,29 @@ func runIntrigueTerm(
 	cc Characteristic,
 ) TermOutcome {
 	elevated := false
-	if run.exiled {
+
+	switch {
+	case run.exiled:
 		if r.Resolve(dice.Check{Dice: 2, Target: c.Score(cc)}).Success {
 			run.exiled = false // Return from Exile
 		}
-	} else if r.Resolve(dice.Check{Dice: 2, Target: c.Score(cc)}).Success {
+	case r.Resolve(dice.Check{Dice: 2, Target: c.Score(cc)}).Success:
 		if r.Dice(2) >= c.Score(Social) && c.scores[Social] < maxCharacteristic {
 			c.scores[Social]++ // Elevation to the next Noble rank
 			c.LandGrants++
 			elevated = true
 		}
-	} else {
+	default:
 		run.exiled = true // Exile
 	}
+
 	elig := career.EligPerTerm
 	if elevated {
 		elig += 2 // "When Elevated 2" (Book 1 p.85)
 	}
+
 	awardSkillsN(r, p, c, career, elig)
+
 	return Ongoing
 }
 
@@ -772,7 +847,9 @@ func runRogueTerm(
 ) TermOutcome {
 	if run.inPrison {
 		run.inPrison = false
+
 		awardPrisonSkills(r, p, c, career, roguePrisonElig)
+
 		return Ongoing
 	}
 
@@ -785,24 +862,30 @@ func runRogueTerm(
 	risk := r.Resolve(dice.Check{Dice: 2, Target: ccVal + riskMod + run.terms})
 	riskOK := risk.Roll != 12 && risk.Success
 	rewardMods := -riskMod + run.terms
+
 	reward := r.Resolve(dice.Check{Dice: 2, Target: ccVal + rewardMods})
 	if reward.Success {
 		payScheme(c, scheme, ccVal+rewardMods, reward.Roll, riskOK)
 	}
 
 	elig := rogueSuccessElig
+
 	if !riskOK {
 		c.Fame++ // Infamy
 		elig = rogueFailElig
+
 		negMods := 0
 		if riskMod < 0 {
 			negMods = -riskMod
 		}
+
 		if min(max(negMods+r.Flux(), 0), 4) > 0 { // a positive sentence means prison next term
 			run.inPrison = true
 		}
 	}
+
 	awardSkillsN(r, p, c, career, elig)
+
 	return Ongoing
 }
 
@@ -813,12 +896,15 @@ func runRogueTerm(
 func payScheme(c *Character, s schemeValue, rewardTarget, rewardRoll int, riskOK bool) {
 	if s.share {
 		c.ShipShares++
+
 		return
 	}
+
 	payoff := s.credits * (1 + rewardTarget - rewardRoll)
 	if !riskOK {
 		payoff /= 2 // "Payoff (if any) is halved"
 	}
+
 	c.Credits += payoff
 }
 
@@ -831,10 +917,12 @@ func awardPrisonSkills(r *dice.Roller, p Policy, c *Character, career Career, n 
 	// raising; otherwise the always-productive Personal column (characteristic
 	// bumps), so every prison roll lands on a real award.
 	const personal, academic = 0, 1
+
 	col := personal
 	if productive, _ := columnScore(*c, career.Skills[academic]); productive {
 		col = academic
 	}
+
 	for range n {
 		applyCell(p, c, career.Skills[col][r.Die()-1])
 	}
@@ -858,6 +946,7 @@ func undercoverAssignment(r *dice.Roller) CareerID {
 	for a > 3 {
 		a = r.Die()
 	}
+
 	return undercoverAssignments[a][r.Die()]
 }
 
@@ -875,6 +964,7 @@ func awardUndercover(r *dice.Roller, p Policy, c *Character, career Career, miss
 	if missionOK {
 		elig += 4 // Successful Mission
 	}
+
 	awardSkillsN(r, p, c, career, elig)
 }
 
@@ -921,26 +1011,35 @@ func resolveRank(r *dice.Roller, c *Character, run *careerRun, career Career) bo
 	// is earned (Book 1 p.76).
 	if career.Tenure != nil && run.rank == career.Tenure.Rank && !c.Tenured {
 		attemptTenure(r, c, *career.Tenure)
+
 		return false
 	}
+
 	if run.officer {
 		if run.rank < len(career.OfficerRanks) && promoted(r, *c, career.OfficerPromote) {
 			promoteRank(c, run, career.OfficerRanks)
+
 			return true
 		}
+
 		return false
 	}
 	// Commission applies only to careers with an officer track to rise into.
 	if len(career.OfficerRanks) > 0 && promoted(r, *c, career.Commission) {
 		run.officer = true
 		run.rank = 1
+
 		grantRankSkill(c, career.OfficerRanks, 1)
+
 		return true
 	}
+
 	if run.rank < len(career.EnlistedRanks) && promoted(r, *c, career.EnlistedPromote) {
 		promoteRank(c, run, career.EnlistedRanks)
+
 		return true
 	}
+
 	return false
 }
 
@@ -952,6 +1051,7 @@ func attemptTenure(r *dice.Roller, c *Character, rule TenureRule) {
 	if c.Score(Education) < rule.EduMin {
 		return // not yet eligible to apply
 	}
+
 	if r.Resolve(dice.Check{Dice: 2, Target: c.Publications * rule.PubsMult}).Success {
 		c.Tenured = true
 	}
@@ -964,9 +1064,11 @@ func promoted(r *dice.Roller, c Character, rule PromotionRule) bool {
 	if rule.MedalsAndWounds {
 		target += c.Medals + c.WoundBadges
 	}
+
 	if rule.PubsMod {
 		target += c.Publications
 	}
+
 	return r.Resolve(dice.Check{Dice: 2, Target: target}).Success
 }
 
@@ -1004,6 +1106,7 @@ func awardSkillsN(r *dice.Roller, p Policy, c *Character, career Career, n int) 
 				),
 			)
 		}
+
 		applyCell(p, c, career.Skills[col][r.Die()-1])
 	}
 }
@@ -1013,6 +1116,8 @@ func awardSkillsN(r *dice.Roller, p Policy, c *Character, career Career, n int) 
 // human maximum), or resolve a player choice among options.
 func applyCell(p Policy, c *Character, cell Cell) {
 	switch cell.Kind {
+	case NoAward:
+		// an empty cell: nothing to apply
 	case AwardSkill:
 		if cell.Knowledge != "" {
 			c.Skills.GrantCascade(cell.Skill, cell.Knowledge)
@@ -1025,6 +1130,7 @@ func applyCell(p Policy, c *Character, cell Cell) {
 		if len(cell.Options) == 0 {
 			panic("chargen: AwardChoice cell has no options")
 		}
+
 		chosen := p.ChooseSkill(*c, cell.Options)
 		if cell.Skill != "" {
 			// A cascade choice: the options are knowledges under the parent skill
@@ -1050,6 +1156,7 @@ const maxCharacteristic = 15
 // A CellKind identifies what a skill-grid cell awards.
 type CellKind int
 
+// Skill-grid cell kinds.
 const (
 	NoAward     CellKind = iota // an empty cell
 	AwardSkill                  // raise Skill (with Knowledge for a cascade skill)
@@ -1077,6 +1184,7 @@ type SkillGrid [7][6]Cell
 // A MusterColumn selects which column of a muster-out row a benefit comes from.
 type MusterColumn int
 
+// Muster-out table columns.
 const (
 	MoneyColumn MusterColumn = iota
 	BenefitColumn
@@ -1085,6 +1193,7 @@ const (
 // A BenefitKind identifies a mustering-out award.
 type BenefitKind int
 
+// Muster-out benefit kinds.
 const (
 	Cash         BenefitKind = iota // Value credits
 	CharBump                        // +Value to characteristic Char
@@ -1122,10 +1231,12 @@ func MusterOut(r *dice.Roller, p Policy, c *Character, rec CareerRecord, career 
 	rolls := musterRollCount(*c, rec)
 	for range rolls {
 		col := p.MusterColumn(*c, rec)
+
 		fullDM := rec.Terms // Money column DM
 		if col == BenefitColumn {
 			fullDM = benefitDM(career.BenefitDM, *c, rec)
 		}
+
 		award := rollMusterAward(r, p, career, col, fullDM)
 		// A result duplicating an unusable named benefit (a second Wafer Jack) may
 		// be rerolled until different (Book 1 p.69). The cap keeps a degenerate
@@ -1134,6 +1245,7 @@ func MusterOut(r *dice.Roller, p Policy, c *Character, rec CareerRecord, career 
 		for tries := 0; isDuplicateBenefit(*c, award) && tries < musterRerollCap; tries++ {
 			award = rollMusterAward(r, p, career, col, fullDM)
 		}
+
 		if !isDuplicateBenefit(*c, award) {
 			applyBenefit(c, award, career, rec)
 		}
@@ -1160,10 +1272,12 @@ func rollMusterAward(
 	if fullDM > 0 && p.RandomizeMusterDM() {
 		dm = r.Index(fullDM + 1)
 	}
+
 	row := min(max(r.Die()+dm, 1), 12)
 	if col == BenefitColumn {
 		return career.MusterOut[row].Benefit
 	}
+
 	return career.MusterOut[row].Money
 }
 
@@ -1197,10 +1311,12 @@ func musterRollCount(c Character, rec CareerRecord) int {
 	if rec.Outcome == Disabled {
 		rolls *= 2
 	}
+
 	rolls += rec.Commendations
 	if c.Fame >= 19 {
 		rolls++
 	}
+
 	return rolls
 }
 
@@ -1238,8 +1354,10 @@ func applyBenefit(c *Character, b Benefit, career Career, rec CareerRecord) {
 func applyKnighthood(c *Character, career Career, rec CareerRecord) {
 	if career.BranchOps != nil && !rec.Officer {
 		c.scores[Social] = min(c.scores[Social]+1, maxCharacteristic)
+
 		return
 	}
+
 	if c.scores[Social] < 11 {
 		c.scores[Social] = 11
 	} else {
@@ -1250,6 +1368,7 @@ func applyKnighthood(c *Character, career Career, rec CareerRecord) {
 // An Injury classifies the result of a failed Risk roll.
 type Injury int
 
+// Injury outcomes from a failed Risk roll.
 const (
 	Unharmed  Injury = iota // the characteristic ends at or above its original value
 	Wounded                 // reduced by 1-3 (a Wound Badge)
@@ -1285,13 +1404,17 @@ func selectCC(p Policy, c Character, run *careerRun, career Career) Characterist
 			run.fixed = p.ChooseCC(c, career.ControllingChars)
 			run.fixedChosen = true
 		}
+
 		return run.fixed
 	}
+
 	if len(run.ccPool) == 0 {
 		run.ccPool = append(run.ccPool, career.ControllingChars...)
 	}
+
 	cc := p.ChooseCC(c, run.ccPool)
 	run.ccPool = removeChar(run.ccPool, cc)
+
 	return cc
 }
 
@@ -1311,24 +1434,30 @@ func continues(
 	if career.Continue.UseCC {
 		target = c.Score(run.fixed) + career.Continue.Mod
 	}
+
 	if career.Continue.UseFame {
 		target = c.Fame + career.Continue.Mod
 	}
+
 	if career.Continue.UseSkill != "" {
 		target = c.Skills.Level(
 			career.Continue.UseSkill,
 		)*career.Continue.SkillMult + career.Continue.Mod
 	}
+
 	if career.Continue.TermsMod {
 		target += rec.Terms // more experience makes staying in easier (Book 1 p. 83, Agent)
 	}
+
 	if career.Continue.PubsMod {
 		target += c.Publications // the Scholar continues more easily as they publish
 	}
+
 	res := r.Resolve(dice.Check{Dice: 2, Target: target})
 	if res.Roll == 2 {
 		return true // Mandatory Continue
 	}
+
 	return p.Continue(c, rec) && res.Success
 }
 
@@ -1337,5 +1466,6 @@ func removeChar(chars []Characteristic, ch Characteristic) []Characteristic {
 	if i := slices.Index(chars, ch); i >= 0 {
 		return slices.Delete(chars, i, i+1)
 	}
+
 	return chars
 }

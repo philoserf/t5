@@ -62,6 +62,7 @@ func TestClassifySizeDIgnoresDecimal(t *testing.T) {
 func TestClassifyOBSelection(t *testing.T) {
 	// typeFlux -6 -> OB. pickB chooses between O and B.
 	o := classify(-6, -6, 0, false)
+
 	b := classify(-6, -6, 0, true)
 	if o.Type != "O" || b.Type != "B" {
 		t.Fatalf("OB selection: O=%s B=%s, want O and B", o.Type, b.Type)

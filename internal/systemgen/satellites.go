@@ -34,14 +34,17 @@ type Satellite struct {
 // pass after placement so it never perturbs the orbit map's dice.
 func (s *System) rollSatellites(r *dice.Roller) {
 	mwPop := s.Mainworld.Profile.Population
+
 	mwIndustrial := s.mainworldIndustrial() // invariant for the system; hoisted, like placeOrbits
 	for i := range s.Orbits {
 		o := &s.Orbits[i]
 		hz, hasHZ := HZOrbit(s.hostStar(o.Host))
+
 		moons, rings := satelliteCount(r, o.Kind, o.Orbit, hz, hasHZ)
 		for range rings {
 			o.Satellites = append(o.Satellites, Satellite{Ring: true})
 		}
+
 		parentSize, capped := s.satelliteParentSize(o)
 		for range moons {
 			wt := satelliteType(o.Orbit, hz, hasHZ, r.Die())
@@ -50,10 +53,12 @@ func (s *System) rollSatellites(r *dice.Roller) {
 			prof.Size = size
 			far := r.Dice(2) >= 8
 			idx := dice.FluxIndex(r.Flux())
+
 			letter := closeOrbitLetters[idx]
 			if far {
 				letter = farOrbitLetters[idx]
 			}
+
 			o.Satellites = append(o.Satellites, Satellite{
 				Far:          far,
 				OrbitLetter:  letter,
@@ -95,7 +100,7 @@ func (s *System) hostStar(label string) Star {
 // are size-capped (Book 3 p.21: a satellite is never larger than its parent).
 // Gas-giant moons are never capped — a giant's size code far exceeds any world
 // size — and belts have no moons.
-func (s *System) satelliteParentSize(o *PlacedOrbit) (size int, capped bool) {
+func (s *System) satelliteParentSize(o *PlacedOrbit) (int, bool) {
 	switch o.Kind {
 	case KindMainworld:
 		return s.Mainworld.Profile.Size, true
@@ -103,7 +108,10 @@ func (s *System) satelliteParentSize(o *PlacedOrbit) (size int, capped bool) {
 		if o.World != nil {
 			return o.World.Profile.Size, true
 		}
+	default:
+		// KindGasGiant and KindBelt are uncapped; handled by the return below.
 	}
+
 	return 0, false
 }
 
@@ -115,6 +123,7 @@ func capSatelliteSize(satSize, parentSize int, capped bool) (int, bool) {
 	if capped && satSize >= parentSize {
 		return parentSize, true
 	}
+
 	return satSize, false
 }
 
@@ -122,20 +131,27 @@ func capSatelliteSize(satSize, parentSize int, capped bool) (int, bool) {
 // zone (Book 3 p.29): a gas giant 1D-1, and a world 1D-5 inner / 1D-4 hospitable
 // / 1D-3 outer. A roll of exactly zero yields a ring and re-rolls the count; a
 // negative roll is none. Belts carry neither.
-func satelliteCount(r *dice.Roller, kind OrbitKind, orbit, hz int, hasHZ bool) (moons, rings int) {
+func satelliteCount(r *dice.Roller, kind OrbitKind, orbit, hz int, hasHZ bool) (int, int) {
 	if kind == KindBelt {
 		return 0, 0
 	}
+
 	dm := -1 // gas giant: 1D-1
 	if kind != KindGasGiant {
 		dm = -4 // hospitable
+
 		switch zoneOf(orbit, hz, hasHZ) {
 		case innerZone:
 			dm = -5
 		case outerZone:
 			dm = -3
+		default:
+			// hospitableZone keeps the -4 set above.
 		}
 	}
+
+	rings := 0
+
 	for {
 		switch roll := r.Die() + dm; {
 		case roll > 0:

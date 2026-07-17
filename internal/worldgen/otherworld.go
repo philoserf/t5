@@ -10,6 +10,7 @@ import (
 // StSAHPGL-T mnemonic marks which), others are fixed or overridden by a formula.
 type OtherWorldType int
 
+// Types of non-mainworld in a system.
 const (
 	Hospitable OtherWorldType = iota // StSAHPGL-T (a full, habitable world)
 	InnerWorld                       // StSAHPGL-T; Pop = 2D-4, Hyd = 2D-4
@@ -80,6 +81,7 @@ func GenerateOtherWorld(r *dice.Roller, t OtherWorldType, mwPop int) uwp.Profile
 		size := r.Dice(2)
 		atm := atmosphere(r.Flux(), size)
 		hyd := hydrographics(r.Flux(), atm, size)
+
 		return uwp.Profile{
 			Starport:      spaceport(-r.Die()),
 			Size:          size,
@@ -95,36 +97,42 @@ func GenerateOtherWorld(r *dice.Roller, t OtherWorldType, mwPop int) uwp.Profile
 		size := rollSize(r)
 		atm := atmosphere(r.Flux(), size)
 		hyd := clamp(r.Dice(2)-4, 0, maxHydrographics)
+
 		return fullOtherWorld(r, size, atm, hyd, capPop(r.Dice(2)-4))
 
 	case BigWorld:
 		size := r.Dice(2) + 7
 		atm := atmosphere(r.Flux(), size)
 		hyd := hydrographics(r.Flux(), atm, size)
+
 		return fullOtherWorld(r, size, atm, hyd, capPop(rollPopulation(r)))
 
 	case StormWorld:
 		size := r.Dice(2)
 		atm := clamp(r.Dice(2)+4, 0, maxAtmosphere)
 		hyd := clamp(r.Dice(2)-4, 0, maxHydrographics)
+
 		return fullOtherWorld(r, size, atm, hyd, capPop(r.Dice(2)-6))
 
 	case Worldlet:
 		size := max(r.Die()-3, 0)
 		atm := atmosphere(r.Flux(), size)
 		hyd := hydrographics(r.Flux(), atm, size)
+
 		return fullOtherWorld(r, size, atm, hyd, capPop(rollPopulation(r)))
 
 	case Iceworld:
 		size := rollSize(r)
 		atm := atmosphere(r.Flux(), size)
 		hyd := hydrographics(r.Flux(), atm, size)
+
 		return fullOtherWorld(r, size, atm, hyd, capPop(r.Dice(2)-6))
 
 	default: // Hospitable
 		size := rollSize(r)
 		atm := atmosphere(r.Flux(), size)
 		hyd := hydrographics(r.Flux(), atm, size)
+
 		return fullOtherWorld(r, size, atm, hyd, capPop(rollPopulation(r)))
 	}
 }
@@ -136,6 +144,7 @@ func fullOtherWorld(r *dice.Roller, size, atm, hyd, pop int) uwp.Profile {
 	gov := government(r.Flux(), pop)
 	lawLevel := law(r.Flux(), gov)
 	sp := spaceport(pop - r.Die())
+
 	return uwp.Profile{
 		Starport:      sp,
 		Size:          size,

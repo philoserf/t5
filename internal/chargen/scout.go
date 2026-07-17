@@ -22,6 +22,8 @@ func choose(options ...string) Cell { return Cell{Kind: AwardChoice, Options: op
 // cascade is a choice among knowledges under a cascade parent skill (e.g. a
 // Language knowledge), granted via the K-K-S progression rather than as a flat
 // skill.
+//
+//nolint:unparam // general cascade helper; parent kept explicit for the readable grids
 func cascade(parent string, knowledges ...string) Cell {
 	return Cell{Kind: AwardChoice, Skill: parent, Options: knowledges}
 }
@@ -87,7 +89,7 @@ var ScoutCareer = Career{
 			bump(Education),
 			bump(Social),
 		},
-		// Col 1 — Academic: Major, Major, Minor, Minor, One Trade, One Trade.
+		// Col 1 — Academic: Major, Minor, One Trade, One Trade.
 		{major, major, minor, minor, choose(theTrades...), choose(theTrades...)},
 		// Col 2 — Courier.
 		{
@@ -137,7 +139,7 @@ var ScoutCareer = Career{
 	},
 	// Muster-out (Book 1 p. 79), indexed 1-12 by (1D + DM). Money-column passages
 	// are recorded at their standard cash value.
-	MusterOut: MusterTable{
+	MusterOut: MusterTable{ //nolint:dupl // per-career muster-out table; parallel by design
 		1:  {Money: cash(1_000), Benefit: named("Ship Share")},          // Low Passage
 		2:  {Money: cash(8_000), Benefit: named("Forbidden Knowledge")}, // Mid Passage
 		3:  {Money: cash(10_000), Benefit: named("Wafer Jack")},         // High Passage

@@ -17,6 +17,7 @@ func fluxSeq(vals ...int) []int {
 			seq = append(seq, 1, 1-v)
 		}
 	}
+
 	return seq
 }
 
@@ -33,6 +34,7 @@ func TestHumanCharacteristics(t *testing.T) {
 	if gp != "SDEIES" {
 		t.Errorf("Genetic Profile = %q, want SDEIES", gp)
 	}
+
 	want := [6]CharSpec{{Str, 2}, {Dex, 2}, {End, 2}, {Int, 2}, {Edu, 2}, {Soc, 2}}
 	if chars != want {
 		t.Errorf("chars = %v, want %v", chars, want)

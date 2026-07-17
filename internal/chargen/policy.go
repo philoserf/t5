@@ -4,7 +4,7 @@ package chargen
 // stays deterministic and testable: the roller provides randomness, the policy
 // provides decisions. More choice points (skill column, muster column) are added
 // as the slices that need them land.
-type Policy interface {
+type Policy interface { //nolint:interfacebloat // intentionally aggregates every player choice as one seam
 	// ChooseCC picks the term's Controlling Characteristic from those available.
 	// The engine only ever passes a non-empty slice (RunCareer rejects a career
 	// with no controlling characteristics).
@@ -79,9 +79,11 @@ func (DefaultPolicy) ChooseSkillColumn(c Character, grid SkillGrid) int {
 			best, bestLevel = col, level
 		}
 	}
+
 	if best < 0 {
 		return 1
 	}
+
 	return best
 }
 
@@ -89,14 +91,18 @@ func (DefaultPolicy) ChooseSkillColumn(c Character, grid SkillGrid) int {
 // character something and the sum of the current levels of the skills it would
 // raise — a proxy for how developed the column already is, used to spread
 // training toward the least-developed productive column.
-func columnScore(c Character, column [6]Cell) (productive bool, level int) {
-	productive = true
+func columnScore(c Character, column [6]Cell) (bool, int) {
+	productive := true
+	level := 0
+
 	for _, cell := range column {
 		if !cellAwards(c, cell) {
 			productive = false
 		}
+
 		level += cellLevel(c, cell)
 	}
+
 	return productive, level
 }
 
@@ -114,6 +120,7 @@ func cellLevel(c Character, cell Cell) int {
 				lowest = level
 			}
 		}
+
 		return lowest
 	case AwardMajor:
 		return c.Skills.Level(c.Major)
@@ -150,6 +157,7 @@ func (DefaultPolicy) ChooseSkill(c Character, options []string) string {
 			best = o
 		}
 	}
+
 	return best
 }
 
