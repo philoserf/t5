@@ -64,6 +64,7 @@ func (t Tonnage) Phrase() string {
 	if t == 100 {
 		return "1 ton"
 	}
+
 	return t.String() + " tons"
 }
 
@@ -74,11 +75,14 @@ func DefaultWeapon(model WeaponID) WeaponSpec {
 	if !validWeapon(model) {
 		return WeaponSpec{Model: model}
 	}
+
 	w := weaponData[model]
+
 	rng := AttackRange // the standard space range
 	if w.scale == WorldScale {
 		rng = VDistant // ...and the standard world one
 	}
+
 	return WeaponSpec{Model: model, Mount: w.minMount, Range: rng}
 }
 
@@ -109,6 +113,7 @@ func DesignWeapon(spec WeaponSpec) Weapon {
 	if !validWeapon(spec.Model) || !validMount(spec.Mount) || !validRange(spec.Range) {
 		return Weapon{Spec: spec, Problems: []string{"unknown weapon, mount, or range"}}
 	}
+
 	w := weaponData[spec.Model]
 	m := mountData[spec.Mount]
 	rng := rangeData[spec.Range]
@@ -116,7 +121,7 @@ func DesignWeapon(spec WeaponSpec) Weapon {
 	var problems []string
 	// The Bolt-In is a defense's mount: a weapon has to see out of the hull.
 	if !m.weaponOK {
-		problems = append(problems, fmt.Sprintf("a weapon cannot be installed in a %s", m.name))
+		problems = append(problems, "a weapon cannot be installed in a "+m.name)
 	}
 	// Each weapon has a minimum mount (p.155): a Meson Gun does not fit in a
 	// turret. Anything at or above the minimum may be selected.
@@ -133,6 +138,7 @@ func DesignWeapon(spec WeaponSpec) Weapon {
 	}
 
 	tl, tons, cost, band := install(w.tl, w.cost, m.tons, m.cost, spec.Range, spec.Stage)
+
 	return Weapon{
 		Spec: spec,
 		TL:   tl,
@@ -155,6 +161,7 @@ func (w Weapon) Name() string {
 	if !validWeapon(w.Spec.Model) {
 		return "?"
 	}
+
 	return fmt.Sprintf("%s-%d", weaponData[w.Spec.Model].name, w.TL)
 }
 
@@ -165,6 +172,7 @@ func (w Weapon) RangeCode() string {
 	if w.Scale == WorldScale {
 		scale = 'R'
 	}
+
 	return fmt.Sprintf("%c=%02d", scale, w.Band)
 }
 
@@ -196,12 +204,14 @@ func WeaponByName(s string) (WeaponID, bool) {
 			}
 		}
 	}
+
 	norm := squash(s)
 	for id, w := range weaponData {
 		if squash(w.name) == norm {
 			return WeaponID(id), true
 		}
 	}
+
 	return 0, false
 }
 
@@ -215,6 +225,7 @@ func MountByCode(s string) (Mount, bool) {
 			return Mount(m), true
 		}
 	}
+
 	return 0, false
 }
 
@@ -227,6 +238,7 @@ func RangeByName(s string) (Range, bool) {
 			return Range(r), true
 		}
 	}
+
 	return 0, false
 }
 
@@ -236,6 +248,7 @@ func WeaponNames() []string {
 	for i, w := range weaponData {
 		names[i] = w.name
 	}
+
 	return names
 }
 
@@ -245,6 +258,7 @@ func MountCodes() []string {
 	for i, m := range mountData {
 		codes[i] = m.code
 	}
+
 	return codes
 }
 
@@ -254,6 +268,7 @@ func RangeNames() []string {
 	for i, r := range rangeData {
 		names[i] = r.name
 	}
+
 	return names
 }
 
@@ -265,6 +280,7 @@ func RangeNames() []string {
 func squash(s string) string {
 	s = strings.ToLower(s)
 	s = strings.ReplaceAll(s, " ", "")
+
 	return strings.ReplaceAll(s, "-", "")
 }
 
@@ -272,6 +288,7 @@ func upper(c byte) byte {
 	if c >= 'a' && c <= 'z' {
 		return c - ('a' - 'A')
 	}
+
 	return c
 }
 
@@ -284,6 +301,7 @@ func mountName(m Mount) string {
 	if !validMount(m) {
 		return "?"
 	}
+
 	return mountData[m].name
 }
 
@@ -300,9 +318,10 @@ func install(
 	deviceTL, deviceCost, mountTons, mountCost int,
 	rng Range,
 	stage Stage,
-) (tl int, tons Tonnage, cost, band int) {
+) (int, Tonnage, int, int) {
 	r := rangeData[rng]
 	st := stageCostData[stageIndex(stage)]
+
 	return deviceTL + r.tlMod + stageTL(stage),
 		Tonnage(mountTons * r.tons),
 		deviceCost*st.num/st.den + mountCost*r.cost/100,
@@ -320,6 +339,7 @@ func stageIndex(s Stage) Stage {
 	if s < 0 || int(s) >= len(stageData) {
 		return Standard
 	}
+
 	return s
 }
 
@@ -327,6 +347,7 @@ func scaleName(s Scale) string {
 	if s == WorldScale {
 		return "world-range"
 	}
+
 	return "space-range"
 }
 
@@ -334,5 +355,6 @@ func scaleName(s Scale) string {
 // — no space, and no trailing zeros.
 func weaponMCr(cr int) string {
 	s := strconv.FormatFloat(float64(cr)/1_000_000, 'f', -1, 64)
+
 	return "MCr" + s
 }

@@ -40,6 +40,7 @@ func mountPoints(h Hull, weapons []Weapon, defenses []Defense) string {
 		if len(problems) > 0 || t == 0 {
 			return
 		}
+
 		if t.SubTon() {
 			firm++
 		} else {
@@ -49,12 +50,15 @@ func mountPoints(h Hull, weapons []Weapon, defenses []Defense) string {
 	for _, w := range weapons {
 		count(w.Tons, w.Problems)
 	}
+
 	for _, d := range defenses {
 		if d.Spec.Mount == BoltIn {
 			continue // needs no mount point at all
 		}
+
 		count(d.Tons, d.Problems)
 	}
+
 	if hard == 0 && firm == 0 {
 		return ""
 	}
@@ -64,6 +68,7 @@ func mountPoints(h Hull, weapons []Weapon, defenses []Defense) string {
 	if need <= h.Hardpoints {
 		return ""
 	}
+
 	return fmt.Sprintf(
 		"%s need %d mount blocks but a %dt hull has %d (one Hardpoint, or %d Firmpoints, per 100t)",
 		mountPhrase(hard, firm),
@@ -92,18 +97,23 @@ func mountPhrase(hard, firm int) string {
 // fractions, and the total rounds up once at the end.
 func armamentTonnage(weapons []Weapon, defenses []Defense) int {
 	var total Tonnage
+
 	charge := func(t Tonnage) {
 		if t.SubTon() {
 			total += t
+
 			return
 		}
+
 		total += t.RoundUp()
 	}
 	for _, w := range weapons {
 		charge(w.Tons)
 	}
+
 	for _, d := range defenses {
 		charge(d.Tons)
 	}
+
 	return total.Ceil()
 }

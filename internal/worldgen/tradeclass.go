@@ -90,6 +90,7 @@ var chartDRank = func() map[string]int {
 	for i, code := range chartDOrder {
 		m[code] = i
 	}
+
 	return m
 }()
 
@@ -102,6 +103,7 @@ func OrderTradeCodes(tcs []string) []string {
 	slices.SortStableFunc(out, func(a, b string) int {
 		return rankOf(a) - rankOf(b)
 	})
+
 	return out
 }
 
@@ -109,6 +111,7 @@ func rankOf(code string) int {
 	if r, ok := chartDRank[code]; ok {
 		return r
 	}
+
 	return len(chartDOrder)
 }
 
@@ -117,6 +120,7 @@ func rankOf(code string) int {
 // determinable from the UWP; see tcRules for what is intentionally left out.
 func TradeClassifications(p uwp.Profile) []string {
 	var out []string
+
 	for _, r := range tcRules {
 		if allows(r.siz, p.Size) && allows(r.atm, p.Atmosphere) &&
 			allows(r.hyd, p.Hydrographics) && allows(r.pop, p.Population) &&
@@ -125,6 +129,7 @@ func TradeClassifications(p uwp.Profile) []string {
 			out = append(out, r.code)
 		}
 	}
+
 	return out
 }
 
@@ -134,6 +139,7 @@ func portAllows(set string, s byte) bool {
 	if set == "" {
 		return true
 	}
+
 	return strings.IndexByte(set, s) >= 0
 }
 
@@ -144,8 +150,10 @@ func allows(set string, v int) bool {
 	if set == "" {
 		return true
 	}
+
 	if v < 0 || v > ehex.Max {
 		return false
 	}
+
 	return strings.IndexByte(set, ehex.Digit(v)) >= 0
 }

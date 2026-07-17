@@ -14,6 +14,7 @@ func humanSpecies() sophont.Species {
 	for i := 2; i <= 12; i++ {
 		table[i] = "Solo"
 	}
+
 	return sophont.Species{
 		Chars: [6]sophont.CharSpec{
 			{Name: sophont.Str, Dice: 2},
@@ -42,9 +43,11 @@ func TestGenerateSophontHumanRegression(t *testing.T) {
 	if got := c.UPP(); got != "777777" {
 		t.Errorf("UPP = %q, want 777777", got)
 	}
+
 	if c.Age != startingAge {
 		t.Errorf("Age = %d, want %d", c.Age, startingAge)
 	}
+
 	if c.Gender != "Solo" {
 		t.Errorf("Gender = %q, want Solo", c.Gender)
 	}
@@ -64,6 +67,7 @@ func TestGenerateSophontBigStr(t *testing.T) {
 	if got := c.Score(Strength); got != 36 {
 		t.Errorf("Str = %d, want 36 (6D = 12+4D, all sixes)", got)
 	}
+
 	if got := c.Score(Endurance); got != 7 {
 		t.Errorf("End = %d, want 7 (2D)", got)
 	}
@@ -78,10 +82,12 @@ func TestGenerateSophontBigStr(t *testing.T) {
 // applied: a Male gender with a +2-across difference raises C1-C5 by 2.
 func TestGenerateSophontGenderDifference(t *testing.T) {
 	sp := humanSpecies()
+
 	var table [13]string
 	for i := 2; i <= 12; i++ {
 		table[i] = "Male" // every 2D roll assigns Male
 	}
+
 	table[2] = "Female" // the base gender (no difference)
 	sp.Gender = sophont.Gender{
 		Structure: sophont.Dual,
@@ -98,6 +104,7 @@ func TestGenerateSophontGenderDifference(t *testing.T) {
 	if c.Gender != "Male" {
 		t.Fatalf("Gender = %q, want Male", c.Gender)
 	}
+
 	if got := c.UPP(); got != "999997" { // C1-C5 raised 7->9, C6 (Soc) untouched
 		t.Errorf("UPP = %q, want 999997 (Male +2 to C1-C5, Soc unchanged)", got)
 	}
@@ -108,10 +115,12 @@ func TestGenerateSophontGenderDifference(t *testing.T) {
 func TestGenerateSophontCasteDifference(t *testing.T) {
 	sp := humanSpecies()
 	sp.Chars[5].Name = sophont.Cas // C6 is Caste
+
 	var ctable [13]string
 	for i := 2; i <= 12; i++ {
 		ctable[i] = "Warrior"
 	}
+
 	caste := sophont.Caste{
 		Structure: sophont.Military,
 		Table:     ctable,
@@ -129,9 +138,11 @@ func TestGenerateSophontCasteDifference(t *testing.T) {
 	if c.Caste != "Warrior" {
 		t.Fatalf("Caste = %q, want Warrior", c.Caste)
 	}
+
 	if got := c.Score(Strength); got != 11 {
 		t.Errorf("Str = %d, want 11 (7 + 2D[2+2])", got)
 	}
+
 	if got := c.Score(Endurance); got != 8 {
 		t.Errorf("End = %d, want 8 (7 + 1)", got)
 	}

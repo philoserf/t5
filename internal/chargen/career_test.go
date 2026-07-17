@@ -41,6 +41,7 @@ func TestContinueTarget(t *testing.T) {
 	if got := (ContinueRule{Fixed: 7, Mod: 2}).target(c); got != 9 {
 		t.Errorf("fixed target = %d, want 9", got)
 	}
+
 	if got := (ContinueRule{UseChar: true, Char: Intelligence, Mod: -1}).target(c); got != 9 {
 		t.Errorf("char target = %d, want 9 (Int 10 - 1)", got)
 	}
@@ -55,6 +56,7 @@ func TestSelectCCRotation(t *testing.T) {
 	for range 8 {
 		seen[selectCC(p, c, &run, testCareer)]++
 	}
+
 	for _, ch := range testCareer.ControllingChars {
 		if seen[ch] != 2 {
 			t.Errorf("over two cycles %s picked %d times, want 2", ch, seen[ch])
@@ -64,6 +66,7 @@ func TestSelectCCRotation(t *testing.T) {
 
 func TestSelectCCFixed(t *testing.T) {
 	fixed := Career{CCMode: FixedCC, ControllingChars: []Characteristic{Endurance}}
+
 	run := careerRun{}
 	for range 3 {
 		if got := selectCC(stopAfter{}, Character{}, &run, fixed); got != Endurance {
@@ -78,6 +81,7 @@ func TestRunCareerRejectsEmptyCC(t *testing.T) {
 			t.Error("RunCareer did not panic on a career with no controlling characteristics")
 		}
 	}()
+
 	c := Character{Age: 18}
 	RunCareer(dice.NewScripted(3, 4), stopAfter{1}, &c, Career{Name: "Broken"})
 }
@@ -86,9 +90,11 @@ func TestRunCareerTermCount(t *testing.T) {
 	// Policy stops after 2 terms; Int 10 makes both Continue rolls (7) succeed.
 	c := Character{scores: [count]int{7, 7, 7, 10, 8, 6}, Age: 18}
 	RunCareer(dice.NewScripted(3, 4), stopAfter{2}, &c, testCareer)
+
 	if len(c.Careers) != 1 || c.Careers[0].Terms != 2 || c.Age != 26 {
 		t.Fatalf("run = %+v age %d, want 2 terms, age 26", c.Careers, c.Age)
 	}
+
 	if c.Careers[0].Outcome != MusteredOut {
 		t.Errorf("outcome = %v, want MusteredOut", c.Careers[0].Outcome)
 	}
@@ -99,6 +105,7 @@ func TestRunCareerMandatoryContinue(t *testing.T) {
 	c := Character{scores: [count]int{7, 7, 7, 10, 8, 6}, Age: 18}
 	// Term 1 Continue rolls 2 (mandatory); term 2 Continue rolls 7 (honours the stop).
 	RunCareer(dice.NewScripted(1, 1, 3, 4), stopAfter{1}, &c, testCareer)
+
 	if c.Careers[0].Terms != 2 {
 		t.Fatalf("mandatory continue: %d terms, want 2", c.Careers[0].Terms)
 	}
@@ -110,6 +117,7 @@ func TestRunCareerStopsAtAging(t *testing.T) {
 	// serves until aging begins — four terms from 18 to 34.
 	c := Character{scores: [count]int{7, 7, 7, 10, 8, 6}, Age: 18}
 	RunCareer(dice.NewScripted(3, 4), DefaultPolicy{}, &c, testCareer)
+
 	if c.Careers[0].Terms != 4 || c.Age != 34 {
 		t.Fatalf("default policy: %d terms age %d, want 4 terms age 34", c.Careers[0].Terms, c.Age)
 	}
@@ -140,9 +148,12 @@ func TestClassifyInjury(t *testing.T) {
 }
 
 // runOneTerm is a helper: build a single-CC run and resolve one term.
+//
+//nolint:unparam // test helper kept general over the controlling characteristic
 func runOneTerm(r *dice.Roller, c *Character, cc Characteristic) TermOutcome {
 	career := Career{Name: "T", ControllingChars: []Characteristic{cc}}
 	run := careerRun{ccPool: []Characteristic{cc}}
+
 	return runTerm(r, stopAfter{}, c, &run, career)
 }
 
@@ -152,6 +163,7 @@ func TestRunTermRiskSuccess(t *testing.T) {
 	if got := runOneTerm(dice.NewScripted(3, 4), &c, Strength); got != Ongoing {
 		t.Fatalf("outcome = %v, want Ongoing", got)
 	}
+
 	if c.scores[Strength] != 7 || c.WoundBadges != 0 {
 		t.Fatalf("survived term changed state: Str %d badges %d", c.scores[Strength], c.WoundBadges)
 	}
@@ -160,6 +172,7 @@ func TestRunTermRiskSuccess(t *testing.T) {
 func TestRunTermWounded(t *testing.T) {
 	// Strength 7, Risk fails (roll 8 > 7), Flux -1 -> reduced to 6: a wound.
 	c := Character{scores: [count]int{7, 7, 7, 8, 8, 8}}
+
 	got := runOneTerm(dice.NewScripted(4, 4 /*risk 8, fail*/, 2, 3 /*flux -1*/), &c, Strength)
 	if got != Ongoing || c.scores[Strength] != 6 || c.WoundBadges != 1 {
 		t.Fatalf(
@@ -174,6 +187,7 @@ func TestRunTermWounded(t *testing.T) {
 func TestRunTermDisabled(t *testing.T) {
 	// Risk fails, Flux -4 reduces Strength 7 -> 3 (reduced by 4): Disabled.
 	c := Character{scores: [count]int{7, 7, 7, 8, 8, 8}}
+
 	got := runOneTerm(dice.NewScripted(4, 4 /*risk 8*/, 1, 5 /*flux -4*/), &c, Strength)
 	if got != Disabled || c.scores[Strength] != 3 {
 		t.Fatalf("disabled: outcome %v Str %d, want Disabled/3", got, c.scores[Strength])
@@ -183,6 +197,7 @@ func TestRunTermDisabled(t *testing.T) {
 func TestRunTermFatal(t *testing.T) {
 	// Strength 3, Risk fails (roll 4 > 3), Flux -3 -> 0: fatal.
 	c := Character{scores: [count]int{3, 7, 7, 8, 8, 8}}
+
 	got := runOneTerm(dice.NewScripted(2, 2 /*risk 4*/, 1, 4 /*flux -3*/), &c, Strength)
 	if got != Died || !c.Dead {
 		t.Fatalf("fatal: outcome %v dead %v, want Died/true", got, c.Dead)
@@ -193,11 +208,13 @@ func TestApplyCell(t *testing.T) {
 	var c Character
 	// A plain skill.
 	applyCell(stopAfter{}, &c, Cell{Kind: AwardSkill, Skill: "Navigation"})
+
 	if c.Skills.Level("Navigation") != 1 {
 		t.Errorf("Navigation = %d, want 1", c.Skills.Level("Navigation"))
 	}
 	// A cascade skill grants a knowledge (K-K-S).
 	applyCell(stopAfter{}, &c, Cell{Kind: AwardSkill, Skill: "Pilot", Knowledge: "Small Craft"})
+
 	if c.Skills.KnowledgeLevel("Pilot", "Small Craft") != 1 || c.Skills.Level("Pilot") != 0 {
 		t.Errorf(
 			"cascade award wrong: K=%d S=%d",
@@ -207,6 +224,7 @@ func TestApplyCell(t *testing.T) {
 	}
 	// A choice picks the first option (DefaultPolicy/stopAfter).
 	applyCell(stopAfter{}, &c, Cell{Kind: AwardChoice, Options: []string{"Gambler", "Carousing"}})
+
 	if c.Skills.Level("Gambler") != 1 {
 		t.Errorf("choice award = %d, want Gambler 1", c.Skills.Level("Gambler"))
 	}
@@ -216,6 +234,7 @@ func TestApplyCell(t *testing.T) {
 		&c,
 		Cell{Kind: AwardChoice, Skill: "Language", Options: []string{"Galanglic", "Vilani"}},
 	)
+
 	if c.Skills.KnowledgeLevel("Language", "Galanglic") != 1 || c.Skills.Level("Language") != 0 {
 		t.Errorf("cascade choice wrong: K=%d S=%d, want 1/0",
 			c.Skills.KnowledgeLevel("Language", "Galanglic"), c.Skills.Level("Language"))
@@ -224,6 +243,7 @@ func TestApplyCell(t *testing.T) {
 	c.scores[Strength] = 14
 	applyCell(stopAfter{}, &c, Cell{Kind: AwardBump, Char: Strength})
 	applyCell(stopAfter{}, &c, Cell{Kind: AwardBump, Char: Strength})
+
 	if c.scores[Strength] != maxCharacteristic {
 		t.Errorf("bump cap: Str = %d, want %d", c.scores[Strength], maxCharacteristic)
 	}
@@ -231,6 +251,7 @@ func TestApplyCell(t *testing.T) {
 	c.Major, c.Minor = "Psychology", "Robotics"
 	applyCell(stopAfter{}, &c, Cell{Kind: AwardMajor})
 	applyCell(stopAfter{}, &c, Cell{Kind: AwardMinor})
+
 	if c.Skills.Level("Psychology") != 1 || c.Skills.Level("Robotics") != 1 {
 		t.Errorf("major/minor award: Psychology=%d Robotics=%d, want 1/1",
 			c.Skills.Level("Psychology"), c.Skills.Level("Robotics"))
@@ -242,6 +263,7 @@ func TestApplyCellMajorLostWithoutEducation(t *testing.T) {
 	var c Character
 	applyCell(stopAfter{}, &c, Cell{Kind: AwardMajor})
 	applyCell(stopAfter{}, &c, Cell{Kind: AwardMinor})
+
 	if c.Skills.String() != "" {
 		t.Errorf("uneducated major/minor cells granted skills: %q", c.Skills.String())
 	}
@@ -254,6 +276,7 @@ func TestChooseSkillColumnDependsOnEducation(t *testing.T) {
 	if uneducated != 2 {
 		t.Errorf("uneducated column = %d, want 2 (Courier)", uneducated)
 	}
+
 	graduate := DefaultPolicy{}.ChooseSkillColumn(
 		Character{Major: "Psychology", Minor: "Robotics"},
 		ScoutCareer.Skills,
@@ -269,6 +292,7 @@ func commsGrid() SkillGrid {
 	for row := range g[0] {
 		g[0][row] = Cell{Kind: AwardSkill, Skill: "Comms"}
 	}
+
 	return g
 }
 
@@ -277,6 +301,7 @@ func TestAwardSkills(t *testing.T) {
 	career := Career{EligPerTerm: 3, Skills: commsGrid()}
 	// stopAfter picks column 0; each 1D lands on a Comms cell.
 	awardSkills(dice.NewScripted(2, 4, 6), stopAfter{}, &c, career)
+
 	if got := c.Skills.Level("Comms"); got != 3 {
 		t.Fatalf("Comms = %d, want 3 (three eligibility rolls)", got)
 	}
@@ -301,6 +326,7 @@ func TestRunTermAwardsSkillsOnSurvival(t *testing.T) {
 	); got != Ongoing {
 		t.Fatalf("outcome = %v, want Ongoing", got)
 	}
+
 	if c.Skills.Level("Comms") != 1 {
 		t.Errorf("survived term granted %d Comms, want 1", c.Skills.Level("Comms"))
 	}
@@ -325,6 +351,7 @@ func TestRunTermNoSkillsWhenDisabled(t *testing.T) {
 	); got != Disabled {
 		t.Fatalf("outcome = %v, want Disabled", got)
 	}
+
 	if c.Skills.Level("Comms") != 0 {
 		t.Errorf("disabled term granted skills: Comms %d", c.Skills.Level("Comms"))
 	}
@@ -336,6 +363,7 @@ func TestApplyCellChoiceEmptyPanics(t *testing.T) {
 			t.Error("AwardChoice with no options did not panic")
 		}
 	}()
+
 	var c Character
 	applyCell(stopAfter{}, &c, Cell{Kind: AwardChoice})
 }
@@ -351,6 +379,7 @@ func TestAwardSkillsBadColumnPanics(t *testing.T) {
 			t.Error("out-of-range skill column did not panic")
 		}
 	}()
+
 	c := Character{}
 	awardSkills(dice.NewScripted(3), badColumn{}, &c, Career{EligPerTerm: 1, Skills: commsGrid()})
 }
@@ -361,6 +390,7 @@ func TestQualificationTargetRejectsEmpty(t *testing.T) {
 			t.Error("Qualification.target did not panic on an empty characteristic set")
 		}
 	}()
+
 	Qualification{}.target(Character{})
 }
 
@@ -370,6 +400,7 @@ func TestGenerateCareeredQualify(t *testing.T) {
 
 	// A qualify roll of 2 (<= Int) succeeds, so the character runs the career.
 	seq := append(append([]int{}, upp...), 1, 1 /*qualify 2*/, 3, 4 /*continue*/)
+
 	c := GenerateCareered(dice.NewScripted(seq...), stopAfter{1}, worldgen.World{}, testCareer)
 	if len(c.Careers) != 1 || c.Careers[0].Career != testCareer.ID {
 		t.Fatalf("qualified but no career recorded: %+v", c.Careers)
@@ -379,6 +410,7 @@ func TestGenerateCareeredQualify(t *testing.T) {
 	// edition grants one), so the character falls straight back to the auto-begin
 	// Citizen life rather than getting a second roll or ending up careerless.
 	seqDraft := append(append([]int{}, upp...), 6, 6 /*qualify 12*/)
+
 	cDraft := GenerateCareered(
 		dice.NewScripted(seqDraft...),
 		stopAfter{1},
@@ -393,14 +425,17 @@ func TestGenerateCareeredQualify(t *testing.T) {
 // twoCitizen serves an extra Citizen career once, then stops.
 type twoCitizen struct {
 	stopAfter
+
 	served bool
 }
 
 func (p *twoCitizen) NextCareer(Character) (Career, bool) {
 	if !p.served {
 		p.served = true
+
 		return CitizenCareer, true
 	}
+
 	return Career{}, false
 }
 
@@ -416,9 +451,11 @@ func TestMultiCareer(t *testing.T) {
 	if len(c.Careers) != 2 {
 		t.Fatalf("careers = %d, want 2 (a sequence of two)", len(c.Careers))
 	}
+
 	if c.Age != 26 {
 		t.Errorf("age = %d, want 26 (18 + 2 careers x 1 term)", c.Age)
 	}
+
 	if c.Careers[0].Career != Citizen || c.Careers[1].Career != Citizen {
 		t.Errorf("records = %+v, want two Citizen careers", c.Careers)
 	}

@@ -12,6 +12,7 @@ const FreightRatePerTon = 1_000 // Cr per ton of freight
 // Passage is a class of passenger travel (Book 2 p.220).
 type Passage int
 
+// Passenger passage classes.
 const (
 	High Passage = iota
 	Mid
@@ -34,7 +35,9 @@ func (c Passage) Fare(demand int) int {
 	if c < High || int(c) >= len(passageRate) {
 		return 0
 	}
+
 	rate := passageRate[c]
+
 	return max(rate.fare+demand*rate.step, 0)
 }
 

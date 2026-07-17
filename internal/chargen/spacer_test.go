@@ -47,6 +47,7 @@ func TestGoldenSpacer(t *testing.T) {
 	if got := c.UPP(); got != "9878A7" {
 		t.Errorf("UPP = %q, want %q (Str 8 +1 muster benefit, Edu 10)", got, "9878A7")
 	}
+
 	if c.Medals != 2 {
 		t.Errorf("Medals = %d, want 2", c.Medals)
 	}
@@ -56,13 +57,16 @@ func TestGoldenSpacer(t *testing.T) {
 		t.Errorf("skills: Fighter=%d Astrogation=%d, want 1/11",
 			c.Skills.Level("Fighter"), c.Skills.Level("Astrogation"))
 	}
+
 	rec := c.Careers[0]
 	if rec.Career != Spacer || rec.Terms != 2 || rec.Outcome != MusteredOut {
 		t.Errorf("record = %+v, want Spacer/2 terms/MusteredOut", rec)
 	}
+
 	if !rec.Officer || rec.Rank != 1 {
 		t.Errorf("rank = %d officer %v, want officer rank 1 (Ensign)", rec.Rank, rec.Officer)
 	}
+
 	if len(c.Benefits) != 1 || c.Benefits[0] != "Wafer Jack" {
 		t.Errorf("Benefits = %v, want [Wafer Jack]", c.Benefits)
 	}

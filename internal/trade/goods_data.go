@@ -376,7 +376,7 @@ var tradeGoodsColumns = map[string][6]goodsBlock{
 	},
 	"In": {
 		{
-			"Manufactureds",
+			"Manufactures",
 			[6]string{"Electronics", "Photonics", "Magnetics", "Fluidics", "Polymers", "Gravitics"},
 		},
 		{
@@ -384,7 +384,7 @@ var tradeGoodsColumns = map[string][6]goodsBlock{
 			[6]string{"Obsoletes", "Used Goods", "Reparables", "Radioactives", "Metals", "Sludges"},
 		},
 		{
-			"Manufactureds",
+			"Manufactures",
 			[6]string{"Biologics", "Mechanicals", "Textiles", "Weapons", "Armor", "Robots"},
 		},
 		{

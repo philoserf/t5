@@ -115,6 +115,7 @@ func TestTypicalWeapons(t *testing.T) {
 		if len(w.Problems) > 0 {
 			t.Errorf("%s: unexpected problems %v", w.Name(), w.Problems)
 		}
+
 		if got := w.LongName(); got != c.want {
 			t.Errorf("LongName mismatch\n got: %s\nwant: %s", got, c.want)
 		}
@@ -249,6 +250,7 @@ func TestWeaponProblems(t *testing.T) {
 	if len(turretMeson.Problems) == 0 {
 		t.Errorf("a Meson Gun in a Single Turret should be a problem")
 	}
+
 	if turretMeson.TL == 0 {
 		t.Errorf("a problem installation should still be designed, got a zero weapon")
 	}
@@ -279,21 +281,26 @@ func TestWeaponProblems(t *testing.T) {
 // mount at its standard range — the form the book lists it in.
 func TestWeaponLetters(t *testing.T) {
 	seen := map[byte]string{}
+
 	for id := range WeaponID(len(weaponData)) {
 		w := DesignWeapon(DefaultWeapon(id))
+
 		letter := weaponData[id].letter
 		if prior, dup := seen[letter]; dup {
 			t.Errorf("weapons %s and %s share the letter %c", prior, w.Name(), letter)
 		}
+
 		seen[letter] = w.Name()
 		if len(w.Problems) > 0 {
 			t.Errorf("%s in its own minimum mount at its standard range should be legal, got %v",
 				w.Name(), w.Problems)
 		}
+
 		if !strings.Contains(w.LongName(), string(rune(letter))) && w.Name() == "" {
 			t.Errorf("%s has no name", w.Name())
 		}
 	}
+
 	if len(seen) != 23 {
 		t.Errorf("got %d distinct weapon letters, want 23 (Book 2 p.83 Table A)", len(seen))
 	}

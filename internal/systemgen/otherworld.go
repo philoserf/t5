@@ -51,6 +51,7 @@ func otherWorldType(orbit, hz int, hasHZ bool, oneD int) worldgen.OtherWorldType
 			return worldgen.Iceworld
 		}
 	}
+
 	switch oneD {
 	case 1:
 		return worldgen.Inferno
@@ -75,5 +76,6 @@ func satelliteType(orbit, hz int, hasHZ bool, oneD int) worldgen.OtherWorldType 
 	if oneD == 4 && zoneOf(orbit, hz, hasHZ) == outerZone {
 		return worldgen.StormWorld
 	}
+
 	return otherWorldType(orbit, hz, hasHZ, oneD)
 }

@@ -40,5 +40,6 @@ func (p Profile) String() string {
 	b.WriteString(ehex.Format(p.Law))
 	b.WriteByte('-')
 	b.WriteString(ehex.Format(p.TechLevel))
+
 	return b.String()
 }

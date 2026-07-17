@@ -11,6 +11,7 @@ import (
 func armedScout(weapons ...WeaponSpec) Ship {
 	spec := murphySpec()
 	spec.Weapons = weapons
+
 	return Design(spec)
 }
 
@@ -24,12 +25,15 @@ func TestArmedShipBudget(t *testing.T) {
 	if len(armed.Problems) > 0 {
 		t.Fatalf("a scout with one turret should be a clean design, got %v", armed.Problems)
 	}
+
 	if got, want := bare.Tonnage.Payload-armed.Tonnage.Payload, 1; got != want {
 		t.Errorf("the turret cost %dt of payload, want %dt", got, want)
 	}
+
 	if got, want := armed.Cost-bare.Cost, 700_000; got != want {
 		t.Errorf("the turret cost Cr%d, want Cr%d", got, want)
 	}
+
 	if len(armed.Weapons) != 1 || armed.Weapons[0].TL != 10 {
 		t.Fatalf("expected one TL-10 Beam Laser, got %+v", armed.Weapons)
 	}
@@ -47,10 +51,12 @@ func TestHardpointLimit(t *testing.T) {
 	if one := armedScout(turret); len(one.Problems) > 0 {
 		t.Fatalf("one turret fits a 100t hull: %v", one.Problems)
 	}
+
 	two := armedScout(turret, turret)
 	if len(two.Problems) == 0 {
 		t.Fatalf("two turrets should not fit a 100t hull's single hardpoint")
 	}
+
 	if !strings.Contains(two.Problems[0], "mount blocks") {
 		t.Errorf("problem should name the mount shortfall, got %q", two.Problems[0])
 	}
@@ -77,6 +83,7 @@ func TestFirmPoints(t *testing.T) {
 	if w := DesignWeapon(tiny); !w.Tons.SubTon() {
 		t.Fatalf("a Boarding-range turret should be sub-ton, got %s", w.Tons)
 	}
+
 	if three := armedScout(tiny, tiny, tiny); len(three.Problems) > 0 {
 		t.Errorf("three sub-ton mounts fit one block's FirmPoints: %v", three.Problems)
 	}
@@ -100,6 +107,7 @@ func TestBoltInNeedsNoMountPoint(t *testing.T) {
 	spec := murphySpec()
 	spec.Weapons = []WeaponSpec{{BeamLaser, SingleTurret, Standard, VDistant}}
 	spec.Defenses = []DefenseSpec{{Model: NuclearDamper, Mount: BoltIn, Range: VDistant}}
+
 	s := Design(spec)
 	if len(s.Problems) > 0 {
 		t.Fatalf("a turret and a bolt-in screen both fit a 100t hull: %v", s.Problems)
@@ -110,6 +118,7 @@ func TestBoltInNeedsNoMountPoint(t *testing.T) {
 	if got, want := bare.Tonnage.Payload-s.Tonnage.Payload, 4; got != want {
 		t.Errorf("turret + screen cost %dt of payload, want %dt", got, want)
 	}
+
 	if !strings.Contains(s.String(), "Defenses: Standard Vdistant Bolt-In Nuclear Damper-12") {
 		t.Errorf("ship card is missing its screen:\n%s", s)
 	}
@@ -131,12 +140,15 @@ func TestWeaponAboveShipTL(t *testing.T) {
 	if len(over.Problems) == 0 {
 		t.Fatalf("a TL-13 weapon on a TL-12 ship should be a problem")
 	}
+
 	found := false
+
 	for _, p := range over.Problems {
 		if strings.Contains(p, "above the ship's TL-12") {
 			found = true
 		}
 	}
+
 	if !found {
 		t.Errorf("problems should name the TL overrun, got %v", over.Problems)
 	}
@@ -159,6 +171,7 @@ func TestWeaponProblemsReachTheShip(t *testing.T) {
 	if len(s.Problems) == 0 {
 		t.Fatalf("a Meson Gun in a scout's turret should be reported")
 	}
+
 	if !strings.Contains(strings.Join(s.Problems, "; "), "Main") {
 		t.Errorf("problems should name the minimum mount, got %v", s.Problems)
 	}
@@ -169,6 +182,7 @@ func TestWeaponProblemsReachTheShip(t *testing.T) {
 // and round up only once, together.
 func TestWeaponTonnage(t *testing.T) {
 	tiny := DesignWeapon(WeaponSpec{MissileLauncher, SingleTurret, Standard, Boarding}) // 0.25t
+
 	full := DesignWeapon(WeaponSpec{BeamLaser, SingleTurret, Standard, VDistant})
 	if got := armamentTonnage([]Weapon{full}, nil); got != 1 {
 		t.Errorf("one 1t mount = %dt, want 1", got)
@@ -182,6 +196,7 @@ func TestWeaponTonnage(t *testing.T) {
 	if got := armamentTonnage([]Weapon{bay}, nil); got != 17 {
 		t.Errorf("a 16.67t bay = %dt, want 17 (a mount rounds up)", got)
 	}
+
 	if got := armamentTonnage(nil, nil); got != 0 {
 		t.Errorf("no weapons = %dt, want 0", got)
 	}
@@ -197,6 +212,7 @@ func TestFailedWeaponTakesNoMountPoint(t *testing.T) {
 		{Model: BeamLaser, Mount: SingleTurret, Range: VDistant},
 		{Model: BeamLaser, Mount: BoltIn, Range: VDistant},
 	}
+
 	s := Design(spec)
 	for _, p := range s.Problems {
 		if strings.Contains(p, "mount blocks") {

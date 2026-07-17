@@ -68,15 +68,19 @@ func TestGovernmentAndLaw(t *testing.T) {
 	if got := government(1, 8); got != 9 { // Regina
 		t.Errorf("government(1,8) = %d, want 9", got)
 	}
+
 	if got := government(-5, 2); got != 0 { // clamps to 0
 		t.Errorf("government(-5,2) = %d, want 0", got)
 	}
+
 	if got := government(5, 14); got != 15 { // clamps to F
 		t.Errorf("government(5,14) = %d, want 15", got)
 	}
+
 	if got := law(0, 9); got != 9 { // Regina
 		t.Errorf("law(0,9) = %d, want 9", got)
 	}
+
 	if got := law(5, 15); got != 18 { // clamps to J
 		t.Errorf("law(5,15) = %d, want 18", got)
 	}

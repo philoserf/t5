@@ -13,7 +13,7 @@ import (
 // derived data from Book 3 Charts C-F — trade classifications, the {Ix}(Ex)[Cx]
 // Extensions, nobility, bases, travel zone, native status, and the population
 // multiplier digit.
-type World struct {
+type World struct { //nolint:recvcheck // deliberate value-reader / pointer-mutator split
 	Profile         uwp.Profile
 	TradeCodes      []string
 	Importance      int
@@ -35,6 +35,7 @@ func PopulationDigit(r *dice.Roller, population int) int {
 	if population == 0 {
 		return 0
 	}
+
 	return r.EvenDist1to9()
 }
 
@@ -59,6 +60,7 @@ func generateWorld(r *dice.Roller, gasGiants, belts int, isCapital, belt bool) W
 	tcs := TradeClassificationsWithContext(p, WorldContext{IsMainworld: true})
 	naval, scout := RollBases(r, p.Starport)
 	ix := Importance(p, tcs, naval, scout, false)
+
 	return World{
 		Profile:         p,
 		TradeCodes:      tcs,
@@ -83,6 +85,7 @@ func (w *World) SetCapital(code string) {
 	if !slices.Contains(w.TradeCodes, code) {
 		w.TradeCodes = append(w.TradeCodes, code)
 	}
+
 	w.Nobility = Nobility(w.TradeCodes, w.Importance, true)
 }
 
@@ -105,6 +108,7 @@ func (w *World) SetWayStation() {
 	if w.WayStation {
 		return
 	}
+
 	w.WayStation = true
 	w.Importance = Importance(w.Profile, w.TradeCodes, w.NavalBase, w.ScoutBase, true)
 	w.Nobility = Nobility(w.TradeCodes, w.Importance, hasCapitalCode(w.TradeCodes))
@@ -132,6 +136,7 @@ func (w World) CapitalCode() string {
 			return tc
 		}
 	}
+
 	return ""
 }
 
@@ -142,6 +147,7 @@ func hasCapitalCode(tcs []string) bool {
 			return true
 		}
 	}
+
 	return false
 }
 
@@ -168,6 +174,7 @@ func (w World) SecondSurvey() string {
 		dashIfEmpty(w.bases()),
 		dashIfEmpty(w.zone()),
 	}
+
 	return strings.Join(fields, " ")
 }
 
@@ -183,16 +190,18 @@ func importance(ix int) string {
 	if ix == 0 {
 		return "{0}"
 	}
+
 	return fmt.Sprintf("{%+d}", ix)
 }
 
 // BaseNames names the bases the world hosts, in the order their codes appear in
 // the Second Survey record (Book 3 p.28). Empty when the world hosts none.
 func (w World) BaseNames() []string {
-	var out []string
+	out := make([]string, 0, len(w.baseList()))
 	for _, b := range w.baseList() {
 		out = append(out, b.name)
 	}
+
 	return out
 }
 
@@ -207,15 +216,19 @@ func (w World) baseList() []baseEntry {
 	if w.NavalBase {
 		out = append(out, baseEntry{"N", "Naval"})
 	}
+
 	if w.ScoutBase {
 		out = append(out, baseEntry{"S", "Scout"})
 	}
+
 	if w.NavalDepot {
 		out = append(out, baseEntry{"D", "Naval Depot"})
 	}
+
 	if w.WayStation {
 		out = append(out, baseEntry{"W", "Way Station"})
 	}
+
 	return out
 }
 
@@ -226,6 +239,7 @@ func (w World) bases() string {
 	for _, base := range w.baseList() {
 		b.WriteString(base.code)
 	}
+
 	return b.String()
 }
 
@@ -234,6 +248,7 @@ func (w World) zone() string {
 	if w.Zone == 'A' || w.Zone == 'R' {
 		return string(w.Zone)
 	}
+
 	return ""
 }
 
@@ -241,5 +256,6 @@ func dashIfEmpty(s string) string {
 	if s == "" {
 		return "-"
 	}
+
 	return s
 }

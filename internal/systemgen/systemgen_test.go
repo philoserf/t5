@@ -14,6 +14,7 @@ import (
 func reginaSystem() System {
 	closeStar := Star{Type: "K", Decimal: 8, Size: "VI"}
 	companion := Star{Type: "M", Decimal: 6, Size: "V"}
+
 	return System{
 		Primary:        Star{Type: "F", Decimal: 8, Size: "V"},
 		Close:          &closeStar,
@@ -79,15 +80,19 @@ func TestOrbitFormulas(t *testing.T) {
 	if got := closeOrbit(dice.NewScripted(1)); got != 0 {
 		t.Errorf("closeOrbit(1D=1) = %d, want 0", got)
 	}
+
 	if got := closeOrbit(dice.NewScripted(6)); got != 5 {
 		t.Errorf("closeOrbit(1D=6) = %d, want 5", got)
 	}
+
 	if got := nearOrbit(dice.NewScripted(1)); got != 6 {
 		t.Errorf("nearOrbit(1D=1) = %d, want 6", got)
 	}
+
 	if got := nearOrbit(dice.NewScripted(6)); got != 11 {
 		t.Errorf("nearOrbit(1D=6) = %d, want 11", got)
 	}
+
 	if got := farOrbit(dice.NewScripted(1)); got != 12 {
 		t.Errorf("farOrbit(1D=1) = %d, want 12", got)
 	}
@@ -103,6 +108,7 @@ func TestGasGiants(t *testing.T) {
 	for total, want := range cases {
 		// Two dice summing to total (use total/2 twice, adjusting for odd).
 		a := total / 2
+
 		b := total - a
 		if got := gasGiants(dice.NewScripted(a, b)); got != want {
 			t.Errorf("gasGiants(2D=%d) = %d, want %d", total, got, want)
@@ -131,26 +137,31 @@ func TestGenerateDeterministic(t *testing.T) {
 		if !reflect.DeepEqual(a, b) {
 			t.Fatalf("seed %d not reproducible:\n%s\n---\n%s", seed, a, b)
 		}
+
 		if a.Primary.Type == "" {
 			t.Fatalf("seed %d: primary has no spectral type", seed)
 		}
+
 		if a.GasGiants < 0 || a.GasGiants > 4 {
 			t.Fatalf("seed %d: gas giants %d out of range 0-4", seed, a.GasGiants)
 		}
+
 		if a.Belts < 0 || a.Belts > 3 {
 			t.Fatalf("seed %d: belts %d out of range 0-3", seed, a.Belts)
 		}
 		// Worlds = 1 + GG + Belts + 2D, so at least 1+GG+Belts+2.
-		if min := 1 + a.GasGiants + a.Belts + 2; a.Worlds < min {
-			t.Fatalf("seed %d: worlds %d below floor %d", seed, a.Worlds, min)
+		if lo := 1 + a.GasGiants + a.Belts + 2; a.Worlds < lo {
+			t.Fatalf("seed %d: worlds %d below floor %d", seed, a.Worlds, lo)
 		}
 		// Present secondary stars sit in their orbit bands.
 		if a.Close != nil && (a.CloseOrbit < 0 || a.CloseOrbit > 5) {
 			t.Fatalf("seed %d: close orbit %d out of band 0-5", seed, a.CloseOrbit)
 		}
+
 		if a.Near != nil && (a.NearOrbit < 6 || a.NearOrbit > 11) {
 			t.Fatalf("seed %d: near orbit %d out of band 6-11", seed, a.NearOrbit)
 		}
+
 		if a.Far != nil && (a.FarOrbit < 12 || a.FarOrbit > 17) {
 			t.Fatalf("seed %d: far orbit %d out of band 12-17", seed, a.FarOrbit)
 		}
@@ -158,9 +169,11 @@ func TestGenerateDeterministic(t *testing.T) {
 		if a.CloseCompanion != nil && a.Close == nil {
 			t.Fatalf("seed %d: close companion without a close star", seed)
 		}
+
 		if a.NearCompanion != nil && a.Near == nil {
 			t.Fatalf("seed %d: near companion without a near star", seed)
 		}
+
 		if a.FarCompanion != nil && a.Far == nil {
 			t.Fatalf("seed %d: far companion without a far star", seed)
 		}
@@ -205,9 +218,11 @@ func TestGenerateForMap(t *testing.T) {
 		if s := GenerateForMap(dice.NewWithSeed(seed), true, false); s.GasGiants < 1 {
 			t.Errorf("seed %d: gas giant present but count = %d", seed, s.GasGiants)
 		}
+
 		if s := GenerateForMap(dice.NewWithSeed(seed), false, false); s.GasGiants != 0 {
 			t.Errorf("seed %d: no gas giant but count = %d", seed, s.GasGiants)
 		}
+
 		if s := GenerateForMap(dice.NewWithSeed(seed), false, true); s.Mainworld.Profile.Size != 0 {
 			t.Errorf(
 				"seed %d: asteroid symbol but mainworld size = %d",
@@ -236,12 +251,15 @@ func TestStars(t *testing.T) {
 	if len(slots) != 3 {
 		t.Fatalf("got %d star slots, want 3 (primary, close, close companion)", len(slots))
 	}
+
 	if slots[0].Label != "Primary" || slots[0].Orbit != -1 || slots[0].Companion {
 		t.Errorf("slot 0 = %+v, want the Primary at no orbit", slots[0])
 	}
+
 	if slots[1].Label != "Close" || slots[1].Orbit != 3 || slots[1].Companion {
 		t.Errorf("slot 1 = %+v, want Close at Orbit 3", slots[1])
 	}
+
 	if slots[2].Label != "Close Companion" || !slots[2].Companion || slots[2].Orbit != -1 {
 		t.Errorf("slot 2 = %+v, want a companion at no orbit", slots[2])
 	}
@@ -253,11 +271,13 @@ func TestSecondaryStarOrbitsAreReserved(t *testing.T) {
 	for seed := uint64(1); seed <= 300; seed++ {
 		s := Generate(dice.NewWithSeed(seed))
 		taken := map[int]bool{}
+
 		for _, sl := range s.Stars() {
 			if !sl.Companion && sl.Orbit >= 0 {
 				taken[sl.Orbit] = true
 			}
 		}
+
 		for _, o := range s.Orbits {
 			if o.Host == "Primary" && taken[o.Orbit] {
 				t.Fatalf(

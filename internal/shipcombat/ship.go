@@ -97,10 +97,12 @@ func ArmorLayers(s shipgen.Ship) []int {
 	if s.Armor.Layers <= 0 {
 		return nil
 	}
+
 	layers := make([]int, s.Armor.Layers)
 	for i := range layers {
 		layers[i] = s.Armor.AV
 	}
+
 	return layers
 }
 
@@ -124,5 +126,6 @@ func ShipAgility(s shipgen.Ship, usedGs int) int {
 	if s.Maneuver == nil {
 		return 0
 	}
+
 	return Agility(min(s.Maneuver.Potential, s.Hull.MaxG), usedGs)
 }

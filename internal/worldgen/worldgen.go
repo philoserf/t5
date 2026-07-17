@@ -33,15 +33,18 @@ func Generate(r *dice.Roller) uwp.Profile {
 // stream stays aligned with a normal one.
 func generate(r *dice.Roller, belt bool) uwp.Profile {
 	sp := starport(r.Dice(2))
+
 	size := rollSize(r)
 	if belt {
 		size = 0
 	}
+
 	atm := atmosphere(r.Flux(), size)
 	hyd := hydrographics(r.Flux(), atm, size)
 	pop := rollPopulation(r)
 	gov := government(r.Flux(), pop)
 	lawLevel := law(r.Flux(), gov)
+
 	return uwp.Profile{
 		Starport:      sp,
 		Size:          size,
@@ -77,6 +80,7 @@ func rollSize(r *dice.Roller) int {
 	if s := r.Dice(2) - 2; s != 10 {
 		return s
 	}
+
 	return r.Die() + 9
 }
 
@@ -85,6 +89,7 @@ func atmosphere(flux, size int) int {
 	if size == 0 {
 		return 0
 	}
+
 	return clamp(flux+size, 0, maxAtmosphere)
 }
 
@@ -94,10 +99,12 @@ func hydrographics(flux, atm, size int) int {
 	if size < 2 {
 		return 0
 	}
+
 	h := flux + atm
 	if atm < 2 || atm > 9 {
 		h -= 4
 	}
+
 	return clamp(h, 0, maxHydrographics)
 }
 
@@ -106,6 +113,7 @@ func rollPopulation(r *dice.Roller) int {
 	if p := r.Dice(2) - 2; p != 10 {
 		return p
 	}
+
 	return r.Dice(2) + 3
 }
 
@@ -121,7 +129,7 @@ func law(flux, gov int) int {
 
 // techLevel is 1D plus modifiers drawn from the starport and every
 // characteristic, per the World Creation card, and never falls below 0.
-func techLevel(oneD int, sp byte, size, atm, hyd, pop, gov int) int {
+func techLevel(oneD int, sp byte, size, atm, hyd, pop, gov int) int { //nolint:cyclop // one branch per UWP tech mod
 	tl := oneD
 	// D, E, and the poorer spaceports (G/H/Y) carry no Tech Level modifier
 	// (Book 3 p.24). Mainworld generation only ever yields A-E or X; the F case
@@ -138,21 +146,25 @@ func techLevel(oneD int, sp byte, size, atm, hyd, pop, gov int) int {
 	case 'X':
 		tl -= 4
 	}
+
 	switch size {
 	case 0, 1:
 		tl += 2
 	case 2, 3, 4:
 		tl++
 	}
+
 	if atm <= 3 || atm >= 10 {
 		tl++
 	}
+
 	switch hyd {
 	case 9:
 		tl++
 	case 10:
 		tl += 2
 	}
+
 	switch {
 	case pop >= 1 && pop <= 5:
 		tl++
@@ -161,15 +173,17 @@ func techLevel(oneD int, sp byte, size, atm, hyd, pop, gov int) int {
 	case pop >= 10:
 		tl += 4
 	}
+
 	switch gov {
 	case 0, 5:
 		tl++
 	case 13:
 		tl -= 2
 	}
+
 	return max(tl, 0)
 }
 
-func clamp(v, lo, hi int) int {
+func clamp(v, lo, hi int) int { //nolint:unparam // general clamp; lo kept for callers
 	return min(max(v, lo), hi)
 }

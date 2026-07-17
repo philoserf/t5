@@ -44,6 +44,7 @@ func TestRollGasGiants(t *testing.T) {
 		2, /*2D=4 -> 23*/
 	)
 	giants := rollGasGiants(r, 4)
+
 	want := []struct {
 		size  int
 		class GGClass
@@ -56,6 +57,7 @@ func TestRollGasGiants(t *testing.T) {
 	if len(giants) != len(want) {
 		t.Fatalf("rollGasGiants returned %d giants, want %d", len(giants), len(want))
 	}
+
 	for i, w := range want {
 		if giants[i].Size != w.size || giants[i].Class != w.class {
 			t.Errorf("giant %d = %s (size %d), want size %d class %v",

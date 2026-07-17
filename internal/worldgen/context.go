@@ -41,10 +41,10 @@ type WorldContext struct {
 // climate and satellite codes later, at placement (systemgen/mainworld.go), plus a
 // capital code later still (survey) — so its list is not final here and is sorted
 // when it renders instead (World.SecondSurvey).
-func TradeClassificationsWithContext(p uwp.Profile, ctx WorldContext) []string {
+func TradeClassificationsWithContext(p uwp.Profile, ctx WorldContext) []string { //nolint:cyclop // Chart D, p.25
 	tcs := TradeClassifications(p)
 	// The Secondary codes apply only to non-mainworlds (Book 3 Chart D p.26).
-	if !ctx.IsMainworld {
+	if !ctx.IsMainworld { //nolint:nestif // mirrors the book's nested contextual checks
 		inHZ := ctx.HasHZ && ctx.Orbit == ctx.HZOrbit
 		// Px (Prison/Exile Camp) is a mainworld-only code, "MW"; a non-mainworld
 		// with that same profile is a Pe (Penal Colony) instead, so strip any Px the

@@ -33,6 +33,7 @@ func TestPace(t *testing.T) {
 		if got := c.d.Hasty(); got != c.hasty {
 			t.Errorf("%s.Hasty() = %d, want %d", c.d, got, c.hasty)
 		}
+
 		if got := c.d.Cautious(); got != c.cautious {
 			t.Errorf("%s.Cautious() = %d, want %d", c.d, got, c.cautious)
 		}
@@ -43,9 +44,11 @@ func TestString(t *testing.T) {
 	if got := Formidable.String(); got != "Formidable" {
 		t.Errorf("Formidable.String() = %q", got)
 	}
+
 	if got := BeyondImpossible.String(); got != "Beyond Impossible" {
 		t.Errorf("BeyondImpossible.String() = %q", got)
 	}
+
 	if got := Difficulty(99).String(); got != "?" {
 		t.Errorf("out-of-range = %q, want ?", got)
 	}

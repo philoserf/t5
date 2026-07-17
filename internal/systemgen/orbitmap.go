@@ -10,6 +10,7 @@ import (
 // OrbitKind is what occupies a placed orbit.
 type OrbitKind int
 
+// The kinds of body an orbit can hold.
 const (
 	KindMainworld OrbitKind = iota
 	KindGasGiant
@@ -67,6 +68,7 @@ type orbitHost struct {
 
 func newHost(label string, star Star, maxOrbit int) *orbitHost {
 	hz, hasHZ := HZOrbit(star)
+
 	return &orbitHost{
 		label: label, star: star, hz: hz, hasHZ: hasHZ,
 		floor: firstOrbit(star), maxOrbit: maxOrbit, occupied: map[int]bool{},
@@ -81,17 +83,22 @@ func (h *orbitHost) claim(want int) (int, bool) {
 	if h.maxOrbit < h.floor {
 		return 0, false
 	}
+
 	want = clamp(want, h.floor, h.maxOrbit)
 	for d := 0; want-d >= h.floor || want+d <= h.maxOrbit; d++ {
 		if o := want - d; o >= h.floor && !h.occupied[o] {
 			h.occupied[o] = true
+
 			return o, true
 		}
+
 		if o := want + d; o <= h.maxOrbit && !h.occupied[o] {
 			h.occupied[o] = true
+
 			return o, true
 		}
 	}
+
 	return 0, false
 }
 
@@ -103,6 +110,7 @@ func giantAt(placed []PlacedOrbit, host string, orbit int) int {
 			return i
 		}
 	}
+
 	return -1
 }
 
@@ -116,6 +124,7 @@ func (s *System) buildHosts() []*orbitHost {
 		if star == nil {
 			return
 		}
+
 		if h := newHost(label, *star, primaryOrbit-3); h.maxOrbit >= h.floor {
 			hosts = append(hosts, h)
 		}
@@ -123,6 +132,7 @@ func (s *System) buildHosts() []*orbitHost {
 	add("Close", s.Close, s.CloseOrbit)
 	add("Near", s.Near, s.NearOrbit)
 	add("Far", s.Far, s.FarOrbit)
+
 	return hosts
 }
 
@@ -133,9 +143,10 @@ func (s *System) buildHosts() []*orbitHost {
 // the next around the Close star, then Near, then Far, repeating. Gas giants and
 // belts sit at habitable-zone-relative P2 orbits, other worlds at absolute ones,
 // each within its host star's own orbit space.
-func (s *System) placeOrbits(r *dice.Roller) {
+func (s *System) placeOrbits(r *dice.Roller) { //nolint:gocognit,cyclop,funlen // per-star orbit map, Book 3 pp.16-17
 	hosts := s.buildHosts()
 	primary := hosts[0]
+
 	var placed []PlacedOrbit
 
 	// A secondary star fills its own orbit around the primary (Book 3 p.21), so no
@@ -172,6 +183,7 @@ func (s *System) placeOrbits(r *dice.Roller) {
 				mw.Parent = &OtherWorld{Type: worldgen.BigWorld, Profile: prof}
 			}
 		}
+
 		placed = append(placed, mw)
 	}
 
@@ -179,9 +191,11 @@ func (s *System) placeOrbits(r *dice.Roller) {
 	// gets its own rotator so it starts fresh at the pool's first star.
 	rotator := func(pool []*orbitHost) func() *orbitHost {
 		i := 0
+
 		return func() *orbitHost {
 			h := pool[i%len(pool)]
 			i++
+
 			return h
 		}
 	}
@@ -196,19 +210,24 @@ func (s *System) placeOrbits(r *dice.Roller) {
 			hzHosts = append(hzHosts, h)
 		}
 	}
+
 	if len(hzHosts) == 0 {
 		hzHosts = hosts[:1]
 	}
+
 	anchor := func(h *orbitHost) int {
 		if h.hasHZ {
 			return h.hz
 		}
+
 		return h.floor
 	}
 
 	ggRotate := rotator(hzHosts)
+
 	for i := range giants {
 		g := &giants[i]
+
 		h := ggRotate()
 		if o, ok := h.claim(anchor(h) + p2(r.Dice(2)).ggOffset(g.Class)); ok {
 			placed = append(
@@ -233,10 +252,12 @@ func (s *System) placeOrbits(r *dice.Roller) {
 	mwPop := s.Mainworld.Profile.Population
 	mwIndustrial := s.mainworldIndustrial()
 	worldRotate := rotator(hosts)
+
 	others := max(s.Worlds-1-s.GasGiants-s.Belts, 0)
 	for i := range others {
 		h := worldRotate()
 		row := p2(r.Dice(2))
+
 		want := row.world1
 		if i == others-1 {
 			want = row.world2
@@ -248,10 +269,12 @@ func (s *System) placeOrbits(r *dice.Roller) {
 			prof := worldgen.GenerateOtherWorld(r, wt, mwPop)
 			far := r.Dice(2) >= 8
 			idx := dice.FluxIndex(r.Flux())
+
 			letter := closeOrbitLetters[idx]
 			if far {
 				letter = farOrbitLetters[idx]
 			}
+
 			placed[gi].Satellites = append(placed[gi].Satellites, Satellite{
 				Far: far, OrbitLetter: letter, Type: wt, Profile: prof,
 				TradeCodes: worldgen.TradeClassificationsWithContext(prof, worldgen.WorldContext{
@@ -260,12 +283,15 @@ func (s *System) placeOrbits(r *dice.Roller) {
 					Satellite: true, SatelliteFar: far,
 				}),
 			})
+
 			continue
 		}
+
 		o, ok := h.claim(want)
 		if !ok {
 			continue // no room on this star: ignore the excess world
 		}
+
 		wt := otherWorldType(o, h.hz, h.hasHZ, r.Die())
 		prof := worldgen.GenerateOtherWorld(r, wt, mwPop)
 		tcs := worldgen.TradeClassificationsWithContext(prof, worldgen.WorldContext{
@@ -289,6 +315,7 @@ func (s *System) placeOrbits(r *dice.Roller) {
 		if placed[i].Host != placed[j].Host {
 			return hostRank[placed[i].Host] < hostRank[placed[j].Host]
 		}
+
 		return placed[i].Orbit < placed[j].Orbit
 	})
 	s.Orbits = placed

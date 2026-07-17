@@ -13,6 +13,7 @@ import (
 // dice rolled — Carouse 1D, Query 2D, Persuade 3D, Command 4D.
 type Purpose int
 
+// Purposes of a Personals interaction.
 const (
 	Carouse Purpose = iota
 	Query
@@ -40,6 +41,7 @@ func (p Purpose) String() string {
 // point value depends on the Purpose it is used for.
 type Strategy int
 
+// Interaction strategies.
 const (
 	Casual Strategy = iota
 	Enjoyment
@@ -65,6 +67,7 @@ var strategyValues = map[Purpose]map[Strategy]int{
 // the strategy is available for that purpose (Book 1 p.183).
 func StrategyValue(p Purpose, s Strategy) (int, bool) {
 	v, ok := strategyValues[p][s]
+
 	return v, ok
 }
 
@@ -72,6 +75,7 @@ func StrategyValue(p Purpose, s Strategy) (int, bool) {
 // applicable Law supplies a Mod to the Target.
 type Law int
 
+// The laws of social attraction.
 const (
 	Similarity Law = iota
 	Superiority
@@ -104,6 +108,7 @@ func LawMod(l Law, p Purpose) int {
 	if p < Carouse || p > Command {
 		return 0
 	}
+
 	return lawMods[l][p]
 }
 
@@ -130,7 +135,7 @@ func Resolve(
 
 // Camaraderie counts an Actor's successful Carouses with a Target; each adds +1
 // to later Personals with that Target, to a maximum of 6 (Book 1 p.182).
-type Camaraderie int
+type Camaraderie int //nolint:recvcheck // deliberate value-reader / pointer-mutator split
 
 // MaxCamaraderie caps the casual-friendship bonus (Book 1 p.182).
 const MaxCamaraderie = 6

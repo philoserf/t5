@@ -19,16 +19,20 @@ func fuel(hullTons int, jump, power *Drive, scoop, purifier bool) Fuel {
 	if jump != nil {
 		tankage += fuelMul(jump.Potential*hullTons/10, jump.Stage)
 	}
+
 	if power != nil {
 		tankage += fuelMul(power.Potential*hullTons/100, power.Stage)
 	}
+
 	cost := tankage * liquidHydrogenCr
 	if scoop {
 		cost += fuelScoopCost
 	}
+
 	if purifier {
 		cost += fuelPurifierCost
 	}
+
 	return Fuel{Tons: tankage, Cost: cost}
 }
 
@@ -61,10 +65,12 @@ func armor(tl, hullTons int, structure Structure, layers int) Armor {
 	if layers < 1 {
 		layers = 1
 	}
+
 	pct := 4
 	if structure == Shell {
 		pct = 2
 	}
+
 	return Armor{
 		Layers: layers,
 		AV:     structureAV(structure, tl),

@@ -51,13 +51,17 @@ func (r *Roller) Resolve(c Check) CheckResult {
 	if n <= 0 {
 		n = Average
 	}
+
 	faces := r.DiceFaces(n)
+
 	roll := 0
 	for _, f := range faces {
 		roll += f
 	}
+
 	total := roll + c.DM
 	target := c.Target + c.Mod
+
 	return CheckResult{
 		Roll:    roll,
 		Total:   total,

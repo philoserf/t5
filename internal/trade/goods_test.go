@@ -26,10 +26,11 @@ func TestRandomTradeGoodsImbalance(t *testing.T) {
 }
 
 func TestTradeGoodString(t *testing.T) {
-	if got := (TradeGood{Name: "Antibiotics", Detail: "Processed"}).String(); got != "Processed Antibiotics" {
+	if got := (Good{Name: "Antibiotics", Detail: "Processed"}).String(); got != "Processed Antibiotics" {
 		t.Errorf("String() = %q, want %q", got, "Processed Antibiotics")
 	}
-	if got := (TradeGood{Name: "Pelts"}).String(); got != "Pelts" {
+
+	if got := (Good{Name: "Pelts"}).String(); got != "Pelts" {
 		t.Errorf("String() = %q, want %q", got, "Pelts")
 	}
 }
@@ -75,10 +76,12 @@ func TestTradeGoodsDetail(t *testing.T) {
 // depend on how the caller happened to order a world's trade codes.
 func TestTradeGoodsDetailOrderIndependent(t *testing.T) {
 	a := tradeGoodsDetail([]string{"Ri", "Ic", "As"}, "In", "In")
+
 	b := tradeGoodsDetail([]string{"As", "Ic", "Ri"}, "In", "In")
 	if a != b {
 		t.Errorf("same world, different code order gave %q vs %q", a, b)
 	}
+
 	if a != "Strange" { // As is first in the p.219 chart order
 		t.Errorf("detail = %q, want Strange (first in chart order)", a)
 	}
@@ -95,10 +98,12 @@ func TestImbalanceNeverLeaksTradeCode(t *testing.T) {
 	for i := range sixes {
 		sixes[i] = 6
 	}
+
 	g := RandomTradeGoods(dice.NewScripted(sixes...), []string{"Ga"})
 	if g.Type == imbalancesBlock {
 		t.Fatalf("good escaped as an Imbalances entry: %+v", g)
 	}
+
 	if goodsColumnEligible[g.Name] {
 		t.Errorf("good's Name %q is a trade class, not a good", g.Name)
 	}
@@ -136,6 +141,7 @@ func TestGoodsDataWellFormed(t *testing.T) {
 			if b.Type == "" {
 				t.Errorf("%s block %d has no type", col, i+1)
 			}
+
 			for j, good := range b.Goods {
 				if good == "" {
 					t.Errorf("%s block %d good %d is empty", col, i+1, j+1)

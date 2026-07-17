@@ -23,13 +23,15 @@ func HitCompartment(flux, targetMod, span int) int {
 // damage cannot meet stops the attack. Damage surviving every layer penetrates,
 // and at least one point must remain to reach the interior. Returns whether it
 // penetrated and the interior damage.
-func Penetrate(damage int, layerAV []int) (penetrated bool, interior int) {
+func Penetrate(damage int, layerAV []int) (bool, int) {
 	for _, av := range layerAV {
 		if damage < av {
 			return false, 0
 		}
+
 		damage -= av
 	}
+
 	return damage >= 1, damage
 }
 
@@ -78,6 +80,7 @@ func SubCompartmentsKnockedOut(points int) int {
 	if points <= 0 {
 		return 0
 	}
+
 	return (points + SubCompartmentCapacity - 1) / SubCompartmentCapacity
 }
 

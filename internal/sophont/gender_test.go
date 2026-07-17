@@ -18,9 +18,11 @@ func TestGenderAyFixture(t *testing.T) {
 	if g.Structure != Dual {
 		t.Fatalf("structure = %v, want Dual", g.Structure)
 	}
+
 	if g.Table[2] != "Female" || g.Table[3] != "Male" {
 		t.Errorf("entries 2/3 = %q/%q, want Female/Male", g.Table[2], g.Table[3])
 	}
+
 	for entry := 4; entry <= 12; entry++ {
 		if g.Table[entry] != "Female" {
 			t.Errorf("entry %d = %q, want Female", entry, g.Table[entry])
@@ -30,6 +32,7 @@ func TestGenderAyFixture(t *testing.T) {
 	if _, ok := g.Differences["Female"]; ok {
 		t.Error("base gender Female should carry no difference")
 	}
+
 	if d := g.Differences["Male"]; d != (Difference{}) {
 		t.Errorf("Male difference at Flux 0 = %+v, want zero", d)
 	}

@@ -33,5 +33,6 @@ func ParseAllegiance(code string) (Allegiance, bool) {
 	if a := Allegiance(code); a.Valid() {
 		return a, true
 	}
+
 	return DefaultAllegiance, code == ""
 }

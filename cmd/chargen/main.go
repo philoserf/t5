@@ -33,6 +33,7 @@ func main() {
 		for range n {
 			fmt.Println(chargen.Generate(r))
 		}
+
 		return
 	}
 
@@ -40,6 +41,7 @@ func main() {
 	if err != nil {
 		cli.Fatalf("%v", err)
 	}
+
 	for range n {
 		// A homeworld is an input to character generation (selected, assigned, or
 		// rolled). Here it is a freshly generated world with no system context.
@@ -52,20 +54,24 @@ func main() {
 // careersByNames resolves a comma-separated list of career names.
 func careersByNames(list string) ([]chargen.Career, error) {
 	names := strings.Split(list, ",")
+
 	careers := make([]chargen.Career, 0, len(names))
 	for _, name := range names {
 		c, err := careerByName(strings.TrimSpace(name))
 		if err != nil {
 			return nil, err
 		}
+
 		careers = append(careers, c)
 	}
+
 	return careers, nil
 }
 
 // sequencePolicy is DefaultPolicy that serves a fixed list of subsequent careers.
 type sequencePolicy struct {
 	chargen.DefaultPolicy
+
 	remaining []chargen.Career
 	i         int
 }
@@ -74,8 +80,10 @@ func (p *sequencePolicy) NextCareer(chargen.Character) (chargen.Career, bool) {
 	if p.i < len(p.remaining) {
 		c := p.remaining[p.i]
 		p.i++
+
 		return c, true
 	}
+
 	return chargen.Career{}, false
 }
 
@@ -84,7 +92,9 @@ func careerByName(name string) (chargen.Career, error) {
 	if c, ok := chargen.CareerByName(name); ok {
 		return c, nil
 	}
+
 	known := strings.ToLower(strings.Join(chargen.CareerNames(), ", "))
+
 	return chargen.Career{}, fmt.Errorf("unknown career %q (known: %s)", name, known)
 }
 
@@ -97,28 +107,37 @@ func render(c chargen.Character) string {
 	var b strings.Builder
 	b.WriteString(summaryLine(c))
 	field(&b, "UPP", c.UPP())
+
 	if hw := homeworldField(c); hw != "" {
 		field(&b, "Homeworld", hw)
 	}
+
 	if ed := educationField(c); ed != "" {
 		field(&b, "Education", ed)
 	}
+
 	if len(c.Careers) > 1 { // one career is summarized in the header line
 		field(&b, "Service", serviceField(c))
 	}
+
 	if skills := c.Skills.List(); len(skills) > 0 {
 		field(&b, "Skills", strings.Join(skills, ", "))
 	}
+
 	renderAchievements(&b, c)
+
 	if c.Credits > 0 {
 		field(&b, "Wealth", "Cr"+commas(c.Credits))
 	}
+
 	if len(c.Benefits) > 0 {
 		field(&b, "Benefits", strings.Join(c.Benefits, ", "))
 	}
+
 	if len(c.Entitlements) > 0 {
 		field(&b, "Entitlements", entitlementsField(c))
 	}
+
 	return b.String()
 }
 
@@ -129,19 +148,23 @@ func summaryLine(c chargen.Character) string {
 	if c.Dead {
 		deceased = ", deceased"
 	}
+
 	switch len(c.Careers) {
 	case 0:
 		return fmt.Sprintf("Age %d — did not qualify for a career%s\n", c.Age, deceased)
 	case 1:
 		rec := c.Careers[0]
+
 		detail := outcomePhrase(rec.Outcome)
 		if rank := rankOf(c, rec); rank != "" {
 			detail += " as " + rank // rank binds to the muster-out, not the term count
 		}
+
 		detail += " after " + plural(rec.Terms, "term")
 		if rec.Outcome == chargen.Died {
 			deceased = "" // "died" already conveys it
 		}
+
 		return fmt.Sprintf(
 			"%s — age %d, %s%s\n",
 			chargen.CareerByID(rec.Career).Name,
@@ -156,7 +179,8 @@ func summaryLine(c chargen.Character) string {
 
 // serviceField lists each career of a multi-career life on its own line.
 func serviceField(c chargen.Character) string {
-	var lines []string
+	lines := make([]string, 0, len(c.Careers))
+
 	for _, rec := range c.Careers {
 		s := fmt.Sprintf(
 			"%s: %s, %s",
@@ -167,8 +191,10 @@ func serviceField(c chargen.Character) string {
 		if rank := rankOf(c, rec); rank != "" {
 			s += " as " + rank
 		}
+
 		lines = append(lines, s)
 	}
+
 	return strings.Join(lines, "\n")
 }
 
@@ -180,11 +206,14 @@ func renderAchievements(b *strings.Builder, c chargen.Character) {
 		if c.Fame > 0 {
 			parts = append(parts, fmt.Sprintf("Fame %d", c.Fame))
 		}
+
 		if c.Talent > 0 {
 			parts = append(parts, fmt.Sprintf("Talent %d", c.Talent))
 		}
+
 		field(b, "Reputation", strings.Join(parts, ", "))
 	}
+
 	if c.Masterpieces > 0 {
 		field(
 			b,
@@ -215,6 +244,7 @@ func renderAchievements(b *strings.Builder, c chargen.Character) {
 func field(b *strings.Builder, label, value string) {
 	lines := strings.Split(value, "\n")
 	fmt.Fprintf(b, "  %-*s  %s\n", labelWidth, label, lines[0])
+
 	pad := strings.Repeat(" ", 2+labelWidth+2)
 	for _, line := range lines[1:] {
 		fmt.Fprintf(b, "%s%s\n", pad, line)
@@ -231,8 +261,10 @@ func entitlementsField(c chargen.Character) string {
 		if e.FromAge > c.Age {
 			line += fmt.Sprintf(" (from age %d)", e.FromAge)
 		}
+
 		lines[i] = line
 	}
+
 	return strings.Join(lines, "\n")
 }
 
@@ -242,9 +274,11 @@ func homeworldField(c chargen.Character) string {
 	if uwp == "" {
 		return ""
 	}
+
 	if len(c.Homeworld.TradeCodes) > 0 {
 		uwp += "   " + strings.Join(c.Homeworld.TradeCodes, " ")
 	}
+
 	return uwp
 }
 
@@ -255,18 +289,21 @@ func educationField(c chargen.Character) string {
 	if len(c.Degrees) == 0 && c.Major == "" {
 		return ""
 	}
+
 	s := strings.Join(c.Degrees, ", ")
 	if c.Major != "" {
 		subjects := c.Major + " (major)"
 		if c.Minor != "" {
 			subjects += ", " + c.Minor + " (minor)"
 		}
+
 		if s == "" {
 			s = subjects
 		} else {
 			s += " — " + subjects
 		}
 	}
+
 	return s
 }
 
@@ -277,7 +314,9 @@ func careerNames(c chargen.Character) string {
 	for i, rec := range c.Careers {
 		names[i] = chargen.CareerByID(rec.Career).Name
 	}
+
 	last := len(names) - 1
+
 	return strings.Join(names[:last], ", ") + ", then " + names[last]
 }
 
@@ -291,15 +330,18 @@ func rankOf(c chargen.Character, rec chargen.CareerRecord) string {
 	if career.ReturnIntrigue {
 		return chargen.NobleTitle(c.Score(chargen.Social))
 	}
+
 	ranks := career.EnlistedRanks
 	if rec.Officer {
 		ranks = career.OfficerRanks
 	} else if rec.Rank <= 1 {
 		return "" // never promoted above the entry rank
 	}
+
 	if rec.Rank >= 1 && rec.Rank <= len(ranks) {
 		return ranks[rec.Rank-1].Title
 	}
+
 	return ""
 }
 
@@ -322,6 +364,7 @@ func plural(n int, noun string) string {
 	if n == 1 {
 		return "1 " + noun
 	}
+
 	return strconv.Itoa(n) + " " + pluralize(noun)
 }
 
@@ -330,6 +373,7 @@ func pluralize(noun string) string {
 	if strings.HasSuffix(noun, "y") && !strings.ContainsRune("aeiou", rune(noun[len(noun)-2])) {
 		return noun[:len(noun)-1] + "ies"
 	}
+
 	return noun + "s"
 }
 
@@ -338,13 +382,18 @@ func commas(n int) string {
 	if n < 0 {
 		return "-" + commas(-n)
 	}
+
 	s := strconv.Itoa(n)
+
 	var out strings.Builder
+
 	for i := range len(s) {
 		if i > 0 && (len(s)-i)%3 == 0 {
 			out.WriteByte(',')
 		}
+
 		out.WriteByte(s[i])
 	}
+
 	return out.String()
 }

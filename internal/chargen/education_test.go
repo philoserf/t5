@@ -10,6 +10,7 @@ import (
 // Minor picks in order and always takes waivers.
 type eduPolicy struct {
 	DefaultPolicy
+
 	picks []string
 	i     int
 }
@@ -17,6 +18,7 @@ type eduPolicy struct {
 func (p *eduPolicy) ChooseSkill(_ Character, _ []string) string {
 	s := p.picks[p.i]
 	p.i++
+
 	return s
 }
 
@@ -43,12 +45,15 @@ func TestGoldenCollege(t *testing.T) {
 	if got := c.UPP(); got != "9AB58A" {
 		t.Errorf("UPP = %q, want %q (Edu 6 -> 8 on graduation)", got, "9AB58A")
 	}
+
 	if c.Major != "Psychology" || c.Skills.Level("Psychology") != 2 {
 		t.Errorf("Major = %q level %d, want Psychology 2", c.Major, c.Skills.Level("Psychology"))
 	}
+
 	if c.Minor != "Robotics" || c.Skills.Level("Robotics") != 1 {
 		t.Errorf("Minor = %q level %d, want Robotics 1", c.Minor, c.Skills.Level("Robotics"))
 	}
+
 	if len(c.Degrees) != 1 || c.Degrees[0] != "BA" {
 		t.Errorf("Degrees = %v, want [BA]", c.Degrees)
 	}
@@ -58,6 +63,7 @@ func TestCollegePrerequisite(t *testing.T) {
 	// Edu 4 is below the College prerequisite of 5: no attendance, no dice.
 	c := Character{scores: [count]int{7, 7, 7, 7, 4, 7}}
 	attendAcademic(dice.NewScripted(1, 1), DefaultPolicy{}, &c, college)
+
 	if len(c.Degrees) != 0 || c.Major != "" || c.Score(Education) != 4 {
 		t.Errorf("under-prereq character was educated: %+v", c)
 	}
@@ -67,12 +73,14 @@ func TestED5RaisesLowEdu(t *testing.T) {
 	// Edu 3, Check Int(8) passes -> Edu raised to 5.
 	c := Character{scores: [count]int{7, 7, 7, 8, 3, 7}}
 	attemptED5(dice.NewScripted(3, 4), &c) // roll 7 <= Int 8, pass
+
 	if c.Score(Education) != 5 {
 		t.Errorf("ED5 pass: Edu = %d, want 5", c.Score(Education))
 	}
 	// A failed Int Check leaves Edu unchanged.
 	c2 := Character{scores: [count]int{7, 7, 7, 4, 3, 7}}
 	attemptED5(dice.NewScripted(6, 6), &c2) // roll 12 > Int 4, fail
+
 	if c2.Score(Education) != 3 {
 		t.Errorf("ED5 fail: Edu = %d, want 3", c2.Score(Education))
 	}
@@ -81,6 +89,7 @@ func TestED5RaisesLowEdu(t *testing.T) {
 	// roll of 7 is scripted, which would set Edu 5 if the Check were rolled).
 	c3 := Character{scores: [count]int{7, 7, 7, 8, 6, 7}}
 	attemptED5(dice.NewScripted(3, 4), &c3)
+
 	if c3.Score(Education) != 6 {
 		t.Errorf("ED5 no-op: Edu = %d, want 6", c3.Score(Education))
 	}
@@ -91,6 +100,7 @@ func TestEducateSelectsUniversity(t *testing.T) {
 	c := Character{scores: [count]int{7, 7, 7, 7, 7, 7}}
 	seq := []int{3, 4, 3, 4, 3, 4, 3, 4, 3, 4} // apply + four passes, each 7 <= Edu 7
 	educate(dice.NewScripted(seq...), &eduPolicy{picks: []string{"Physics", "History"}}, &c)
+
 	if c.Score(Education) != 9 || len(c.Degrees) != 1 {
 		t.Errorf(
 			"University graduation: Edu = %d degrees %v, want 9 / [BA]",
@@ -104,6 +114,7 @@ func TestCollegeRejectedNoWaiver(t *testing.T) {
 	// Admission fails and the policy declines a waiver: nothing gained.
 	c := Character{scores: [count]int{7, 7, 7, 6, 6, 6}}
 	attendAcademic(dice.NewScripted(6, 6 /*apply 12, fail*/), noWaiver{}, &c, college)
+
 	if len(c.Degrees) != 0 || c.Major != "" {
 		t.Errorf("rejected applicant was educated: %+v", c)
 	}
@@ -119,9 +130,11 @@ func TestCollegeFailsOut(t *testing.T) {
 		6, 6, // year 2: fail, no waiver -> wash out
 	}
 	attendAcademic(dice.NewScripted(seq...), noWaiver{}, &c, college)
+
 	if len(c.Degrees) != 0 {
 		t.Errorf("washed-out student graduated: degrees %v", c.Degrees)
 	}
+
 	if c.Major == "" || c.Skills.Level(c.Major) != 1 {
 		t.Errorf("pre-washout pass not kept: Major %q level %d", c.Major, c.Skills.Level(c.Major))
 	}
@@ -148,15 +161,19 @@ func TestTradeSchool(t *testing.T) {
 		3, 4, // year Check Int(7): 7 <= 7, pass
 	}
 	educate(dice.NewScripted(seq...), tradePolicy{}, &c)
+
 	if c.Major != "Biologics" {
 		t.Errorf("Major = %q, want Biologics", c.Major)
 	}
+
 	if c.Skills.Level("Biologics") != 2 {
 		t.Errorf("Biologics = %d, want 2 (Trade School Major +2)", c.Skills.Level("Biologics"))
 	}
+
 	if c.Score(Education) != 6 {
 		t.Errorf("Edu = %d, want 6 unchanged (Trade School grants no Edu bump)", c.Score(Education))
 	}
+
 	if c.Minor != "" || len(c.Degrees) != 0 {
 		t.Errorf("Trade School granted a Minor %q or degree %v, want none", c.Minor, c.Degrees)
 	}
@@ -205,9 +222,11 @@ func TestGraduateLadder(t *testing.T) {
 		t.Errorf("Psychology=%d Robotics=%d, want 8/4",
 			c.Skills.Level("Psychology"), c.Skills.Level("Robotics"))
 	}
+
 	if c.Score(Education) != 12 {
 		t.Errorf("Edu = %d, want 12 (Professor graduation)", c.Score(Education))
 	}
+
 	if !c.hasDegree("BA") || !c.hasDegree("MA") || !c.hasDegree("Professor") {
 		t.Errorf("Degrees = %v, want BA, MA, and Professor", c.Degrees)
 	}
@@ -217,6 +236,7 @@ func TestGraduateLadder(t *testing.T) {
 func TestMastersNeedsDegree(t *testing.T) {
 	c := Character{scores: [count]int{7, 7, 7, 9, 9, 7}} // no degree
 	attendAcademic(dice.NewScripted(1, 1, 1, 1, 1, 1), DefaultPolicy{}, &c, masters)
+
 	if len(c.Degrees) != 0 || c.Score(Education) != 9 {
 		t.Errorf("Masters admitted without a BA: degrees %v Edu %d", c.Degrees, c.Score(Education))
 	}
@@ -233,6 +253,7 @@ func TestProfessorsDegree(t *testing.T) {
 	}
 	c.Skills.Raise("Psychology", 4)
 	c.Skills.Raise("Robotics", 3)
+
 	seq := []int{
 		3, 4, // apply Check (best of Int 9/Edu 9): 7 <= 9, admitted
 		3, 4, 3, 4, // 2 years pass — Major +1 each (Psych 4->6), Minor +1 per 2 (Robotics 3->4)
@@ -245,9 +266,11 @@ func TestProfessorsDegree(t *testing.T) {
 		t.Errorf("Professors Major/Minor: Psychology=%d Robotics=%d, want 6/4",
 			c.Skills.Level("Psychology"), c.Skills.Level("Robotics"))
 	}
+
 	if c.Score(Education) != 12 {
 		t.Errorf("Edu = %d, want 12 (Professor graduation)", c.Score(Education))
 	}
+
 	if !c.hasDegree("Professor") {
 		t.Errorf("Degrees = %v, want a Professor degree", c.Degrees)
 	}
@@ -257,6 +280,7 @@ func TestProfessorsDegree(t *testing.T) {
 func TestProfessorsNeedsMasters(t *testing.T) {
 	c := Character{scores: [count]int{7, 7, 7, 9, 9, 7}, Degrees: []string{"BA"}}
 	attendAcademic(dice.NewScripted(1, 1, 1, 1, 1, 1), DefaultPolicy{}, &c, professors)
+
 	if c.hasDegree("Professor") || c.Score(Education) != 9 {
 		t.Errorf(
 			"Professors admitted without an MA: degrees %v Edu %d",
@@ -280,6 +304,7 @@ func TestTradeSchoolFailsOut(t *testing.T) {
 		6, 6, // year Check Int(7): 12 > 7, fail; no waiver -> washes out
 	}
 	educate(dice.NewScripted(seq...), tradeNoWaiver{}, &c)
+
 	if c.Major != "" || c.Skills.Level("Biologics") != 0 {
 		t.Errorf("failed Trade School still granted Major %q (Biologics %d), want none",
 			c.Major, c.Skills.Level("Biologics"))
@@ -299,6 +324,7 @@ func TestMastersRaisesMajor(t *testing.T) {
 	c.Major, c.Minor = "History", "Art"
 	c.Skills.Raise("History", 1)
 	c.Skills.Raise("Art", 1)
+
 	p := &eduPolicy{}
 
 	seq := []int{
@@ -310,9 +336,11 @@ func TestMastersRaisesMajor(t *testing.T) {
 	if lvl := c.Skills.Level("History"); lvl != 3 {
 		t.Errorf("Masters Major = History %d, want 3 (Major+1 per pass, 2 passes)", lvl)
 	}
+
 	if lvl := c.Skills.Level("Art"); lvl != 2 {
 		t.Errorf("Masters Minor = Art %d, want 2 (Minor+1 per 2 passes)", lvl)
 	}
+
 	if !c.hasDegree("MA") {
 		t.Errorf("Masters should confer an MA: %v", c.Degrees)
 	}

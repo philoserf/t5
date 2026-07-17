@@ -21,6 +21,7 @@ import (
 // order (physical, then mental, then social).
 type Characteristic int
 
+// The six characteristics of the UPP (Str/Dex/End/Int/Edu/Soc).
 const (
 	Strength Characteristic = iota
 	Dexterity
@@ -41,6 +42,7 @@ func (c Characteristic) String() string {
 	if c < 0 || c >= count {
 		return "?"
 	}
+
 	return abbrev[c]
 }
 
@@ -52,7 +54,7 @@ type Character struct {
 	Dead   bool // set when aging (or a career mishap) kills the character
 
 	Homeworld        worldgen.World // the world the character was raised on (Book 1 p. 56)
-	Gender           string         // the individual's gender, for a non-human sophont (Book 3 p. 230); "" for a plain human
+	Gender           string         // the individual's gender, for a non-human sophont (Book 3 p. 230); "" for a human
 	Caste            string         // the individual's caste, for a casted sophont (Book 3 p. 229); "" if none
 	Major            string         // College Major subject, if educated
 	Minor            string         // College Minor subject, if educated
@@ -71,7 +73,7 @@ type Character struct {
 	Publications     int            // research the Scholar has published (Book 1 p. 76)
 	Tenured          bool           // the Scholar has earned academic Tenure (Book 1 p. 76)
 	Commendations    int            // official recognitions the Agent has earned (Book 1 p. 83)
-	LandGrants       int            // fiefs granted to the Noble on each Elevation, and to the Scout on each Discovery (Book 1 pp. 79, 85)
+	LandGrants       int            // fiefs to the Noble per Elevation and the Scout per Discovery (Book 1 pp. 79, 85)
 	Discoveries      int            // valuable worlds or features the Scout has found (Book 1 p. 79)
 	ShipShares       int            // ownership shares the Merchant accumulates (Book 1 p. 80)
 
@@ -91,6 +93,7 @@ func Generate(r *dice.Roller) Character {
 	for i := range c.scores {
 		c.scores[i] = r.Dice(2)
 	}
+
 	return c
 }
 
@@ -107,6 +110,7 @@ func (c Character) Score(ch Characteristic) int {
 	if ch < 0 || ch >= count {
 		panic(fmt.Sprintf("chargen: invalid characteristic %d", int(ch)))
 	}
+
 	return c.scores[ch]
 }
 
@@ -119,9 +123,11 @@ func (c Character) Score(ch Characteristic) int {
 func (c Character) UPP() string {
 	var b strings.Builder
 	b.Grow(count)
+
 	for _, v := range c.scores {
 		b.WriteString(ehex.Format(v))
 	}
+
 	return b.String()
 }
 

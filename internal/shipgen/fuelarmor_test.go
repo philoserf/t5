@@ -7,6 +7,7 @@ func TestFuelMurphy(t *testing.T) {
 	// operations fuel; total 22t. Scoops + purifier fittings add cost.
 	jump := &Drive{Kind: Jump, Potential: 2}
 	power := &Drive{Kind: Power, Potential: 2}
+
 	f := fuel(100, jump, power, true, true)
 	if f.Tons != 22 {
 		t.Errorf("fuel tankage = %d, want 22", f.Tons)

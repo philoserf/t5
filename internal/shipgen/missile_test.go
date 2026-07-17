@@ -53,6 +53,7 @@ func TestIdentifyingMissiles(t *testing.T) {
 		if len(m.Problems) > 0 {
 			t.Errorf("Size-%d %s: unexpected problems %v", c.size, c.typ, m.Problems)
 		}
+
 		if got := m.LongName(); got != c.want {
 			t.Errorf("LongName mismatch\n got: %s\nwant: %s", got, c.want)
 		}
@@ -75,6 +76,7 @@ func TestMissileGuidanceReach(t *testing.T) {
 	if len(m.Problems) > 0 {
 		t.Errorf("a Size-5 Self-Aware round at TL 12 is legal: %v", m.Problems)
 	}
+
 	if !strings.Contains(m.LongName(), "Guidance: OG HW SA (DL not available)") {
 		t.Errorf("TL-12 Size-5 guidance = %q", m.LongName())
 	}
@@ -114,6 +116,7 @@ func TestMissileLauncherLimits(t *testing.T) {
 			t.Errorf("a Missile launcher throws Size-%d: %v", size, m.Problems)
 		}
 	}
+
 	for _, size := range []int{3, 7} {
 		if m := DesignMissile(
 			missile,
@@ -135,6 +138,7 @@ func TestMissileLauncherLimits(t *testing.T) {
 	}
 	// The KK Missile throws only its 100-ton Size-7 kinetic round.
 	kk := launcherAtTL(KKMissile, Standard, AttackRange)
+
 	m := DesignMissile(kk, MissileSpec{Size: 7, Type: Kinetic, Guidance: SelfAware})
 	if m.TonsEach != 100 {
 		t.Errorf("a KK round is %d tons each, want 100", m.TonsEach)
@@ -155,6 +159,7 @@ func TestMissileMagazine(t *testing.T) {
 	); m.PerTon != 3000 {
 		t.Errorf("Vsmall Missiles are %d/ton, want 3000", m.PerTon)
 	}
+
 	missile := launcherAtTL(MissileLauncher, Standard, AttackRange)
 	if m := DesignMissile(
 		missile,
@@ -162,12 +167,14 @@ func TestMissileMagazine(t *testing.T) {
 	); m.PerTon != 400 {
 		t.Errorf("Small Missiles are %d/ton, want 400", m.PerTon)
 	}
+
 	if m := DesignMissile(
 		missile,
 		MissileSpec{Size: 5, Type: Explosive, Guidance: HardWired},
 	); m.PerTon != 50 {
 		t.Errorf("Missiles are %d/ton, want 50", m.PerTon)
 	}
+
 	if m := DesignMissile(
 		missile,
 		MissileSpec{Size: 6, Type: Explosive, Guidance: HardWired},

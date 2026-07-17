@@ -25,6 +25,7 @@ func Digit(v int) byte {
 	if v < 0 || v > Max {
 		panic(fmt.Sprintf("ehex: value %d out of range 0..%d", v, Max))
 	}
+
 	return Alphabet[v]
 }
 
@@ -35,6 +36,7 @@ func Format(v int) string {
 	if v < 0 || v > Max {
 		return "?"
 	}
+
 	return string(Alphabet[v])
 }
 
@@ -44,8 +46,10 @@ func ParseDigit(c byte) (int, error) {
 	if c >= 'a' && c <= 'z' {
 		c -= 'a' - 'A'
 	}
+
 	if v := strings.IndexByte(Alphabet, c); v >= 0 {
 		return v, nil
 	}
+
 	return 0, fmt.Errorf("ehex: %q is not an eHex digit", c)
 }

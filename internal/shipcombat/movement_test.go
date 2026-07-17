@@ -6,6 +6,7 @@ func TestAgility(t *testing.T) {
 	if got := Agility(6, 2); got != 4 {
 		t.Errorf("Agility(6,2) = %d, want 4", got)
 	}
+
 	if got := Agility(4, 4); got != 0 {
 		t.Errorf("Agility(4,4) = %d, want 0", got)
 	}
@@ -52,6 +53,7 @@ func TestRangeChangeRounds(t *testing.T) {
 	if _, tactical := RangeChangeRounds(11, 1); tactical {
 		t.Errorf("band 11 should not be a tactical (round-measured) change")
 	}
+
 	if _, tactical := RangeChangeRounds(0, 1); tactical {
 		t.Errorf("band 0 is the target, no change below it")
 	}

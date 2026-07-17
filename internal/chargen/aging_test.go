@@ -50,6 +50,7 @@ func TestAgingCascade(t *testing.T) {
 func TestAgingCheckBeforePeakIsNoOp(t *testing.T) {
 	c := Character{scores: [count]int{8, 8, 8, 8, 8, 8}, Age: 30}
 	AgingCheck(dice.NewScripted(2), &c) // would age everything if it ran
+
 	if c.scores != [count]int{8, 8, 8, 8, 8, 8} {
 		t.Fatalf("aging before 34 changed scores: %v", c.scores)
 	}
@@ -60,12 +61,14 @@ func TestAgingCheckDecrements(t *testing.T) {
 	// Intelligence (mental) is untouched until 66.
 	c := Character{scores: [count]int{8, 8, 8, 8, 8, 8}, Age: 34}
 	AgingCheck(dice.NewScripted(2), &c) // Dice(2) = 4 each
+
 	if c.scores != [count]int{7, 7, 7, 8, 8, 8} {
 		t.Fatalf("after aging = %v, want [7 7 7 8 8 8]", c.scores)
 	}
 	// A high roll (12) never ages.
 	c2 := Character{scores: [count]int{8, 8, 8, 8, 8, 8}, Age: 34}
 	AgingCheck(dice.NewScripted(6), &c2)
+
 	if c2.scores != [count]int{8, 8, 8, 8, 8, 8} {
 		t.Fatalf("high rolls aged the character: %v", c2.scores)
 	}
@@ -77,6 +80,7 @@ func TestAgingCheckResetsZeroToOne(t *testing.T) {
 	c := Character{scores: [count]int{1, 8, 8, 8, 8, 8}, Age: 34}
 	// Str rolls 4 (ages), Dex and End roll 12 (safe).
 	AgingCheck(dice.NewScripted(2, 2, 6, 6, 6, 6), &c)
+
 	if c.scores[Strength] != 1 || c.Dead || c.extremeAgings != 0 {
 		t.Fatalf(
 			"reset case = %v dead=%v extreme=%d, want Str 1, alive, 0 extreme",
@@ -91,10 +95,13 @@ func TestAgingCheckDeathOnSecondExtreme(t *testing.T) {
 	// Three physical characteristics at 1: each aging check zeroes all three.
 	c := Character{scores: [count]int{1, 1, 1, 8, 8, 8}, Age: 34}
 	AgingCheck(dice.NewScripted(2), &c) // first extreme illness
+
 	if c.Dead || c.extremeAgings != 1 {
 		t.Fatalf("after first extreme: dead=%v extreme=%d, want alive, 1", c.Dead, c.extremeAgings)
 	}
+
 	AgingCheck(dice.NewScripted(2), &c) // second extreme illness kills
+
 	if !c.Dead {
 		t.Fatalf("second extreme illness did not kill")
 	}

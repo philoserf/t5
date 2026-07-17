@@ -41,6 +41,7 @@ func TestGoldenEntertainer(t *testing.T) {
 	if got := c.UPP(); got != "887777" {
 		t.Errorf("UPP = %q, want %q (Str 7 +1 muster benefit)", got, "887777")
 	}
+
 	if c.Fame != 9 || c.Talent != 8 {
 		t.Errorf(
 			"Fame/Talent = %d/%d, want 9/8 (start 7, no Flux term1, +2 Flux term2; Talent +1 on the rise)",
@@ -48,13 +49,16 @@ func TestGoldenEntertainer(t *testing.T) {
 			c.Talent,
 		)
 	}
+
 	if c.Skills.Level("Survey") != 10 {
 		t.Errorf("Survey = %d, want 10 (6 skills term1 + 4 skills term2)", c.Skills.Level("Survey"))
 	}
+
 	rec := c.Careers[0]
 	if rec.Career != Entertainer || rec.Terms != 2 || rec.Outcome != MusteredOut {
 		t.Errorf("record = %+v, want Entertainer/2 terms/MusteredOut", rec)
 	}
+
 	if len(c.Benefits) != 1 || c.Benefits[0] != "Wafer Jack" {
 		t.Errorf("Benefits = %v, want [Wafer Jack]", c.Benefits)
 	}
@@ -73,9 +77,11 @@ func TestFameFallDoesNotBonus(t *testing.T) {
 		&careerRun{terms: 1},
 		EntertainerCareer,
 	)
+
 	if c.Fame != 3 || c.Talent != 8 {
 		t.Errorf("Fame/Talent = %d/%d, want 3/8 (fall grants no Talent)", c.Fame, c.Talent)
 	}
+
 	if c.Skills.Level("Survey") != 4 {
 		t.Errorf("Survey = %d, want 4 (base eligibility, no +2)", c.Skills.Level("Survey"))
 	}

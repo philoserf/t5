@@ -14,6 +14,7 @@ func (r *Roller) EvenDist1to9() int {
 	// column triple (1-3, 4-6) repeats an offset of 1-3.
 	band := ((row - 1) % 3) * 3
 	offset := ((col - 1) % 3) + 1
+
 	return band + offset
 }
 
@@ -26,10 +27,12 @@ func (r *Roller) EvenDist0to9() int {
 		if row == 6 {
 			continue // "rr": reroll
 		}
+
 		v := (row - 1) * 2
 		if col > 3 {
 			v++
 		}
+
 		return v
 	}
 }
@@ -40,6 +43,7 @@ func (r *Roller) EvenDist1to10() int {
 	if v := r.EvenDist0to9(); v != 0 {
 		return v
 	}
+
 	return 10
 }
 
@@ -51,16 +55,20 @@ func (r *Roller) Index(n int) int {
 	if n <= 0 {
 		panic("dice: Index requires n > 0")
 	}
+
 	limit := 1
 	for limit < n {
 		limit *= 6
 	}
+
 	accept := limit - limit%n // the largest multiple of n at or below limit
+
 	for {
 		x := 0
 		for d := limit; d > 1; d /= 6 {
 			x = x*6 + r.d6() - 1
 		}
+
 		if x < accept {
 			return x % n
 		}

@@ -26,6 +26,7 @@ func (b Band) Number() (int, bool) {
 	if err != nil {
 		return 0, false
 	}
+
 	return n, true
 }
 
@@ -67,8 +68,10 @@ var spaceBands = []Band{
 	{"13", "Outer System", "", 1_500_000_000_000},
 }
 
-// WorldBands and SpaceBands return copies of the two ladders, in order.
+// WorldBands returns a copy of the World-surface range ladder, in order.
 func WorldBands() []Band { return append([]Band(nil), worldBands...) }
+
+// SpaceBands returns a copy of the Space range ladder, in order.
 func SpaceBands() []Band { return append([]Band(nil), spaceBands...) }
 
 // WorldBand returns the R= band with the given code.
@@ -83,6 +86,7 @@ func find(bands []Band, code string) (Band, bool) {
 			return b, true
 		}
 	}
+
 	return Band{}, false
 }
 
@@ -98,16 +102,20 @@ func nearest(bands []Band, meters float64) Band {
 	if meters <= 0 {
 		return bands[0] // Contact / zero point
 	}
+
 	lm := math.Log10(meters)
+
 	best, bestGap := bands[0], math.Inf(1)
 	for _, b := range bands {
 		if b.Meters <= 0 {
 			continue // the zero-point band has no finite distance
 		}
+
 		if gap := math.Abs(lm - math.Log10(b.Meters)); gap < bestGap {
 			best, bestGap = b, gap
 		}
 	}
+
 	return best
 }
 
@@ -117,11 +125,13 @@ func WorldToSpace(worldCode string) (string, bool) {
 	if _, ok := WorldBand(worldCode); !ok {
 		return "", false
 	}
+
 	switch worldCode {
 	case "5":
 		return "B", true
 	case "6", "7", "8", "9":
 		n, _ := strconv.Atoi(worldCode)
+
 		return strconv.Itoa(n - 5), true
 	default: // 0, R, T, 1-4 all collapse to S=0
 		return "0", true
@@ -135,6 +145,7 @@ func SpaceToWorld(spaceCode string) (string, bool) {
 	if _, ok := SpaceBand(spaceCode); !ok {
 		return "", false
 	}
+
 	switch spaceCode {
 	case "0":
 		return "0", true
@@ -142,6 +153,7 @@ func SpaceToWorld(spaceCode string) (string, bool) {
 		return "5", true
 	default:
 		n, _ := strconv.Atoi(spaceCode)
+
 		return strconv.Itoa(n + 5), true
 	}
 }
@@ -155,13 +167,16 @@ func WorldSubBand(meters float64) float64 {
 	if meters <= numeric[0].Meters {
 		return 1
 	}
+
 	for i := 1; i < len(numeric); i++ {
 		if meters <= numeric[i].Meters {
 			lo, hi := numeric[i-1], numeric[i]
 			frac := (math.Log10(meters) - math.Log10(lo.Meters)) /
 				(math.Log10(hi.Meters) - math.Log10(lo.Meters))
+
 			return float64(i) + frac // band i is R=(i+1); index i-1 is R=i
 		}
 	}
+
 	return 9
 }

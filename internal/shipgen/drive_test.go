@@ -26,9 +26,11 @@ func TestDriveForPotential(t *testing.T) {
 	if got := DriveForPotential(6, 10); got != 30 || driveLabel(got) != "Q2" {
 		t.Errorf("DriveForPotential(6, 10) = %d (%s), want 30 (Q2)", got, driveLabel(got))
 	}
+
 	if got := DriveForPotential(2, 1); got != 1 { // Potential-2 in Hull-A -> Drive-A
 		t.Errorf("DriveForPotential(2, 1) = %d, want 1", got)
 	}
+
 	if DriveForPotential(9, 24) != 0 { // beyond Z2 range
 		t.Errorf("unreachable potential should return 0")
 	}
@@ -90,10 +92,12 @@ func TestDesignDriveMurphy(t *testing.T) {
 	if p1 != "" || m.Potential != 2 || m.Tons != 2 || m.Cost != 4_000_000 {
 		t.Errorf("Maneuver-A = %+v (%q), want 2G/2t/MCr4", m, p1)
 	}
+
 	j, p2 := designDrive(Jump, DriveSpec{Letter: 1}, 1, 12)
 	if p2 != "" || j.Potential != 2 || j.Tons != 10 || j.Cost != 10_000_000 {
 		t.Errorf("Jump-A = %+v (%q), want J2/10t/MCr10", j, p2)
 	}
+
 	pw, p3 := designDrive(Power, DriveSpec{Letter: 1}, 1, 12)
 	if p3 != "" || pw.Potential != 2 || pw.Tons != 4 || pw.Cost != 4_000_000 {
 		t.Errorf("Power-A = %+v (%q), want pot2/4t/MCr4", pw, p3)

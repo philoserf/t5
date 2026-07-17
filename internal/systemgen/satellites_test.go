@@ -80,23 +80,28 @@ func TestRollSatellites(t *testing.T) {
 			Orbits:  []PlacedOrbit{{Orbit: 2, Kind: KindGasGiant}},
 		}
 		s.Mainworld.Profile.Population = 8
+
 		return s
 	}
 	// A gas giant with moons: each is a real body (type + UWP + orbit letter), and
 	// a gas giant's moon is never size-capped, so never a double planet.
 	s := newSys()
 	s.rollSatellites(dice.NewWithSeed(4))
+
 	moons := s.Orbits[0].Satellites
 	if len(moons) == 0 {
 		t.Fatal("gas giant got no satellites for seed 4")
 	}
+
 	for i, m := range moons {
 		if m.Ring {
 			continue
 		}
+
 		if m.OrbitLetter == "" || m.Profile.String() == "" {
 			t.Errorf("moon %d missing letter or UWP: %+v", i, m)
 		}
+
 		if m.DoublePlanet {
 			t.Errorf("gas-giant moon %d flagged double planet: %+v", i, m)
 		}
@@ -104,6 +109,7 @@ func TestRollSatellites(t *testing.T) {
 	// Deterministic for a fixed seed.
 	s2 := newSys()
 	s2.rollSatellites(dice.NewWithSeed(4))
+
 	if len(s2.Orbits[0].Satellites) != len(moons) {
 		t.Errorf(
 			"non-deterministic satellite count: %d vs %d",
@@ -135,13 +141,16 @@ func TestSatelliteType(t *testing.T) {
 	// StormWorld (Iceworld for an other world).
 	for roll := 1; roll <= 6; roll++ {
 		got := satelliteType(hz+3, hz, true, roll)
+
 		want := otherWorldType(hz+3, hz, true, roll)
 		if roll == 4 {
 			want = worldgen.StormWorld
+
 			if otherWorldType(hz+3, hz, true, 4) != worldgen.Iceworld {
 				t.Errorf("fixture: outer other-world roll 4 should be Iceworld")
 			}
 		}
+
 		if got != want {
 			t.Errorf("outer satelliteType(roll %d) = %v, want %v", roll, got, want)
 		}
@@ -175,17 +184,21 @@ func TestCapSatelliteSize(t *testing.T) {
 func TestSatellitesCarryTradeCodes(t *testing.T) {
 	sys := Generate(dice.NewWithSeed(11))
 	found := false
+
 	for _, o := range sys.Orbits {
 		for _, sat := range o.Satellites {
 			if sat.Ring {
 				continue
 			}
+
 			found = true
+
 			if len(sat.TradeCodes) == 0 {
 				t.Errorf("satellite %s carries no trade codes", sat.OrbitLetter)
 			}
 		}
 	}
+
 	if !found {
 		t.Skip("this seed produced no non-ring satellites")
 	}

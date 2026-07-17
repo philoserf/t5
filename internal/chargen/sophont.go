@@ -30,10 +30,12 @@ func GenerateSophont(r *dice.Roller, species sophont.Species) Character {
 	for i := range c.scores {
 		c.scores[i] = sophont.RollValue(r, species.Chars[i].Dice)
 	}
+
 	c.Gender = rollTrait(r, &c, species.Gender.Table, species.Gender.Differences)
 	if species.Caste != nil {
 		c.Caste = rollTrait(r, &c, species.Caste.Table, species.Caste.Differences)
 	}
+
 	return c
 }
 
@@ -51,6 +53,7 @@ func rollTrait(
 	if diff, ok := diffs[name]; ok {
 		applyDifference(r, c, diff)
 	}
+
 	return name
 }
 
@@ -62,6 +65,7 @@ func applyDifference(r *dice.Roller, c *Character, d sophont.Difference) {
 	if d.C1Dice > 0 {
 		c.scores[Strength] += r.Dice(d.C1Dice)
 	}
+
 	for i := range 5 {
 		c.scores[i] = max(c.scores[i]+d.Mods[i], 0)
 	}

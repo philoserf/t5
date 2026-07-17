@@ -18,11 +18,13 @@ func TestCasteAyFixture(t *testing.T) {
 	if c.Structure != Body {
 		t.Fatalf("structure = %v, want Body", c.Structure)
 	}
+
 	for entry := 2; entry <= 11; entry++ {
 		if c.Table[entry] != "Muscle" {
 			t.Errorf("entry %d = %q, want Muscle", entry, c.Table[entry])
 		}
 	}
+
 	if c.Table[12] != "Brain" {
 		t.Errorf("entry 12 = %q, want Brain (Unique)", c.Table[12])
 	}
@@ -30,6 +32,7 @@ func TestCasteAyFixture(t *testing.T) {
 	if _, ok := c.Differences["Muscle"]; ok {
 		t.Error("Common caste Muscle should carry no difference")
 	}
+
 	if d := c.Differences["Brain"]; d != (Difference{}) {
 		t.Errorf("Brain difference at Flux 0 = %+v, want zero", d)
 	}
@@ -42,7 +45,8 @@ func TestCasteGenderSubstitution(t *testing.T) {
 	gender.Table[4] = "Bearer" // the gender occupying slot 4
 	// Structure die 1 (Body). Entries 2 and 3 roll Flux 0 (Muscle); entry 4 rolls
 	// Flux -4 (=Gender) -> copies gender.Table[4]; entries 5,6,8..11 roll Flux 0.
-	seq := []int{1}
+	seq := make([]int, 0, 23)
+	seq = append(seq, 1)
 	seq = append(seq, fluxSeq(0, 0)...)       // entries 2, 3
 	seq = append(seq, fluxSeq(-4)...)         // entry 4 -> =Gender
 	seq = append(seq, fluxSeq(0, 0)...)       // entries 5, 6
@@ -50,6 +54,7 @@ func TestCasteGenderSubstitution(t *testing.T) {
 	// Distinct non-Common castes are Bearer then (nothing else); Brain at 12. Two
 	// difference rolls (Bearer, Brain).
 	seq = append(seq, fluxSeq(0, 0)...)
+
 	c := rollCaste(dice.NewScripted(seq...), gender)
 	if c.Table[4] != "Bearer" {
 		t.Errorf("entry 4 = %q, want Bearer (=Gender substitution)", c.Table[4])
@@ -63,6 +68,7 @@ func TestSkilledCasteDeferred(t *testing.T) {
 	if c.Structure != Skilled {
 		t.Fatalf("structure = %v, want Skilled", c.Structure)
 	}
+
 	if c.Table != ([13]string{}) || len(c.Differences) != 0 {
 		t.Error("Skilled caste should leave Table and Differences empty")
 	}

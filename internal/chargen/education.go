@@ -105,8 +105,10 @@ func educate(r *dice.Roller, p Policy, c *Character) {
 	// the academic College/University (they share the Edu 5+ prerequisite).
 	if p.ChooseTradeSchool(*c) && c.Score(Education) >= tradeSchoolPreReqEdu {
 		attendTradeSchool(r, p, c)
+
 		return
 	}
+
 	switch {
 	case c.Score(Education) >= university.preReqEdu:
 		attendAcademic(r, p, c, university)
@@ -117,6 +119,7 @@ func educate(r *dice.Roller, p Policy, c *Character) {
 	// (having earned the MA) a terminal Professors program.
 	if p.PursueGraduateSchool(*c) && c.hasDegree(masters.preReqDegree) {
 		attendAcademic(r, p, c, masters)
+
 		if c.hasDegree(professors.preReqDegree) {
 			attendAcademic(r, p, c, professors)
 		}
@@ -137,15 +140,18 @@ func attendTradeSchool(r *dice.Roller, p Policy, c *Character) {
 	if c.Score(Education) < tradeSchoolPreReqEdu {
 		return
 	}
+
 	priorWaivers := 0
 	if !admitted(r, p, c, Intelligence, &priorWaivers) {
 		return
 	}
+
 	passCh := bestChar(*c, Intelligence, Education)
 	if !r.Resolve(dice.Check{Dice: 2, Target: c.Score(passCh)}).Success &&
 		!waiverGranted(r, p, c, &priorWaivers) {
 		return // failed the year out — no Major
 	}
+
 	c.Major = p.ChooseSkill(*c, theTrades)
 	c.Skills.Raise(c.Major, tradeSchoolMajorBump)
 }
@@ -158,6 +164,7 @@ func attemptED5(r *dice.Roller, c *Character) {
 	if c.Score(Education) > ed5MaxEdu {
 		return
 	}
+
 	if r.Resolve(dice.Check{Dice: 2, Target: c.Score(Intelligence)}).Success {
 		c.scores[Education] = ed5RaisesTo
 	}
@@ -171,16 +178,20 @@ func attendAcademic(r *dice.Roller, p Policy, c *Character, prog academicProgram
 	if prog.preReqDegree != "" && !c.hasDegree(prog.preReqDegree) {
 		return
 	}
+
 	if c.Score(Education) < prog.preReqEdu {
 		return
 	}
+
 	priorWaivers := 0
 	// Admission and each yearly Pass/Fail Check use the better of Int or Edu.
 	passCh := bestChar(*c, Intelligence, Education)
 	if !admitted(r, p, c, passCh, &priorWaivers) {
 		return
 	}
+
 	passes := 0
+
 	for range prog.years {
 		if r.Resolve(dice.Check{Dice: 2, Target: c.Score(passCh)}).Success {
 			passes++
@@ -189,6 +200,7 @@ func attendAcademic(r *dice.Roller, p Policy, c *Character, prog academicProgram
 			return // failed out — no graduation
 		}
 	}
+
 	graduate(c, prog)
 }
 
@@ -198,6 +210,7 @@ func admitted(r *dice.Roller, p Policy, c *Character, ch Characteristic, priorWa
 	if r.Resolve(dice.Check{Dice: 2, Target: c.Score(ch)}).Success {
 		return true
 	}
+
 	return waiverGranted(r, p, c, priorWaivers)
 }
 
@@ -208,8 +221,10 @@ func waiverGranted(r *dice.Roller, p Policy, c *Character, priorWaivers *int) bo
 	if !p.TakeWaiver(*c, *priorWaivers) {
 		return false
 	}
+
 	res := r.Resolve(dice.Check{Dice: 2, Target: c.Score(Social), Mod: -*priorWaivers})
 	(*priorWaivers)++
+
 	return res.Success
 }
 
@@ -221,12 +236,15 @@ func awardAcademicPass(c *Character, p Policy, prog academicProgram, passNum int
 		if c.Major == "" {
 			c.Major = p.ChooseSkill(*c, academicMajors)
 		}
+
 		c.Skills.Raise(c.Major, 1)
 	}
+
 	if prog.awardsMinor && passNum%2 == 0 {
 		if c.Minor == "" {
 			c.Minor = p.ChooseSkill(*c, without(academicMajors, c.Major))
 		}
+
 		c.Skills.Raise(c.Minor, 1)
 	}
 }
@@ -240,6 +258,7 @@ func graduate(c *Character, prog academicProgram) {
 	} else {
 		c.scores[Education] = min(c.scores[Education]+1, maxCharacteristic)
 	}
+
 	c.Degrees = append(c.Degrees, prog.degree)
 }
 
@@ -251,6 +270,7 @@ func bestChar(c Character, chars ...Characteristic) Characteristic {
 			best = ch
 		}
 	}
+
 	return best
 }
 

@@ -54,6 +54,7 @@ func TestRetirementPay(t *testing.T) {
 	for _, tc := range cases {
 		c := &Character{Age: tc.age, Careers: tc.careers}
 		computeEntitlements(c)
+
 		if !equalEntitlements(c.Entitlements, tc.want) {
 			t.Errorf("%s: entitlements = %+v, want %+v", tc.name, c.Entitlements, tc.want)
 		}
@@ -88,6 +89,7 @@ func TestCivilPension(t *testing.T) {
 	for _, tc := range cases {
 		c := &Character{Careers: tc.careers}
 		computeEntitlements(c)
+
 		if !equalEntitlements(c.Entitlements, tc.want) {
 			t.Errorf("%s: entitlements = %+v, want %+v", tc.name, c.Entitlements, tc.want)
 		}
@@ -99,6 +101,7 @@ func TestCivilPension(t *testing.T) {
 func TestPensionDoubling(t *testing.T) {
 	c := &Character{Careers: []CareerRecord{{Career: Functionary, Terms: 1}}, pensionDoublings: 2}
 	computeEntitlements(c)
+
 	if len(c.Entitlements) != 1 || c.Entitlements[0].PerYear != 45000 {
 		t.Errorf("doubled pension = %+v, want Cr45,000/year (15,000 x 3)", c.Entitlements)
 	}
@@ -109,6 +112,7 @@ func TestPensionDoubling(t *testing.T) {
 func TestPensionX2Benefit(t *testing.T) {
 	c := &Character{}
 	applyBenefit(c, pensionX2(), FunctionaryCareer, CareerRecord{})
+
 	if c.pensionDoublings != 1 {
 		t.Errorf("pensionDoublings = %d, want 1", c.pensionDoublings)
 	}
@@ -124,6 +128,7 @@ func TestRetirementDoubling(t *testing.T) {
 		retirementDoublings: 1,
 	}
 	computeEntitlements(c)
+
 	if len(c.Entitlements) != 1 || c.Entitlements[0].PerYear != 24000 {
 		t.Errorf("doubled retirement = %+v, want Cr24,000/year (3,000 x 4 x 2)", c.Entitlements)
 	}
@@ -134,6 +139,7 @@ func TestRetirementDoubling(t *testing.T) {
 func TestRetirementX2Benefit(t *testing.T) {
 	c := &Character{}
 	applyBenefit(c, retirementX2(), MarineCareer, CareerRecord{})
+
 	if c.retirementDoublings != 1 {
 		t.Errorf("retirementDoublings = %d, want 1", c.retirementDoublings)
 	}
@@ -146,12 +152,15 @@ func TestIsDuplicateBenefit(t *testing.T) {
 	if !isDuplicateBenefit(c, named("Wafer Jack")) {
 		t.Error("a held Wafer Jack should be a rerollable duplicate")
 	}
+
 	if isDuplicateBenefit(c, named("Ship Share")) {
 		t.Error("Ship Shares stack — not a duplicate")
 	}
+
 	if isDuplicateBenefit(c, named("TAS Fellowship")) {
 		t.Error("a benefit not yet held is not a duplicate")
 	}
+
 	if isDuplicateBenefit(c, cash(1000)) {
 		t.Error("cash never duplicates")
 	}
@@ -162,6 +171,7 @@ func TestRandomizeMusterDMPolicy(t *testing.T) {
 	if !(DefaultPolicy{}).RandomizeMusterDM() {
 		t.Error("DefaultPolicy should randomize the muster DM")
 	}
+
 	if (goldenPolicy{}).RandomizeMusterDM() {
 		t.Error("goldenPolicy should apply the full DM (deterministic)")
 	}
@@ -173,6 +183,7 @@ func TestProfessorsPension(t *testing.T) {
 	// Tenured Scholar -> Professor's Pension.
 	c := &Character{Tenured: true, Careers: []CareerRecord{{Career: Scholar, Terms: 4}}}
 	computeEntitlements(c)
+
 	if !equalEntitlements(c.Entitlements, []Entitlement{{"Professor's Pension", 10000, 66}}) {
 		t.Errorf("tenured Scholar entitlements = %+v, want one Professor's Pension", c.Entitlements)
 	}
@@ -180,6 +191,7 @@ func TestProfessorsPension(t *testing.T) {
 	// An untenured Scholar gets nothing.
 	c = &Character{Careers: []CareerRecord{{Career: Scholar, Terms: 4}}}
 	computeEntitlements(c)
+
 	if len(c.Entitlements) != 0 {
 		t.Errorf("untenured Scholar entitlements = %+v, want none", c.Entitlements)
 	}
@@ -190,6 +202,7 @@ func TestProfessorsPension(t *testing.T) {
 		Careers: []CareerRecord{{Career: Functionary, Terms: 1}, {Career: Scholar, Terms: 4}},
 	}
 	computeEntitlements(c)
+
 	want := []Entitlement{{"Functionary's Pension", 15000, 66}, {"Professor's Pension", 10000, 66}}
 	if !equalEntitlements(c.Entitlements, want) {
 		t.Errorf("Functionary+Professor entitlements = %+v, want both pensions", c.Entitlements)
@@ -201,6 +214,7 @@ func TestProfessorsPension(t *testing.T) {
 func TestDeadCollectsNothing(t *testing.T) {
 	c := &Character{Age: 34, Dead: true, Careers: []CareerRecord{{Career: Soldier, Terms: 4}}}
 	computeEntitlements(c)
+
 	if len(c.Entitlements) != 0 {
 		t.Errorf("dead character entitlements = %+v, want none", c.Entitlements)
 	}
@@ -210,10 +224,12 @@ func equalEntitlements(a, b []Entitlement) bool {
 	if len(a) != len(b) {
 		return false
 	}
+
 	for i := range a {
 		if a[i] != b[i] {
 			return false
 		}
 	}
+
 	return true
 }

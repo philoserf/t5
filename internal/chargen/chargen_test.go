@@ -16,10 +16,12 @@ func TestGenerateUPP(t *testing.T) {
 		4, 5, // Edu 9
 		5, 5, // Soc 10 (A)
 	}
+
 	c := Generate(dice.NewScripted(rolls...))
 	if got := c.UPP(); got != "77789A" {
 		t.Fatalf("UPP() = %q, want 77789A", got)
 	}
+
 	if c.Score(Endurance) != 7 || c.Score(Social) != 10 {
 		t.Fatalf("Score mismatch: End=%d Soc=%d", c.Score(Endurance), c.Score(Social))
 	}
@@ -32,6 +34,7 @@ func TestCharacteristicString(t *testing.T) {
 			t.Errorf("Characteristic(%d) = %q, want %q", i, got, w)
 		}
 	}
+
 	if got := Characteristic(99).String(); got != "?" {
 		t.Errorf("out-of-range = %q, want ?", got)
 	}
@@ -39,6 +42,7 @@ func TestCharacteristicString(t *testing.T) {
 
 func TestScorePanicsOutOfRange(t *testing.T) {
 	c := Generate(dice.NewScripted(4, 4))
+
 	for _, ch := range []Characteristic{-1, count, 99} {
 		func() {
 			defer func() {
@@ -46,6 +50,7 @@ func TestScorePanicsOutOfRange(t *testing.T) {
 					t.Errorf("Score(%d) did not panic", ch)
 				}
 			}()
+
 			c.Score(ch)
 		}()
 	}
@@ -54,6 +59,7 @@ func TestScorePanicsOutOfRange(t *testing.T) {
 func TestCheck(t *testing.T) {
 	// Endurance 8; a 2D roll of 7 succeeds (7 <= 8).
 	c := Generate(dice.NewScripted(4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4)) // all 8s
+
 	res := c.Check(dice.NewScripted(3, 4), Endurance, dice.Average, 0)
 	if !res.Success || res.Target != 8 {
 		t.Fatalf("Check = %+v, want success against target 8", res)
@@ -68,10 +74,12 @@ func TestCheck(t *testing.T) {
 func TestGenerateRangeAndDeterminism(t *testing.T) {
 	for seed := uint64(1); seed <= 300; seed++ {
 		a := Generate(dice.NewWithSeed(seed))
+
 		b := Generate(dice.NewWithSeed(seed))
 		if a.UPP() != b.UPP() {
 			t.Fatalf("seed %d not reproducible: %s vs %s", seed, a, b)
 		}
+
 		for ch := Strength; ch <= Social; ch++ {
 			if v := a.Score(ch); v < 2 || v > 12 {
 				t.Fatalf("seed %d: %s = %d out of 2D range", seed, ch, v)

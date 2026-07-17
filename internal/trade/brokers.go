@@ -21,6 +21,7 @@ func BrokerCommissionPercent(brokerSkill int) int {
 // 1-2 at A-D. A skill below 1 has no broker.
 func BrokerAvailable(brokerSkill int, starport byte) bool {
 	var worst byte
+
 	switch {
 	case brokerSkill >= 7:
 		worst = 'A'
@@ -33,6 +34,7 @@ func BrokerAvailable(brokerSkill int, starport byte) bool {
 	default:
 		return false
 	}
+
 	return starport >= 'A' && starport <= worst
 }
 

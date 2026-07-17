@@ -63,29 +63,37 @@ func TestGoldenScout(t *testing.T) {
 	if got := c.UPP(); got != "877777" {
 		t.Errorf("UPP = %q, want %q (Str 7 +1 muster benefit)", got, "877777")
 	}
+
 	if c.Age != 26 {
 		t.Errorf("Age = %d, want 26 (18 + 2 terms)", c.Age)
 	}
+
 	if c.Skills.Level("Animals") != 1 || c.Skills.Level("Vacc Suit") != 1 {
 		t.Errorf("homeworld skills: Animals=%d Vacc Suit=%d, want 1/1",
 			c.Skills.Level("Animals"), c.Skills.Level("Vacc Suit"))
 	}
+
 	if got := c.Skills.Level("Survey"); got != 8 {
 		t.Errorf("Survey = %d, want 8", got)
 	}
+
 	if got := c.Skills.Level("Navigation"); got != 8 {
 		t.Errorf("Navigation = %d, want 8", got)
 	}
+
 	if len(c.Careers) != 1 {
 		t.Fatalf("careers = %+v, want one record", c.Careers)
 	}
+
 	rec := c.Careers[0]
 	if rec.Career != Scout || rec.Terms != 2 || rec.Outcome != MusteredOut {
 		t.Errorf("record = %+v, want Scout/2 terms/MusteredOut", rec)
 	}
+
 	if c.Credits != 0 {
 		t.Errorf("Credits = %d, want 0 (both muster rolls took benefits)", c.Credits)
 	}
+
 	if len(c.Benefits) != 1 || c.Benefits[0] != "Forbidden Knowledge" {
 		t.Errorf("Benefits = %v, want [Forbidden Knowledge]", c.Benefits)
 	}
@@ -95,6 +103,7 @@ func TestGoldenScout(t *testing.T) {
 		t.Errorf("Discoveries=%d LandGrants=%d Fame=%d, want 2/2/2",
 			c.Discoveries, c.LandGrants, c.Fame)
 	}
+
 	if c.WoundBadges != 0 || c.Dead {
 		t.Errorf("unexpected injury: badges %d dead %v", c.WoundBadges, c.Dead)
 	}
@@ -136,6 +145,7 @@ func TestScoutCourierDuty(t *testing.T) {
 			c.WoundBadges,
 		)
 	}
+
 	if c.Skills.Level("Survey") != 4 {
 		t.Errorf("Survey = %d, want 4 (Courier grants 4 skills, not 8)", c.Skills.Level("Survey"))
 	}

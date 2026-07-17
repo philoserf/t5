@@ -41,16 +41,20 @@ func ParseHex(s string) (Hex, bool) {
 	if len(s) != 4 {
 		return Hex{}, false
 	}
+
 	for i := range len(s) {
 		if s[i] < '0' || s[i] > '9' {
 			return Hex{}, false
 		}
 	}
+
 	col, _ := strconv.Atoi(s[:2])
+
 	row, _ := strconv.Atoi(s[2:])
 	if col < 1 || col > Columns || row < 1 || row > Rows {
 		return Hex{}, false
 	}
+
 	return Hex{Col: col, Row: row}, true
 }
 
@@ -62,6 +66,7 @@ func (h Hex) Distance(o Hex) int {
 	ax, az := h.Col, h.Row-(h.Col+(h.Col&1))/2
 	bx, bz := o.Col, o.Row-(o.Col+(o.Col&1))/2
 	ay, by := -ax-az, -bx-bz
+
 	return (max(ax-bx, bx-ax) + max(ay-by, by-ay) + max(az-bz, bz-az)) / 2
 }
 
@@ -72,10 +77,12 @@ func ParseSubsector(s string) (byte, bool) {
 	if len(s) != 1 {
 		return 0, false
 	}
+
 	letter := strings.ToUpper(s)[0]
 	if letter < 'A' || letter > 'P' {
 		return 0, false
 	}
+
 	return letter, true
 }
 
@@ -84,13 +91,15 @@ func ParseSubsector(s string) (byte, bool) {
 func (h Hex) Subsector() byte {
 	colBand := (h.Col - 1) / subsectorCol
 	rowBand := (h.Row - 1) / subsectorRow
-	return byte('A' + rowBand*subsectorCols + colBand)
+
+	return byte('A' + rowBand*subsectorCols + colBand) //nolint:gosec // G115: value is a bounded 0-33 eHex digit
 }
 
 // Density is a region's stellar density (Book 3 p.13 Extended System Contents),
 // which sets how likely a hex holds a star system.
 type Density int
 
+// System-presence densities (Book 3 p. 12).
 const (
 	ExtraGalactic Density = iota // 3D <= 3 (~1%)
 	Rift                         // 2D <= 2 (~3%)
@@ -127,6 +136,7 @@ func (d Density) String() string {
 	if d < ExtraGalactic || d > Core {
 		return "?"
 	}
+
 	return densityInfo[d].name
 }
 
@@ -136,6 +146,7 @@ func DensityNames() []string {
 	for i, info := range densityInfo {
 		names[i] = info.name
 	}
+
 	return names
 }
 
@@ -148,6 +159,7 @@ func DensityByName(name string) (Density, bool) {
 			return Density(i), true
 		}
 	}
+
 	return 0, false
 }
 
@@ -163,7 +175,9 @@ func SystemPresent(r *dice.Roller, d Density) bool {
 	if d < ExtraGalactic || d > Core {
 		return false
 	}
+
 	info := densityInfo[d]
+
 	return r.Dice(info.dice) <= info.threshold
 }
 
@@ -194,6 +208,7 @@ func rollContents(r *dice.Roller, h Hex) StellarHex {
 // which selects a subsector from a surveyed sector instead.
 func GenerateSector(r *dice.Roller, d Density) []StellarHex {
 	var systems []StellarHex
+
 	for col := 1; col <= Columns; col++ {
 		for row := 1; row <= Rows; row++ {
 			if SystemPresent(r, d) {
@@ -201,5 +216,6 @@ func GenerateSector(r *dice.Roller, d Density) []StellarHex {
 			}
 		}
 	}
+
 	return systems
 }

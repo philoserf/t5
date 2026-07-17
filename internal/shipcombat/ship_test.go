@@ -17,10 +17,12 @@ func TestArmorLayersDoesNotDivide(t *testing.T) {
 		TL: 12, HullLetter: 1, Config: shipgen.Lifting, Structure: shipgen.Shell, ArmorLayers: 2,
 		Maneuver: &shipgen.DriveSpec{Letter: 1}, Power: &shipgen.DriveSpec{Letter: 1},
 	})
+
 	layers := ArmorLayers(ship)
 	if len(layers) != 2 {
 		t.Fatalf("armor = %v, want 2 layers", layers)
 	}
+
 	for i, av := range layers {
 		if av != ship.Armor.AV {
 			t.Errorf("layer %d has AV %d, want the ship's per-layer AV %d", i, av, ship.Armor.AV)
@@ -60,6 +62,7 @@ func TestShipAgilityRespectsTheHull(t *testing.T) {
 	if cluster.Hull.MaxG != 1 {
 		t.Fatalf("a Cluster hull is capped at 1G, got %d", cluster.Hull.MaxG)
 	}
+
 	if cluster.Maneuver.Potential <= cluster.Hull.MaxG {
 		t.Fatalf(
 			"this test needs a drive that outruns the hull, got %dG",

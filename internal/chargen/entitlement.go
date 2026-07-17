@@ -28,12 +28,15 @@ func computeEntitlements(c *Character) {
 	if c.Dead {
 		return
 	}
+
 	if e, ok := retirementPay(c); ok {
 		c.Entitlements = append(c.Entitlements, e)
 	}
+
 	if e, ok := civilPension(c); ok {
 		c.Entitlements = append(c.Entitlements, e)
 	}
+
 	if e, ok := professorsPension(c); ok {
 		c.Entitlements = append(c.Entitlements, e)
 	}
@@ -47,6 +50,7 @@ func professorsPension(c *Character) (Entitlement, bool) {
 	if !c.Tenured {
 		return Entitlement{}, false
 	}
+
 	return Entitlement{Source: "Professor's Pension", PerYear: 10000, FromAge: retirementAge}, true
 }
 
@@ -57,19 +61,23 @@ func professorsPension(c *Character) (Entitlement, bool) {
 // "musters out as an Officer"), applied to their total combined terms.
 func retirementPay(c *Character) (Entitlement, bool) {
 	terms, officer := 0, false
+
 	for _, rec := range c.Careers {
 		if CareerByID(rec.Career).BranchOps != nil { // an armed-forces career
 			terms += rec.Terms
 			officer = rec.Officer // the most recent armed-forces career's status
 		}
 	}
+
 	if terms < 4 {
 		return Entitlement{}, false
 	}
+
 	rate, source := 2000, "Enlisted Retirement"
 	if officer {
 		rate, source = 3000, "Officer Retirement"
 	}
+
 	return Entitlement{
 		Source:  source,
 		PerYear: rate * terms * (1 + c.retirementDoublings),
@@ -82,15 +90,23 @@ func retirementPay(c *Character) (Entitlement, bool) {
 // pension replaces the Citizen one). It begins at Retirement, age 66.
 func civilPension(c *Character) (Entitlement, bool) {
 	var functionary, citizen bool
+
 	for _, rec := range c.Careers {
 		switch rec.Career {
 		case Functionary:
 			functionary = true
 		case Citizen:
 			citizen = true
+		default:
+			// other careers earn no civil pension
 		}
 	}
-	base, source := 0, ""
+
+	var (
+		base   int
+		source string
+	)
+
 	switch {
 	case functionary:
 		base, source = 15000, "Functionary's Pension"
@@ -99,6 +115,7 @@ func civilPension(c *Character) (Entitlement, bool) {
 	default:
 		return Entitlement{}, false
 	}
+
 	return Entitlement{
 		Source:  source,
 		PerYear: base * (1 + c.pensionDoublings),

@@ -25,6 +25,7 @@ func TestParseAllegiance(t *testing.T) {
 			t.Errorf("ParseAllegiance(%q) = %q,%v, want Im,false", bad, a, ok)
 		}
 	}
+
 	if !Imperial.Valid() || !Allegiance("ImDd").Valid() || Allegiance("Imp").Valid() {
 		t.Errorf("Valid accepts a 2- or 4-letter code only")
 	}

@@ -23,7 +23,7 @@ const starPresent = 3
 // A System is a generated star system. The Primary always exists; the other
 // stars are present only when rolled, so they are pointers that are nil when
 // absent. Each of Primary, Close, Near, and Far may have a companion.
-type System struct {
+type System struct { //nolint:recvcheck // deliberate value-reader / pointer-mutator split
 	Primary          Star
 	PrimaryCompanion *Star
 	Close            *Star
@@ -77,6 +77,7 @@ func GenerateForMap(r *dice.Roller, gasGiant, asteroidMainworld bool) System {
 	if gasGiant {
 		gg = ggPresent
 	}
+
 	return generate(r, gg, asteroidMainworld)
 }
 
@@ -95,6 +96,7 @@ func generate(r *dice.Roller, gg ggConstraint, asteroidMainworld bool) System {
 	}
 
 	var primaryType, primarySize int
+
 	s.Primary, primaryType, primarySize = rollStar(r, true, 0, 0)
 
 	// With the primary known, place the mainworld relative to its habitable zone
@@ -108,20 +110,25 @@ func generate(r *dice.Roller, gg ggConstraint, asteroidMainworld bool) System {
 		if r.Flux() < starPresent {
 			return nil
 		}
+
 		star, _, _ := rollStar(r, false, primaryType, primarySize)
+
 		return &star
 	}
 
 	s.PrimaryCompanion = present()
 	s.Close = present()
 	s.Near = present()
+
 	s.Far = present()
 	if s.Close != nil {
 		s.CloseCompanion = present()
 	}
+
 	if s.Near != nil {
 		s.NearCompanion = present()
 	}
+
 	if s.Far != nil {
 		s.FarCompanion = present()
 	}
@@ -136,9 +143,11 @@ func generate(r *dice.Roller, gg ggConstraint, asteroidMainworld bool) System {
 	if s.Close != nil {
 		s.CloseOrbit = closeOrbit(r)
 	}
+
 	if s.Near != nil {
 		s.NearOrbit = nearOrbit(r)
 	}
+
 	if s.Far != nil {
 		s.FarOrbit = farOrbit(r)
 	}
@@ -147,6 +156,7 @@ func generate(r *dice.Roller, gg ggConstraint, asteroidMainworld bool) System {
 	// concrete orbit map, then give its worlds their moons.
 	s.placeOrbits(r)
 	s.rollSatellites(r)
+
 	return s
 }
 
@@ -207,8 +217,10 @@ func orbitLabel(o PlacedOrbit) string {
 			label += " " + strings.Join(o.World.TradeCodes, " ")
 		}
 	}
+
 	if n := len(o.Satellites); n > 0 {
 		moons := make([]string, n)
+
 		for j, sat := range o.Satellites {
 			switch {
 			case sat.Ring:
@@ -219,18 +231,22 @@ func orbitLabel(o PlacedOrbit) string {
 				moons[j] = fmt.Sprintf("%s %s", sat.OrbitLetter, sat.Profile)
 			}
 		}
+
 		suffix := ""
 		if n > 1 {
 			suffix = "s"
 		}
+
 		label += fmt.Sprintf(" (%d moon%s: %s)", n, suffix, strings.Join(moons, "; "))
 	}
+
 	return label
 }
 
 // String renders a one-block summary of the system.
 func (s System) String() string {
 	var b strings.Builder
+
 	for _, sl := range s.Stars() {
 		if sl.Orbit >= 0 {
 			fmt.Fprintf(&b, "%s: %s (Orbit %d)\n", sl.Label, sl.Star, sl.Orbit)
@@ -238,32 +254,39 @@ func (s System) String() string {
 			fmt.Fprintf(&b, "%s: %s\n", sl.Label, sl.Star)
 		}
 	}
+
 	switch {
 	case len(s.Orbits) > 0:
 		// Group orbits under their host star; a header is shown only for
 		// secondary stars (the primary's orbits follow "Orbits:" directly).
 		multiHost := s.Orbits[len(s.Orbits)-1].Host != "Primary"
+
 		b.WriteString("Orbits:")
+
 		host := ""
 		for _, o := range s.Orbits {
 			if multiHost && o.Host != host {
 				host = o.Host
 				fmt.Fprintf(&b, "\n  %s:", host)
 			}
+
 			fmt.Fprintf(&b, "\n        %d: %s", o.Orbit, orbitLabel(o))
 		}
+
 		b.WriteByte('\n')
 	case len(s.Giants) > 0:
 		giants := make([]string, len(s.Giants))
 		for i, g := range s.Giants {
 			giants[i] = g.String()
 		}
+
 		fmt.Fprintf(&b, "Gas Giants: %s\n", strings.Join(giants, ", "))
 	}
 	// PBG already carries the belt and gas-giant counts (its 2nd and 3rd
 	// digits), so they are not labelled separately.
 	fmt.Fprintf(&b, "Worlds: %d  PBG: %s\n", s.Worlds, s.PBG())
 	fmt.Fprintf(&b, "Mainworld: %s", s.Mainworld.SecondSurvey())
+
 	return b.String()
 }
 
@@ -291,6 +314,7 @@ type StarSlot struct {
 // rather than walking the eight pointers again.
 func (s System) Stars() []StarSlot {
 	slots := make([]StarSlot, 0, 8)
+
 	slots = append(slots, StarSlot{Label: "Primary", Star: s.Primary, Orbit: -1})
 	for _, e := range []struct {
 		label     string
@@ -313,6 +337,7 @@ func (s System) Stars() []StarSlot {
 			)
 		}
 	}
+
 	return slots
 }
 
@@ -323,6 +348,7 @@ func (s System) Stellar() string {
 	for _, sl := range s.Stars() {
 		stars = append(stars, sl.Star.String())
 	}
+
 	return strings.Join(stars, " ")
 }
 
@@ -335,6 +361,7 @@ func (s System) Stellar() string {
 // malformed one defaults to Imperial (worldgen.ParseAllegiance).
 func (s System) SecondSurvey(hex, name, allegiance string) string {
 	a, _ := worldgen.ParseAllegiance(allegiance)
+
 	return fmt.Sprintf("%s %s %s %s %d %s %s",
 		hex, name, s.Mainworld.SecondSurvey(), s.PBG(), s.Worlds, a, s.Stellar())
 }

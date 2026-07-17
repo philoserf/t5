@@ -33,7 +33,9 @@ func placeMainworld(
 	if mainworld.Profile.Size == 0 {
 		return p2(r.Dice(2)).belt, MainworldSatellite{}
 	}
+
 	hzVar := hzVarFromFlux(r.Flux() + hzVarDM(primary))
+
 	sat := rollMainworldSatellite(r)
 	if sat.IsSatellite {
 		if sat.Far {
@@ -42,14 +44,17 @@ func placeMainworld(
 			mainworld.TradeCodes = append(mainworld.TradeCodes, "Lk")
 		}
 	}
+
 	hz, ok := HZOrbit(primary)
 	if !ok {
 		return -1, sat
 	}
+
 	orbit := max(hz+hzVar, 0)
 	if codes := worldgen.ClimateCodes(mainworld.Profile, orbit, hz, true); len(codes) > 0 {
 		mainworld.TradeCodes = append(mainworld.TradeCodes, codes...)
 	}
+
 	return orbit, sat
 }
 
@@ -140,5 +145,6 @@ func hzVarDM(primary Star) int {
 	case "O", "B":
 		return -2
 	}
+
 	return 0
 }

@@ -29,6 +29,7 @@ func main() {
 	for range n {
 		s := sophont.Generate(r)
 		fmt.Println(s)
+
 		if *showChar {
 			fmt.Println("  " + memberLine(s, chargen.GenerateSophont(r, s)))
 		}
@@ -42,9 +43,11 @@ func memberLine(s sophont.Species, c chargen.Character) string {
 	if c.Gender != "" {
 		parts = append(parts, c.Gender)
 	}
+
 	if c.Caste != "" {
 		parts = append(parts, c.Caste)
 	}
+
 	return strings.Join(parts, " ")
 }
 
@@ -56,10 +59,12 @@ func memberLine(s sophont.Species, c chargen.Character) string {
 // from the profile — the caste appears by name instead.
 func profile(s sophont.Species, c chargen.Character) string {
 	var b strings.Builder
+
 	for ch := chargen.Strength; ch <= chargen.Social; ch++ {
 		if ch == chargen.Social && s.Caste != nil {
 			break // C6 is the caste, reported by name, not a placeholder digit
 		}
+
 		v := c.Score(ch)
 		if v >= 0 && v <= ehex.Max {
 			b.WriteString(ehex.Format(v))
@@ -67,5 +72,6 @@ func profile(s sophont.Species, c chargen.Character) string {
 			fmt.Fprintf(&b, "[%d]", v)
 		}
 	}
+
 	return b.String()
 }

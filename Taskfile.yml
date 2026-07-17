@@ -48,9 +48,19 @@ tasks:
       - go vet ./...
 
   fmt:
-    desc: Format the code
+    desc: Format the code (gofumpt + goimports + golines)
     cmds:
-      - gofmt -w .
+      - golangci-lint fmt
+
+  lint:
+    desc: Lint the code
+    cmds:
+      - golangci-lint run
+
+  audit:
+    desc: Report what the globally-disabled linters would flag — non-gating, for periodic review of the blind spots those exceptions create
+    cmds:
+      - golangci-lint run --enable-only=exhaustruct,mnd,goconst,varnamelen,gochecknoglobals,paralleltest,err113 --max-issues-per-linter=0 --max-same-issues=0 || true
 
   tidy:
     desc: Tidy the module files
@@ -58,8 +68,7 @@ tasks:
       - go mod tidy
 
   check:
-    desc: Formatting, vet, and tests — the pre-commit gate
+    desc: Lint (incl. format + vet) and tests — the pre-commit gate
     cmds:
-      - gofmt -l .
-      - go vet ./...
+      - golangci-lint run
       - go test ./...

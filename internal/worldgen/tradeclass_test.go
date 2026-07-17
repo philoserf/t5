@@ -11,7 +11,7 @@ import (
 // TestTradeClassificationsRegina checks the canonical worked example: Regina
 // (A788899-C) is Pre-High, Pre-Agricultural, and Rich.
 func TestTradeClassificationsRegina(t *testing.T) {
-	regina := uwp.Profile{
+	reginaProfile := uwp.Profile{
 		Starport:      'A',
 		Size:          7,
 		Atmosphere:    8,
@@ -21,7 +21,8 @@ func TestTradeClassificationsRegina(t *testing.T) {
 		Law:           9,
 		TechLevel:     12,
 	}
-	got := TradeClassifications(regina)
+	got := TradeClassifications(reginaProfile)
+
 	want := []string{"Ph", "Pa", "Ri"}
 	if !reflect.DeepEqual(got, want) {
 		t.Fatalf("TradeClassifications(Regina) = %v, want %v", got, want)
@@ -83,8 +84,6 @@ func TestTradeClassifications(t *testing.T) {
 // beyond the original 21 (Book 3 Chart D, p.26): Dieback, Barren, Prison/Exile,
 // and Reserve.
 func TestTradeClassificationsUWPCodes(t *testing.T) {
-	has := func(codes []string, code string) bool { return slices.Contains(codes, code) }
-
 	// Di Dieback: Pop0/Gov0/Law0 with a working starport (A-D).
 	di := uwp.Profile{
 		Starport:      'C',
@@ -95,7 +94,7 @@ func TestTradeClassificationsUWPCodes(t *testing.T) {
 		Government:    0,
 		Law:           0,
 	}
-	if got := TradeClassifications(di); !has(got, "Di") || has(got, "Ba") {
+	if got := TradeClassifications(di); !slices.Contains(got, "Di") || slices.Contains(got, "Ba") {
 		t.Errorf("Dieback = %v, want Di and not Ba", got)
 	}
 	// Ba Barren: the same core with Starport E or X.
@@ -109,14 +108,14 @@ func TestTradeClassificationsUWPCodes(t *testing.T) {
 			Government:    0,
 			Law:           0,
 		}
-		if got := TradeClassifications(ba); !has(got, "Ba") || has(got, "Di") {
+		if got := TradeClassifications(ba); !slices.Contains(got, "Ba") || slices.Contains(got, "Di") {
 			t.Errorf("Barren (starport %c) = %v, want Ba and not Di", sp, got)
 		}
 	}
 	// Di/Ba are mutually exclusive across every starport (and the belt's 0x00).
 	for _, sp := range []byte{'A', 'B', 'C', 'D', 'E', 'X', 0} {
 		got := TradeClassifications(uwp.Profile{Starport: sp, Population: 0, Government: 0, Law: 0})
-		if has(got, "Di") && has(got, "Ba") {
+		if slices.Contains(got, "Di") && slices.Contains(got, "Ba") {
 			t.Errorf("starport %q emitted both Di and Ba: %v", sp, got)
 		}
 	}
@@ -130,9 +129,10 @@ func TestTradeClassificationsUWPCodes(t *testing.T) {
 		Government:    5,
 		Law:           7,
 	}
-	if got := TradeClassifications(px); !has(got, "Px") {
+	if got := TradeClassifications(px); !slices.Contains(got, "Px") {
 		t.Errorf("Prison = %v, want Px", got)
 	}
+
 	if got := TradeClassifications(
 		uwp.Profile{
 			Starport:      'B',
@@ -142,7 +142,7 @@ func TestTradeClassificationsUWPCodes(t *testing.T) {
 			Government:    5,
 			Law:           5,
 		},
-	); has(
+	); slices.Contains(
 		got,
 		"Px",
 	) {
@@ -151,12 +151,13 @@ func TestTradeClassificationsUWPCodes(t *testing.T) {
 
 	// Re Reserve: Pop 0-4, Gov 6, Law 0/4/5.
 	re := uwp.Profile{Starport: 'C', Population: 2, Government: 6, Law: 4}
-	if got := TradeClassifications(re); !has(got, "Re") {
+	if got := TradeClassifications(re); !slices.Contains(got, "Re") {
 		t.Errorf("Reserve = %v, want Re", got)
 	}
+
 	if got := TradeClassifications(
 		uwp.Profile{Starport: 'C', Population: 2, Government: 5, Law: 4},
-	); has(
+	); slices.Contains(
 		got,
 		"Re",
 	) {
@@ -173,15 +174,16 @@ func TestOrderTradeCodes(t *testing.T) {
 	// As accumulated for a satellite: He (Planetary), a zone code, a climate code,
 	// then Sa (Planetary) last.
 	got := OrderTradeCodes([]string{"He", "Da", "Tz", "Sa"})
-	want := []string{"He", "Sa", "Tz", "Da"} // Planetary, Planetary, Climate, Special
+
+	want := []string{"He", "Sa", "Tz", "Da"} // Planetary, Climate, Special
 	if !slices.Equal(got, want) {
 		t.Errorf("OrderTradeCodes = %v, want %v", got, want)
 	}
 	// A capital (Political) sorts before the Special zone codes, wherever it was
 	// stamped in.
-	cap := OrderTradeCodes([]string{"Fo", "Cs", "Ni"})
-	if !slices.Equal(cap, []string{"Ni", "Cs", "Fo"}) { // Population, Political, Special
-		t.Errorf("capital ordering = %v, want [Ni Cs Fo]", cap)
+	capacity := OrderTradeCodes([]string{"Fo", "Cs", "Ni"})
+	if !slices.Equal(capacity, []string{"Ni", "Cs", "Fo"}) { // Population, Political, Special
+		t.Errorf("capital ordering = %v, want [Ni Cs Fo]", capacity)
 	}
 	// Regina's codes are already in order and stay put.
 	reg := OrderTradeCodes([]string{"Ph", "Pa", "Ri"})
@@ -190,6 +192,7 @@ func TestOrderTradeCodes(t *testing.T) {
 	}
 	// It does not mutate its input.
 	in := []string{"Da", "He"}
+
 	_ = OrderTradeCodes(in)
 	if !slices.Equal(in, []string{"Da", "He"}) {
 		t.Errorf("OrderTradeCodes mutated its input: %v", in)

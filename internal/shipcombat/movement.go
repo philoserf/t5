@@ -36,10 +36,11 @@ var rangeChangeRounds = [9][7]int{
 // Range band and the adjacent inner band at a constant thrust (Book 2 p.200), and
 // whether that transit is within tactical (round-measured) range. Bands 9-12
 // transit in hours or days (tactical false); band 0 is the target.
-func RangeChangeRounds(band, gs int) (rounds int, tactical bool) {
+func RangeChangeRounds(band, gs int) (int, bool) {
 	if band < 1 || band > 8 {
 		return 0, false
 	}
+
 	return rangeChangeRounds[band][gsColumn(gs)], true
 }
 

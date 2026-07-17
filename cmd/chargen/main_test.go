@@ -20,6 +20,7 @@ func TestRankOf(t *testing.T) {
 	soldier := func(rank int, officer bool) chargen.CareerRecord {
 		return chargen.CareerRecord{Career: chargen.Soldier, Terms: 3, Rank: rank, Officer: officer}
 	}
+
 	cases := []struct {
 		name string
 		c    chargen.Character
@@ -55,6 +56,7 @@ func TestRankOf(t *testing.T) {
 	// A Noble's rank is their Social Standing, not a ladder position. Roll a
 	// character whose Soc is 11 (2D = 6+5) — a Knight.
 	noble := chargen.Generate(dice.NewScripted(1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 6, 5))
+
 	rec := chargen.CareerRecord{Career: chargen.Noble, Terms: 2}
 	if got := rankOf(noble, rec); got != "Knight" {
 		t.Errorf("Noble with Soc 11: rankOf = %q, want Knight", got)
@@ -70,6 +72,7 @@ func TestSummaryLine(t *testing.T) {
 	); got != "Age 18 — did not qualify for a career\n" {
 		t.Errorf("careerless = %q", got)
 	}
+
 	if got := summaryLine(
 		chargen.Character{Age: 18, Dead: true},
 	); !strings.Contains(
@@ -83,6 +86,7 @@ func TestSummaryLine(t *testing.T) {
 	one := served(chargen.CareerRecord{
 		Career: chargen.Soldier, Terms: 3, Rank: 3, Outcome: chargen.MusteredOut,
 	})
+
 	want := "Soldier — age 26, mustered out as Sergeant after 3 terms\n"
 	if got := summaryLine(one); got != want {
 		t.Errorf("single career = %q, want %q", got, want)
@@ -91,10 +95,12 @@ func TestSummaryLine(t *testing.T) {
 	// "died" already conveys death, so the deceased suffix must not repeat it.
 	died := served(chargen.CareerRecord{Career: chargen.Soldier, Terms: 1, Outcome: chargen.Died})
 	died.Dead = true
+
 	got := summaryLine(died)
 	if !strings.Contains(got, "died") {
 		t.Errorf("a fatal career should say died: %q", got)
 	}
+
 	if strings.Contains(got, "deceased") {
 		t.Errorf("%q says both died and deceased", got)
 	}
@@ -143,10 +149,12 @@ func TestEducationField(t *testing.T) {
 // it, so a plain character's sheet is not padded with zeroes and empty labels.
 func TestRenderOmitsEmptyFields(t *testing.T) {
 	c := served(chargen.CareerRecord{Career: chargen.Scout, Terms: 1, Outcome: chargen.MusteredOut})
+
 	out := render(c)
 	if !strings.Contains(out, "Scout") || !strings.Contains(out, "UPP") {
 		t.Fatalf("sheet is missing its headline or UPP:\n%s", out)
 	}
+
 	for _, absent := range []string{"Wealth", "Benefits", "Education", "Masterpieces", "Publications", "Service"} {
 		if strings.Contains(out, absent) {
 			t.Errorf("a character with no %s should not show that field:\n%s", absent, out)
@@ -162,6 +170,7 @@ func TestRenderOmitsEmptyFields(t *testing.T) {
 			{Career: chargen.Citizen, Terms: 1, Outcome: chargen.MusteredOut},
 		},
 	}
+
 	out = render(rich)
 	for _, want := range []string{"Service", "Publications", "Wealth", "Cr50,000", "Benefits", "TAS"} {
 		if !strings.Contains(out, want) {

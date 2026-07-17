@@ -41,21 +41,25 @@ func TestGoldenCraftsman(t *testing.T) {
 	if got := c.UPP(); got != "877777" {
 		t.Errorf("UPP = %q, want %q (Str 7 +1 muster benefit)", got, "877777")
 	}
+
 	if c.Masterpieces != 0 {
 		t.Errorf(
 			"Masterpieces = %d, want 0 (a fresh Craftsman cannot reach 40 Master Points)",
 			c.Masterpieces,
 		)
 	}
+
 	if c.Skills.Level("Craftsman") != 2 {
 		t.Errorf(
 			"Craftsman = %d, want 2 (+1 per term from failed attempts)",
 			c.Skills.Level("Craftsman"),
 		)
 	}
+
 	if c.Skills.Level("Animals") != 10 {
 		t.Errorf("Animals = %d, want 10 (5 skills x 2 terms)", c.Skills.Level("Animals"))
 	}
+
 	rec := c.Careers[0]
 	if rec.Career != Craftsman || rec.Terms != 2 || rec.Outcome != MusteredOut {
 		t.Errorf("record = %+v, want Craftsman/2 terms/MusteredOut", rec)
@@ -67,11 +71,13 @@ func TestGoldenCraftsman(t *testing.T) {
 func TestCraftsmanMasterpiece(t *testing.T) {
 	c := Character{scores: [count]int{8, 7, 7, 7, 7, 7}}
 	c.Skills.Raise("Craftsman", 10)
+
 	for _, s := range []string{"Pilot", "Gunner", "Computer", "Admin", "Trader"} {
 		c.Skills.Raise(s, 6) // five skills at 6+
 	}
 	// Master Points = Str 8 + Craftsman 10 + (5 x 6) = 48. A 9D of nine 5s = 45 <= 48.
 	runCraftsmanTerm(dice.NewScripted(5), DefaultPolicy{}, &c, CraftsmanCareer, Strength)
+
 	if c.Masterpieces != 1 {
 		t.Errorf("Masterpieces = %d, want 1", c.Masterpieces)
 	}
@@ -79,6 +85,7 @@ func TestCraftsmanMasterpiece(t *testing.T) {
 	if c.MasterpieceValue != 230_000 {
 		t.Errorf("MasterpieceValue = %d, want 230000", c.MasterpieceValue)
 	}
+
 	if c.Skills.Level("Craftsman") != 11 {
 		t.Errorf(
 			"Craftsman = %d, want 11 (+1 from the successful term)",

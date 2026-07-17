@@ -52,6 +52,7 @@ const (
 // defense. So this is a set, not a single value.
 type Principle int
 
+// Defensive screen operating principles.
 const (
 	Electronic Principle = 1 << iota
 	Magnetic
@@ -60,6 +61,7 @@ const (
 
 func (p Principle) String() string {
 	var names []string
+
 	for _, e := range []struct {
 		bit  Principle
 		name string
@@ -68,6 +70,7 @@ func (p Principle) String() string {
 			names = append(names, e.name)
 		}
 	}
+
 	switch len(names) {
 	case 0:
 		return "?"
@@ -191,9 +194,11 @@ func DesignDefense(spec DefenseSpec) Defense {
 	if problems != nil {
 		return Defense{Spec: spec, Problems: problems}
 	}
+
 	if !validDefenseMount(spec.Mount) || !validRange(spec.Range) {
 		return Defense{Spec: spec, Device: dev.name, Problems: []string{"unknown mount or range"}}
 	}
+
 	m := defenseMountData[spec.Mount]
 	rng := rangeData[spec.Range]
 
@@ -209,6 +214,7 @@ func DesignDefense(spec DefenseSpec) Defense {
 			fmt.Sprintf("a defense cannot be built for %s (Vdistant is the furthest)", rng.name),
 		)
 	}
+
 	if spec.Weapon != nil {
 		w := weaponData[*spec.Weapon]
 		// A weapon needs to see out of the hull to shoot, defending or not — so it
@@ -225,6 +231,7 @@ func DesignDefense(spec DefenseSpec) Defense {
 	}
 
 	tl, tons, cost, band := install(dev.tl, dev.cost, m.tons, m.cost, spec.Range, spec.Stage)
+
 	return Defense{
 		Spec:   spec,
 		Device: dev.name,
@@ -256,6 +263,7 @@ func defenseDevice(spec DefenseSpec) (device, []string) {
 		if !validWeapon(*spec.Weapon) {
 			return device{}, []string{"unknown weapon"}
 		}
+
 		w := weaponData[*spec.Weapon]
 		dev := device{w.name, w.tl, w.cost, w.principle, w.scale}
 		// Only nine weapons may be allocated to Defensive Fire (Book 2 p.174). A
@@ -263,11 +271,14 @@ func defenseDevice(spec DefenseSpec) (device, []string) {
 		if !w.defenseOK {
 			return dev, []string{fmt.Sprintf("a %s cannot serve as a defense", w.name)}
 		}
+
 		return dev, nil
 	}
+
 	if !validDefense(spec.Model) {
 		return device{}, []string{"unknown defense"}
 	}
+
 	d := defenseData[spec.Model]
 	// Every screen is a world-range device standing at R=7 (Book 2 p.174 Table A).
 	return device{d.name, d.tl, d.cost, d.principle, WorldScale}, nil
@@ -278,6 +289,7 @@ func (d Defense) Name() string {
 	if d.Device == "" {
 		return "?"
 	}
+
 	return fmt.Sprintf("%s-%d", d.Device, d.TL)
 }
 
@@ -289,6 +301,7 @@ func (d Defense) LongName() string {
 	if d.Device == "" || !validDefenseMount(d.Spec.Mount) || !validRange(d.Spec.Range) {
 		return "?"
 	}
+
 	return fmt.Sprintf("%s %s %s %s Mod=%+d. %s. %s. R=%02d. (%s).",
 		d.Spec.Stage, rangeData[d.Spec.Range].name, mountName(d.Spec.Mount),
 		d.Name(), d.Mod, d.Tons.Phrase(), weaponMCr(d.Cost), d.Band, d.Principle)
@@ -312,6 +325,7 @@ func DefenseByName(s string) (DefenseID, bool) {
 			return DefenseID(id), true
 		}
 	}
+
 	if len(s) == 1 {
 		for id, d := range defenseData {
 			if upper(s[0]) == d.letter {
@@ -319,6 +333,7 @@ func DefenseByName(s string) (DefenseID, bool) {
 			}
 		}
 	}
+
 	return 0, false
 }
 
@@ -328,6 +343,7 @@ func DefenseNames() []string {
 	for i, d := range defenseData {
 		names[i] = d.name
 	}
+
 	return names
 }
 

@@ -1,0 +1,97 @@
+# golangci-lint v2 configuration — aggressively opinionated.
+#
+# Posture: enable every linter, then disable only those that fight this repo's
+# deliberate design (transcribed rulebook tables, white-box tests, data globals)
+# or standard idiomatic Go. See docs and CLAUDE.md for the rationale per linter.
+version: "2"
+
+linters:
+  default: all
+  disable:
+    - exhaustruct # positional records / partial inits are intentional
+    - mnd # the codebase IS transcribed rulebook tables (magic numbers by nature)
+    - goconst # domain vocabulary (skills/careers/trade codes) is string map keys, not consts
+    - varnamelen # terse dice vars (r, c, d6) are idiomatic here
+    - gomodguard # deprecated in v2.12; std-lib-only module has no blocked modules to guard
+    - gochecknoglobals # career/table data are intentional package-level vars
+    - noinlineerr # `if err := f(); err != nil` is standard Go
+    - paralleltest # ~0 benefit on fast deterministic tests; huge manual churn
+    - err113 # false-positive-prone; pointless sentinels for one-off CLI errors
+    - wsl # deprecated; superseded by wsl_v5
+  settings:
+    depguard:
+      # Enforce the deliberate std-lib-only invariant (go.mod has no require
+      # block): only the standard library and our own module may be imported, so
+      # any new third-party dependency is flagged for a conscious decision.
+      rules:
+        main:
+          list-mode: strict
+          allow:
+            - $gostd
+            - github.com/philoserf/t5
+    lll:
+      line-length: 120
+    cyclop:
+      max-complexity: 15
+    funlen:
+      lines: 80
+      statements: 60
+    gocognit:
+      min-complexity: 25
+    nestif:
+      min-complexity: 6
+    exhaustive:
+      default-signifies-exhaustive: true # a default case handles the enum's remainder
+    gosec:
+      excludes:
+        - G404 # game dice use a seedable math/rand PRNG by design, never cryptographic
+    govet:
+      enable-all: true
+      disable:
+        - fieldalignment # micro-optimization; noisy on the record structs
+    nolintlint:
+      require-explanation: true
+      require-specific: true
+      allow-unused: false
+  exclusions:
+    generated: lax
+    presets:
+      - common-false-positives
+      - std-error-handling
+    rules:
+      # The cmd/ CLIs print records to stdout via fmt.Print*; that is their job.
+      # forbidigo stays enabled for the library packages, where a bare print is
+      # a real smell (records there should be returned, not printed).
+      - path: ^cmd/
+        linters:
+          - forbidigo
+      # White-box tests are intentional, and table-driven tests trip several
+      # linters on their terse, repetitive shape. Relax them in _test.go only.
+      - path: _test\.go
+        linters:
+          - dupl
+          - funlen
+          - gocognit
+          - cyclop
+          - lll
+          - gosec
+          - noctx
+          - testpackage
+          - gochecknoglobals
+
+formatters:
+  enable:
+    - gofumpt
+    - goimports
+    - golines
+    - swaggo
+  settings:
+    gofumpt:
+      extra-rules: true
+    goimports:
+      local-prefixes:
+        - github.com/philoserf/t5
+    golines:
+      max-len: 120
+  exclusions:
+    generated: lax

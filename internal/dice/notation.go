@@ -1,6 +1,7 @@
 package dice
 
 import (
+	"errors"
 	"fmt"
 	"strconv"
 	"strings"
@@ -34,7 +35,7 @@ func Parse(s string) (Roll, error) {
 	t := strings.ToUpper(strings.ReplaceAll(s, " ", ""))
 	switch t {
 	case "":
-		return Roll{}, fmt.Errorf("dice: empty roll")
+		return Roll{}, errors.New("dice: empty roll")
 	case "FLUX":
 		return Roll{Kind: FluxRoll}, nil
 	case "D/2":
@@ -47,28 +48,35 @@ func Parse(s string) (Roll, error) {
 	}
 
 	n := 1
+
 	if d > 0 {
 		v, err := strconv.Atoi(t[:d])
 		if err != nil {
 			return Roll{}, fmt.Errorf("dice: bad dice count in %q", s)
 		}
+
 		n = v
 	}
+
 	if n < 1 {
 		return Roll{}, fmt.Errorf("dice: dice count must be positive in %q", s)
 	}
 
 	mod := 0
+
 	if rest := t[d+1:]; rest != "" {
 		if rest[0] != '+' && rest[0] != '-' {
 			return Roll{}, fmt.Errorf("dice: modifier must be signed (+k or -k) in %q", s)
 		}
+
 		v, err := strconv.Atoi(rest)
 		if err != nil {
 			return Roll{}, fmt.Errorf("dice: bad modifier in %q", s)
 		}
+
 		mod = v
 	}
+
 	return Roll{Kind: Standard, N: n, Mod: mod}, nil
 }
 
@@ -95,9 +103,11 @@ func (roll Roll) String() string {
 		if roll.Mod > 0 {
 			return fmt.Sprintf("%dD+%d", roll.N, roll.Mod)
 		}
+
 		if roll.Mod < 0 {
 			return fmt.Sprintf("%dD%d", roll.N, roll.Mod)
 		}
+
 		return fmt.Sprintf("%dD", roll.N)
 	}
 }

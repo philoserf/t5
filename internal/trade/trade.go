@@ -89,6 +89,7 @@ func ValueClasses(tcs []string) []string {
 			out = append(out, code)
 		}
 	}
+
 	return out
 }
 
@@ -106,6 +107,7 @@ func costOf(sourceTL int, valueClasses []string) int {
 	for _, code := range valueClasses {
 		c += costMod[code]
 	}
+
 	return max(c, 0)
 }
 
@@ -125,7 +127,9 @@ func Price(sourceTL, marketTL int, sourceTCs, marketTCs []string) int {
 			}
 		}
 	}
+
 	p += (sourceTL - marketTL) * p / 10
+
 	return max(p, 0)
 }
 
@@ -134,6 +138,7 @@ func Price(sourceTL, marketTL int, sourceTCs, marketTCs []string) int {
 // effective Flux is clamped to the table's -5..+8 range.
 func ActualValuePercent(flux, brokerSkill int) int {
 	e := clamp(flux+BrokerDM(brokerSkill), -5, 8)
+
 	return actualValue[e+5]
 }
 
@@ -148,13 +153,16 @@ func SellingPrice(price, flux, brokerSkill int) int {
 // 221): with the first die known, the second still varies 1-6, bounding the sale.
 // The Broker DM applies as in ActualValuePercent. E.g. a first die of 6 with no
 // broker bounds the outcome to 100%-170%.
-func EstimateActualValue(firstDie, brokerSkill int) (minPct, maxPct int) {
-	minPct = 1 << 30
+func EstimateActualValue(firstDie, brokerSkill int) (int, int) {
+	minPct := 1 << 30
+	maxPct := 0
+
 	for second := 1; second <= 6; second++ {
 		pct := ActualValuePercent(firstDie-second, brokerSkill)
 		minPct = min(minPct, pct)
 		maxPct = max(maxPct, pct)
 	}
+
 	return minPct, maxPct
 }
 
@@ -168,14 +176,17 @@ func EstimateActualValue(firstDie, brokerSkill int) (minPct, maxPct int) {
 // dropping An; the book is inconsistent, and the mechanical chart wins here.
 func CargoID(sourceTL int, sourceTCs []string, allegiance string) string {
 	vc := ValueClasses(sourceTCs)
+
 	id := ehex.Format(sourceTL)
 	if len(vc) > 0 { // a world with no value class has no class field, not an empty one
 		id += "-" + strings.Join(vc, " ")
 	}
+
 	id += " Cr" + commas(costOf(sourceTL, vc))
 	if allegiance != "" && allegiance != "Im" {
 		id += " " + allegiance
 	}
+
 	return id
 }
 
@@ -183,10 +194,11 @@ func CargoID(sourceTL int, sourceTCs []string, allegiance string) string {
 // market that carries the trade class whose oversupply produced it (Book 2 p.211:
 // "If these goods are sold on a market world with this Trade Classification,
 // increase their Price +Cr1,000"). Add it to Price; it is zero for ordinary goods.
-func ImbalanceBonus(g TradeGood, marketTCs []string) int {
+func ImbalanceBonus(g Good, marketTCs []string) int {
 	if g.Imbalance != "" && slices.Contains(marketTCs, g.Imbalance) {
 		return 1_000
 	}
+
 	return 0
 }
 
@@ -198,20 +210,26 @@ func clamp(v, lo, hi int) int {
 // commas renders an integer with thousands separators, e.g. 1800 -> "1,800".
 func commas(n int) string {
 	s := strconv.Itoa(n)
+
 	neg := strings.HasPrefix(s, "-")
 	if neg {
 		s = s[1:]
 	}
+
 	var b strings.Builder
 	b.Grow(len(s) + len(s)/3)
+
 	for i := range len(s) {
 		if i > 0 && (len(s)-i)%3 == 0 {
 			b.WriteByte(',')
 		}
+
 		b.WriteByte(s[i])
 	}
+
 	if neg {
 		return "-" + b.String()
 	}
+
 	return b.String()
 }

@@ -21,6 +21,7 @@ import (
 // land. Its QSP letter is one of C B P U S A L.
 type Config int
 
+// Hull configurations.
 const (
 	Cluster Config = iota
 	Braced
@@ -49,6 +50,7 @@ func (c Config) Letter() byte {
 	if c < Cluster || c > Lifting {
 		return '?'
 	}
+
 	return configData[c].letter
 }
 
@@ -56,6 +58,7 @@ func (c Config) String() string {
 	if c < Cluster || c > Lifting {
 		return "?"
 	}
+
 	return configData[c].name
 }
 
@@ -63,6 +66,7 @@ func (c Config) String() string {
 // armor value and a cost multiplier. FramePlate is the default (zero value).
 type Structure int
 
+// Hull structures.
 const (
 	FramePlate Structure = iota // Frame-and-Plate (default)
 	Shell                       // base AV = TL/2
@@ -85,6 +89,7 @@ func (s Structure) String() string {
 	if s < FramePlate || s > Charged {
 		return "?"
 	}
+
 	return structureNames[s]
 }
 
@@ -93,6 +98,7 @@ func (s Structure) String() string {
 // (Power Plant).
 type DriveKind int
 
+// Drive kinds.
 const (
 	Maneuver DriveKind = iota
 	Jump
@@ -105,6 +111,7 @@ func (k DriveKind) String() string {
 	if k < Maneuver || k > Power {
 		return "?"
 	}
+
 	return driveKindNames[k]
 }
 
@@ -122,9 +129,11 @@ func LetterOrdinal(c byte) int {
 	if c >= 'a' && c <= 'z' {
 		c -= 'a' - 'A'
 	}
+
 	if i := strings.IndexByte(ehex.Alphabet, c); i >= 10 {
 		return i - 9
 	}
+
 	return 0
 }
 
@@ -133,6 +142,7 @@ func ordinalLetter(n int) byte {
 	if n < 1 || n > maxLetter {
 		return '?'
 	}
+
 	return ehex.Digit(9 + n)
 }
 
@@ -240,6 +250,7 @@ type Ship struct {
 // interstellar drive would append its prefix (deferred).
 func (s Ship) QSP() string {
 	g, jump := potential(s.Maneuver), potential(s.Jump)
+
 	return fmt.Sprintf("%s-%c%c%s%s",
 		s.Spec.Mission, ordinalLetter(s.Hull.Letter), s.Hull.Config.Letter(),
 		ehex.Format(g), ehex.Format(jump))
@@ -249,16 +260,19 @@ func potential(d *Drive) int {
 	if d == nil {
 		return 0
 	}
+
 	return d.Potential
 }
 
 // String renders a full ship card.
 func (s Ship) String() string {
 	var b strings.Builder
+
 	name := s.Spec.Name
 	if name == "" {
 		name = "Ship"
 	}
+
 	fmt.Fprintf(&b, "%s  %s\n", name, s.QSP())
 	fmt.Fprintf(&b, "Hull:    %c %dt %s · TL-%d · %s\n",
 		ordinalLetter(s.Hull.Letter), s.Hull.Tons, s.Hull.Config, s.Spec.TL, s.Hull.Structure)
@@ -270,15 +284,18 @@ func (s Ship) String() string {
 			fmt.Sprintf("Maneuver-%s %dG", driveLabel(s.Maneuver.Letter), s.Maneuver.Potential),
 		)
 	}
+
 	if s.Jump != nil {
 		drives = append(
 			drives,
 			fmt.Sprintf("Jump-%s J-%d", driveLabel(s.Jump.Letter), s.Jump.Potential),
 		)
 	}
+
 	if s.Power != nil {
-		drives = append(drives, fmt.Sprintf("Power-%s", driveLabel(s.Power.Letter)))
+		drives = append(drives, "Power-"+driveLabel(s.Power.Letter))
 	}
+
 	if len(drives) > 0 {
 		fmt.Fprintf(&b, "Drives:  %s\n", strings.Join(drives, " · "))
 	}
@@ -286,20 +303,25 @@ func (s Ship) String() string {
 	if s.Armor.Layers > 0 {
 		fmt.Fprintf(&b, "Armor:   %d layers AV-%d\n", s.Armor.Layers, s.Armor.AV)
 	}
+
 	for i, w := range s.Weapons {
 		label := "Weapons:"
 		if i > 0 {
 			label = "        " // the rest of the battery lines up under the first
 		}
+
 		fmt.Fprintf(&b, "%s %s\n", label, w.LongName())
 	}
+
 	for i, d := range s.Defenses {
 		label := "Defenses:"
 		if i > 0 {
 			label = "         "
 		}
+
 		fmt.Fprintf(&b, "%s %s\n", label, d.LongName())
 	}
+
 	fmt.Fprintf(
 		&b,
 		"Fuel:    %dt · Cost %s · Payload %dt",
@@ -307,9 +329,11 @@ func (s Ship) String() string {
 		mcr(s.Cost),
 		s.Tonnage.Payload,
 	)
+
 	for _, p := range s.Problems {
 		fmt.Fprintf(&b, "\n! %s", p)
 	}
+
 	return b.String()
 }
 

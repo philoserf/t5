@@ -38,17 +38,21 @@ func TestGoldenCitizen(t *testing.T) {
 	if got := c.UPP(); got != "877777" {
 		t.Errorf("UPP = %q, want %q (Str 7 +1 muster benefit)", got, "877777")
 	}
+
 	if c.Skills.Level("Admin") != 4 || c.Skills.Level("Broker") != 2 {
 		t.Errorf("Job/Hobby: Admin=%d Broker=%d, want 4/2",
 			c.Skills.Level("Admin"), c.Skills.Level("Broker"))
 	}
+
 	if c.Skills.Level("Bureaucrat") != 8 {
 		t.Errorf("Bureaucrat = %d, want 8 (grid skills)", c.Skills.Level("Bureaucrat"))
 	}
+
 	rec := c.Careers[0]
 	if rec.Career != Citizen || rec.Terms != 2 || rec.Outcome != MusteredOut {
 		t.Errorf("record = %+v, want Citizen/2 terms/MusteredOut", rec)
 	}
+
 	if len(c.Benefits) != 1 || c.Benefits[0] != "Wafer Jack" {
 		t.Errorf("Benefits = %v, want [Wafer Jack]", c.Benefits)
 	}
@@ -71,6 +75,7 @@ func TestCitizenLifeFailureIsHarmless(t *testing.T) {
 	if got != Ongoing {
 		t.Errorf("outcome = %v, want Ongoing", got)
 	}
+
 	if run.job != "" || c.WoundBadges != 0 {
 		t.Errorf(
 			"failed Citizen Life gave job %q or wounds %d, want none/0",

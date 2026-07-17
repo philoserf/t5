@@ -80,6 +80,7 @@ func classify(typeFlux, sizeFlux, decimal int, pickB bool) Star {
 	if sp == "BD" {
 		return Star{Type: "BD", Decimal: -1}
 	}
+
 	if sp == "OB" {
 		if pickB {
 			sp = "B"
@@ -100,6 +101,7 @@ func classify(typeFlux, sizeFlux, decimal int, pickB bool) Star {
 	case size == "VI" && (sp == "A" || (sp == "F" && decimal <= 4)):
 		size = "V"
 	}
+
 	return Star{Type: sp, Decimal: decimal, Size: size}
 }
 
@@ -112,12 +114,15 @@ func rollStar(
 	r *dice.Roller,
 	primary bool,
 	primaryType, primarySize int,
-) (star Star, typeFlux, sizeFlux int) {
+) (Star, int, int) {
+	var typeFlux, sizeFlux int
+
 	if primary {
 		typeFlux = r.Flux()
 	} else {
 		typeFlux = primaryType + r.Die() - 1
 	}
+
 	sp := row(typeFlux).sp
 	if sp == "BD" {
 		return Star{Type: "BD", Decimal: -1}, typeFlux, 0
@@ -129,9 +134,11 @@ func rollStar(
 	} else {
 		sizeFlux = primarySize + r.Die() + 2
 	}
+
 	pickB := false
 	if sp == "OB" {
 		pickB = r.Die() >= 4
 	}
+
 	return classify(typeFlux, sizeFlux, decimal, pickB), typeFlux, sizeFlux
 }

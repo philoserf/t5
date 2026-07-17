@@ -7,6 +7,7 @@ func TestManyDice10(t *testing.T) {
 	if got := scripted(1, 2, 3, 1, 2, 3, 1, 2, 3, 1).ManyDice10(100); got != 190 {
 		t.Errorf("ManyDice10(100) = %d, want 190", got)
 	}
+
 	if got := scripted(1, 2, 3).ManyDice10(0); got != 0 {
 		t.Errorf("ManyDice10(0) = %d, want 0", got)
 	}
@@ -27,9 +28,11 @@ func TestAverage35(t *testing.T) {
 	if got := Average35(50); got != 175 {
 		t.Errorf("Average35(50) = %v, want 175", got)
 	}
+
 	if got := Average35(51); got != 178.5 {
 		t.Errorf("Average35(51) = %v, want 178.5", got)
 	}
+
 	if got := Average35(0); got != 0 {
 		t.Errorf("Average35(0) = %v, want 0", got)
 	}
@@ -53,6 +56,7 @@ func TestManyDice35Flux(t *testing.T) {
 			t.Errorf("%s: ManyDice35Flux(100) = %v, want %v", c.name, got, c.want)
 		}
 	}
+
 	if got := scripted(4, 4).ManyDice35Flux(0); got != 0 {
 		t.Errorf("ManyDice35Flux(0) = %v, want 0", got)
 	}

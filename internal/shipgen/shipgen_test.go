@@ -75,9 +75,11 @@ func TestLetterOrdinal(t *testing.T) {
 		if got := LetterOrdinal(c.letter); got != c.ordinal {
 			t.Errorf("LetterOrdinal(%c) = %d, want %d", c.letter, got, c.ordinal)
 		}
+
 		if got := ordinalLetter(c.ordinal); got != c.letter {
 			t.Errorf("ordinalLetter(%d) = %c, want %c", c.ordinal, got, c.letter)
 		}
+
 		if got := HullTons(c.ordinal); got != c.tons {
 			t.Errorf("HullTons(%d) = %d, want %d", c.ordinal, got, c.tons)
 		}
@@ -94,9 +96,11 @@ func TestConfigAndStructureLetters(t *testing.T) {
 	if Lifting.Letter() != 'L' || Streamlined.Letter() != 'S' || Cluster.Letter() != 'C' {
 		t.Errorf("config letters wrong")
 	}
+
 	if Lifting.String() != "Lifting Body" || Shell.String() != "Shell" {
 		t.Errorf("names wrong")
 	}
+
 	if Config(99).Letter() != '?' || Structure(99).String() != "?" {
 		t.Errorf("out-of-range guards wrong")
 	}

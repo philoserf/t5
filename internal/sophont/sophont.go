@@ -56,6 +56,7 @@ func Generate(r *dice.Roller) Species {
 		caste := rollCaste(r, gender)
 		s.Caste = &caste
 	}
+
 	return s
 }
 
@@ -86,6 +87,7 @@ func (s Species) Human() bool {
 			return false
 		}
 	}
+
 	return true
 }
 
@@ -105,8 +107,10 @@ func (s Species) String() string {
 		s.LifeCycle.Lifespan,
 		s.Gender.Structure,
 	)
+
 	if s.Caste != nil {
 		fmt.Fprintf(&b, " %s-caste", s.Caste.Structure)
 	}
+
 	return b.String()
 }

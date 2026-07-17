@@ -38,6 +38,7 @@ func TestGoldenNoble(t *testing.T) {
 	if got := c.UPP(); got != "79788B" {
 		t.Errorf("UPP = %q, want %q (Soc 10 -> 11 by Elevation, Dex +1 muster)", got, "79788B")
 	}
+
 	if c.Score(Social) != 11 || c.LandGrants != 1 {
 		t.Errorf(
 			"Soc = %d, LandGrants = %d, want 11 / 1 (one Elevation)",
@@ -45,16 +46,19 @@ func TestGoldenNoble(t *testing.T) {
 			c.LandGrants,
 		)
 	}
+
 	if c.Skills.Level("Advocate") != 10 {
 		t.Errorf(
 			"Advocate = %d, want 10 (6 elevated term 1 + 4 term 2)",
 			c.Skills.Level("Advocate"),
 		)
 	}
+
 	rec := c.Careers[0]
 	if rec.Career != Noble || rec.Terms != 2 || rec.Outcome != MusteredOut {
 		t.Errorf("record = %+v, want Noble/2 terms/MusteredOut", rec)
 	}
+
 	if len(c.Benefits) != 1 || c.Benefits[0] != "Wafer Jack" {
 		t.Errorf("Benefits = %v, want [Wafer Jack]", c.Benefits)
 	}
@@ -74,6 +78,7 @@ func TestIntrigueFailureExiles(t *testing.T) {
 		NobleCareer,
 		Dexterity,
 	)
+
 	if !run.exiled || c.Score(Social) != 10 || c.WoundBadges != 0 {
 		t.Fatalf(
 			"failed Intrigue: exiled %v Soc %d wounds %d, want exiled/10/0",
@@ -91,6 +96,7 @@ func TestIntrigueFailureExiles(t *testing.T) {
 		NobleCareer,
 		Dexterity,
 	)
+
 	if run.exiled {
 		t.Error("successful Return should end the Exile")
 	}

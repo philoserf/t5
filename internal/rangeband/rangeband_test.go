@@ -10,6 +10,7 @@ func TestWorldBand(t *testing.T) {
 	if !ok || b.Descriptor != "Medium" || b.Meters != 150 {
 		t.Errorf("WorldBand(3) = %+v,%v, want Medium/150", b, ok)
 	}
+
 	if _, ok := WorldBand("Z"); ok {
 		t.Errorf("WorldBand(Z) should not exist")
 	}
@@ -19,6 +20,7 @@ func TestSpaceBand(t *testing.T) {
 	if b, _ := SpaceBand("B"); b.Descriptor != "Boarding" || b.Combat != "B" || b.Meters != 1000 {
 		t.Errorf("SpaceBand(B) = %+v, want Boarding/B/1000", b)
 	}
+
 	if b, _ := SpaceBand("13"); b.Descriptor != "Outer System" || b.Meters != 1.5e12 {
 		t.Errorf("SpaceBand(13) = %+v, want Outer System/1.5e12", b)
 	}
@@ -29,15 +31,19 @@ func TestForDistance(t *testing.T) {
 	if b := WorldForDistance(150); b.Code != "3" {
 		t.Errorf("WorldForDistance(150m) = %q, want 3", b.Code)
 	}
+
 	if b := WorldForDistance(5_000); b.Code != "6" {
 		t.Errorf("WorldForDistance(5km) = %q, want 6", b.Code)
 	}
+
 	if b := WorldForDistance(0); b.Code != "0" {
 		t.Errorf("WorldForDistance(0) = %q, want 0 (Contact)", b.Code)
 	}
+
 	if b := SpaceForDistance(5_000_000); b.Code != "4" {
 		t.Errorf("SpaceForDistance(5000km) = %q, want 4 (Far Orbit)", b.Code)
 	}
+
 	if b := SpaceForDistance(1.5e12); b.Code != "13" {
 		t.Errorf("SpaceForDistance(1.5bn km) = %q, want 13", b.Code)
 	}
@@ -48,6 +54,7 @@ func TestBandNumber(t *testing.T) {
 	if n, ok := b3.Number(); n != 3 || !ok {
 		t.Errorf("WorldBand(3).Number() = %d,%v, want 3,true", n, ok)
 	}
+
 	s13, _ := SpaceBand("13")
 	if n, ok := s13.Number(); n != 13 || !ok {
 		t.Errorf("SpaceBand(13).Number() = %d,%v, want 13,true", n, ok)
@@ -67,6 +74,7 @@ func TestConversion(t *testing.T) {
 			t.Errorf("WorldToSpace(%q) = %q,%v, want %q", r, s, ok, wantS)
 		}
 	}
+
 	space := map[string]string{"0": "0", "B": "5", "4": "9", "13": "18"}
 	for s, wantR := range space {
 		if r, ok := SpaceToWorld(s); !ok || r != wantR {
@@ -84,6 +92,7 @@ func TestWorldSubBand(t *testing.T) {
 	if got := WorldSubBand(1); got != 1 {
 		t.Errorf("WorldSubBand(1m) = %g, want 1", got)
 	}
+
 	if got := WorldSubBand(1e9); got != 9 {
 		t.Errorf("WorldSubBand(1e9) = %g, want 9", got)
 	}
@@ -109,8 +118,10 @@ func TestSpaceDescriptors(t *testing.T) {
 		b, ok := SpaceBand(code)
 		if !ok {
 			t.Errorf("SpaceBand(%q) not found", code)
+
 			continue
 		}
+
 		if b.Descriptor != desc {
 			t.Errorf("SpaceBand(%q).Descriptor = %q, want %q", code, b.Descriptor, desc)
 		}

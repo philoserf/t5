@@ -16,6 +16,7 @@ func TestTargetSize(t *testing.T) {
 	if TargetSize(5, 5, Standing) != 0 || TargetSize(6, 5, Standing) != 1 {
 		t.Errorf("target size wrong")
 	}
+
 	if TargetSize(5, 3, Prone) != 0 { // 5-3-2
 		t.Errorf("prone target size wrong")
 	}
@@ -70,6 +71,7 @@ func TestRangedUnhittableTarget(t *testing.T) {
 	if ts >= 0 {
 		t.Fatalf("target size = %d, want negative", ts)
 	}
+
 	if res := Ranged(dice.NewScripted(1), 10, 3, ts, 1); res.Success {
 		t.Errorf("attack on unhittable target should fail: %+v", res)
 	}

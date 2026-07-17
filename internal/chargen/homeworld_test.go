@@ -10,6 +10,7 @@ func TestApplyHomeworldSkills(t *testing.T) {
 	grant := func(codes ...string) skillLevels {
 		var c Character
 		ApplyHomeworldSkills(&c, worldgen.World{TradeCodes: codes}, DefaultPolicy{})
+
 		return skillLevels{&c}
 	}
 
@@ -30,6 +31,7 @@ func TestApplyHomeworldSkills(t *testing.T) {
 	if got := grant("In").level(theTrades[0]); got != 1 {
 		t.Errorf("In -> %s = %d, want 1", theTrades[0], got)
 	}
+
 	if got := grant("Ri").level(oneArt[0]); got != 1 {
 		t.Errorf("Ri -> %s = %d, want 1", oneArt[0], got)
 	}

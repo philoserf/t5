@@ -39,12 +39,15 @@ func TestHullMurphy(t *testing.T) {
 	if h.Letter != 1 || h.Tons != 100 || h.Hardpoints != 1 {
 		t.Errorf("hull = %+v, want A/100t/1 hardpoint", h)
 	}
+
 	if h.Friction != -5 || h.MaxG != 9 || h.Agility != 1 || h.Stability != 3 || !h.LandCapable {
 		t.Errorf("hull attrs = %+v, want Friction /5, Agility +1, Stability +3, lands", h)
 	}
+
 	if h.BaseArmor != 6 { // Shell = TL/2 = 6
 		t.Errorf("Shell base AV = %d, want 6", h.BaseArmor)
 	}
+
 	if h.Cost != 16_000_000 { // Lifting-A = 16 MCr
 		t.Errorf("hull cost = %d, want 16 MCr", h.Cost)
 	}
@@ -57,9 +60,11 @@ func TestHullBeowulfOvertonnage(t *testing.T) {
 	if h.Tons != 222 || h.Letter != 2 {
 		t.Errorf("hull = %+v, want 222t Hull-B", h)
 	}
+
 	if h.Agility != -1 || h.Stability != 0 { // Streamlined 0/+1, minus overtonnage 1/1
 		t.Errorf("overtonnage agility/stability = %d/%d, want -1/0", h.Agility, h.Stability)
 	}
+
 	if h.BaseArmor != 10 || h.Hardpoints != 2 { // Frame-Plate AV = TL; 222/100 = 2
 		t.Errorf("hull = %+v, want AV 10, 2 hardpoints", h)
 	}

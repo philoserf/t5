@@ -117,6 +117,7 @@ func TestIdentifyingDefenses(t *testing.T) {
 		if len(d.Problems) > 0 {
 			t.Errorf("%s: unexpected problems %v", d.Name(), d.Problems)
 		}
+
 		if got := d.LongName(); got != c.want {
 			t.Errorf("LongName mismatch\n got: %s\nwant: %s", got, c.want)
 		}
@@ -163,6 +164,7 @@ func TestWeaponsAsDefenses(t *testing.T) {
 		if len(d.Problems) > 0 {
 			t.Errorf("%s: unexpected problems %v", d.Name(), d.Problems)
 		}
+
 		if got := d.LongName(); got != c.want {
 			t.Errorf("LongName mismatch\n got: %s\nwant: %s", got, c.want)
 		}
@@ -196,6 +198,7 @@ func TestDefenseRangeLimit(t *testing.T) {
 			t.Errorf("a defense built for %s should be reported", rangeData[r].name)
 		}
 	}
+
 	for _, r := range []Range{Vlong, Distant, VDistant} {
 		if d := DesignDefense(
 			DefenseSpec{Model: BlackGlobe, Mount: BoltIn, Stage: Standard, Range: r},
@@ -223,6 +226,7 @@ func TestDefenseProblems(t *testing.T) {
 		d.LongName() != "?" {
 		t.Errorf("an unknown defense should be reported, got %+v", d)
 	}
+
 	if d := DesignWeaponAsDefense(WeaponSpec{Model: WeaponID(99)}); len(d.Problems) == 0 {
 		t.Errorf("an unknown weapon-as-defense should be reported")
 	}
@@ -251,6 +255,7 @@ func TestDefenseSpecZeroValue(t *testing.T) {
 			d.LongName(),
 		)
 	}
+
 	if d := DesignDefense(DefaultDefense(NuclearDamper)); len(d.Problems) > 0 {
 		t.Errorf("DefaultDefense should be clean, got %v", d.Problems)
 	}
@@ -260,15 +265,18 @@ func TestDefenseSpecZeroValue(t *testing.T) {
 // As Defenses". A Meson Gun is not point defence.
 func TestOnlyNineWeaponsDefend(t *testing.T) {
 	defenders := 0
+
 	for id := range WeaponID(len(weaponData)) {
 		d := DesignWeaponAsDefense(DefaultWeapon(id))
 		if len(d.Problems) == 0 {
 			defenders++
 		}
 	}
+
 	if defenders != 9 {
 		t.Errorf("%d weapons can serve as defenses, want the book's 9", defenders)
 	}
+
 	for _, id := range []WeaponID{MesonGun, KKMissile, Stasis} {
 		if d := DesignWeaponAsDefense(DefaultWeapon(id)); len(d.Problems) == 0 {
 			t.Errorf("a %s should not serve as a defense", weaponData[id].name)
@@ -284,6 +292,7 @@ func TestOnlyNineWeaponsDefend(t *testing.T) {
 func TestNoWeaponBoltsInAsADefense(t *testing.T) {
 	for _, id := range []WeaponID{BeamLaser, MesonGun, PlasmaGun} {
 		spec := DefaultWeapon(id)
+
 		spec.Mount = BoltIn
 		if d := DesignWeaponAsDefense(spec); len(d.Problems) == 0 {
 			t.Errorf("a %s cannot be bolted inside the hull, got a clean %s",

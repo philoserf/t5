@@ -24,6 +24,7 @@ func New(year, day int) (Date, error) {
 	if day < 1 || day > DaysPerYear {
 		return Date{}, fmt.Errorf("calendar: day %d out of range 1..%d", day, DaysPerYear)
 	}
+
 	return Date{Year: year, Day: day}, nil
 }
 
@@ -52,6 +53,7 @@ func (d Date) String() string {
 // over 365-day years.
 func (d Date) Add(days int) Date {
 	total := (d.Day - 1) + days // zero-based day index from the start of the year
+
 	return Date{
 		Year: d.Year + floorDiv(total, DaysPerYear),
 		Day:  floorMod(total, DaysPerYear) + 1,
@@ -71,6 +73,7 @@ func floorDiv(a, b int) int {
 	if a%b != 0 && (a < 0) != (b < 0) {
 		q--
 	}
+
 	return q
 }
 
@@ -79,5 +82,6 @@ func floorMod(a, b int) int {
 	if m != 0 && (m < 0) != (b < 0) {
 		m += b
 	}
+
 	return m
 }

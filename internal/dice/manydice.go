@@ -16,6 +16,7 @@ func (r *Roller) ManyDice10(n int) int {
 	if n <= 0 {
 		return 0
 	}
+
 	return cycleSum(r.DiceFaces(10), n)
 }
 
@@ -25,6 +26,7 @@ func (r *Roller) ManyDice2D(n int) int {
 	if n <= 0 {
 		return 0
 	}
+
 	return cycleSum(r.DiceFaces(r.Dice(2)), n)
 }
 
@@ -34,6 +36,7 @@ func cycleSum(faces []int, n int) int {
 	for i := range n {
 		sum += faces[i%len(faces)]
 	}
+
 	return sum
 }
 
@@ -43,6 +46,7 @@ func Average35(n int) float64 {
 	if n <= 0 {
 		return 0
 	}
+
 	return float64(n) * 3.5
 }
 
@@ -52,5 +56,6 @@ func (r *Roller) ManyDice35Flux(n int) float64 {
 	if n <= 0 {
 		return 0
 	}
+
 	return (7.0 + float64(r.Flux())) / 2.0 * float64(n)
 }

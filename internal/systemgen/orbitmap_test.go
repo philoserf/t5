@@ -67,6 +67,7 @@ func TestPlaceOrbitsMultiStar(t *testing.T) {
 	if len(s.Orbits) != len(want) {
 		t.Fatalf("placed %d orbits, want %d: %+v", len(s.Orbits), len(want), s.Orbits)
 	}
+
 	for i, w := range want {
 		o := s.Orbits[i]
 		if o.Host != w.host || o.Orbit != w.orbit || o.Kind != w.kind {
@@ -81,6 +82,7 @@ func TestPlaceOrbitsMultiStar(t *testing.T) {
 				w.kind,
 			)
 		}
+
 		if o.Giant == nil || o.Giant.Size != w.size {
 			t.Errorf("orbit %d giant = %v, want size %d", i, o.Giant, w.size)
 		}
@@ -103,16 +105,20 @@ func TestPlaceOrbitsSatelliteMainworldNoGasGiant(t *testing.T) {
 	if len(s.Orbits) != 1 {
 		t.Fatalf("placed %d orbits, want 1: %+v", len(s.Orbits), s.Orbits)
 	}
+
 	mw := s.Orbits[0]
 	if mw.Kind != KindMainworld || mw.Orbit != 4 {
 		t.Errorf("mainworld orbit = {%s %d}, want {Mainworld 4}", mw.Kind, mw.Orbit)
 	}
+
 	if mw.Giant != nil {
 		t.Errorf("system has no gas giant, but mainworld rides one: %v", mw.Giant)
 	}
+
 	if mw.Parent == nil || mw.Parent.Type != worldgen.BigWorld {
 		t.Fatalf("mainworld parent = %+v, want a BigWorld", mw.Parent)
 	}
+
 	if sz := mw.Parent.Profile.Size; sz < 9 || sz > 19 {
 		t.Errorf("BigWorld parent size = %d, want 2D+7 (9..19)", sz)
 	}
@@ -143,15 +149,18 @@ func TestPlaceOrbitsWorldCapturedByGiant(t *testing.T) {
 			s.Orbits,
 		)
 	}
+
 	for _, o := range s.Orbits {
 		if o.Kind == KindWorld {
 			t.Errorf("captured world should not occupy a standalone orbit: %+v", o)
 		}
 	}
+
 	giant := s.Orbits[1] // sorted: mainworld@4, giant@8
 	if giant.Kind != KindGasGiant || giant.Orbit != 8 {
 		t.Fatalf("expected the giant at orbit 8: %+v", giant)
 	}
+
 	if len(giant.Satellites) != 1 {
 		t.Fatalf(
 			"giant should have 1 captured moon, has %d: %+v",
@@ -159,6 +168,7 @@ func TestPlaceOrbitsWorldCapturedByGiant(t *testing.T) {
 			giant.Satellites,
 		)
 	}
+
 	m := giant.Satellites[0]
 	if m.Type != worldgen.RadWorld || m.OrbitLetter != "Gee" || m.DoublePlanet {
 		t.Errorf("captured moon = %+v, want RadWorld, Gee, not a double planet", m)
@@ -240,12 +250,14 @@ func TestPlaceOrbits(t *testing.T) {
 	if len(s.Orbits) != len(want) {
 		t.Fatalf("placed %d orbits, want %d: %+v", len(s.Orbits), len(want), s.Orbits)
 	}
+
 	for i, w := range want {
 		if s.Orbits[i].Orbit != w.orbit || s.Orbits[i].Kind != w.kind {
 			t.Errorf("orbit %d = {%d %s}, want {%d %s}",
 				i, s.Orbits[i].Orbit, s.Orbits[i].Kind, w.orbit, w.kind)
 		}
 	}
+
 	if g := s.Orbits[2].Giant; g == nil || g.Size != 23 {
 		t.Errorf("orbit 6 giant = %v, want size 23 (P SGG)", s.Orbits[2].Giant)
 	}
@@ -255,6 +267,7 @@ func TestPlaceOrbits(t *testing.T) {
 	if w == nil || w.Type != worldgen.Iceworld || w.Profile.String() != "F222666-6" {
 		t.Errorf("orbit 9 world = %+v, want Iceworld F222666-6", w)
 	}
+
 	if !slices.Contains(w.TradeCodes, "Pe") {
 		t.Errorf("orbit 9 world codes = %v, want Pe", w.TradeCodes)
 	}

@@ -17,6 +17,7 @@ func AcceleratedDeliveryPremium(baseCost, daysEarly int) int {
 	if daysEarly <= 0 {
 		return 0
 	}
+
 	return baseCost * daysEarly / 10
 }
 
@@ -53,5 +54,6 @@ func MailContractBid(twoD, roundTrips int) int {
 	if roundTrips >= 10 {
 		return bid.tenTrip
 	}
+
 	return bid.fiveTrip
 }

@@ -64,5 +64,6 @@ var weaponsMassiveExplosion = map[string]MassiveExplosionMultiplier{
 // tabulated.
 func WeaponsMassiveExplosion(option string) (MassiveExplosionMultiplier, bool) {
 	m, ok := weaponsMassiveExplosion[option]
+
 	return m, ok
 }

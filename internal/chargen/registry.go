@@ -33,6 +33,7 @@ func CareerByName(name string) (Career, bool) {
 			return c, true
 		}
 	}
+
 	return Career{}, false
 }
 
@@ -42,5 +43,6 @@ func CareerNames() []string {
 	for i, c := range allCareers {
 		names[i] = c.Name
 	}
+
 	return names
 }

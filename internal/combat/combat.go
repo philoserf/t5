@@ -23,6 +23,7 @@ func ImpactNumber(speed int) int { return speed }
 // Stance adjusts a target's apparent Size (Book 1 p.203).
 type Stance int
 
+// Combat stances.
 const (
 	Standing  Stance = iota // no change
 	Crouching               // Size -1
@@ -37,6 +38,7 @@ func (s Stance) sizeMod() int {
 	if s < Standing || s > Evading {
 		return 0
 	}
+
 	return stanceSizeMods[s]
 }
 
@@ -60,10 +62,12 @@ func Ranged(
 	if targetSize < 0 {
 		return dice.CheckResult{} // Size - Range below zero: the target cannot be attacked
 	}
+
 	nd := max(rng, 1)
 	if rng > weaponSkill {
 		nd++ // This Is Hard!: Range exceeds skill
 	}
+
 	return task.ResolveDice(r, nd, shootingNumber+targetSize, mods...)
 }
 
@@ -100,6 +104,7 @@ func Wound(physicals [3]int, hits int) [3]int {
 		if hits <= 0 {
 			break
 		}
+
 		if hits >= physicals[i] {
 			hits -= physicals[i]
 			physicals[i] = 0
@@ -108,5 +113,6 @@ func Wound(physicals [3]int, hits int) [3]int {
 			hits = 0
 		}
 	}
+
 	return physicals
 }

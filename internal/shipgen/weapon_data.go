@@ -50,11 +50,12 @@ const (
 // (Table E).
 type Scale int
 
+// Range scales for a weapon.
 const (
 	SpaceScale Scale = iota // S=
 	WorldScale              // R=
-	// A few weapons reach on both ladders — the book marks them "S=7* R=7*"
-	// (p.83 Table A) — and may be built for a range on either.
+	// EitherScale is for the few weapons that reach on both ladders — the book
+	// marks them "S=7* R=7*" (p.83 Table A) — and may be built for a range on either.
 	EitherScale
 )
 
