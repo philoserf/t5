@@ -1,30 +1,51 @@
 # t5
 
-Multipurpose Traveller5 (T5) workspace: Go code, extracted rules reference, and
-worldbuilding synthesis for fiction.
+A [Traveller5](https://www.farfuture.net/) (T5) toolkit in Go: a faithful, seedable
+implementation of the T5 generators — worlds, star systems, characters, alien species,
+sectors, and starships — alongside the extracted rules reference and worldbuilding notes that
+draw on them.
 
-Go module: `github.com/philoserf/t5`.
+Go module: `github.com/philoserf/t5`. Standard library only.
 
-## Layout
+Jump to what you need:
 
-- `internal/` — the Go engine: `dice`, `ehex`, `uwp`, and the generators
-- `cmd/` — command-line front ends for the generators
-- `docs/pdf/` — source rulebooks (T5 Core Rules Books 1–3 + Read Me), git-ignored
-- `docs/reference/` — text extracted from those PDFs, git-ignored (see below)
+- [**Run the generators**](#run-the-generators) — the command-line tools.
+- [**Build on the engine**](#build-on-the-engine) — the Go packages.
+- [**Understand & contribute**](#understand--contribute) — design, layout, and how to help.
 
-## Generators
+Requires [Go](https://go.dev/) 1.26+ (`go run` needs nothing else). Contributors can install
+the full toolchain — go, go-task, golangci-lint, poppler — with `task deps` (Homebrew).
 
-All generators share a single seedable dice engine (`internal/dice`), so any run
-is reproducible with `-seed`. Each command takes `-n` (count) and `-seed`.
+---
+
+## Run the generators
+
+Six command-line generators. Every run is reproducible: pass `-seed` and you get the same
+result every time; omit it for a fresh random run. Generators write their records to
+**stdout** and everything else — notes, errors — to **stderr**, so a piped record stream stays
+clean.
 
 ```sh
-go run ./cmd/worldgen  -n 5 -seed 42            # mainworld Universal World Profiles
-go run ./cmd/systemgen -n 5 -seed 42            # star systems (stars, gas giants, belts, mainworld)
-go run ./cmd/chargen   -n 5 -seed 42            # character UPPs
-go run ./cmd/chargen   -career scout -n 5 -seed 42  # careered characters (qualify, terms, skills, muster-out)
+go run ./cmd/worldgen  -n 5 -seed 42                      # mainworld Universal World Profiles
+go run ./cmd/systemgen -n 1 -seed 7                       # full star systems (stars, giants, belts, orbits, moons)
+go run ./cmd/chargen   -career scout,merchant -seed 7     # characters through their careers
+go run ./cmd/sophont   -seed 42                           # alien species templates
+go run ./cmd/sectorgen -seed 42                           # a surveyed subsector (worlds, capitals, trade routes)
+go run ./cmd/shipgen   -hull A -tl 12 -config S -maneuver A -jump A \
+                       -weapon "beamlaser:T1:orbit" -defense blackglobe   # designed starships
 ```
 
-Example output:
+Shared flags: `-n` (count) and `-seed`. Command-specific ones:
+
+- **chargen** — `-career name[,name…]`: run one career or a sequence (aging and accumulating
+  skills across each); omit for a bare UPP.
+- **sectorgen** — `-density D`, `-subsector L`, `-hex CCRR`: the coarse density, one subsector
+  listing, or one system's full sheet.
+- **shipgen** — `-hull -tl -config -structure -armor -maneuver -jump -power -mission -weapon
+-defense`: the design is deterministic (no dice); infeasibility is reported, not fatal.
+- **sophont** — `-char`: also roll an individual of the generated species.
+
+### Sample output
 
 ```
 $ go run ./cmd/worldgen -n 3 -seed 42
@@ -32,13 +53,7 @@ D665656-7  Ga Ni Ag Ri
 C7A5958-A  Fl Hi In
 B160113-B  De Lo
 
-$ go run ./cmd/systemgen -n 1 -seed 7
-Primary: K5 V
-Primary Companion: M0 VI
-Worlds: 6  PBG: 901
-Mainworld: E643231-6 Lo Po {-3}(810-3)[1164] B - -
-
-$ go run ./cmd/chargen -career scout -n 2 -seed 7
+$ go run ./cmd/chargen -career scout -seed 7
 Scout — age 22, mustered out after 1 term
   UPP            785399
   Homeworld      B6667B8-9   Ga Ag Ri
@@ -46,68 +61,132 @@ Scout — age 22, mustered out after 1 term
   Skills         Actor-1, Animals-1, Athlete-1, Biologist-1, Comms-2, Fighter-1, Hostile Environ-1, JOT-1, Medic-1, Psychology-4, Robotics-2, Trader-1
   Benefits       Ship Share
 
-Citizen — age 34, mustered out after 4 terms
-  UPP            5767A3
-  Homeworld      B87A663-8   Wa Ni
-  Education      BA — Psychology (major), Robotics (minor)
-  Skills         Actor-1, Admin-5, Advocate-1, Artist-1, Athlete-1, Author-1, Biologics-1, Biologist-1, Broker-3, Bureaucrat-2, Chemist-1, Craftsman-1, Driver-2, Hostile Environ-1, Medic-2, Physicist-1, Psychology-4, Robotics-2, Seafarer-1
+$ go run ./cmd/sectorgen -seed 42 | head -3
+0101 Mecu E658352-3 Lo {-3}(820-5)[6121] B - - 520 9 Im F6 V F D
+0103 Donaejae B446466-7 Ni Pa Ho {-1}(B30+2)[3356] Bc N - 701 7 Im G5 V G0 VI K0 VI
+0110 Paela A69A215-C Wa Lo {+1}(C11-1)[134F] B - - 204 16 Im K6 V
+
+$ go run ./cmd/shipgen -hull A -tl 12 -config S -maneuver A -jump A -weapon "beamlaser:T1:orbit" -defense blackglobe
+Ship  X-AS22
+Hull:    A 100t Streamlined · TL-12 · Frame-and-Plate
+Drives:  Maneuver-A 2G · Jump-A J-2 · Power-A
+Armor:   1 layers AV-12
+Weapons: Standard Orbit Single Turret Beam Laser-11 Mod=+0. 2 tons. MCr1.1. Hits= 1D. R=08.
 ```
 
-The second character failed to qualify for the Scout service (even on the
-Retry the first career allows), so — as T5 has no draft — they fall back to the
-Citizen life, whose Begin is automatic (Book 1 p. 63).
+Those record lines are the canonical T5 "Second Survey" forms — a world line carries its UWP,
+trade classifications, the `{Ix}(Ex)[Cx]` Extensions, bases, and travel zone; a ship line is
+the compact QSP profile. The generators feed each other: chargen composes worldgen (the
+homeworld grants one skill per trade classification) and education before a career even begins.
 
-A character's homeworld (a generated world) grants one skill per Trade
-Classification (Book 1 p. 56), and college — when they qualify — grants a Major
-and Minor and raises Edu (Book 1 p. 60), so the worldgen and chargen engines
-feed each other before a career even begins.
+---
 
-The mainworld line is the full world record — UWP, trade classifications, the
-`{Ix}(Ex)[Cx]` Extensions, nobility, bases, and travel zone.
+## Build on the engine
 
-The engine is faithful to the rules and validated against the books' own worked
-examples — e.g. worldgen reproduces the Regina profile `A788899-C` and the
-generated part of its record, `A788899-C Ph Pa Ri {+4}(D7E+4)[9C6D] BcCeF NS -`.
-(The book prints Regina with two more trade codes, `An` and `Cp` — an Ancient Site
-and a Subsector Capital. Both are referee-assigned rather than generated, so the
-line is the generatable subset of the book's, not a copy of it.)
-Chargen runs the character lifecycle (homeworld skills, college with a Major and
-Minor, then career qualification, four-year terms with Risk & Reward and aging,
-skill eligibility, and mustering out) for all thirteen careers, each selected
-with its own `-career` value: the Scout, the fixed-characteristic Rogue, the
-rankless Agent, the auto-enrolling Citizen (benign Citizen Life), the Fame-driven
-Entertainer, the Masterpiece-making Craftsman, the single-ladder Scholar
-(Research and Publications), the Office-Politics Functionary, the Noble (Return &
-Intrigue, Elevation and Land Grants), the dual-track Merchant (Rating/Officer,
-Ship Shares), and three ranked armed-forces careers — the Soldier, Marine, and
-Spacer — whose enlisted/officer ladders, Commissions, and Medal-boosted
-promotions exercise the rank engine (e.g. `-career soldier`). A character may
-serve **several careers in sequence** — `-career scout,merchant,noble` — aging
-and accumulating skills, benefits, and rank across each. The rest of the
-education institutions and per-world orbital detail (systemgen) are the next
-stages.
+The generators are a thin shell over a Go library. The packages live under `internal/`, so
+they are consumed **from within this module** — you build on the engine by adding a `cmd/` tool
+or an `internal/` package, not by importing it from another project.
 
-## Development
+One rule governs the whole thing: **randomness is injected, never global.** A `*dice.Roller` is
+the single source of dice — hand it a seed for reproducibility, or a scripted die sequence for
+exact, deterministic tests.
+
+```go
+import (
+	"fmt"
+
+	"github.com/philoserf/t5/internal/dice"
+	"github.com/philoserf/t5/internal/worldgen"
+)
+
+r := dice.NewWithSeed(42)   // reproducible; dice.New() = random; dice.NewScripted(3, 5) = fixed rolls
+uwp := worldgen.Generate(r) // a mainworld Universal World Profile
+fmt.Println(uwp)            // "D665656-7"
+```
+
+Entry points, each taking a `*dice.Roller` (except ship design, which is pure):
+
+| Package     | Call                                             | Produces                                            |
+| ----------- | ------------------------------------------------ | --------------------------------------------------- |
+| `worldgen`  | `Generate(r)` · `GenerateWorld(r, …)`            | a UWP · a full world record                         |
+| `systemgen` | `Generate(r)`                                    | a star system (stars, giants, belts, orbits, moons) |
+| `chargen`   | `GenerateCareered(r, policy, homeworld, career)` | a character through their careers                   |
+| `sophont`   | `Generate(r)` · `chargen.GenerateSophont(…)`     | an alien species · an individual of it              |
+| `shipgen`   | `Design(spec)`                                   | a designed ship (deterministic)                     |
+| `survey`    | `Sector(…)`                                      | a surveyed sector with capitals and trade routes    |
+
+The layers, bottom to top:
+
+- **`dice`** — the T5 dice engine (Flux, roll-low checks/resolves, Many-Dice, chart notation),
+  the one source of randomness.
+- **Primitives** — `ehex` (extended-hex digits), `uwp` (the `Profile`), `skill`, `calendar`,
+  `task` (the Universal Task profile), `rangeband`.
+- **Generators** — `worldgen`, `systemgen`, `chargen`, `sophont`, `shipgen`, and the mapping
+  stack (`sectorgen` + `survey` + `route`).
+- **Play & economy** — `senses`, `personals`, `combat`, `shipcombat`, and `trade` build on the
+  task engine.
+
+Determinism is the contract at every layer: the same seed (or the same scripted rolls) yields
+the same output — which is exactly what makes the golden tests possible.
+
+---
+
+## Understand & contribute
+
+This repo holds three kinds of work in one place:
+
+- **Go code** — the generators above, faithful to the T5 rules.
+- **Rules reference** — the core rulebooks extracted from PDF to text (see below).
+- **Worldbuilding** — setting notes and fiction that draw on the generators.
+
+### Design
+
+Each generator **transcribes the rulebook's own tables and formulas** as pure functions that
+take their rolls as arguments, then locks the result with a **golden test** built from a worked
+example in the books — e.g. worldgen reproduces the canonical Regina record,
+`A788899-C Ph Pa Ri {+4}(D7E+4)[9C6D] BcCeF NS -`. (The book prints Regina with two more codes,
+`An` and `Cp` — an Ancient Site and a Subsector Capital — both referee-assigned, so the
+generated line is the generatable _subset_ of the book's, not a copy of it.) The house style is
+YAGNI: structure arrives when real content fills it.
+
+### Layout
+
+- `internal/` — the engine and generators (module-local)
+- `cmd/` — the six command-line front ends
+- `docs/pdf/` — the source rulebooks, **git-ignored** (see below)
+- `docs/reference/` — text extracted from those PDFs, git-ignored and regenerable
+
+### Working on it
 
 ```sh
-task            # run the tests
-task check      # gofmt, vet, test — the pre-commit gate
-task extract    # regenerate docs/reference/ from the PDFs
+task              # run the tests
+task check        # golangci-lint + tests — the pre-commit gate (also runs in CI)
+task lint         # golangci-lint run
+task fmt          # gofumpt + goimports + golines
+task audit        # non-gating report of what the globally-disabled linters would flag
+task extract      # regenerate docs/reference/ from the PDFs
+task deps         # install the toolchain from the Brewfile
 ```
 
-## Rulebooks
+The lint config (`.golangci.yml`) is deliberately aggressive — `default: all`, disabling only
+where a linter fights the repo's transcribed-table design (magic numbers, data globals, terse
+dice idioms). `task audit` reports what those exceptions hide, for periodic review. To add a
+generator: transcribe its tables from `docs/reference/`, build it on a `*dice.Roller`, and lock
+it with a golden test from a worked example. The backlog lives in **GitHub issues** (the
+"Triage and Tracking" project) — one issue per unstarted generator and per deferred piece.
 
-The T5 PDFs are **not committed** (git-ignored) — they are Marc Miller / Far Future
-Enterprises material and not ours to redistribute. To work with the reference and
-extraction pipeline, obtain them yourself and drop them in `docs/pdf/`:
+### Rulebooks
+
+The T5 PDFs are **not committed** (git-ignored) — they are Marc Miller / Far Future Enterprises
+material, not ours to redistribute. To use the reference and extraction pipeline, obtain them
+yourself and drop them in `docs/pdf/`:
 
 - `Traveller5 Core Rules Book 1 Characters and Combat.pdf`
 - `Traveller5 Core Rules Book 2 Starships.pdf`
 - `Traveller5 Core Rules Book 3 Worlds and Adventures.pdf`
 - `Traveller5 Read Me.pdf`
 
-Then `task extract` runs `pdftotext` over them into `docs/reference/*.txt` for local
-reading and reference. That extracted text is also git-ignored for the same copyright
-reason — it is a local, regenerable derivation, not something we redistribute. The Go
-generators encode only the rules' _mechanics_ (formulas and small tables), hand-authored
-from the reference and validated against the books' worked examples.
+Then `task extract` runs `pdftotext` over them into `docs/reference/*.txt` for local reading.
+That extracted text is git-ignored too, for the same copyright reason — a local, regenerable
+derivation. The Go generators encode only the rules' _mechanics_ (formulas and small tables),
+hand-authored from the reference and validated against the books' worked examples.
