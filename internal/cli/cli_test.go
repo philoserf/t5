@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"strconv"
 	"strings"
 	"testing"
 )
@@ -94,15 +95,20 @@ func rollChild() {
 	// passes); Roller parses what follows, as it would a real command line.
 	rollerArgs := flag.Args() // read before the reset discards them
 	flag.CommandLine = flag.NewFlagSet(os.Args[0], flag.ExitOnError)
+
 	os.Args = append([]string{"rollgen"}, rollerArgs...)
 
 	r := Roller()
 
-	var rolls []string
+	rolls := make([]string, 0, 10)
+
 	for range 10 {
-		rolls = append(rolls, fmt.Sprint(r.Dice(2)))
+		rolls = append(rolls, strconv.Itoa(r.Dice(2)))
 	}
 
+	// The child stands in for a real command: its records go to stdout, which is
+	// precisely what the parent asserts the seed report stays out of.
+	//nolint:forbidigo // this subprocess emulates a command's record stream
 	fmt.Println(strings.Join(rolls, " "))
 	os.Exit(0)
 }

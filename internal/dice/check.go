@@ -100,9 +100,8 @@ func applySpectacular(arithmetic bool, faces []int) bool {
 		return true
 	case SpectacularFailure:
 		return false
-	case NotSpectacular, SpectacularlyInteresting:
+	default:
+		// NotSpectacular, and SpectacularlyInteresting per the comment above.
 		return arithmetic
 	}
-
-	return arithmetic
 }

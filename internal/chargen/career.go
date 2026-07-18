@@ -469,7 +469,7 @@ func RunCareer(r *dice.Roller, p Policy, c *Character, career Career) {
 // surviving armed-forces character then resolves rank. It returns Ongoing,
 // Disabled, or Died.
 //
-//nolint:cyclop,funlen // the term engine dispatches every career variant; irreducibly branchy
+//nolint:cyclop // the term engine dispatches every career variant; irreducibly branchy
 func runTerm(r *dice.Roller, p Policy, c *Character, run *careerRun, career Career) TermOutcome {
 	if career.FameCareer {
 		return runFameTerm(r, p, c, run, career) // no CC — the Entertainer resolves Fame/Talent
@@ -510,7 +510,9 @@ func runTerm(r *dice.Roller, p Policy, c *Character, run *careerRun, career Care
 	// Reward (Book 1 p. 82); Caution/Bravery keep their usual signs.
 	riskOK := r.Resolve(dice.Check{Dice: 2, Target: ccVal + mod - bo}).Success
 
-	injury := Unharmed
+	// outcome is the term's verdict, decided by the Risk roll but not returned
+	// until after the Reward roll, which happens either way.
+	outcome := Ongoing
 
 	if !riskOK {
 		// Risk failed: the CC drops by any negative (bravery) mod and the Branch/
@@ -522,9 +524,7 @@ func runTerm(r *dice.Roller, p Policy, c *Character, run *careerRun, career Care
 			negMods += -mod
 		}
 
-		var newVal int
-
-		injury, newVal = classifyInjury(ccVal, negMods, r.Flux())
+		injury, newVal := classifyInjury(ccVal, negMods, r.Flux())
 		switch injury {
 		case Unharmed:
 			// the Flux compensated for the mods: no injury
@@ -533,9 +533,11 @@ func runTerm(r *dice.Roller, p Policy, c *Character, run *careerRun, career Care
 			c.WoundBadges++
 		case Disabling:
 			c.scores[cc] = newVal
+			outcome = Disabled
 		case Fatal:
 			c.scores[cc] = max(newVal, 0)
 			c.Dead = true
+			outcome = Died
 		}
 	}
 
@@ -550,13 +552,10 @@ func runTerm(r *dice.Roller, p Policy, c *Character, run *careerRun, career Care
 		grantReward(c, run, career, reward, ccVal)
 	}
 
-	switch injury {
-	case Fatal:
-		return Died
-	case Disabling:
-		return Disabled
-	case Unharmed, Wounded:
-		// a surviving (even wounded) character finishes the term below
+	// A dead or disabled character stops here; a surviving (even wounded) one
+	// finishes the term below.
+	if outcome != Ongoing {
+		return outcome
 	}
 
 	// A surviving (even wounded) character gains skills. An Agent runs an

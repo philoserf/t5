@@ -93,11 +93,11 @@ func GenerateSatelliteWorld(r *dice.Roller, t OtherWorldType, mwPop, maxSize int
 	capPop := func(pop int) int { return clamp(pop, 0, maxPop) }
 
 	capSize := func(size int) int {
-		if maxSize != NoSizeCap && size > maxSize {
-			return maxSize
+		if maxSize == NoSizeCap {
+			return size
 		}
 
-		return size
+		return min(size, maxSize)
 	}
 
 	switch t {
@@ -106,13 +106,8 @@ func GenerateSatelliteWorld(r *dice.Roller, t OtherWorldType, mwPop, maxSize int
 		// A capped Inferno keeps its defining atmosphere unless it is cut to
 		// Size 0, which the chart forces airless.
 		size := capSize(6 + r.Die())
-		atm := 11
 
-		if size == 0 {
-			atm = 0
-		}
-
-		return uwp.Profile{Starport: 'Y', Size: size, Atmosphere: atm}
+		return uwp.Profile{Starport: 'Y', Size: size, Atmosphere: sizedAtmosphere(11, size)}
 
 	case RadWorld:
 		// StSAH000-0: a bombarded world, uninhabited (Pop/Gov/Law/TL zero).

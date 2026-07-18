@@ -85,27 +85,22 @@ func rollSize(r *dice.Roller) int {
 }
 
 // atmosphere is Flux+Size, forced to 0 for a size-0 world and clamped to F.
+// The structural rule and the clamp live in sizedAtmosphere, so a type carrying
+// its own Atm formula passes through exactly the same conditions this does.
 func atmosphere(flux, size int) int {
-	if size == 0 {
-		return 0
-	}
-
-	return clamp(flux+size, 0, maxAtmosphere)
+	return sizedAtmosphere(flux+size, size)
 }
 
 // hydrographics is Flux+Atmosphere, zero for worlds smaller than size 2, with a
-// -4 modifier for thin or very dense atmospheres, clamped to A.
+// -4 modifier for thin or very dense atmospheres, clamped to A. As with
+// atmosphere, the size rule and the clamp live in sizedHydrographics.
 func hydrographics(flux, atm, size int) int {
-	if size < 2 {
-		return 0
-	}
-
 	h := flux + atm
 	if atm < 2 || atm > 9 {
 		h -= 4
 	}
 
-	return clamp(h, 0, maxHydrographics)
+	return sizedHydrographics(h, size)
 }
 
 // rollPopulation is 2D-2; a result of 10 is rerolled as 2D+3.

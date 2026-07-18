@@ -167,21 +167,20 @@ func TestSatelliteType(t *testing.T) {
 func TestRollMoonSizeCap(t *testing.T) {
 	cases := []struct {
 		name       string
-		parentSize int
-		capped     bool
+		maxSize    int
 		wantSize   int
 		wantDouble bool
 	}{
-		{"oversized cut to parent", 5, true, 5, true},
-		{"cut to a worldlet parent", 3, true, 3, true},
-		{"cut to an asteroid parent", 0, true, 0, true},
-		{"gas-giant parent never caps", 0, false, 19, false},
+		{"oversized cut to parent", 5, 5, true},
+		{"cut to a worldlet parent", 3, 3, true},
+		{"cut to an asteroid parent", 0, 0, true},
+		{"gas-giant parent never caps", worldgen.NoSizeCap, 19, false},
 	}
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
 			m := rollMoon(dice.NewScripted(6), moonSpec{
 				Type: worldgen.BigWorld, Orbit: 3, HZOrbit: 3, HasHZ: true,
-				MWPop: 8, ParentSize: c.parentSize, Capped: c.capped,
+				MWPop: 8, MaxSize: c.maxSize,
 			})
 			if m.Profile.Size != c.wantSize {
 				t.Errorf("Size = %d, want %d", m.Profile.Size, c.wantSize)
@@ -204,7 +203,7 @@ func TestRollMoonCappedProfileIsConsistent(t *testing.T) {
 	// Size 0: airless and dry, and an asteroid for trade-code purposes.
 	m := rollMoon(dice.NewScripted(6), moonSpec{
 		Type: worldgen.BigWorld, Orbit: 3, HZOrbit: 3, HasHZ: true,
-		MWPop: 8, ParentSize: 0, Capped: true,
+		MWPop: 8, MaxSize: 0,
 	})
 	if m.Profile.Atmosphere != 0 || m.Profile.Hydrographics != 0 {
 		t.Errorf("Size-0 moon = Atm %d/Hyd %d, want 0/0 (p.24 If Siz=0, Atm=0)",
@@ -219,7 +218,7 @@ func TestRollMoonCappedProfileIsConsistent(t *testing.T) {
 	// forced dry.
 	m = rollMoon(dice.NewScripted(6), moonSpec{
 		Type: worldgen.BigWorld, Orbit: 3, HZOrbit: 3, HasHZ: true,
-		MWPop: 8, ParentSize: 1, Capped: true,
+		MWPop: 8, MaxSize: 1,
 	})
 	if m.Profile.Atmosphere != 1 {
 		t.Errorf("Size-1 moon Atm = %d, want 1 (Flux 0 + Siz 1)", m.Profile.Atmosphere)

@@ -274,6 +274,7 @@ func (s *System) placeOrbits(r *dice.Roller) { //nolint:gocognit,cyclop,funlen /
 				HasHZ:      h.hasHZ,
 				MWPop:      mwPop,
 				Industrial: mwIndustrial,
+				MaxSize:    worldgen.NoSizeCap,
 			}))
 
 			continue
