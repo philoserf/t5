@@ -230,7 +230,9 @@ func TestViewsAgree(t *testing.T) {
 }
 
 func TestWorldName(t *testing.T) {
-	name := worldName(dice.NewScripted(3, 4, 2, 5, 1, 6))
+	// A name draws one die for the syllable count and two per syllable, and each
+	// of those is an even-distribution index costing more than one die: nine in all.
+	name := worldName(dice.NewScripted(3, 4, 2, 5, 1, 6, 3, 4, 2))
 	if name == "" || name[0] < 'A' || name[0] > 'Z' {
 		t.Errorf("worldName = %q, want a capitalized non-empty name", name)
 	}

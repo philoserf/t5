@@ -1,6 +1,7 @@
 package chargen
 
 import (
+	"slices"
 	"testing"
 
 	"github.com/philoserf/t5/internal/dice"
@@ -112,7 +113,8 @@ func TestResolveRankCommission(t *testing.T) {
 	}
 	// A failed commission and enlisted promotion report false (no extra skill).
 	stuck := careerRun{rank: 2}
-	if resolveRank(dice.NewScripted(6, 6), &c, &stuck, SoldierCareer) {
+	// Two rolls of 12: the Commission fails, then the Enlisted Promotion.
+	if resolveRank(dice.NewScripted(slices.Repeat([]int{6}, 4)...), &c, &stuck, SoldierCareer) {
 		t.Error("resolveRank should report false when neither commission nor promotion succeeds")
 	}
 }
@@ -124,12 +126,12 @@ func TestBranchOpsMod(t *testing.T) {
 	c := Character{scores: [count]int{7, 7, 7, 7, 7, 7}} // Edu 7, no +2 bonus
 	// Infantry branch (mod 1, Ops DM 1): four ops rolls of 1 -> index 2 -> Combat (2).
 	run := careerRun{branchMod: 1, branchOpsDM: 1}
-	if got := branchOpsMod(dice.NewScripted(1), &c, &run, SoldierCareer); got != 3 {
+	if got := branchOpsMod(dice.NewScripted(slices.Repeat([]int{1}, 4)...), &c, &run, SoldierCareer); got != 3 {
 		t.Errorf("Infantry Branch/Ops mod = %d, want 3 (branch 1 + Combat 2)", got)
 	}
 	// Technical branch (mod 0, Ops DM 6): ops rolls of 3 -> index 9 -> Base (0).
 	tech := careerRun{branchMod: 0, branchOpsDM: 6}
-	if got := branchOpsMod(dice.NewScripted(3), &c, &tech, SoldierCareer); got != 0 {
+	if got := branchOpsMod(dice.NewScripted(slices.Repeat([]int{3}, 4)...), &c, &tech, SoldierCareer); got != 0 {
 		t.Errorf("Technical Branch/Ops mod = %d, want 0 (branch 0 + Base 0)", got)
 	}
 }

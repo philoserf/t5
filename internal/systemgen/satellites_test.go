@@ -1,6 +1,7 @@
 package systemgen
 
 import (
+	"slices"
 	"testing"
 
 	"github.com/philoserf/t5/internal/dice"
@@ -180,7 +181,8 @@ func TestRollMoonSizeCap(t *testing.T) {
 	}
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
-			m := rollMoon(dice.NewScripted(6), moonSpec{
+			// A full moon draws twenty dice; every one is a 6.
+			m := rollMoon(dice.NewScripted(slices.Repeat([]int{6}, 20)...), moonSpec{
 				Type: worldgen.BigWorld, Orbit: 3, HZOrbit: 3, HasHZ: true,
 				MWPop: 8, MaxSize: c.maxSize,
 			})
@@ -204,7 +206,7 @@ func TestRollMoonSizeCap(t *testing.T) {
 func TestRollMoonCappedProfileIsConsistent(t *testing.T) {
 	// Size 1: Atmosphere follows Flux+Siz from the capped size, Hydrographics is
 	// forced dry.
-	m := rollMoon(dice.NewScripted(6), moonSpec{
+	m := rollMoon(dice.NewScripted(slices.Repeat([]int{6}, 20)...), moonSpec{
 		Type: worldgen.BigWorld, Orbit: 3, HZOrbit: 3, HasHZ: true,
 		MWPop: 8, MaxSize: 1,
 	})

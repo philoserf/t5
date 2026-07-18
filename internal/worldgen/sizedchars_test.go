@@ -1,6 +1,7 @@
 package worldgen
 
 import (
+	"slices"
 	"testing"
 
 	"github.com/philoserf/t5/internal/dice"
@@ -61,7 +62,8 @@ func TestSizedHydrographicsSizeRule(t *testing.T) {
 // guard a Size-0 Inner World could come out an airless asteroid with oceans.
 // rollSize is 2D-2, so scripted 1s give Size 0.
 func TestInnerWorldSizeZeroHasNoHydrographics(t *testing.T) {
-	p := GenerateOtherWorld(dice.NewScripted(1), InnerWorld, 8)
+	// The whole Inner World profile draws fourteen dice; every one is a 1.
+	p := GenerateOtherWorld(dice.NewScripted(slices.Repeat([]int{1}, 14)...), InnerWorld, 8)
 
 	if p.Size != 0 {
 		t.Fatalf("Size = %d, want 0 (2D-2 on scripted 1s)", p.Size)
