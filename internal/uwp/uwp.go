@@ -25,13 +25,13 @@ type Profile struct {
 // String renders the profile in standard UWP notation: the starport letter,
 // the six eHex characteristic digits, a hyphen, and the eHex Tech Level —
 // for example "A788899-C".
-// A characteristic outside eHex range renders as "?" rather than panicking:
-// Profile is an exported model whose fields a caller may set directly, and a
-// String method must not crash.
+// A characteristic outside eHex range — or a Starport outside portLetters —
+// renders as "?" rather than panicking: Profile is an exported model whose
+// fields a caller may set directly, and a String method must not crash.
 func (p Profile) String() string {
 	var b strings.Builder
 	b.Grow(9)
-	b.WriteByte(p.Starport)
+	b.WriteByte(formatStarport(p.Starport))
 	b.WriteString(ehex.Format(p.Size))
 	b.WriteString(ehex.Format(p.Atmosphere))
 	b.WriteString(ehex.Format(p.Hydrographics))
@@ -42,4 +42,21 @@ func (p Profile) String() string {
 	b.WriteString(ehex.Format(p.TechLevel))
 
 	return b.String()
+}
+
+// portLetters is the Starport field's domain: the mainworld starport qualities
+// A-E and X, plus the spaceport letters F, G, H and Y that worldgen's secondary
+// worlds store in the same field (Book 3 p. 24).
+const portLetters = "ABCDEXFGHY"
+
+// formatStarport returns c when it is a port letter, and '?' otherwise. Like
+// ehex.Format it never panics, so it is safe on the display path where the byte
+// may come from a caller-built Profile — including the zero value, whose unset
+// Starport would otherwise emit a NUL into a piped record stream.
+func formatStarport(c byte) byte {
+	if strings.IndexByte(portLetters, c) < 0 {
+		return '?'
+	}
+
+	return c
 }
