@@ -34,10 +34,26 @@ var configAttr = [...]struct {
 	Lifting:       {-5, 1, 9, 3, true},
 }
 
+// validConfig reports whether a Config names a real row of the p.70/p.71 tables.
+// Design uses it to raise a Problem; configIndex is what keeps the lookups safe.
+func validConfig(c Config) bool { return c >= Cluster && int(c) < len(configAttr) }
+
+// configIndex bounds a Config to the tables, so an out-of-range one reads as
+// Cluster rather than panicking — the same guard-of-last-resort stageIndex gives
+// a Stage. It is not a silent default: Design reports the substitution as a
+// Problem, because a hull nobody asked for is its own kind of infeasible.
+func configIndex(c Config) Config {
+	if !validConfig(c) {
+		return Cluster
+	}
+
+	return c
+}
+
 // hullCostMCr returns a hull's cost in MCr for the given size ordinal and config
 // (Book 2 p.70). Structure multipliers are applied by hullCost.
 func hullCostMCr(ordinal int, config Config) int {
-	c := configCost[config]
+	c := configCost[configIndex(config)]
 
 	return c.slope*ordinal + c.intercept
 }
@@ -75,6 +91,7 @@ func hull(tl, ordinal, tons int, config Config, structure Structure) Hull {
 		nominal = HullTons(ordinal)
 	}
 
+	config = configIndex(config)
 	attr := configAttr[config]
 	agility, stability := attr.agility, attr.stability
 

@@ -2,18 +2,59 @@ package shipgen
 
 import "fmt"
 
+// specProblems reports the fields of a ShipSpec that name nothing in the book's
+// tables. Design stays total by clamping them (configIndex, stageIndex) rather
+// than indexing raw, but a clamp on its own would quietly hand the caller a
+// different ship than they asked for — so the substitution is reported here.
+// That is the same choice DesignWeapon makes for an unknown model, mount, or
+// range: build something, and say what was wrong with the request.
+func specProblems(spec ShipSpec) []string {
+	var problems []string
+
+	if !validConfig(spec.Config) {
+		problems = append(problems, fmt.Sprintf(
+			"configuration %d is not one of Cluster..Lifting; built as %s",
+			spec.Config, configIndex(spec.Config)))
+	}
+	// Hull sizes are the eHex letters as an ordinal, A=1 .. Z=24 (Book 2 p.93).
+	// An ordinal outside that range does not panic — it yields a nonsense
+	// tonnage and prints "?" — so it is reported rather than substituted, there
+	// being no defensible guess at what size was meant.
+	if spec.HullLetter < 1 || spec.HullLetter > maxLetter {
+		problems = append(problems, fmt.Sprintf(
+			"hull size %d is outside A..Z (1..%d)", spec.HullLetter, maxLetter))
+	}
+
+	// Ordered, not a map: Problems is a rendered list, so its order is part of
+	// what a caller sees.
+	drives := []struct {
+		kind DriveKind
+		spec *DriveSpec
+	}{{Maneuver, spec.Maneuver}, {Jump, spec.Jump}, {Power, spec.Power}}
+	for _, d := range drives {
+		if d.spec != nil && stageIndex(d.spec.Stage) != d.spec.Stage {
+			problems = append(problems, fmt.Sprintf(
+				"%s drive stage %d is not one of Standard..Ultimate; built as %s",
+				d.kind, d.spec.Stage, Standard))
+		}
+	}
+
+	return problems
+}
+
 // Design builds a complete ship from a spec (Book 2 Starship Design Checklist).
-// It is total — never an error: infeasibility is reported in Ship.Problems (a
-// power plant weaker than its drives, a TL-capped drive, a weapon the hull has no
-// mount point for or the yard cannot build, or an over-budget hull). The tonnage
-// budget's Payload is the residual left for what the engine does not yet model —
-// accommodations and cargo — so a clean ship still lists that tonnage as Payload
-// rather than fully spent.
+// It is total — never an error, and never a panic: infeasibility is reported in
+// Ship.Problems (a power plant weaker than its drives, a TL-capped drive, a
+// weapon the hull has no mount point for or the yard cannot build, an
+// over-budget hull, or a spec field naming no row of the book's tables). The
+// tonnage budget's Payload is the residual left for what the engine does not yet
+// model — accommodations and cargo — so a clean ship still lists that tonnage as
+// Payload rather than fully spent.
 func Design(spec ShipSpec) Ship { //nolint:gocognit,cyclop,funlen // ship-design pipeline (Book 2 pp.30-95)
 	h := hull(spec.TL, spec.HullLetter, spec.Tons, spec.Config, spec.Structure)
 	ship := Ship{Spec: spec, Hull: h}
 
-	var problems []string
+	problems := specProblems(spec)
 
 	used := 0
 

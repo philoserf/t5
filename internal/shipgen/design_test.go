@@ -136,3 +136,103 @@ func hasProblem(s Ship, substr string) bool {
 
 	return false
 }
+
+// Design is total (design.go): every out-of-range enum in a ShipSpec has to come
+// back as a Problem, never a panic. These are the inputs that used to index the
+// stage and config tables raw (GitHub #199, #219).
+func TestDesignOutOfRangeSpecFields(t *testing.T) {
+	base := func() ShipSpec {
+		return ShipSpec{
+			Mission: "X", TL: 12, HullLetter: 1, Config: Streamlined,
+			Maneuver: &DriveSpec{Letter: 1}, Power: &DriveSpec{Letter: 1},
+		}
+	}
+
+	tests := []struct {
+		name    string
+		mutate  func(*ShipSpec)
+		problem string
+	}{
+		{"stage above the table", func(s *ShipSpec) {
+			s.Maneuver.Stage = 99
+		}, "stage 99"},
+		{"negative stage", func(s *ShipSpec) {
+			s.Maneuver.Stage = -1
+		}, "stage -1"},
+		{"jump stage above the table", func(s *ShipSpec) {
+			s.Jump = &DriveSpec{Letter: 1, Stage: 42}
+		}, "stage 42"},
+		{"power stage below the table", func(s *ShipSpec) {
+			s.Power.Stage = -7
+		}, "stage -7"},
+		{"config above the table", func(s *ShipSpec) {
+			s.Config = Config(7)
+		}, "configuration 7"},
+		{"negative config", func(s *ShipSpec) {
+			s.Config = Config(-1)
+		}, "configuration -1"},
+		{"hull letter above Z", func(s *ShipSpec) {
+			s.HullLetter = 25
+		}, "hull size 25"},
+		{"hull letter of zero", func(s *ShipSpec) {
+			s.HullLetter = 0
+		}, "hull size 0"},
+		{"negative hull letter", func(s *ShipSpec) {
+			s.HullLetter = -3
+		}, "hull size -3"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			spec := base()
+			tt.mutate(&spec)
+
+			s := Design(spec) // must not panic
+			if !hasProblem(s, tt.problem) {
+				t.Errorf("expected a %q problem, got %v", tt.problem, s.Problems)
+			}
+		})
+	}
+}
+
+// A clamped-away bad Stage must not quietly buy the caller a Standard-stage
+// drive that looks clean: the substitution is reported, and the ship it yields
+// is the Standard one.
+func TestDesignBadStageClampsToStandard(t *testing.T) {
+	good := Design(ShipSpec{
+		Mission: "X", TL: 12, HullLetter: 1, Config: Streamlined,
+		Maneuver: &DriveSpec{Letter: 1, Stage: Standard},
+	})
+	bad := Design(ShipSpec{
+		Mission: "X", TL: 12, HullLetter: 1, Config: Streamlined,
+		Maneuver: &DriveSpec{Letter: 1, Stage: 99},
+	})
+
+	if bad.Maneuver.Tons != good.Maneuver.Tons || bad.Maneuver.Cost != good.Maneuver.Cost {
+		t.Errorf("bad-stage drive = %+v, want the Standard %+v", bad.Maneuver, good.Maneuver)
+	}
+
+	if len(good.Problems) == len(bad.Problems) {
+		t.Errorf("the substitution went unreported: %v", bad.Problems)
+	}
+}
+
+// The fuel phase reads the same stage table as the drive phase (fuelarmor.go).
+func TestFuelMulOutOfRangeStage(t *testing.T) {
+	for _, stage := range []Stage{-1, 99} {
+		if got := fuelMul(100, stage); got != 100 {
+			t.Errorf("fuelMul(100, %d) = %d, want the Standard 100", stage, got)
+		}
+	}
+}
+
+// hull is total for the same reason Design is: it is the first thing Design calls.
+func TestHullOutOfRangeConfig(t *testing.T) {
+	for _, config := range []Config{-1, 7, 99} {
+		h := hull(12, 1, 0, config, Shell) // must not panic
+		if h.MaxG != configAttr[Cluster].maxG {
+			t.Errorf("hull(config %d).MaxG = %d, want the Cluster %d",
+				config, h.MaxG, configAttr[Cluster].maxG)
+		}
+	}
+}
