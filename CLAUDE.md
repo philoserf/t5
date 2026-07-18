@@ -37,7 +37,10 @@ Tooling (go, go-task, poppler's `pdftotext`) is pinned in `Brewfile`.
   scripted `d6` for deterministic tests, as the tests do). It provides the primitives (`Dice`,
   `DiceFaces` for the individual dice, `Flux`/`GoodFlux`/`BadFlux`, `HalfDie`, even distributions),
   the roll-low `Check`/`Resolve` mechanic (Mod adjusts the Target, DM adjusts the roll; the result
-  carries `Faces` and a `Spectacular()` classifier for three-1s/three-6s, Book 1 p.127), the
+  carries `Faces` and a `Spectacular()` classifier for three-1s/three-6s, Book 1 p.127 — and
+  `Resolve` **applies** that override to `Success`: three 1s force success "even if the result
+  would otherwise be a failure", three 6s force failure. `Effect` stays arithmetic, and
+  Spectacularly Interesting (both at once, 6D+) leaves the arithmetic outcome to the referee), the
   Many-Dice fast methods for large pools (`ManyDice10`/`ManyDice2D`/`Average35`/`ManyDice35Flux`,
   Book 1 p.260), and a `Parse`/`Eval` for chart notation like `2D-2` and `Flux`. Build generators on top of this rather than calling
   `math/rand` directly. `dice.NewSource(func() int)` supplies a custom/scripted die source,
