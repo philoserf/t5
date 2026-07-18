@@ -39,7 +39,7 @@ func fuel(hullTons int, jump, power *Drive, scoop, purifier bool) Fuel {
 // fuelMul scales a base fuel amount by a drive stage's fuel multiplier (Book 2
 // p.76 X, e.g. Experimental x2.0, Advanced x0.8).
 func fuelMul(base int, stage Stage) int {
-	return base * stageData[stage].fuelPct / 100
+	return base * stageData[stageIndex(stage)].fuelPct / 100
 }
 
 // structureAV is the per-layer armor value of a hull structure (Book 2 p.75 B):

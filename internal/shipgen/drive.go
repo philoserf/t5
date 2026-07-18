@@ -170,7 +170,7 @@ func driveLabel(ord int) string {
 // when TL availability caps the Potential below the drive's Z1 rating. The
 // stage's fuel/efficiency values are carried on the Drive for the fuel phase.
 func designDrive(kind DriveKind, spec DriveSpec, hullOrd, tl int) (*Drive, string) {
-	st := stageData[spec.Stage]
+	st := stageData[stageIndex(spec.Stage)]
 	raw := drivePotential(spec.Letter, hullOrd)
 
 	pot, problem := raw, ""
