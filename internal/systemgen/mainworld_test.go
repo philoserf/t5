@@ -54,13 +54,14 @@ func TestPlaceMainworld(t *testing.T) {
 		t.Errorf("temperate planet gained an extra code: %v", mw.TradeCodes)
 	}
 
-	// Hot placement: HZVar Flux -4 -> -1 -> orbit 3; type Flux +2 -> Planet;
-	// temperate-band UWP -> Tr.
+	// Hot placement: HZVar Flux -4 -> -1 -> orbit 3. The climate codes that orbit
+	// earns are tagged later, against the claimed orbit (see TestTagMainworldClimate).
 	mw2 := worldgen.World{Profile: uwp.Profile{Size: 7, Atmosphere: 6, Hydrographics: 5}}
 
 	orbit2, _ := placeMainworld(dice.NewScripted(1, 5 /*-4*/, 5, 3 /*Planet*/), primary, &mw2)
-	if orbit2 != 3 || !slices.Contains(mw2.TradeCodes, "Tr") {
-		t.Errorf("hot placement: orbit %d, codes %v, want orbit 3 + Tr", orbit2, mw2.TradeCodes)
+	if orbit2 != 3 || len(mw2.TradeCodes) != 0 {
+		t.Errorf("hot placement: orbit %d, codes %v, want orbit 3 and no codes yet",
+			orbit2, mw2.TradeCodes)
 	}
 
 	// Far-satellite mainworld: one Flux of -4 (Chart 2C) gives both the Far
@@ -97,5 +98,53 @@ func TestPlaceMainworld(t *testing.T) {
 			sat5.IsSatellite,
 			mw5.TradeCodes,
 		)
+	}
+	// The Belt column goes negative at its low end (2D=2 -> -1), which is not an
+	// orbit and collided with the "no orbit" sentinel. It is floored at the star's
+	// innermost legal orbit: 0 for the main-sequence F7 V above, and 3 for an M0 III
+	// giant whose surface engulfs orbits 0-2 (Book 1 p.31 sub-orbits).
+	mw6 := worldgen.World{Profile: uwp.Profile{Size: 0}}
+
+	if orbit6, _ := placeMainworld(dice.NewScripted(1, 1 /*2D=2*/), primary, &mw6); orbit6 != 0 {
+		t.Errorf("belt mainworld at 2D=2: orbit %d, want 0 (the F7 V floor)", orbit6)
+	}
+
+	mw7 := worldgen.World{Profile: uwp.Profile{Size: 0}}
+	giant := Star{Type: "M", Decimal: 0, Size: "III"}
+
+	if orbit7, _ := placeMainworld(dice.NewScripted(1, 1 /*2D=2*/), giant, &mw7); orbit7 != 3 {
+		t.Errorf("belt mainworld at 2D=2 around M0 III: orbit %d, want 3 (its floor)", orbit7)
+	}
+}
+
+// TestTagMainworldClimate: the climate codes are keyed to the orbit the mainworld
+// was finally placed in, and an asteroid-belt mainworld — placed without regard to
+// the habitable zone — takes none.
+func TestTagMainworldClimate(t *testing.T) {
+	// A temperate-band world one orbit inside the HZ is Hot and Tropic (Chart D).
+	mw := worldgen.World{Profile: uwp.Profile{Size: 7, Atmosphere: 6, Hydrographics: 5}}
+
+	tagMainworldClimate(&mw, 3, 4, true)
+
+	if !slices.Equal(mw.TradeCodes, []string{"Ho", "Tr"}) {
+		t.Errorf("orbit 3 of HZ 4 = %v, want [Ho Tr]", mw.TradeCodes)
+	}
+	// The same world placed in the habitable zone itself earns nothing — which is
+	// the divergence this split fixes: the codes follow the claimed orbit, so a
+	// mainworld nudged from HZ-1 to HZ stops claiming to be Hot.
+	mw2 := worldgen.World{Profile: uwp.Profile{Size: 7, Atmosphere: 6, Hydrographics: 5}}
+
+	tagMainworldClimate(&mw2, 4, 4, true)
+
+	if len(mw2.TradeCodes) != 0 {
+		t.Errorf("orbit 4 of HZ 4 = %v, want no codes", mw2.TradeCodes)
+	}
+	// A belt mainworld takes no climate codes even in a coded orbit.
+	belt := worldgen.World{Profile: uwp.Profile{Size: 0}}
+
+	tagMainworldClimate(&belt, 3, 4, true)
+
+	if len(belt.TradeCodes) != 0 {
+		t.Errorf("belt mainworld gained climate codes: %v", belt.TradeCodes)
 	}
 }
