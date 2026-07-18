@@ -27,9 +27,19 @@ type Check struct {
 	DM     int
 }
 
-// A CheckResult reports the outcome of resolving a Check. Effect is the
-// success margin: the adjusted Target minus the adjusted roll. It is >= 0 on
-// success and negative on failure, and gives the degree of success or failure.
+// A CheckResult reports the outcome of resolving a Check.
+//
+// Success is the task's outcome after the Spectacular override (Book 1 p. 127):
+// three or more ones force it true and three or more sixes force it false,
+// regardless of the arithmetic. Compare Total against Target directly for the
+// unoverridden comparison.
+//
+// Effect is the arithmetic success margin: the adjusted Target minus the
+// adjusted roll. It is >= 0 when Total <= Target and negative otherwise, and
+// gives the degree of success or failure. It is deliberately NOT rewritten by
+// the Spectacular override — the book assigns no margin to a spectacular
+// outcome, so Effect keeps reporting what the dice actually did. A caller that
+// needs the two to agree should branch on Spectacular() itself.
 type CheckResult struct {
 	Roll    int // sum of the dice, before the DM
 	Total   int // Roll + DM, compared against the target
@@ -66,8 +76,33 @@ func (r *Roller) Resolve(c Check) CheckResult {
 		Roll:    roll,
 		Total:   total,
 		Target:  target,
-		Success: total <= target,
+		Success: applySpectacular(total <= target, faces),
 		Effect:  target - total,
 		Faces:   faces,
 	}
+}
+
+// applySpectacular overrides an arithmetic pass/fail with the Spectacular
+// result (Book 1 p. 127). Three ones make the task succeed "even if the result
+// would otherwise be a failure"; three sixes make it "fail to produce the
+// results desired".
+//
+// SpectacularlyInteresting (three ones AND three sixes at once, only reachable
+// on 6D or more) is deliberately left alone: the book describes it as "a
+// situation involving both Spectacular Success and Spectacular Failure (and a
+// sign that the referee should make [the] situation a rousing, interesting
+// event)" and never states whether the task itself succeeds. That is a referee
+// call, so the arithmetic outcome stands and the caller can detect the case via
+// CheckResult.Spectacular.
+func applySpectacular(arithmetic bool, faces []int) bool {
+	switch Classify(faces) {
+	case SpectacularSuccess:
+		return true
+	case SpectacularFailure:
+		return false
+	case NotSpectacular, SpectacularlyInteresting:
+		return arithmetic
+	}
+
+	return arithmetic
 }
