@@ -48,30 +48,68 @@ func (s *System) rollSatellites(r *dice.Roller) {
 		parentSize, capped := s.satelliteParentSize(o)
 		for range moons {
 			wt := satelliteType(o.Orbit, hz, hasHZ, r.Die())
-			prof := worldgen.GenerateOtherWorld(r, wt, mwPop)
-			size, double := capSatelliteSize(prof.Size, parentSize, capped)
-			prof.Size = size
-			far := r.Dice(2) >= 8
-			idx := dice.FluxIndex(r.Flux())
-
-			letter := closeOrbitLetters[idx]
-			if far {
-				letter = farOrbitLetters[idx]
-			}
-
-			o.Satellites = append(o.Satellites, Satellite{
-				Far:          far,
-				OrbitLetter:  letter,
-				Type:         wt,
-				Profile:      prof,
-				DoublePlanet: double,
-				TradeCodes: worldgen.TradeClassificationsWithContext(prof, worldgen.WorldContext{
-					MainworldIndustrial: mwIndustrial,
-					Orbit:               o.Orbit, HZOrbit: hz, HasHZ: hasHZ,
-					Satellite: true, SatelliteFar: far,
-				}),
-			})
+			o.Satellites = append(o.Satellites, rollMoon(r, moonSpec{
+				Type:       wt,
+				Orbit:      o.Orbit,
+				HZOrbit:    hz,
+				HasHZ:      hasHZ,
+				MWPop:      mwPop,
+				Industrial: mwIndustrial,
+				ParentSize: parentSize,
+				Capped:     capped,
+			}))
 		}
+	}
+}
+
+// moonSpec is everything rollMoon needs that it does not roll: the moon's
+// already-determined world type, its parent's orbit and habitable zone, the
+// mainworld context its trade codes read, and the parent-size cap.
+type moonSpec struct {
+	Type       worldgen.OtherWorldType
+	Orbit      int
+	HZOrbit    int
+	HasHZ      bool
+	MWPop      int
+	Industrial bool
+	ParentSize int
+	Capped     bool
+}
+
+// rollMoon builds one satellite: its UWP (size-capped to its parent, Book 3
+// p.21), then Close/Far (2D, 7- is Close) and the Flux-rolled orbit letter
+// (p.24 table 2C), then its trade codes in satellite context. It is the single
+// moon-assembly path — both the satellite pass and the orbit map's captured
+// world (a world whose orbit a gas giant already holds) go through it, so the
+// dice order (UWP, 2D far, Flux letter) cannot drift between them.
+func rollMoon(r *dice.Roller, spec moonSpec) Satellite {
+	maxSize := worldgen.NoSizeCap
+	if spec.Capped {
+		maxSize = spec.ParentSize
+	}
+
+	prof := worldgen.GenerateSatelliteWorld(r, spec.Type, spec.MWPop, maxSize)
+	double := spec.Capped && prof.Size == spec.ParentSize
+
+	far := r.Dice(2) >= 8
+	idx := dice.FluxIndex(r.Flux())
+
+	letter := closeOrbitLetters[idx]
+	if far {
+		letter = farOrbitLetters[idx]
+	}
+
+	return Satellite{
+		Far:          far,
+		OrbitLetter:  letter,
+		Type:         spec.Type,
+		Profile:      prof,
+		DoublePlanet: double,
+		TradeCodes: worldgen.TradeClassificationsWithContext(prof, worldgen.WorldContext{
+			MainworldIndustrial: spec.Industrial,
+			Orbit:               spec.Orbit, HZOrbit: spec.HZOrbit, HasHZ: spec.HasHZ,
+			Satellite: true, SatelliteFar: far,
+		}),
 	}
 }
 
@@ -113,18 +151,6 @@ func (s *System) satelliteParentSize(o *PlacedOrbit) (int, bool) {
 	}
 
 	return 0, false
-}
-
-// capSatelliteSize enforces the satellite-size rule (Book 3 p.21): a moon of a
-// world that rolls at least as large as its parent is cut to the parent's size
-// and flagged a double planet. Uncapped parents (gas giants) pass the size
-// through unchanged.
-func capSatelliteSize(satSize, parentSize int, capped bool) (int, bool) {
-	if capped && satSize >= parentSize {
-		return parentSize, true
-	}
-
-	return satSize, false
 }
 
 // satelliteCount rolls a body's moon count and ring count by kind and orbital

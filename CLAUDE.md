@@ -74,7 +74,13 @@ Tooling (go, go-task, golangci-lint, poppler's `pdftotext`) is pinned in `Brewfi
   map (mainworld/gas giants/belts/other worlds in concrete orbits, rotate-per-star); `rollSatellites`
   gives every placed body its moons — each a real satellite with a type (`satelliteType`, the p.29
   Satellites tables) and UWP, capped to its parent's size with a double-planet flag at equal size
-  (Book 3 p.21), or a Ring.
+  (Book 3 p.21), or a Ring. `rollMoon` is the **single** moon-assembly path (both the satellite pass
+  and the orbit map's gas-giant-captured world go through it, so their dice order cannot drift), and
+  the size cap is applied **inside** generation via `worldgen.GenerateSatelliteWorld` — Atmosphere is
+  Flux+Size and Hydrographics is Flux+Atmosphere, so capping Size after the roll would leave a
+  profile describing the larger world and break the World Creation chart's own structural rules
+  ("If Siz=0, Atm=0", "If Siz <2, Hyd =0", p.24). Capping in place consumes identical dice, so it
+  re-derives rather than re-rolls.
 - `internal/chargen/` — character creation (Book 1, Characteristics pp. 47+, careers pp. 63-79,
   Master Chargen Checklist p. 72). Generates the six-characteristic UPP (Str/Dex/End/Int/Edu/Soc,
   each 2D, eHex) at age 18, offers `Check`, and `AgingCheck` (Book 1 p. 89: `2D < LifeStage`,
