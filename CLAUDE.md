@@ -253,6 +253,10 @@ Tooling (go, go-task, poppler's `pdftotext`) is pinned in `Brewfile`.
   They follow one convention, owned by `internal/cli`: **generated records go to stdout, everything
   else to stderr**. Bad input is `cli.Fatalf` (exit 2, the code `flag` itself uses); a true-but-empty
   result is `cli.Notef` (exit 0, still off stdout, so a piped record stream stays clean).
+  **Every run is reproducible**: `cli.Roller` draws the fresh seed itself when `-seed` is omitted and
+  reports it via `Notef` ("`sectorgen: seed 16919235832026294750`"), so a run worth keeping can always
+  be replayed — re-run with that `-seed` for byte-identical records, or to select another view of the
+  same survey (`-hex`, `-sector`). The report is on stderr, so piped records are unaffected.
 
 When adding a generator, transcribe the rule tables/formulas from `docs/reference/` and lock
 them with a golden test built from a worked example in the books.
