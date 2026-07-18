@@ -21,14 +21,14 @@ Machine-level workflow runs through `task` (go-task, version 3; see `Taskfile.ym
 
 ```sh
 task            # = task test
-task check      # gofmt -l, go vet, go test — the pre-commit gate
+task check      # golangci-lint run (subsumes format + vet), go test — the pre-commit gate
 task test       # go test ./...
 task cover      # go test -cover ./...
 task deps       # brew bundle — install tooling from the Brewfile
 ```
 
 Or drive `go` directly (e.g. `go test ./internal/dice` for a single package).
-Tooling (go, go-task, poppler's `pdftotext`) is pinned in `Brewfile`.
+Tooling (go, go-task, golangci-lint, poppler's `pdftotext`) is pinned in `Brewfile`.
 
 ## Code
 
