@@ -80,38 +80,71 @@ func GenerateOtherWorld(r *dice.Roller, t OtherWorldType, mwPop int) uwp.Profile
 // smaller than its parent; if its size is generated as larger than the parent,
 // adjust to fit" (Book 3 p.21). Pass NoSizeCap for an unlimited world.
 //
-// The cap is applied to Size as it is rolled, *before* the characteristics that
-// derive from it, because Atmosphere is Flux+Size and Hydrographics is
-// Flux+Atmosphere (World Creation chart, p.24) — adjusting Size after the fact
-// would leave a profile describing the larger world that was rolled, breaking
-// the chart's own structural rules ("If Siz=0, Atm=0", "If Siz <2, Hyd =0") and
-// misclassifying the world's trade codes. Capping in place consumes exactly the
-// same dice in the same order as the uncapped roll, so it re-derives the
-// dependent characteristics rather than re-rolling them.
+// The generation is a pipeline rather than nine independent recipes, so the two
+// rules that hold for every world type are structural, not something a case body
+// opts into:
+//
+//   - Size is rolled once (typeSize) and capped once, *above* the switch. Every
+//     type rolls Size first, so hoisting it consumes exactly the dice the
+//     per-type roll did, and the cap necessarily lands before the characteristics
+//     that derive from Size — Atmosphere is Flux+Size and Hydrographics is
+//     Flux+Atmosphere (World Creation chart, p.24). Capping afterwards would
+//     leave a profile describing the larger world that was rolled.
+//   - Every profile returns through chartProfile, which applies the chart's
+//     Size-driven rules ("If Siz=0, Atm=0", "If Siz <2, Hyd =0"). A new world
+//     type cannot produce an out-of-chart profile by forgetting a helper.
 func GenerateSatelliteWorld(r *dice.Roller, t OtherWorldType, mwPop, maxSize int) uwp.Profile {
 	maxPop := max(mwPop-1, 0)
 	capPop := func(pop int) int { return clamp(pop, 0, maxPop) }
 
-	capSize := func(size int) int {
-		if maxSize == NoSizeCap {
-			return size
-		}
+	size := capSize(typeSize(r, t), maxSize)
 
-		return min(size, maxSize)
+	return chartProfile(rollOtherWorld(r, t, size, capPop))
+}
+
+// typeSize rolls a world type's Size formula (Book 3 p.29). It is the single
+// point at which Size enters generation, which is what lets the satellite cap
+// and the chart's Size-driven rules both be applied before any characteristic
+// derives from Size. Planetoids yield 0 *without rolling*: a belt has no Size
+// formula, and spending a die here would shift every later roll.
+func typeSize(r *dice.Roller, t OtherWorldType) int {
+	switch t {
+	case Planetoids:
+		return 0
+	case Inferno:
+		return 6 + r.Die()
+	case BigWorld:
+		return r.Dice(2) + 7
+	case RadWorld, StormWorld:
+		return r.Dice(2)
+	case Worldlet:
+		return max(r.Die()-3, 0)
+	default: // Hospitable, InnerWorld, Iceworld
+		return rollSize(r)
+	}
+}
+
+// capSize applies the satellite-size rule (Book 3 p.21) to a rolled Size.
+func capSize(size, maxSize int) int {
+	if maxSize == NoSizeCap {
+		return size
 	}
 
+	return min(size, maxSize)
+}
+
+// rollOtherWorld rolls the characteristics a type does not take from Size, given
+// the already-rolled and already-capped size. Each case is the book's formula
+// transcription and nothing more: the chart's structural conditions are applied
+// for it, by fullOtherWorld and chartProfile.
+func rollOtherWorld(r *dice.Roller, t OtherWorldType, size int, capPop func(int) int) uwp.Profile {
 	switch t {
 	case Inferno:
 		// YSB0000-0: no spaceport, an exotic (B) atmosphere, a large hot world.
-		// A capped Inferno keeps its defining atmosphere unless it is cut to
-		// Size 0, which the chart forces airless.
-		size := capSize(6 + r.Die())
-
-		return uwp.Profile{Starport: 'Y', Size: size, Atmosphere: sizedAtmosphere(11, size)}
+		return uwp.Profile{Starport: 'Y', Size: size, Atmosphere: 11}
 
 	case RadWorld:
 		// StSAH000-0: a bombarded world, uninhabited (Pop/Gov/Law/TL zero).
-		size := capSize(r.Dice(2))
 		atm := atmosphere(r.Flux(), size)
 		hyd := hydrographics(r.Flux(), atm, size)
 
@@ -124,50 +157,60 @@ func GenerateSatelliteWorld(r *dice.Roller, t OtherWorldType, mwPop, maxSize int
 
 	case Planetoids:
 		// St000PGL-T: a belt-like body — no size, atmosphere, or hydrographics.
-		return fullOtherWorld(r, 0, 0, 0, capPop(rollPopulation(r)))
+		return fullOtherWorld(r, size, 0, 0, capPop(rollPopulation(r)))
 
 	case InnerWorld:
-		size := capSize(rollSize(r))
 		atm := atmosphere(r.Flux(), size)
-		hyd := sizedHydrographics(r.Dice(2)-4, size)
+		hyd := r.Dice(2) - 4
 
 		return fullOtherWorld(r, size, atm, hyd, capPop(r.Dice(2)-4))
 
+	case StormWorld:
+		atm := r.Dice(2) + 4
+		hyd := r.Dice(2) - 4
+
+		return fullOtherWorld(r, size, atm, hyd, capPop(r.Dice(2)-6))
+
 	case BigWorld:
-		size := capSize(r.Dice(2) + 7)
 		atm := atmosphere(r.Flux(), size)
 		hyd := hydrographics(r.Flux(), atm, size)
 
 		return fullOtherWorld(r, size, atm, hyd, capPop(rollPopulation(r)))
 
-	case StormWorld:
-		size := capSize(r.Dice(2))
-		atm := sizedAtmosphere(r.Dice(2)+4, size)
-		hyd := sizedHydrographics(r.Dice(2)-4, size)
-
-		return fullOtherWorld(r, size, atm, hyd, capPop(r.Dice(2)-6))
-
 	case Worldlet:
-		size := capSize(max(r.Die()-3, 0))
 		atm := atmosphere(r.Flux(), size)
 		hyd := hydrographics(r.Flux(), atm, size)
 
 		return fullOtherWorld(r, size, atm, hyd, capPop(rollPopulation(r)))
 
 	case Iceworld:
-		size := capSize(rollSize(r))
 		atm := atmosphere(r.Flux(), size)
 		hyd := hydrographics(r.Flux(), atm, size)
 
 		return fullOtherWorld(r, size, atm, hyd, capPop(r.Dice(2)-6))
 
 	default: // Hospitable
-		size := capSize(rollSize(r))
 		atm := atmosphere(r.Flux(), size)
 		hyd := hydrographics(r.Flux(), atm, size)
 
 		return fullOtherWorld(r, size, atm, hyd, capPop(rollPopulation(r)))
 	}
+}
+
+// chartProfile applies the World Creation chart's structural rules to an
+// assembled profile (Book 3 p.24): "If Atm<0 or Siz=0, Atm=0" and "If Siz <2,
+// Hyd =0". Every non-mainworld profile returns through here, so the rules hold
+// for a type carrying its own Atm/Hyd formula — and for a future type whose
+// author never learns the rules exist.
+//
+// Both helpers are idempotent, so a value that already consulted Size (anything
+// from atmosphere/hydrographics, or from fullOtherWorld's own normalization)
+// passes through untouched.
+func chartProfile(p uwp.Profile) uwp.Profile {
+	p.Atmosphere = sizedAtmosphere(p.Atmosphere, p.Size)
+	p.Hydrographics = sizedHydrographics(p.Hydrographics, p.Size)
+
+	return p
 }
 
 // sizedAtmosphere clamps a type's own Atmosphere formula (StormWorld's 2D+4,
@@ -195,7 +238,14 @@ func sizedHydrographics(hyd, size int) int {
 // fullOtherWorld finishes a world whose size/atmosphere/hydrographics/population
 // are already rolled: Government, Law, the spaceport (from Population), and Tech
 // Level, in that order (Book 3 p.29 StSAHPGL-T).
+//
+// Atmosphere and Hydrographics are normalized on entry rather than at assembly
+// because Tech Level reads both: the chart's structural rules must be settled
+// before anything derives from them.
 func fullOtherWorld(r *dice.Roller, size, atm, hyd, pop int) uwp.Profile {
+	atm = sizedAtmosphere(atm, size)
+	hyd = sizedHydrographics(hyd, size)
+
 	gov := government(r.Flux(), pop)
 	lawLevel := law(r.Flux(), gov)
 	sp := spaceport(pop - r.Die())
