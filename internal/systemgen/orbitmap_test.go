@@ -175,6 +175,87 @@ func TestPlaceOrbitsWorldCapturedByGiant(t *testing.T) {
 	}
 }
 
+// TestBeltMainworldIsAlwaysPlaced: an asteroid-belt mainworld is placed from the
+// P2 Belt column as an absolute orbit (Book 3 p.21, "If the Mainworld is an
+// Asteroid Belt, it is placed using the Belt Column of the Basic Placement Chart
+// without regard to Habitable Zone"). That column runs negative at its low end —
+// on 2D=2 it is -1 — and an orbit is never negative. The raw offset used to reach
+// s.MainworldOrbit, where -1 already meant "the primary has no habitable zone, do
+// not place", so the belt mainworld was silently dropped from the orbit map.
+func TestBeltMainworldIsAlwaysPlaced(t *testing.T) {
+	for seed := uint64(1); seed <= 1000; seed++ {
+		s := GenerateForMap(dice.NewWithSeed(seed), false, true)
+		if !slices.ContainsFunc(s.Orbits, func(o PlacedOrbit) bool {
+			return o.Kind == KindMainworld
+		}) {
+			t.Fatalf(
+				"seed %d: belt mainworld dropped from the orbit map (MainworldOrbit %d)\n%s",
+				seed, s.MainworldOrbit, s,
+			)
+		}
+	}
+}
+
+// climateVocabulary is every code ClimateCodes can emit. No other classifier
+// produces one, so a mainworld's climate codes can be recovered from its trade
+// codes by this filter.
+var climateVocabulary = []string{"Ho", "Co", "Tr", "Tu", "Fr", "Tz"}
+
+func climateOf(codes []string) []string {
+	got := []string{}
+
+	for _, c := range codes {
+		if slices.Contains(climateVocabulary, c) {
+			got = append(got, c)
+		}
+	}
+
+	slices.Sort(got)
+
+	return got
+}
+
+// TestMainworldOrbitAgreesWithOrbitMap: the mainworld's orbit is claimed on the
+// primary, and claim may nudge it — a secondary star's orbit is reserved, and the
+// want is clamped to the star's precluded floor. The system must not then disagree
+// with itself: s.MainworldOrbit, the orbit the mainworld occupies in s.Orbits, and
+// the orbit its climate codes describe are all the same orbit.
+func TestMainworldOrbitAgreesWithOrbitMap(t *testing.T) {
+	for seed := uint64(1); seed <= 2000; seed++ {
+		s := Generate(dice.NewWithSeed(seed))
+
+		i := slices.IndexFunc(s.Orbits, func(o PlacedOrbit) bool { return o.Kind == KindMainworld })
+		if i < 0 {
+			if s.MainworldOrbit >= 0 {
+				t.Fatalf("seed %d: MainworldOrbit %d but no mainworld in the orbit map",
+					seed, s.MainworldOrbit)
+			}
+
+			continue
+		}
+
+		placed := s.Orbits[i].Orbit
+		if s.MainworldOrbit != placed {
+			t.Fatalf("seed %d: MainworldOrbit %d but the orbit map places it at %d",
+				seed, s.MainworldOrbit, placed)
+		}
+
+		if s.Mainworld.Profile.Size == 0 {
+			continue // a belt mainworld takes no climate codes
+		}
+
+		hz, hasHZ := HZOrbit(s.Primary)
+
+		want := climateOf(worldgen.ClimateCodes(s.Mainworld.Profile, placed, hz, hasHZ))
+		if got := climateOf(s.Mainworld.TradeCodes); !slices.Equal(got, want) {
+			t.Fatalf(
+				"seed %d: mainworld at orbit %d (HZ %d) carries climate %v, want %v\n%s",
+				seed, placed, hz, got, want, s,
+			)
+		}
+	}
+}
+
 func TestOtherWorldType(t *testing.T) {
 	hz := 4
 	// Inner/HZ table (orbit <= hz+1): rolls 1..6.
