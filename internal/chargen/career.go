@@ -548,7 +548,12 @@ func runTerm(r *dice.Roller, p Policy, c *Character, run *careerRun, career Care
 	// a Wound Badge in the first — and still rolls Reward and takes a Medal each
 	// time. The target keeps the ORIGINAL Controlling Characteristic: Eneri's
 	// second-term Reward is "10 +2 +1 -2" against his pre-injury Dexterity-10.
-	if reward := r.Resolve(dice.Check{Dice: 2, Target: ccVal - mod + bo}); reward.Success {
+	// The roll happens either way, so the dice stream does not depend on the Risk
+	// outcome, but a character the Risk roll killed collects nothing: the book
+	// has him "determine the consequences", and a corpse has none. Without this
+	// a Merchant killed in his term still banks Ship Shares, and a Scout still
+	// records a Discovery, both of which feed muster-out and the character sheet.
+	if reward := r.Resolve(dice.Check{Dice: 2, Target: ccVal - mod + bo}); reward.Success && outcome != Died {
 		grantReward(c, run, career, reward, ccVal)
 	}
 

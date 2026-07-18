@@ -1,7 +1,6 @@
 package systemgen
 
 import (
-	"slices"
 	"testing"
 
 	"github.com/philoserf/t5/internal/dice"
@@ -173,8 +172,11 @@ func TestRollMoonSizeCap(t *testing.T) {
 	}{
 		{"oversized cut to parent", 5, 5, true},
 		{"cut to a worldlet parent", 3, 3, true},
-		{"cut to an asteroid parent", 0, 0, true},
 		{"gas-giant parent never caps", worldgen.NoSizeCap, 19, false},
+		// A Size digit of 0 is the asteroid-belt code, not a dimension, so it is
+		// not a cap: capping to it flattened every moon of a belt mainworld to
+		// Y000000-0, atmosphere and tech level included.
+		{"size-0 parent is a belt code, not a cap", 0, 19, false},
 	}
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
@@ -200,23 +202,9 @@ func TestRollMoonSizeCap(t *testing.T) {
 // trade codes classified off the inconsistent profile. The capped size must
 // feed the characteristics that derive from it.
 func TestRollMoonCappedProfileIsConsistent(t *testing.T) {
-	// Size 0: airless and dry, and an asteroid for trade-code purposes.
-	m := rollMoon(dice.NewScripted(6), moonSpec{
-		Type: worldgen.BigWorld, Orbit: 3, HZOrbit: 3, HasHZ: true,
-		MWPop: 8, MaxSize: 0,
-	})
-	if m.Profile.Atmosphere != 0 || m.Profile.Hydrographics != 0 {
-		t.Errorf("Size-0 moon = Atm %d/Hyd %d, want 0/0 (p.24 If Siz=0, Atm=0)",
-			m.Profile.Atmosphere, m.Profile.Hydrographics)
-	}
-
-	if !slices.Contains(m.TradeCodes, "As") {
-		t.Errorf("Size-0 moon trade codes = %v, want As", m.TradeCodes)
-	}
-
 	// Size 1: Atmosphere follows Flux+Siz from the capped size, Hydrographics is
 	// forced dry.
-	m = rollMoon(dice.NewScripted(6), moonSpec{
+	m := rollMoon(dice.NewScripted(6), moonSpec{
 		Type: worldgen.BigWorld, Orbit: 3, HZOrbit: 3, HasHZ: true,
 		MWPop: 8, MaxSize: 1,
 	})
@@ -228,6 +216,65 @@ func TestRollMoonCappedProfileIsConsistent(t *testing.T) {
 		t.Errorf("Size-1 moon Hyd = %d, want 0 (p.24 If Siz <2, Hyd =0)",
 			m.Profile.Hydrographics)
 	}
+}
+
+// TestBeltMainworldDoesNotFlattenItsMoons is the regression for the belt-code
+// cap: an asteroid-belt mainworld carries UWP Size 0, and reading that digit as
+// a satellite cap cut every one of its moons to Size 0 — losing Atmosphere,
+// Hydrographics and Tech Level with it, so a Big World rendered Y000000-0 and
+// every moon came back flagged a double planet with an As trade code.
+func TestBeltMainworldDoesNotFlattenItsMoons(t *testing.T) {
+	checked := 0
+
+	for seed := uint64(1); seed <= 40; seed++ {
+		s := GenerateForMap(dice.NewWithSeed(seed), true, true)
+		if s.Mainworld.Profile.Size != 0 {
+			continue // not a belt mainworld for this seed
+		}
+
+		for _, o := range s.Orbits {
+			if o.Kind != KindMainworld {
+				continue
+			}
+
+			for _, sat := range o.Satellites {
+				if sat.Ring {
+					continue
+				}
+
+				checked++
+
+				// Worldlet (1D-3) and Planetoids roll Size 0 honestly; the types
+				// below have a nonzero minimum (BigWorld 2D+7, StormWorld and
+				// RadWorld 2D, Inferno 6+1D), so a Size-0 one can only be a cap
+				// artifact.
+				switch sat.Type {
+				case worldgen.BigWorld, worldgen.StormWorld, worldgen.RadWorld, worldgen.Inferno:
+					if sat.Profile.Size == 0 {
+						t.Errorf(
+							"seed %d: %v moon of a belt mainworld is Size 0 (%s); the belt's Size digit is a code, not a cap",
+							seed,
+							sat.Type,
+							sat.Profile,
+						)
+					}
+				default:
+					// Hospitable/InnerWorld/Iceworld/Worldlet/Planetoids may roll 0.
+				}
+
+				if sat.DoublePlanet {
+					t.Errorf("seed %d: %v moon (%s) flagged a double planet with a belt parent",
+						seed, sat.Type, sat.Profile)
+				}
+			}
+		}
+	}
+
+	if checked == 0 {
+		t.Skip("no belt-mainworld moons in the sampled seeds")
+	}
+
+	t.Logf("checked %d moons of belt mainworlds", checked)
 }
 
 // TestSatellitesCarryTradeCodes: every generated non-ring satellite carries trade

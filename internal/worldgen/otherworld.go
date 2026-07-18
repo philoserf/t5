@@ -125,6 +125,9 @@ func typeSize(r *dice.Roller, t OtherWorldType) int {
 }
 
 // capSize applies the satellite-size rule (Book 3 p.21) to a rolled Size.
+// A caller passing 0 gets a Size-0 world: whether a Size digit of 0 is a real
+// cap or the asteroid-belt code is the caller's question, not this function's
+// (systemgen's satelliteMaxSize answers it for satellites).
 func capSize(size, maxSize int) int {
 	if maxSize == NoSizeCap {
 		return size
@@ -171,25 +174,14 @@ func rollOtherWorld(r *dice.Roller, t OtherWorldType, size int, capPop func(int)
 
 		return fullOtherWorld(r, size, atm, hyd, capPop(r.Dice(2)-6))
 
-	case BigWorld:
-		atm := atmosphere(r.Flux(), size)
-		hyd := hydrographics(r.Flux(), atm, size)
-
-		return fullOtherWorld(r, size, atm, hyd, capPop(rollPopulation(r)))
-
-	case Worldlet:
-		atm := atmosphere(r.Flux(), size)
-		hyd := hydrographics(r.Flux(), atm, size)
-
-		return fullOtherWorld(r, size, atm, hyd, capPop(rollPopulation(r)))
-
 	case Iceworld:
 		atm := atmosphere(r.Flux(), size)
 		hyd := hydrographics(r.Flux(), atm, size)
 
 		return fullOtherWorld(r, size, atm, hyd, capPop(r.Dice(2)-6))
 
-	default: // Hospitable
+	default: // Hospitable, BigWorld, Worldlet — same derivation, differing only in
+		// the Size formula that typeSize already applied.
 		atm := atmosphere(r.Flux(), size)
 		hyd := hydrographics(r.Flux(), atm, size)
 

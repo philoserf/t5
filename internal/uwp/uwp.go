@@ -14,8 +14,8 @@ import (
 // is an eHex value; Starport is a literal port letter, and its domain depends on
 // the kind of world: a mainworld carries a starport quality A-E or X (Book 3
 // table 1), a secondary world a spaceport class F, G, H or Y (Book 3 p.29 table
-// 1B). Switching on the mainworld letters alone — as the starport-keyed tables
-// in worldgen do — misreads every secondary world's profile as malformed.
+// 1B). Code switching on this field must cover both sets — worldgen's portTable
+// does — because a Profile alone does not say which kind of world it describes.
 type Profile struct {
 	Starport      byte
 	Size          int

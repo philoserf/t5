@@ -83,8 +83,17 @@ type moonSpec struct {
 // world (a world whose orbit a gas giant already holds) go through it, so the
 // dice order (UWP, 2D far, Flux letter) cannot drift between them.
 func rollMoon(r *dice.Roller, spec moonSpec) Satellite {
-	prof := worldgen.GenerateSatelliteWorld(r, spec.Type, spec.MWPop, spec.MaxSize)
-	double := spec.MaxSize != worldgen.NoSizeCap && prof.Size == spec.MaxSize
+	// No parent caps its moons at Size 0 — satelliteMaxSize resolves the
+	// asteroid-belt code to NoSizeCap — so treat any non-positive cap as absent
+	// rather than flattening the moon. This also keeps moonSpec's zero value
+	// safe: an unset MaxSize means uncapped, not "cap everything to Size 0".
+	maxSize := spec.MaxSize
+	if maxSize <= 0 {
+		maxSize = worldgen.NoSizeCap
+	}
+
+	prof := worldgen.GenerateSatelliteWorld(r, spec.Type, spec.MWPop, maxSize)
+	double := maxSize != worldgen.NoSizeCap && prof.Size == maxSize
 
 	far := r.Dice(2) >= 8
 	idx := dice.FluxIndex(r.Flux())
@@ -133,19 +142,35 @@ func (s *System) hostStar(label string) Star {
 // satellite is never larger than its parent), or worldgen.NoSizeCap when they
 // take none. Gas-giant moons are never capped — a giant's size code far exceeds
 // any world size — and belts have no moons.
+//
+// A Size digit of 0 is not a cap. In a UWP it marks an asteroid belt (the same
+// convention PortFacilities reads to site a Beltport), so it is a code rather
+// than a dimension: capping to it would cut every moon of a belt mainworld to
+// Size 0, taking its Atmosphere, Hydrographics and Tech Level with it and
+// rendering a Big World as Y000000-0.
 func (s *System) satelliteMaxSize(o *PlacedOrbit) int {
 	switch o.Kind {
 	case KindMainworld:
-		return s.Mainworld.Profile.Size
+		return sizeCapOf(s.Mainworld.Profile.Size)
 	case KindWorld:
 		if o.World != nil {
-			return o.World.Profile.Size
+			return sizeCapOf(o.World.Profile.Size)
 		}
 	default:
 		// KindGasGiant and KindBelt are uncapped; handled by the return below.
 	}
 
 	return worldgen.NoSizeCap
+}
+
+// sizeCapOf turns a parent's UWP Size digit into a satellite cap, treating 0 —
+// the asteroid-belt code — as no cap at all.
+func sizeCapOf(parentSize int) int {
+	if parentSize <= 0 {
+		return worldgen.NoSizeCap
+	}
+
+	return parentSize
 }
 
 // satelliteCount rolls a body's moon count and ring count by kind and orbital
