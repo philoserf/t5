@@ -35,6 +35,29 @@ func TestStringOutOfRangeDoesNotPanic(t *testing.T) {
 	if got := p.String(); got != "A?88899-C" {
 		t.Fatalf("String() = %q, want A?88899-C", got)
 	}
+
+	// The zero value is constructible; its unset Starport must render "?" and
+	// not put a NUL byte into the record stream.
+	if got := (Profile{}).String(); got != "?000000-0" {
+		t.Fatalf("Profile{}.String() = %q, want %q", got, "?000000-0")
+	}
+
+	// Any other byte outside the port domain renders "?" too.
+	for _, c := range []byte{'a', '~', 'I', 'Z', '0'} {
+		if got := (Profile{Starport: c}).String(); got != "?000000-0" {
+			t.Errorf("Profile{Starport: %q}.String() = %q, want %q", c, got, "?000000-0")
+		}
+	}
+}
+
+func TestStringPortLetters(t *testing.T) {
+	// Starport carries a mainworld starport (A-E, X) or a secondary world's
+	// spaceport (F, G, H, Y — worldgen/otherworld.go); all render as themselves.
+	for _, c := range []byte{'A', 'B', 'C', 'D', 'E', 'X', 'F', 'G', 'H', 'Y'} {
+		if got := (Profile{Starport: c}).String(); got[0] != c {
+			t.Errorf("Profile{Starport: %q}.String() = %q, want leading %q", c, got, c)
+		}
+	}
 }
 
 func TestStringEHexFields(t *testing.T) {

@@ -7,6 +7,9 @@
 # macOS
 .DS_Store
 
+# Agent worktrees (git worktrees nested inside the working directory)
+/.claude/worktrees/
+
 # Source rulebooks and their extracted text — copyrighted, not distributed (see README)
 /docs/pdf/*.pdf
 /docs/reference/

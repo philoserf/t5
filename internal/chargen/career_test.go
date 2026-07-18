@@ -173,7 +173,14 @@ func TestRunTermWounded(t *testing.T) {
 	// Strength 7, Risk fails (roll 8 > 7), Flux -1 -> reduced to 6: a wound.
 	c := Character{scores: [count]int{7, 7, 7, 8, 8, 8}}
 
-	got := runOneTerm(dice.NewScripted(4, 4 /*risk 8, fail*/, 2, 3 /*flux -1*/), &c, Strength)
+	// Reward is rolled even though Risk failed (Book 1 p.65), so its 2D follows
+	// the injury Flux in the script; career "T" has RewardNone, so it grants
+	// nothing here beyond consuming its roll.
+	got := runOneTerm(
+		dice.NewScripted(4, 4 /*risk 8, fail*/, 2, 3 /*flux -1*/, 3, 4 /*reward*/),
+		&c,
+		Strength,
+	)
 	if got != Ongoing || c.scores[Strength] != 6 || c.WoundBadges != 1 {
 		t.Fatalf(
 			"wound: outcome %v Str %d badges %d, want Ongoing/6/1",
@@ -188,7 +195,11 @@ func TestRunTermDisabled(t *testing.T) {
 	// Risk fails, Flux -4 reduces Strength 7 -> 3 (reduced by 4): Disabled.
 	c := Character{scores: [count]int{7, 7, 7, 8, 8, 8}}
 
-	got := runOneTerm(dice.NewScripted(4, 4 /*risk 8*/, 1, 5 /*flux -4*/), &c, Strength)
+	got := runOneTerm(
+		dice.NewScripted(4, 4 /*risk 8*/, 1, 5 /*flux -4*/, 3, 4 /*reward*/),
+		&c,
+		Strength,
+	)
 	if got != Disabled || c.scores[Strength] != 3 {
 		t.Fatalf("disabled: outcome %v Str %d, want Disabled/3", got, c.scores[Strength])
 	}
@@ -198,9 +209,83 @@ func TestRunTermFatal(t *testing.T) {
 	// Strength 3, Risk fails (roll 4 > 3), Flux -3 -> 0: fatal.
 	c := Character{scores: [count]int{3, 7, 7, 8, 8, 8}}
 
-	got := runOneTerm(dice.NewScripted(2, 2 /*risk 4*/, 1, 4 /*flux -3*/), &c, Strength)
+	got := runOneTerm(
+		dice.NewScripted(2, 2 /*risk 4*/, 1, 4 /*flux -3*/, 3, 4 /*reward*/),
+		&c,
+		Strength,
+	)
 	if got != Died || !c.Dead {
 		t.Fatalf("fatal: outcome %v dead %v, want Died/true", got, c.Dead)
+	}
+}
+
+// TestRunTermRewardRollsWhenRiskFails locks Book 1 p.65's sequence: "The
+// Character rolls for Risk ... and determines the outcome. He then rolls again
+// for Reward ... and determines the consequences." Reward is rolled every term,
+// not only on a held Risk.
+//
+// It is shaped after the Eneri Dinsha worked example's first term (p.66), which
+// is the book's own demonstration: Eneri fails Risk against Endurance-11, takes
+// a Wound Badge, and *still* rolls Reward — "he rolls 3 and succeeds again. He
+// will receive a Medal." Eneri's Branch/Operations and Caution mods are stripped
+// to zero here so the test isolates the rule from the armed-forces mod stack.
+//
+// The Reward target is deliberately checked against the ORIGINAL characteristic:
+// Eneri's Reward is rolled against Endurance-11 even though the injury has just
+// dropped him to Endurance-10.
+func TestRunTermRewardRollsWhenRiskFails(t *testing.T) {
+	c := Character{scores: [count]int{7, 7, 11, 8, 8, 8}} // Endurance 11, as Eneri
+	career := Career{
+		Name:             "T",
+		ControllingChars: []Characteristic{Endurance},
+		RewardKind:       RewardMedal,
+	}
+	run := careerRun{ccPool: []Characteristic{Endurance}}
+
+	// Risk 2D=12 > End 11 fails; Flux -1 wounds him to End 10; Reward 2D=3 is
+	// still rolled and succeeds against the original End 11, earning a Medal.
+	got := runTerm(
+		dice.NewScripted(6, 6 /*risk 12, fail*/, 2, 3 /*flux -1*/, 1, 2 /*reward 3*/),
+		stopAfter{},
+		&c,
+		&run,
+		career,
+	)
+
+	if got != Ongoing {
+		t.Fatalf("outcome = %v, want Ongoing (a wound does not end the term)", got)
+	}
+
+	if c.WoundBadges != 1 || c.scores[Endurance] != 10 {
+		t.Errorf("injury: badges %d End %d, want 1/10", c.WoundBadges, c.scores[Endurance])
+	}
+
+	if c.Medals != 1 {
+		t.Errorf("Medals = %d, want 1: Reward is rolled even when Risk fails (Book 1 p.65)",
+			c.Medals)
+	}
+}
+
+// TestRunTermRewardRollsWhenRiskKills confirms the Reward roll is drawn from the
+// dice stream even on a fatal term, so a death does not silently shift every
+// subsequent roll of a multi-character generation.
+func TestRunTermRewardRollsWhenRiskKills(t *testing.T) {
+	c := Character{scores: [count]int{3, 7, 7, 8, 8, 8}}
+	career := Career{
+		Name:             "T",
+		ControllingChars: []Characteristic{Strength},
+		RewardKind:       RewardMedal,
+	}
+	run := careerRun{ccPool: []Characteristic{Strength}}
+	r := dice.NewScripted(2, 2 /*risk 4, fail*/, 1, 4 /*flux -3, fatal*/, 1, 2 /*reward*/, 6)
+
+	if got := runTerm(r, stopAfter{}, &c, &run, career); got != Died {
+		t.Fatalf("outcome = %v, want Died", got)
+	}
+	// The Reward 2D was consumed, so the next draw is the trailing 6, not part
+	// of the reward roll.
+	if next := r.Die(); next != 6 {
+		t.Errorf("next die = %d, want 6: the Reward roll should have consumed its 2D", next)
 	}
 }
 
@@ -341,9 +426,10 @@ func TestRunTermNoSkillsWhenDisabled(t *testing.T) {
 		Skills:           commsGrid(),
 	}
 	run := careerRun{ccPool: []Characteristic{Strength}}
-	// Risk fails (8 > 7), Flux -4 disables: no skills awarded.
+	// Risk fails (8 > 7), Flux -4 disables: no skills awarded. The Reward roll
+	// still happens first (Book 1 p.65), so its 2D is scripted after the Flux.
 	if got := runTerm(
-		dice.NewScripted(4, 4, 1, 5),
+		dice.NewScripted(4, 4, 1, 5, 3, 4),
 		stopAfter{},
 		&c,
 		&run,

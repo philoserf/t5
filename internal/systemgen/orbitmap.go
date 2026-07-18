@@ -265,24 +265,17 @@ func (s *System) placeOrbits(r *dice.Roller) { //nolint:gocognit,cyclop,funlen /
 		// A world whose target orbit is already held by a gas giant becomes that
 		// giant's moon rather than being nudged to a free orbit (Book 3 p.21).
 		if gi := giantAt(placed, h.label, clamp(want, h.floor, h.maxOrbit)); gi >= 0 {
-			wt := otherWorldType(placed[gi].Orbit, h.hz, h.hasHZ, r.Die())
-			prof := worldgen.GenerateOtherWorld(r, wt, mwPop)
-			far := r.Dice(2) >= 8
-			idx := dice.FluxIndex(r.Flux())
-
-			letter := closeOrbitLetters[idx]
-			if far {
-				letter = farOrbitLetters[idx]
-			}
-
-			placed[gi].Satellites = append(placed[gi].Satellites, Satellite{
-				Far: far, OrbitLetter: letter, Type: wt, Profile: prof,
-				TradeCodes: worldgen.TradeClassificationsWithContext(prof, worldgen.WorldContext{
-					MainworldIndustrial: mwIndustrial,
-					Orbit:               placed[gi].Orbit, HZOrbit: h.hz, HasHZ: h.hasHZ,
-					Satellite: true, SatelliteFar: far,
-				}),
-			})
+			// The captor is a gas giant, whose size code exceeds any world's, so
+			// the moon takes no size cap (Book 3 p.21).
+			placed[gi].Satellites = append(placed[gi].Satellites, rollMoon(r, moonSpec{
+				Type:       otherWorldType(placed[gi].Orbit, h.hz, h.hasHZ, r.Die()),
+				Orbit:      placed[gi].Orbit,
+				HZOrbit:    h.hz,
+				HasHZ:      h.hasHZ,
+				MWPop:      mwPop,
+				Industrial: mwIndustrial,
+				MaxSize:    worldgen.NoSizeCap,
+			}))
 
 			continue
 		}

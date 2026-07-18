@@ -469,7 +469,7 @@ func RunCareer(r *dice.Roller, p Policy, c *Character, career Career) {
 // surviving armed-forces character then resolves rank. It returns Ongoing,
 // Disabled, or Died.
 //
-//nolint:cyclop,funlen // the term engine dispatches every career variant; irreducibly branchy
+//nolint:cyclop // the term engine dispatches every career variant; irreducibly branchy
 func runTerm(r *dice.Roller, p Policy, c *Character, run *careerRun, career Career) TermOutcome {
 	if career.FameCareer {
 		return runFameTerm(r, p, c, run, career) // no CC — the Entertainer resolves Fame/Talent
@@ -509,34 +509,16 @@ func runTerm(r *dice.Roller, p Policy, c *Character, run *careerRun, career Care
 	// Branch & Operations mods are negative on Risk (riskier) and positive on
 	// Reward (Book 1 p. 82); Caution/Bravery keep their usual signs.
 	riskOK := r.Resolve(dice.Check{Dice: 2, Target: ccVal + mod - bo}).Success
-	if riskOK {
-		// Survived. Reward roll; success earns the career's reward token.
-		if reward := r.Resolve(dice.Check{Dice: 2, Target: ccVal - mod + bo}); reward.Success {
-			switch career.RewardKind {
-			case RewardNone:
-				// the reward is deferred (e.g. the Rogue's Scheme); nothing to grant
-			case RewardMedal:
-				c.Medals++
-			case RewardPublication:
-				c.Publications++
-				if reward.Roll <= ccVal-4 {
-					c.Publications++ // Award-Winning (Book 1 p.76): a Publication 4 under the CC counts as two
-				}
-			case RewardShipShares:
-				run.rewards++ // the Nth Reward success is worth N Ship Shares
-				c.ShipShares += run.rewards
-			case RewardDiscovery:
-				c.Discoveries++ // a valuable new world or feature: a Land Grant and Fame +1
-				c.LandGrants++
-				c.Fame++
-			case RewardCommendation:
-				c.Commendations++
-				run.commends++
-			}
-		}
-	} else {
+
+	// outcome is the term's verdict, decided by the Risk roll but not returned
+	// until after the Reward roll, which happens either way.
+	outcome := Ongoing
+
+	if !riskOK {
 		// Risk failed: the CC drops by any negative (bravery) mod and the Branch/
-		// Operations mod, then Flux.
+		// Operations mod, then Flux. This resolution comes before the Reward roll
+		// because it is the Risk roll's own outcome (Book 1 p.65, and the Eneri
+		// Dinsha example on p.66 applies the injury Flux before rolling Reward).
 		negMods := bo
 		if mod < 0 {
 			negMods += -mod
@@ -545,20 +527,40 @@ func runTerm(r *dice.Roller, p Policy, c *Character, run *careerRun, career Care
 		injury, newVal := classifyInjury(ccVal, negMods, r.Flux())
 		switch injury {
 		case Unharmed:
-			// no injury; fall through to the skill award below
-		case Fatal:
-			c.scores[cc] = max(newVal, 0)
-			c.Dead = true
-
-			return Died
-		case Disabling:
-			c.scores[cc] = newVal
-
-			return Disabled
+			// the Flux compensated for the mods: no injury
 		case Wounded:
 			c.scores[cc] = newVal
 			c.WoundBadges++
+		case Disabling:
+			c.scores[cc] = newVal
+			outcome = Disabled
+		case Fatal:
+			c.scores[cc] = max(newVal, 0)
+			c.Dead = true
+			outcome = Died
 		}
+	}
+
+	// Reward is rolled EVERY term, whether the Risk was held or lost (Book 1
+	// p.65: "The Character rolls for Risk ... and determines the outcome. He
+	// then rolls again for Reward ... and determines the consequences"). The
+	// Eneri Dinsha worked example (p.66) fails Risk in both of his terms — taking
+	// a Wound Badge in the first — and still rolls Reward and takes a Medal each
+	// time. The target keeps the ORIGINAL Controlling Characteristic: Eneri's
+	// second-term Reward is "10 +2 +1 -2" against his pre-injury Dexterity-10.
+	// The roll happens either way, so the dice stream does not depend on the Risk
+	// outcome, but a character the Risk roll killed collects nothing: the book
+	// has him "determine the consequences", and a corpse has none. Without this
+	// a Merchant killed in his term still banks Ship Shares, and a Scout still
+	// records a Discovery, both of which feed muster-out and the character sheet.
+	if reward := r.Resolve(dice.Check{Dice: 2, Target: ccVal - mod + bo}); reward.Success && outcome != Died {
+		grantReward(c, run, career, reward, ccVal)
+	}
+
+	// A dead or disabled character stops here; a surviving (even wounded) one
+	// finishes the term below.
+	if outcome != Ongoing {
+		return outcome
 	}
 
 	// A surviving (even wounded) character gains skills. An Agent runs an
@@ -579,6 +581,39 @@ func runTerm(r *dice.Roller, p Policy, c *Character, run *careerRun, career Care
 	awardSkillsN(r, p, c, career, elig)
 
 	return Ongoing
+}
+
+// grantReward awards the career's reward token for a successful Reward roll
+// (Book 1 p.65). ccVal is the term's original Controlling Characteristic value,
+// which the Scholar's Award-Winning threshold is measured against.
+func grantReward(
+	c *Character,
+	run *careerRun,
+	career Career,
+	reward dice.CheckResult,
+	ccVal int,
+) {
+	switch career.RewardKind {
+	case RewardNone:
+		// the reward is deferred (e.g. the Rogue's Scheme); nothing to grant
+	case RewardMedal:
+		c.Medals++
+	case RewardPublication:
+		c.Publications++
+		if reward.Roll <= ccVal-4 {
+			c.Publications++ // Award-Winning (Book 1 p.76): a Publication 4 under the CC counts as two
+		}
+	case RewardShipShares:
+		run.rewards++ // the Nth Reward success is worth N Ship Shares
+		c.ShipShares += run.rewards
+	case RewardDiscovery:
+		c.Discoveries++ // a valuable new world or feature: a Land Grant and Fame +1
+		c.LandGrants++
+		c.Fame++
+	case RewardCommendation:
+		c.Commendations++
+		run.commends++
+	}
 }
 
 // branchOpsMod returns an armed-forces term's combined Branch & Operations mod

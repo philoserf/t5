@@ -99,3 +99,37 @@ func TestSeedIsDeterministic(t *testing.T) {
 		}
 	}
 }
+
+// TestSeedIsRecoverable: a Roller can always name the seed it was built from,
+// so output from an auto-seeded run can be reproduced. Only a Roller drawing
+// from a caller-supplied sequence has no seed to name.
+func TestSeedIsRecoverable(t *testing.T) {
+	if got, ok := NewWithSeed(42).Seed(); !ok || got != 42 {
+		t.Errorf("NewWithSeed(42).Seed() = %d, %v; want 42, true", got, ok)
+	}
+
+	// New draws its own seed, and replaying it reproduces the rolls.
+	auto := New()
+
+	seed, ok := auto.Seed()
+	if !ok {
+		t.Fatal("New().Seed() reported no seed; an auto-seeded run must stay reproducible")
+	}
+
+	replay := NewWithSeed(seed)
+	for i := range 100 {
+		if x, y := auto.Dice(2), replay.Dice(2); x != y {
+			t.Fatalf("replay of seed %d diverged at roll %d: %d != %d", seed, i, x, y)
+		}
+	}
+
+	// A scripted or sourced Roller has no seed and must say so rather than
+	// reporting a plausible zero.
+	if _, ok := NewScripted(1).Seed(); ok {
+		t.Error("NewScripted().Seed() claimed a seed")
+	}
+
+	if _, ok := NewSource(func() int { return 1 }).Seed(); ok {
+		t.Error("NewSource().Seed() claimed a seed")
+	}
+}

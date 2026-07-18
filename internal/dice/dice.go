@@ -20,9 +20,17 @@ type Roller struct {
 	// d6 returns a single die result in 1..6. Held as a func so tests can
 	// substitute a scripted sequence.
 	d6 func() int
+
+	// seed is the value the generator was built from, kept so that even an
+	// auto-seeded Roller can name it; seeded is false for a Roller drawing from
+	// a caller-supplied sequence, which has no seed to name.
+	seed   uint64
+	seeded bool
 }
 
-// New returns a Roller seeded from the runtime's random source.
+// New returns a Roller seeded from the runtime's random source. The drawn seed
+// is kept and reported by Seed, so output from an auto-seeded Roller stays
+// reproducible — never draw a seed and discard it.
 func New() *Roller {
 	return NewWithSeed(rand.Uint64())
 }
@@ -32,7 +40,10 @@ func New() *Roller {
 func NewWithSeed(seed uint64) *Roller {
 	rng := rand.New(rand.NewPCG(seed, seed^0x9e3779b97f4a7c15))
 
-	return NewSource(func() int { return rng.IntN(6) + 1 })
+	r := NewSource(func() int { return rng.IntN(6) + 1 })
+	r.seed, r.seeded = seed, true
+
+	return r
 }
 
 // NewSource returns a Roller that draws each die from next, which must return
@@ -60,6 +71,13 @@ func NewScripted(faces ...int) *Roller {
 
 		return v
 	})
+}
+
+// Seed reports the seed the Roller was built from and whether it has one. A
+// Roller from NewSource or NewScripted draws from a supplied sequence rather
+// than a seeded generator, so it reports ok false.
+func (r *Roller) Seed() (uint64, bool) {
+	return r.seed, r.seeded
 }
 
 // Die rolls a single D6, returning 1..6.

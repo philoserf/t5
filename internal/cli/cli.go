@@ -42,9 +42,12 @@ func commandName() string {
 
 // Roller defines the shared -seed flag, parses the command line, and returns a
 // roller. When -seed is given the roller is seeded — so any value, including 0,
-// is reproducible — and otherwise it is freshly random. A command that needs
-// extra flags defines them (via the flag package) before calling Roller, which
-// parses the command line.
+// is reproducible — and otherwise a fresh seed is drawn and reported on stderr
+// (via Notef), so every run is reproducible after the fact: re-run with the
+// printed -seed to get the same records. The report stays off stdout, so a
+// piped record stream is unaffected. A command that needs extra flags defines
+// them (via the flag package) before calling Roller, which parses the command
+// line.
 func Roller() *dice.Roller {
 	seed := flag.Uint64("seed", 0, "random seed; if omitted, a fresh random seed is used")
 
@@ -62,7 +65,14 @@ func Roller() *dice.Roller {
 		return dice.NewWithSeed(*seed)
 	}
 
-	return dice.New()
+	// dice.New keeps the seed it drew, so say it out loud — a record nobody can
+	// regenerate is the bug this avoids.
+	r := dice.New()
+	if fresh, ok := r.Seed(); ok {
+		Notef("seed %d", fresh)
+	}
+
+	return r
 }
 
 // SeededRoller defines the shared -n and -seed flags (naming the item in the -n

@@ -21,14 +21,14 @@ Machine-level workflow runs through `task` (go-task, version 3; see `Taskfile.ym
 
 ```sh
 task            # = task test
-task check      # gofmt -l, go vet, go test — the pre-commit gate
+task check      # golangci-lint run (subsumes format + vet), go test — the pre-commit gate
 task test       # go test ./...
 task cover      # go test -cover ./...
 task deps       # brew bundle — install tooling from the Brewfile
 ```
 
 Or drive `go` directly (e.g. `go test ./internal/dice` for a single package).
-Tooling (go, go-task, poppler's `pdftotext`) is pinned in `Brewfile`.
+Tooling (go, go-task, golangci-lint, poppler's `pdftotext`) is pinned in `Brewfile`.
 
 ## Code
 
@@ -37,7 +37,10 @@ Tooling (go, go-task, poppler's `pdftotext`) is pinned in `Brewfile`.
   scripted `d6` for deterministic tests, as the tests do). It provides the primitives (`Dice`,
   `DiceFaces` for the individual dice, `Flux`/`GoodFlux`/`BadFlux`, `HalfDie`, even distributions),
   the roll-low `Check`/`Resolve` mechanic (Mod adjusts the Target, DM adjusts the roll; the result
-  carries `Faces` and a `Spectacular()` classifier for three-1s/three-6s, Book 1 p.127), the
+  carries `Faces` and a `Spectacular()` classifier for three-1s/three-6s, Book 1 p.127 — and
+  `Resolve` **applies** that override to `Success`: three 1s force success "even if the result
+  would otherwise be a failure", three 6s force failure. `Effect` stays arithmetic, and
+  Spectacularly Interesting (both at once, 6D+) leaves the arithmetic outcome to the referee), the
   Many-Dice fast methods for large pools (`ManyDice10`/`ManyDice2D`/`Average35`/`ManyDice35Flux`,
   Book 1 p.260), and a `Parse`/`Eval` for chart notation like `2D-2` and `Flux`. Build generators on top of this rather than calling
   `math/rand` directly. `dice.NewSource(func() int)` supplies a custom/scripted die source,
@@ -71,7 +74,13 @@ Tooling (go, go-task, poppler's `pdftotext`) is pinned in `Brewfile`.
   map (mainworld/gas giants/belts/other worlds in concrete orbits, rotate-per-star); `rollSatellites`
   gives every placed body its moons — each a real satellite with a type (`satelliteType`, the p.29
   Satellites tables) and UWP, capped to its parent's size with a double-planet flag at equal size
-  (Book 3 p.21), or a Ring.
+  (Book 3 p.21), or a Ring. `rollMoon` is the **single** moon-assembly path (both the satellite pass
+  and the orbit map's gas-giant-captured world go through it, so their dice order cannot drift), and
+  the size cap is applied **inside** generation via `worldgen.GenerateSatelliteWorld` — Atmosphere is
+  Flux+Size and Hydrographics is Flux+Atmosphere, so capping Size after the roll would leave a
+  profile describing the larger world and break the World Creation chart's own structural rules
+  ("If Siz=0, Atm=0", "If Siz <2, Hyd =0", p.24). Capping in place consumes identical dice, so it
+  re-derives rather than re-rolls.
 - `internal/chargen/` — character creation (Book 1, Characteristics pp. 47+, careers pp. 63-79,
   Master Chargen Checklist p. 72). Generates the six-characteristic UPP (Str/Dex/End/Int/Edu/Soc,
   each 2D, eHex) at age 18, offers `Check`, and `AgingCheck` (Book 1 p. 89: `2D < LifeStage`,
@@ -250,6 +259,10 @@ Tooling (go, go-task, poppler's `pdftotext`) is pinned in `Brewfile`.
   They follow one convention, owned by `internal/cli`: **generated records go to stdout, everything
   else to stderr**. Bad input is `cli.Fatalf` (exit 2, the code `flag` itself uses); a true-but-empty
   result is `cli.Notef` (exit 0, still off stdout, so a piped record stream stays clean).
+  **Every run is reproducible**: `cli.Roller` draws the fresh seed itself when `-seed` is omitted and
+  reports it via `Notef` ("`sectorgen: seed 16919235832026294750`"), so a run worth keeping can always
+  be replayed — re-run with that `-seed` for byte-identical records, or to select another view of the
+  same survey (`-hex`, `-sector`). The report is on stderr, so piped records are unaffected.
 
 When adding a generator, transcribe the rule tables/formulas from `docs/reference/` and lock
 them with a golden test built from a worked example in the books.

@@ -45,33 +45,75 @@ func (s *System) rollSatellites(r *dice.Roller) {
 			o.Satellites = append(o.Satellites, Satellite{Ring: true})
 		}
 
-		parentSize, capped := s.satelliteParentSize(o)
+		maxSize := s.satelliteMaxSize(o)
 		for range moons {
 			wt := satelliteType(o.Orbit, hz, hasHZ, r.Die())
-			prof := worldgen.GenerateOtherWorld(r, wt, mwPop)
-			size, double := capSatelliteSize(prof.Size, parentSize, capped)
-			prof.Size = size
-			far := r.Dice(2) >= 8
-			idx := dice.FluxIndex(r.Flux())
-
-			letter := closeOrbitLetters[idx]
-			if far {
-				letter = farOrbitLetters[idx]
-			}
-
-			o.Satellites = append(o.Satellites, Satellite{
-				Far:          far,
-				OrbitLetter:  letter,
-				Type:         wt,
-				Profile:      prof,
-				DoublePlanet: double,
-				TradeCodes: worldgen.TradeClassificationsWithContext(prof, worldgen.WorldContext{
-					MainworldIndustrial: mwIndustrial,
-					Orbit:               o.Orbit, HZOrbit: hz, HasHZ: hasHZ,
-					Satellite: true, SatelliteFar: far,
-				}),
-			})
+			o.Satellites = append(o.Satellites, rollMoon(r, moonSpec{
+				Type:       wt,
+				Orbit:      o.Orbit,
+				HZOrbit:    hz,
+				HasHZ:      hasHZ,
+				MWPop:      mwPop,
+				Industrial: mwIndustrial,
+				MaxSize:    maxSize,
+			}))
 		}
+	}
+}
+
+// moonSpec is everything rollMoon needs that it does not roll: the moon's
+// already-determined world type, its parent's orbit and habitable zone, the
+// mainworld context its trade codes read, and the parent-size cap. MaxSize is
+// worldgen's own sentinel rather than a size/flag pair, so "uncapped" has one
+// representation and a capped moon cannot be spelled as a cap of zero.
+type moonSpec struct {
+	Type       worldgen.OtherWorldType
+	Orbit      int
+	HZOrbit    int
+	HasHZ      bool
+	MWPop      int
+	Industrial bool
+	MaxSize    int
+}
+
+// rollMoon builds one satellite: its UWP (size-capped to its parent, Book 3
+// p.21), then Close/Far (2D, 7- is Close) and the Flux-rolled orbit letter
+// (p.24 table 2C), then its trade codes in satellite context. It is the single
+// moon-assembly path — both the satellite pass and the orbit map's captured
+// world (a world whose orbit a gas giant already holds) go through it, so the
+// dice order (UWP, 2D far, Flux letter) cannot drift between them.
+func rollMoon(r *dice.Roller, spec moonSpec) Satellite {
+	// No parent caps its moons at Size 0 — satelliteMaxSize resolves the
+	// asteroid-belt code to NoSizeCap — so treat any non-positive cap as absent
+	// rather than flattening the moon. This also keeps moonSpec's zero value
+	// safe: an unset MaxSize means uncapped, not "cap everything to Size 0".
+	maxSize := spec.MaxSize
+	if maxSize <= 0 {
+		maxSize = worldgen.NoSizeCap
+	}
+
+	prof := worldgen.GenerateSatelliteWorld(r, spec.Type, spec.MWPop, maxSize)
+	double := maxSize != worldgen.NoSizeCap && prof.Size == maxSize
+
+	far := r.Dice(2) >= 8
+	idx := dice.FluxIndex(r.Flux())
+
+	letter := closeOrbitLetters[idx]
+	if far {
+		letter = farOrbitLetters[idx]
+	}
+
+	return Satellite{
+		Far:          far,
+		OrbitLetter:  letter,
+		Type:         spec.Type,
+		Profile:      prof,
+		DoublePlanet: double,
+		TradeCodes: worldgen.TradeClassificationsWithContext(prof, worldgen.WorldContext{
+			MainworldIndustrial: spec.Industrial,
+			Orbit:               spec.Orbit, HZOrbit: spec.HZOrbit, HasHZ: spec.HasHZ,
+			Satellite: true, SatelliteFar: far,
+		}),
 	}
 }
 
@@ -96,35 +138,39 @@ func (s *System) hostStar(label string) Star {
 	}
 }
 
-// satelliteParentSize returns the parent body's UWP size and whether its moons
-// are size-capped (Book 3 p.21: a satellite is never larger than its parent).
-// Gas-giant moons are never capped — a giant's size code far exceeds any world
-// size — and belts have no moons.
-func (s *System) satelliteParentSize(o *PlacedOrbit) (int, bool) {
+// satelliteMaxSize returns the size cap a body's moons take (Book 3 p.21: a
+// satellite is never larger than its parent), or worldgen.NoSizeCap when they
+// take none. Gas-giant moons are never capped — a giant's size code far exceeds
+// any world size — and belts have no moons.
+//
+// A Size digit of 0 is not a cap. In a UWP it marks an asteroid belt (the same
+// convention PortFacilities reads to site a Beltport), so it is a code rather
+// than a dimension: capping to it would cut every moon of a belt mainworld to
+// Size 0, taking its Atmosphere, Hydrographics and Tech Level with it and
+// rendering a Big World as Y000000-0.
+func (s *System) satelliteMaxSize(o *PlacedOrbit) int {
 	switch o.Kind {
 	case KindMainworld:
-		return s.Mainworld.Profile.Size, true
+		return sizeCapOf(s.Mainworld.Profile.Size)
 	case KindWorld:
 		if o.World != nil {
-			return o.World.Profile.Size, true
+			return sizeCapOf(o.World.Profile.Size)
 		}
 	default:
 		// KindGasGiant and KindBelt are uncapped; handled by the return below.
 	}
 
-	return 0, false
+	return worldgen.NoSizeCap
 }
 
-// capSatelliteSize enforces the satellite-size rule (Book 3 p.21): a moon of a
-// world that rolls at least as large as its parent is cut to the parent's size
-// and flagged a double planet. Uncapped parents (gas giants) pass the size
-// through unchanged.
-func capSatelliteSize(satSize, parentSize int, capped bool) (int, bool) {
-	if capped && satSize >= parentSize {
-		return parentSize, true
+// sizeCapOf turns a parent's UWP Size digit into a satellite cap, treating 0 —
+// the asteroid-belt code — as no cap at all.
+func sizeCapOf(parentSize int) int {
+	if parentSize <= 0 {
+		return worldgen.NoSizeCap
 	}
 
-	return satSize, false
+	return parentSize
 }
 
 // satelliteCount rolls a body's moon count and ring count by kind and orbital
