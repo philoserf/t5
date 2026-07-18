@@ -28,9 +28,18 @@ func (s Spectacular) String() string {
 	}
 }
 
+// minSpectacularDice is the smallest pool that can hold three of a kind, so the
+// smallest that can be spectacular at all (Book 1 p. 127: three ones are "not
+// possible on 1D or 2D").
+const minSpectacularDice = 3
+
 // Classify inspects the raw dice faces (Book 1 p. 127). Ones and sixes are
 // counted across all dice; fewer than three dice can never be spectacular.
 func Classify(faces []int) Spectacular {
+	if len(faces) < minSpectacularDice {
+		return NotSpectacular
+	}
+
 	ones, sixes := 0, 0
 
 	for _, f := range faces {

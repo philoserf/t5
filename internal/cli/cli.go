@@ -8,7 +8,6 @@ package cli
 import (
 	"flag"
 	"fmt"
-	"math/rand/v2"
 	"os"
 	"path/filepath"
 
@@ -66,12 +65,14 @@ func Roller() *dice.Roller {
 		return dice.NewWithSeed(*seed)
 	}
 
-	// Draw the seed here rather than in dice.New, so we can say it out loud —
-	// a record nobody can regenerate is the bug this avoids.
-	fresh := rand.Uint64()
-	Notef("seed %d", fresh)
+	// dice.New keeps the seed it drew, so say it out loud — a record nobody can
+	// regenerate is the bug this avoids.
+	r := dice.New()
+	if fresh, ok := r.Seed(); ok {
+		Notef("seed %d", fresh)
+	}
 
-	return dice.NewWithSeed(fresh)
+	return r
 }
 
 // SeededRoller defines the shared -n and -seed flags (naming the item in the -n
