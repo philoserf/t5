@@ -48,17 +48,20 @@ type Policy interface { //nolint:interfacebloat // intentionally aggregates ever
 	ChooseExplorerDuty(c Character) bool
 	// RerollBranch reports whether a surviving non-officer rerolls their
 	// armed-forces Branch at the end of a term (Book 1 p. 66). False keeps the
-	// current Branch and rolls no die. The book's third option — *selecting* a
-	// Branch — is gated on a Soc roll the engine does not yet make, so it is not
-	// offered here; see BranchOps.
+	// current Branch and rolls no die. True offers the p. 66 "change (reselect or
+	// reroll)" in full: the character may attempt a Soc-gated selection via
+	// SelectBranch below, and rolls when that is declined or failed.
 	RerollBranch(c Character, rec CareerRecord) bool
-	// SelectBranch reports the Branch the character wishes to SELECT by name, and
-	// whether to attempt a selection at all (Book 1 p.66, "select or roll for
-	// Branch"). available is the column the character reads, rows 1-8.
+	// SelectBranch reports which Branch the character wishes to SELECT, as an index
+	// into available, and whether to attempt a selection at all (Book 1 p.66,
+	// "select or roll for Branch"). available is the column the character reads,
+	// rows 1-8; a policy choosing by name scans it itself, since it is the side that
+	// knows what it is looking for.
 	//
-	// Selecting costs a Soc check; a policy that returns false rolls no dice. A
-	// failed check falls back to rolling, as does a name the career does not print.
-	SelectBranch(c Character, available []Branch) (string, bool)
+	// Selecting costs a Soc check; a policy that returns false rolls no dice, and a
+	// failed check falls back to rolling. An index outside available is a policy bug
+	// and panics.
+	SelectBranch(c Character, available []Branch) (int, bool)
 	// RerollBranchOnCommission reports whether a newly commissioned character
 	// rolls for a new Branch rather than keeping their current one (Book 1 p. 66).
 	// False keeps it, re-read from the Officer column.
@@ -231,7 +234,7 @@ func (DefaultPolicy) RerollBranch(Character, CareerRecord) bool { return false }
 // SelectBranch declines to select, so the Branch is rolled and no Soc check is
 // made. Choosing a Branch is a player decision with a price, and the default
 // policy does not spend a character's Social Standing on one unasked.
-func (DefaultPolicy) SelectBranch(Character, []Branch) (string, bool) { return "", false }
+func (DefaultPolicy) SelectBranch(Character, []Branch) (int, bool) { return 0, false }
 
 // RerollBranchOnCommission keeps the Branch the character was commissioned out
 // of, for the same reason — and because the Officer column of a two-column table

@@ -63,7 +63,7 @@ func retirementPay(c *Character) (Entitlement, bool) {
 	terms, officer := 0, false
 
 	for _, rec := range c.Careers {
-		if CareerByID(rec.Career).BranchOps != nil { // an armed-forces career
+		if CareerByID(rec.Career).armedForces() {
 			terms += rec.Terms
 			officer = rec.Officer // the most recent armed-forces career's status
 		}

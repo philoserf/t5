@@ -105,9 +105,12 @@ type Rank struct {
 // A PromotionRule is a rank-advancement roll: 2D at or under a characteristic,
 // optionally raised by the character's Medals and Wound Badges, or Publications.
 type PromotionRule struct {
-	Char            Characteristic
-	MedalsAndWounds bool
-	PubsMod         bool
+	Char Characteristic
+	// MedalMods raises the promotion target by the character's summed Medal mods
+	// (Book 1 p.70). Wound Badges do NOT count despite three pages saying they do —
+	// see promoted, which resolves that conflict against the worked example.
+	MedalMods bool
+	PubsMod   bool
 }
 
 // A TenureRule gates a Scholar's promotion beyond a rank until they earn Tenure
@@ -202,13 +205,11 @@ type Branch struct {
 // defaulting to keeping the current Branch: keeping rolls no die, so a default
 // character's dice stream is exactly what it was before this rule existed.
 //
-// The p. 66 option to *select* rather than reroll a Branch is not offered. The
-// book gates selection on a roll — "He must roll Soc or less to select Branch"
-// (p. 66's worked example; the p. 72 checklists print "Select Branch Soc") — and
-// that gate is not implemented anywhere, at career start included, where the
-// engine simply rolls. Offering free selection without the gate would hand a
-// character their best Branch for nothing; the gate and the option belong in one
-// change.
+// The p. 66 option to *select* rather than roll a Branch is offered, and priced:
+// "He must roll Soc or less to select Branch" (the p. 72 worked example; the
+// checklists print "Select Branch  Soc"). See selectBranch. Selection without
+// that gate would hand a character their best Branch for nothing, which is why
+// the gate and the option landed together.
 type BranchOps struct {
 	Branches [9]Branch // indexed 1-8 by the branch roll (index 0 unused)
 	// EnlistedBranches is the separate Enlisted column, for a career that prints
@@ -218,14 +219,21 @@ type BranchOps struct {
 	OpsMods          [10]int // indexed 1-9 by the operations roll (index 0 unused)
 }
 
+// armedForces reports whether this is an armed-forces career — one that prints a
+// Branch table (Book 1 pp.81-86). It is the discriminator for the rules that page
+// set carries alone: the Branch/Operations mods, the Commission ladder, and the XS
+// badge a held Risk earns.
+//
+// It is BranchOps, not RewardKind or hasRanks. RewardKind names what a *Reward*
+// earns and coincides only because Soldier/Spacer/Marine are today's only
+// RewardMedal careers; hasRanks is broader still, matching the Merchant, Scholar
+// and Functionary, none of which print the XS line.
+func (c Career) armedForces() bool { return c.BranchOps != nil }
+
 // branchFor returns the Branch for a branch roll, read from the column matching
 // the character's status at the moment they select a Branch (Book 1 p. 81).
 func (bo *BranchOps) branchFor(officer bool, roll int) Branch {
-	if !officer && bo.EnlistedBranches != nil {
-		return bo.EnlistedBranches[roll]
-	}
-
-	return bo.Branches[roll]
+	return bo.column(officer)[roll]
 }
 
 // commissionBranch is the Branch a newly commissioned character keeps (Book 1
@@ -246,10 +254,8 @@ func (bo *BranchOps) commissionBranch(roll int) Branch {
 	}
 
 	current := bo.EnlistedBranches[roll]
-	for i := 1; i < len(bo.Branches); i++ {
-		if bo.Branches[i].Name == current.Name {
-			return bo.Branches[i]
-		}
+	if b, ok := bo.officerBranchNamed(current.Name); ok {
+		return b
 	}
 
 	return bo.Branches[roll]
@@ -662,6 +668,8 @@ func resolveRiskInjury(
 // (2D <= CC - mod, mods flipped). A failed Risk injures the character; a
 // surviving armed-forces character then resolves rank. It returns Ongoing,
 // Disabled, or Died.
+//
+//nolint:cyclop // the term engine dispatches every career variant; irreducibly branchy
 func runTerm(r *dice.Roller, p Policy, c *Character, run *careerRun, career Career) TermOutcome {
 	if career.FameCareer {
 		return runFameTerm(r, p, c, run, career) // no CC — the Entertainer resolves Fame/Talent
@@ -706,13 +714,20 @@ func runTerm(r *dice.Roller, p Policy, c *Character, run *careerRun, career Care
 	// until after the Reward roll, which happens either way.
 	outcome := Ongoing
 
-	awardExemplaryService(c, career, riskOK)
-
-	if !riskOK {
+	if riskOK {
+		// "Risk Success: Receive XS Exemplary Service Badge. Character is unharmed."
+		// (Book 1 pp.81/82/86, printed on all three armed-forces pages.) Medals were
+		// awarded only on Reward successes, so a character who held his Risk went
+		// undercounted at every later promotion roll. No dice are drawn: the badge
+		// follows from the Risk roll already made.
+		if career.armedForces() {
+			awardMedal(c, exemplaryService)
+		}
+	} else {
 		outcome = resolveRiskInjury(r, c, cc, ccVal, mod, bo)
 	}
 
-	// Reward is rolled EVERY term, held Risk or lost — see rollReward's contract.
+	// Reward is rolled EVERY term, held Risk or lost — see grantReward's contract.
 	if reward := r.Resolve(dice.Check{Dice: 2, Target: ccVal - mod + bo}); reward.Success && outcome != Died {
 		grantReward(c, run, career, reward, ccVal)
 	}
@@ -739,32 +754,17 @@ func runTerm(r *dice.Roller, p Policy, c *Character, run *careerRun, career Care
 		return outcome
 	}
 
-	awardSkillsN(r, p, c, career, termEligibility(r, p, c, run, career, outcome))
-
-	return outcome
-}
-
-// termEligibility is how many skills a term grants: the career's base, plus one
-// for a term the character commissioned or promoted in (Book 1 p.82, "1 skill
-// because he was promoted").
-//
-// The rank roll happens here, so it is skipped for a Disabled character — he
-// serves the term out and earns its skills, but is not promoted on his way to
-// the infirmary. Skipping it also keeps his dice stream free of a roll whose
-// result could never apply.
-func termEligibility(
-	r *dice.Roller,
-	p Policy,
-	c *Character,
-	run *careerRun,
-	career Career,
-	outcome TermOutcome,
-) int {
+	// The rank roll is skipped for a Disabled character: he serves the term out and
+	// earns its skills, but is not promoted on his way to the infirmary. Skipping it
+	// also keeps his stream free of a draw whose result could never apply.
+	elig := career.EligPerTerm
 	if outcome == Ongoing && resolveRank(r, p, c, run, career) {
-		return career.EligPerTerm + 1
+		elig++ // Book 1 p.82, "1 skill because he was promoted"
 	}
 
-	return career.EligPerTerm
+	awardSkillsN(r, p, c, career, elig)
+
+	return outcome
 }
 
 // A Medal is one award from the Imperial Medals table (Book 1 p.70). Mod is the
@@ -802,27 +802,28 @@ var medalsTable = [14]Medal{
 // table's own bottom entry, not a separate award.
 var exemplaryService = medalsTable[2]
 
-// awardMedal records one medal: the count drives the muster-out rolls, the mod
-// sum drives promotion targets. They are kept apart because the book uses them
-// apart — a character with one MCUF has one medal but a +2 promotion mod.
+// awardMedal records one medal. The award itself is kept, not a tally of it: a
+// character sheet reading "MCUF, SEH" cannot be recovered from a count and a mod
+// sum, and #192's MCG/SEH muster-out rolls need to know which medal was earned.
+// The count and the mod sum are both derived (MedalCount, MedalMods), so they
+// cannot drift from each other or from the awards.
 func awardMedal(c *Character, m Medal) {
-	c.Medals++
-	c.MedalMods += m.Mod
+	c.Medals = append(c.Medals, m)
 }
 
-// awardExemplaryService grants the XS badge a held Risk earns: "Risk Success:
-// Receive XS Exemplary Service Badge. Character is unharmed." (Book 1 pp.81/82/86,
-// printed on all three armed-forces pages). Medals were awarded only on Reward
-// successes, so a character who held his Risk went undercounted at every later
-// promotion roll.
-//
-// The gate is RewardMedal because the XS is an armed-forces award — a Scholar who
-// holds a Risk earns no badge. No dice are drawn: the badge follows from the Risk
-// roll already made, so this does not move the stream.
-func awardExemplaryService(c *Character, career Career, riskHeld bool) {
-	if riskHeld && career.RewardKind == RewardMedal {
-		awardMedal(c, exemplaryService)
+// MedalCount is how many medals the character has been awarded.
+func (c Character) MedalCount() int { return len(c.Medals) }
+
+// MedalMods is the summed p.70 table mod of the character's medals — the bonus
+// they contribute to a Soldier/Spacer/Marine promotion target. Two medals are not
+// worth +2 unless both are XS: one MCUF alone is +2.
+func (c Character) MedalMods() int {
+	total := 0
+	for _, m := range c.Medals {
+		total += m.Mod
 	}
+
+	return total
 }
 
 // medalFor reads the award off the p.70 table for a successful Reward roll.
@@ -834,7 +835,10 @@ func medalFor(rawRoll int, officer bool) Medal {
 		line++
 	}
 
-	return medalsTable[min(max(line, 2), 13)]
+	// No clamp: 2D is 2..12 and the Officer bump tops out at 13, so every reachable
+	// line is a real row. An index outside that came from something other than a
+	// successful Reward roll, and should fail loudly rather than award a medal.
+	return medalsTable[line]
 }
 
 // grantReward awards the career's reward token for a successful Reward roll
@@ -894,19 +898,17 @@ func (bo *BranchOps) column(officer bool) *[9]Branch {
 	return &bo.Branches
 }
 
-// findBranch locates a Branch by name in the character's column, returning it
-// with the roll that would have produced it. A name appearing on more than one
-// row (Infantry holds rows 1 and 2 of the Soldier table) resolves to the first,
-// which is the lowest roll that reaches it.
-func (bo *BranchOps) findBranch(officer bool, name string) (Branch, int, bool) {
-	col := bo.column(officer)
+// officerBranchNamed locates a Branch by name in the Officer column. A name on
+// more than one row (Infantry holds rows 1 and 2 of the Soldier table) resolves
+// to the first, which is the lowest roll that reaches it.
+func (bo *BranchOps) officerBranchNamed(name string) (Branch, bool) {
 	for roll := 1; roll <= 8; roll++ {
-		if col[roll].Name == name {
-			return col[roll], roll, true
+		if bo.Branches[roll].Name == name {
+			return bo.Branches[roll], true
 		}
 	}
 
-	return Branch{}, 0, false
+	return Branch{}, false
 }
 
 // selectBranch attempts the "select" half of Book 1 p.66, "the character Begins
@@ -920,25 +922,32 @@ func (bo *BranchOps) findBranch(officer bool, name string) (Branch, int, bool) {
 // existing golden — is unchanged. A FAILED Soc check falls back to rolling: p.66
 // offers select and roll as alternatives, so failing to select leaves the roll,
 // and the character is not left without a Branch.
-func selectBranch(r *dice.Roller, p Policy, c *Character, run *careerRun, career Career) bool {
-	name, want := p.SelectBranch(*c, career.BranchOps.column(run.officer)[1:])
+func selectBranch(r *dice.Roller, p Policy, c *Character, run *careerRun, bo *BranchOps) bool {
+	col := bo.column(run.officer)
+
+	idx, want := p.SelectBranch(*c, col[1:])
 	if !want {
 		return false
 	}
 
+	// The index is into the slice the hook was just handed, so anything outside it
+	// is a policy bug, not a rule outcome — panic rather than quietly rolling and
+	// leaving the character in a Branch nobody chose. This is the same treatment
+	// awardSkillsN gives an out-of-range skill column.
+	if idx < 0 || idx >= len(col)-1 {
+		panic(fmt.Sprintf("chargen: SelectBranch index %d out of range 0-%d", idx, len(col)-2))
+	}
+
+	// Checked before the roll, so a buggy policy fails without first perturbing the
+	// dice stream.
 	if !r.Resolve(dice.Check{Dice: 2, Target: c.Score(Social)}).Success {
 		return false
 	}
 
-	b, roll, ok := career.BranchOps.findBranch(run.officer, name)
-	if !ok {
-		return false // the policy named a Branch this career does not print
-	}
-
 	// branchRoll is kept in step with the Branch, since a later Commission re-reads
 	// the Officer column through it.
-	run.branchRoll = roll
-	holdBranch(run, b)
+	run.branchRoll = idx + 1
+	holdBranch(run, col[run.branchRoll])
 
 	return true
 }
@@ -946,7 +955,7 @@ func selectBranch(r *dice.Roller, p Policy, c *Character, run *careerRun, career
 // chooseBranch resolves a Branch at a selection point: the character may attempt
 // to select one, and otherwise — or on a failed Soc check — rolls for it.
 func chooseBranch(r *dice.Roller, p Policy, c *Character, run *careerRun, career Career) {
-	if !selectBranch(r, p, c, run, career) {
+	if !selectBranch(r, p, c, run, career.BranchOps) {
 		rollBranch(r, c, run, career)
 	}
 }
@@ -1499,8 +1508,8 @@ func attemptTenure(r *dice.Roller, c *Character, rule TenureRule) {
 // mod, not one point each — a flat count would have made it 12.
 func promoted(r *dice.Roller, c Character, rule PromotionRule) bool {
 	target := c.Score(rule.Char)
-	if rule.MedalsAndWounds {
-		target += c.MedalMods
+	if rule.MedalMods {
+		target += c.MedalMods()
 	}
 
 	if rule.PubsMod {

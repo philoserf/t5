@@ -55,9 +55,9 @@ func TestGoldenSoldier(t *testing.T) {
 	// "Risk Success: Receive XS Exemplary Service Badge") and passes its Reward
 	// (raw roll 7, enlisted, so Medals table line 7 — also an XS). All four are
 	// XS, so the promotion mod is +4.
-	if c.Medals != 4 || c.MedalMods != 4 {
+	if c.MedalCount() != 4 || c.MedalMods() != 4 {
 		t.Errorf("Medals = %d mods = %d, want 4 and 4 (an XS for each Risk held and each Reward passed)",
-			c.Medals, c.MedalMods)
+			c.MedalCount(), c.MedalMods())
 	}
 
 	if c.Skills.Level("Fighter") != 1 || c.Skills.Level("Leader") != 1 ||
@@ -99,9 +99,13 @@ func TestPromotedMedalMods(t *testing.T) {
 	// One XS (+1) and one MCUF (+2): two medals, but a +3 mod. The Wound Badge is
 	// deliberately present and deliberately not counted (Book 1 p.70, and the Eneri
 	// Dinsha example promotes at "Soc plus Medal Mods (10 +1)" while holding one).
-	c := Character{scores: [count]int{7, 7, 7, 7, 7, 6}, Medals: 2, MedalMods: 3, WoundBadges: 1}
+	c := Character{
+		scores:      [count]int{7, 7, 7, 7, 7, 6},
+		Medals:      []Medal{medalsTable[2], medalsTable[9]}, // an XS (+1) and an MCUF (+2)
+		WoundBadges: 1,
+	}
 	// Soc 6 + Medal mods 3 = target 9; a roll of 8 succeeds.
-	if !promoted(dice.NewScripted(4, 4), c, PromotionRule{Char: Social, MedalsAndWounds: true}) {
+	if !promoted(dice.NewScripted(4, 4), c, PromotionRule{Char: Social, MedalMods: true}) {
 		t.Error("promotion with medal mods should succeed at 8 vs target 9")
 	}
 	// Without the mods the target is just Soc 6; 8 fails.
@@ -111,7 +115,7 @@ func TestPromotedMedalMods(t *testing.T) {
 	// The Wound Badge must not contribute: Soc 6 + mods 0, with two badges, is
 	// still target 6 and 8 fails. A flat +WoundBadges model would make it 8 and pass.
 	wounded := Character{scores: [count]int{7, 7, 7, 7, 7, 6}, WoundBadges: 2}
-	if promoted(dice.NewScripted(4, 4), wounded, PromotionRule{Char: Social, MedalsAndWounds: true}) {
+	if promoted(dice.NewScripted(4, 4), wounded, PromotionRule{Char: Social, MedalMods: true}) {
 		t.Error("Wound Badges must not raise the promotion target (Book 1 p.70)")
 	}
 }
@@ -159,14 +163,16 @@ func TestBranchOpsMod(t *testing.T) {
 	}
 }
 
-// selectingPolicy attempts to select a named Branch rather than roll for one.
+// selectingPolicy attempts to select a Branch by row rather than roll for one.
+// row is the Branch table row it wants (1-8), which the hook reports as an index
+// into the rows-1-8 slice it is handed.
 type selectingPolicy struct {
 	goldenPolicy
 
-	want string
+	row int
 }
 
-func (s selectingPolicy) SelectBranch(Character, []Branch) (string, bool) { return s.want, true }
+func (s selectingPolicy) SelectBranch(Character, []Branch) (int, bool) { return s.row - 1, true }
 
 // TestSelectBranchSocCheck covers the "select" half of Book 1 p.66, priced by the
 // Eneri Dinsha example: "He must roll Soc or less to select Branch (roll 10 or
@@ -178,7 +184,7 @@ func TestSelectBranchSocCheck(t *testing.T) {
 	c := Character{scores: [count]int{7, 7, 7, 7, 7, 10}}
 	run := careerRun{}
 
-	if !selectBranch(dice.NewScripted(3, 4), selectingPolicy{want: "Medical"}, &c, &run, SoldierCareer) {
+	if !selectBranch(dice.NewScripted(3, 4), selectingPolicy{row: 8}, &c, &run, SoldierCareer.BranchOps) {
 		t.Fatal("a Soc check of 7 against Soc 10 should select the Branch")
 	}
 
@@ -196,7 +202,7 @@ func TestSelectBranchFailedSocFallsBack(t *testing.T) {
 	run := careerRun{}
 	// Soc 6 against a check of 12: the selection fails. chooseBranch then rolls,
 	// and the script provides exactly one die for it (a 3 -> Artillery).
-	chooseBranch(dice.NewScripted(6, 6, 3), selectingPolicy{want: "Medical"}, &c, &run, SoldierCareer)
+	chooseBranch(dice.NewScripted(6, 6, 3), selectingPolicy{row: 8}, &c, &run, SoldierCareer)
 
 	if run.branchName != "Artillery" {
 		t.Errorf("after a failed Soc check the Branch is %q, want the rolled Artillery",
@@ -204,17 +210,23 @@ func TestSelectBranchFailedSocFallsBack(t *testing.T) {
 	}
 }
 
-// TestSelectBranchUnknownNameFallsBack guards the policy seam: a policy naming a
-// Branch this career does not print must not leave the character branchless.
-func TestSelectBranchUnknownNameFallsBack(t *testing.T) {
+// TestSelectBranchRejectsOutOfRangeIndex guards the policy seam. An index is into
+// the slice the hook was handed, so one outside it is a programming error, not a
+// rule outcome — it panics rather than quietly rolling and leaving the character
+// in a Branch nobody chose. The panic happens before the Soc check, so a buggy
+// policy cannot perturb the dice stream on its way out.
+func TestSelectBranchRejectsOutOfRangeIndex(t *testing.T) {
+	defer func() {
+		if recover() == nil {
+			t.Error("an out-of-range SelectBranch index did not panic")
+		}
+	}()
+
 	c := Character{scores: [count]int{7, 7, 7, 7, 7, 12}}
 	run := careerRun{}
-	// Soc 12 makes the check succeed, so the fallback is reached on the name alone.
-	chooseBranch(dice.NewScripted(3, 4, 3), selectingPolicy{want: "Flight"}, &c, &run, SoldierCareer)
-
-	if run.branchName != "Artillery" {
-		t.Errorf("unknown Branch name gave %q, want the rolled Artillery", run.branchName)
-	}
+	// row 9 is off the 1-8 table; NewScripted provides no dice, so a Soc check
+	// before the bounds test would panic for the wrong reason.
+	selectBranch(dice.NewScripted(), selectingPolicy{row: 9}, &c, &run, SoldierCareer.BranchOps)
 }
 
 // TestDefaultPolicyDrawsNoSocCheck is why every existing golden is undisturbed:

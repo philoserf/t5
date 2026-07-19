@@ -48,9 +48,9 @@ var SoldierCareer = Career{
 	BenefitDM:        DMOfficerRank,
 	RewardKind:       RewardMedal,
 	BranchOps:        &soldierBranchOps,
-	Commission:       PromotionRule{Char: Endurance},                        // C3
-	EnlistedPromote:  PromotionRule{Char: Endurance, MedalsAndWounds: true}, // C3*
-	OfficerPromote:   PromotionRule{Char: Social, MedalsAndWounds: true},    // Soc*
+	Commission:       PromotionRule{Char: Endurance},                  // C3
+	EnlistedPromote:  PromotionRule{Char: Endurance, MedalMods: true}, // C3*
+	OfficerPromote:   PromotionRule{Char: Social, MedalMods: true},    // Soc*
 	EnlistedRanks: []Rank{
 		{Title: "Private", Skill: "Fighter"},
 		{Title: "Corporal"},

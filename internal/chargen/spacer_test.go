@@ -50,8 +50,8 @@ func TestGoldenSpacer(t *testing.T) {
 
 	// Four medals over two terms: an XS for each Risk held (Book 1 pp.81/86) and an
 	// XS for each Reward passed (raw roll 7, enlisted, Medals table line 7).
-	if c.Medals != 4 || c.MedalMods != 4 {
-		t.Errorf("Medals = %d mods = %d, want 4 and 4", c.Medals, c.MedalMods)
+	if c.MedalCount() != 4 || c.MedalMods() != 4 {
+		t.Errorf("Medals = %d mods = %d, want 4 and 4", c.MedalCount(), c.MedalMods())
 	}
 	// Astrogation: 5 (term 1 grid, 4 + 1 promotion) + 1 (Ensign auto-skill) +
 	// 5 (term 2 grid, 4 + 1 commission) = 11.
@@ -174,10 +174,10 @@ func TestSpacerEnlistedBranchRow3(t *testing.T) {
 	// One medal, not two: the held Risk earns an XS (Book 1 p.81), and the Reward
 	// misses. The Reward is still the discriminator — a SECOND medal would mean the
 	// Officer column (Line mod 1) had been read, putting the target at 8.
-	if c.Medals != 1 {
+	if c.MedalCount() != 1 {
 		t.Errorf("Medals = %d, want 1 (the Risk XS alone): branch 3 is Enlisted Engineer mod 0, "+
 			"so Reward is 8 vs 7 and misses; 2 Medals means the Officer column (Line mod 1) was read",
-			c.Medals)
+			c.MedalCount())
 	}
 }
 
@@ -195,10 +195,10 @@ func TestSpacerEnlistedBranchRow6(t *testing.T) {
 	}
 
 	// As in row 3: the held Risk earns an XS, so one medal means the Reward missed.
-	if c.Medals != 1 {
+	if c.MedalCount() != 1 {
 		t.Errorf("Medals = %d, want 1 (the Risk XS alone): branch 6 is Enlisted Gunnery mod 1, "+
 			"so Reward is 9 vs 8 and misses; 2 Medals means the Officer column (Flight mod 2) was read",
-			c.Medals)
+			c.MedalCount())
 	}
 }
 
@@ -212,9 +212,9 @@ func TestSpacerBranchRow5Agrees(t *testing.T) {
 
 	c := GenerateCareered(dice.NewScripted(seq...), oneTermPolicy{}, worldgen.World{}, SpacerCareer)
 
-	if c.Medals != 1 {
+	if c.MedalCount() != 1 {
 		t.Errorf("Medals = %d, want 1 — the Risk XS alone (branch 5 is Gunnery mod 1 in both columns)",
-			c.Medals)
+			c.MedalCount())
 	}
 }
 
@@ -241,7 +241,7 @@ func TestMedalsTableEneri(t *testing.T) {
 	eneri := Character{scores: [count]int{9, 10, 11, 5, 8, 10}, WoundBadges: 1}
 	awardMedal(&eneri, medalFor(3, true))
 
-	if got := eneri.Score(Social) + eneri.MedalMods; got != 11 {
+	if got := eneri.Score(Social) + eneri.MedalMods(); got != 11 {
 		t.Errorf("term-1 promotion target = %d, want 11 (Soc 10 +1; the Wound Badge does not count)", got)
 	}
 
@@ -249,11 +249,11 @@ func TestMedalsTableEneri(t *testing.T) {
 	// term's MCUF. A flat one-point-per-medal model yields 12 and fails here.
 	awardMedal(&eneri, medalFor(9, true))
 
-	if got := eneri.Score(Social) + eneri.MedalMods; got != 13 {
+	if got := eneri.Score(Social) + eneri.MedalMods(); got != 13 {
 		t.Errorf("term-2 promotion target = %d, want 13 (Soc 10 +1+2)", got)
 	}
 
-	if eneri.Medals != 2 {
-		t.Errorf("Medals = %d, want 2 (two awards, worth +3 between them)", eneri.Medals)
+	if eneri.MedalCount() != 2 {
+		t.Errorf("Medals = %d, want 2 (two awards, worth +3 between them)", eneri.MedalCount())
 	}
 }

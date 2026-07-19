@@ -52,8 +52,8 @@ func TestGoldenMarine(t *testing.T) {
 
 	// Four medals over two terms: an XS for each Risk held (Book 1 pp.81/86) and an
 	// XS for each Reward passed (raw roll 7, enlisted, Medals table line 7).
-	if c.Medals != 4 || c.MedalMods != 4 {
-		t.Errorf("Medals = %d mods = %d, want 4 and 4", c.Medals, c.MedalMods)
+	if c.MedalCount() != 4 || c.MedalMods() != 4 {
+		t.Errorf("Medals = %d mods = %d, want 4 and 4", c.MedalCount(), c.MedalMods())
 	}
 
 	if c.Skills.Level("Fighter") != 1 || c.Skills.Level("Leader") != 1 ||
