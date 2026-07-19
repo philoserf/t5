@@ -6,7 +6,10 @@ package chargen
 // Scheme rolled from the Rogue Schemes table pays out on a successful Reward,
 // a failed Risk imprisons the Rogue and earns Infamy, and skill eligibility
 // swings with the outcome (Successful Scheme 6 / Failed Scheme 3 / In Prison 2).
-// The Scheme's "Mod +Terms" and "12 is always failure" rules live in the engine.
+// The Scheme's "Mod +Terms" and "12 is always failure" rules live in the engine
+// (ContinueRule.TermsMod and AutoFailOn12/Career.held); both footnotes sit under
+// the whole To Begin / Risk & Reward / Continue block on p. 84, so both cover
+// all four rolls.
 // Deferred pieces (the exact prison sentence, the ±1 Flux modification, and
 // selecting a previous career in place of the roll) are noted at runRogueTerm.
 // The Rogue is a fixed-CC career with the p. 84 skill grid and mustering-out
@@ -21,14 +24,16 @@ var allChars = []Characteristic{Strength, Dexterity, Endurance, Intelligence, Ed
 var soldierSkls = []string{"Fighter", "Gunner", "Heavy Weapons", "Tactics"}
 
 // RogueCareer is the Rogue (Book 1 p. 84): a fixed-CC career. To Begin, Risk &
-// Reward, and Continue all use the one selected Controlling Characteristic.
+// Reward, and Continue all use the one selected Controlling Characteristic, so
+// the career carries no Qualification — under FixedCC, beginCareer rolls against
+// the chosen CC and never reads one.
 var RogueCareer = Career{
 	ID:               Rogue,
 	Name:             "Rogue",
-	Qualify:          Qualification{Chars: allChars},
 	CCMode:           FixedCC,
 	ControllingChars: allChars,
 	Continue:         ContinueRule{UseCC: true, TermsMod: true}, // "Mod +Terms" (Book 1 p. 84)
+	AutoFailOn12:     true,                                      // "But, 12 is always automatic failure" (p. 84)
 	Advance:          RollLow,
 	EligPerTerm:      2,
 	SchemeCareer:     true,

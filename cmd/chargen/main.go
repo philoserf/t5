@@ -18,6 +18,7 @@ import (
 
 	"github.com/philoserf/t5/internal/chargen"
 	"github.com/philoserf/t5/internal/cli"
+	"github.com/philoserf/t5/internal/uwp"
 	"github.com/philoserf/t5/internal/worldgen"
 )
 
@@ -268,18 +269,26 @@ func entitlementsField(c chargen.Character) string {
 	return strings.Join(lines, "\n")
 }
 
-// homeworldField is the homeworld's UWP and any trade classifications.
+// homeworldField is the homeworld's UWP and any trade classifications, or "" for
+// a character with no homeworld.
+//
+// The test is the Profile, not its rendering: uwp.Profile.String is total and
+// never returns "" — the zero Profile renders "?000000-0", a NUL Starport and
+// six zeroes shown as the "?" that String substitutes rather than panicking. So
+// the old uwp == "" guard could not fire, and a homeworld-less character (every
+// character built without one, including the goldens) printed that line.
 func homeworldField(c chargen.Character) string {
-	uwp := c.Homeworld.Profile.String()
-	if uwp == "" {
-		return ""
+	var parts []string
+	// An unset Profile has no UWP to show; rendering it would emit "?000000-0".
+	if c.Homeworld.Profile != (uwp.Profile{}) {
+		parts = append(parts, c.Homeworld.Profile.String())
 	}
 
 	if len(c.Homeworld.TradeCodes) > 0 {
-		uwp += "   " + strings.Join(c.Homeworld.TradeCodes, " ")
+		parts = append(parts, strings.Join(c.Homeworld.TradeCodes, " "))
 	}
 
-	return uwp
+	return strings.Join(parts, "   ")
 }
 
 // educationField renders the character's degrees and, if declared, their Major

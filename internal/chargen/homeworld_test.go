@@ -50,3 +50,37 @@ type skillLevels struct{ c *Character }
 
 func (s skillLevels) level(name string) int { return s.c.Skills.Level(name) }
 func (s skillLevels) any() bool             { return s.c.Skills.String() != "" }
+
+// TestHighGSpelledOneWay guards the one skill name the book spells two ways.
+// Skill names are map keys, so an Ocean-World native's "Hi-G" and a Rogue's
+// "High-G" would never stack — the homeworld level would sit in a bucket no
+// career could raise. Every site uses the p.132 master-Skills-table spelling.
+func TestHighGSpelledOneWay(t *testing.T) {
+	c := Character{}
+	ApplyHomeworldSkills(&c, worldgen.World{TradeCodes: []string{"Oc"}}, DefaultPolicy{})
+
+	if c.Skills.Level("High-G") != 1 {
+		t.Errorf("Ocean World grants %v, want High-G-1", c.Skills.List())
+	}
+	// The Rogue, Noble, and Functionary grids award the same skill; a level from
+	// the homeworld and a level from a career must land on one entry.
+	for _, career := range []Career{RogueCareer, NobleCareer, FunctionaryCareer} {
+		found := false
+
+		for _, col := range career.Skills {
+			for _, cell := range col {
+				if cell.Skill == "High-G" {
+					found = true
+				}
+
+				if cell.Skill == "Hi-G" {
+					t.Errorf("%s grid spells the skill %q; use High-G", career.Name, cell.Skill)
+				}
+			}
+		}
+
+		if !found {
+			t.Errorf("%s grid has no High-G cell", career.Name)
+		}
+	}
+}

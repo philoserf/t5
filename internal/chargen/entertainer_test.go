@@ -86,3 +86,36 @@ func TestFameFallDoesNotBonus(t *testing.T) {
 		t.Errorf("Survey = %d, want 4 (base eligibility, no +2)", c.Skills.Level("Survey"))
 	}
 }
+
+// TestEntertainerComeback locks the Fame-and-Talent table's last line (Book 1
+// pp.64 and 77): "Comeback: Reset Fame to 2D; Talent is unchanged. Comeback is
+// possible any number of times." Re-entering the career rerolls the audience's
+// memory, not the performer's craft — a second career once overwrote Talent
+// with the fresh 2D and kept the old Fame, which is the rule exactly backwards.
+func TestEntertainerComeback(t *testing.T) {
+	c := Character{scores: [count]int{7, 8, 7, 7, 7, 7}}
+	c.Talent = 9 // earned across an earlier Entertainer career
+	c.Fame = 11
+
+	// One 2D roll (2,3 = 5) opens the career. Term 1 draws no Flux (p.77: "Term 1
+	// = 2D"), so it is 4 skill rolls and the Continue.
+	seq := []int{
+		2, 3, // the Comeback 2D = 5
+		1, 1, 1, 1, // 4 skill rolls
+		3, 4, // continue: policy stops after one term
+	}
+	RunCareer(dice.NewScripted(seq...), oneTerm{}, &c, EntertainerCareer)
+
+	if c.Talent != 9 {
+		t.Errorf("Talent = %d, want 9 unchanged (the Comeback rerolls Fame, not Talent)", c.Talent)
+	}
+
+	if c.Fame != 5 {
+		t.Errorf("Fame = %d, want 5 (reset to the Comeback 2D)", c.Fame)
+	}
+}
+
+// oneTerm is goldenPolicy serving a single term.
+type oneTerm struct{ goldenPolicy }
+
+func (oneTerm) Continue(_ Character, rec CareerRecord) bool { return rec.Terms < 1 }

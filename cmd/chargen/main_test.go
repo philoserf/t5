@@ -6,6 +6,8 @@ import (
 
 	"github.com/philoserf/t5/internal/chargen"
 	"github.com/philoserf/t5/internal/dice"
+	"github.com/philoserf/t5/internal/uwp"
+	"github.com/philoserf/t5/internal/worldgen"
 )
 
 // served builds a Character who ran one career, for exercising the sheet's
@@ -222,5 +224,50 @@ func TestOutcomePhrase(t *testing.T) {
 		if got := outcomePhrase(o); got != want {
 			t.Errorf("outcomePhrase(%v) = %q, want %q", o, got, want)
 		}
+	}
+}
+
+// TestHomeworldField covers the guard that could never fire. uwp.Profile.String
+// is total, so the zero Profile renders "?000000-0" rather than "" — the old
+// `uwp == ""` test never held, and a character with no homeworld got a line of
+// that garbage.
+func TestHomeworldField(t *testing.T) {
+	tests := []struct {
+		name string
+		hw   worldgen.World
+		want string
+	}{
+		{"no homeworld at all", worldgen.World{}, ""},
+		{
+			"a real homeworld",
+			worldgen.World{
+				Profile:    uwp.Profile{Starport: 'A', Size: 7, Atmosphere: 8, Population: 8, TechLevel: 12},
+				TradeCodes: []string{"Ri", "Ph"},
+			},
+			"A780800-C   Ri Ph",
+		},
+		{
+			// The goldens build homeworlds as trade codes alone; show those without
+			// inventing a UWP for them.
+			"trade codes but no profile",
+			worldgen.World{TradeCodes: []string{"Ag", "Va"}},
+			"Ag Va",
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			c := served(chargen.CareerRecord{Career: chargen.Scout, Terms: 1})
+			c.Homeworld = tt.hw
+
+			if got := homeworldField(c); got != tt.want {
+				t.Errorf("homeworldField = %q, want %q", got, tt.want)
+			}
+		})
+	}
+	// And the sheet omits the row entirely for a homeworld-less character.
+	out := render(served(chargen.CareerRecord{Career: chargen.Scout, Terms: 1}))
+	if strings.Contains(out, "Homeworld") {
+		t.Errorf("a character with no homeworld should show no Homeworld row:\n%s", out)
 	}
 }

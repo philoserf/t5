@@ -10,7 +10,7 @@ import (
 // TestGoldenFunctionary traces a two-term Functionary: Office Politics promotes
 // on each Reward success (Clerk -> Supervisor -> Senior Supervisor) with no
 // injury. Rolls are 3,4 (= 7) unless noted. Starting scores "787887" (final UPP
-// 797887 after the muster benefit).
+// 887987 after the two muster benefits).
 func TestGoldenFunctionary(t *testing.T) {
 	seq := []int{
 		// UPP: Str 7, Dex 8, End 7, Int 8, Edu 8, Soc 7.
@@ -26,9 +26,12 @@ func TestGoldenFunctionary(t *testing.T) {
 		3, 4, // reward -> promote (rank 3)
 		1, 1, 1, 1, 1, // Biologics x5 (4 + 1 promotion), now 10
 		3, 4, // continue: policy stops after term 2
-		// Muster out: 2 rolls, Benefit column, DM +Rank (=3, Senior Supervisor).
-		2, // 2 + 3 = row 5 -> Dex +1 (8 -> 9)
-		5, // 5 + 3 = row 8 -> Life Insurance
+		// Muster out: 2 rolls, Benefit column. The DM is the rank number the p.87
+		// ladder prints, and that ladder starts at F0 Clerk — two promotions from
+		// F0 is F2 Senior Supervisor, so the DM is +2 (the engine's 1-based rank 3
+		// minus one). This once read the internal index straight through as +3.
+		2, // 2 + 2 = row 4 -> Str +1 (7 -> 8)
+		5, // 5 + 2 = row 7 -> Int +1 (8 -> 9)
 	}
 
 	// goldenPolicy (scout_test.go) picks skill column 3; for the Functionary grid
@@ -40,8 +43,12 @@ func TestGoldenFunctionary(t *testing.T) {
 		FunctionaryCareer,
 	)
 
-	if got := c.UPP(); got != "797887" {
-		t.Errorf("UPP = %q, want %q (Dex 8 +1 muster benefit)", got, "797887")
+	if got := c.UPP(); got != "887987" {
+		t.Errorf("UPP = %q, want %q (Str 7->8, Int 8->9 muster benefits)", got, "887987")
+	}
+
+	if len(c.Benefits) != 0 {
+		t.Errorf("Benefits = %v, want none (both muster rolls landed on characteristics)", c.Benefits)
 	}
 
 	if c.Skills.Level("Bureaucrat") != 1 || c.Skills.Level("Admin") != 1 ||
@@ -61,6 +68,17 @@ func TestGoldenFunctionary(t *testing.T) {
 			rec.Rank,
 			rec.Officer,
 		)
+	}
+	// The muster DM is the number the p.87 ladder prints, not the engine's index:
+	// the third rung of F0..F8 is F2.
+	if got := benefitDM(FunctionaryCareer.BenefitDM, c, rec); got != 2 {
+		t.Errorf("muster Benefit DM = %d, want 2 (F2 Senior Supervisor)", got)
+	}
+	// A Clerk has yet to be promoted: F0 is a DM of +0, the case the off-by-one
+	// most obviously broke.
+	clerk := CareerRecord{Career: Functionary, Rank: 1}
+	if got := benefitDM(FunctionaryCareer.BenefitDM, c, clerk); got != 0 {
+		t.Errorf("a Clerk's muster Benefit DM = %d, want 0 (F0)", got)
 	}
 }
 

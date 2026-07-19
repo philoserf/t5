@@ -45,16 +45,22 @@ var homeworldSkill = map[string][]string{
 	"Mi": {"Survey"},              // Mining
 	"Na": {"Survey"},              // Non-agricultural
 	"Ni": {"Driver"},              // Non-industrial
-	"Oc": {"Hi-G"},                // Ocean World
-	"Pa": {"Trader"},              // Pre-Agricultural
-	"Pi": {"JOT"},                 // Pre-Industrial
-	"Po": {"Steward"},             // Poor
-	"Pr": {"Craftsman"},           // Pre-Rich
-	"Tr": {"Survival"},            // Tropic
-	"Tu": {"Survival"},            // Tundra
-	"Tz": {"Driver"},              // Twilight Zone
-	"Va": {"Vacc Suit"},           // Vacuum
-	"Wa": {"Seafarer"},            // Water World
+	// "Oc" reads "Hi-G" on p.56, but the skill is spelled "High-G" on the p.132
+	// master Skills table, in the index, and on every career grid that awards it
+	// (Rogue p.84, Noble p.85, Functionary p.87) — the p.154 definition's own
+	// headword lists "High-Gravity" first among its alternates. Skill names are
+	// keys here: two spellings never stack, so an Ocean-World native's level would
+	// sit in a bucket no career could ever raise. Normalized to the majority form.
+	"Oc": {"High-G"},    // Ocean World
+	"Pa": {"Trader"},    // Pre-Agricultural
+	"Pi": {"JOT"},       // Pre-Industrial
+	"Po": {"Steward"},   // Poor
+	"Pr": {"Craftsman"}, // Pre-Rich
+	"Tr": {"Survival"},  // Tropic
+	"Tu": {"Survival"},  // Tundra
+	"Tz": {"Driver"},    // Twilight Zone
+	"Va": {"Vacc Suit"}, // Vacuum
+	"Wa": {"Seafarer"},  // Water World
 }
 
 // ApplyHomeworldSkills grants a character their homeworld skills: one per Trade
