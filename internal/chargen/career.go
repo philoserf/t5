@@ -138,12 +138,20 @@ const (
 	DMNone        MusterDM = iota // no modifier (the zero value)
 	DMTerms                       // + terms served
 	DMOfficerRank                 // + rank, only while on the officer track (armed forces, Merchant)
-	DMRank                        // + rank on any track (single-ladder Scholar, Functionary)
+	DMRank                        // + rank on any track, ladder numbered from 1 (the Scholar)
+	DMRankF0                      // + rank on a ladder numbered from 0 (the Functionary; see below)
 	DMFameHalf                    // + Fame/2 (the Scout)
 	DMCommends                    // + Commendations (the Agent)
 )
 
 // benefitDM returns the value of a Benefit-column muster DM for a character.
+//
+// A rank DM is the rank *number the career prints*, and two careers number their
+// ladders differently. The Scholar begins at Scholar1 (Book 1 p.65, "Scholars
+// begin with formal rank (Scholar = Scholar1)"), so its first rung is 1. The
+// Functionary's ladder runs F0 Clerk … F8 Secretary (p.87), so its first rung is
+// 0 — a Clerk's "+Officer Rank" muster DM is +0, not +1. run.rank is always a
+// 1-based ladder index, so DMRankF0 subtracts the difference.
 func benefitDM(dm MusterDM, c Character, rec CareerRecord) int {
 	switch dm {
 	case DMTerms:
@@ -156,6 +164,8 @@ func benefitDM(dm MusterDM, c Character, rec CareerRecord) int {
 		return 0
 	case DMRank:
 		return rec.Rank
+	case DMRankF0:
+		return max(rec.Rank-1, 0)
 	case DMFameHalf:
 		return c.Fame / 2
 	case DMCommends:
