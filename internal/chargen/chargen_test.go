@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/philoserf/t5/internal/dice"
+	"github.com/philoserf/t5/internal/task"
 )
 
 func TestGenerateUPP(t *testing.T) {
@@ -61,12 +62,12 @@ func TestCheck(t *testing.T) {
 	// Endurance 8; a 2D roll of 7 succeeds (7 <= 8).
 	c := Generate(dice.NewScripted(4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4, 4)) // all 8s
 
-	res := c.Check(dice.NewScripted(3, 4), Endurance, dice.Average, 0)
+	res := c.Check(dice.NewScripted(3, 4), Endurance, task.Average.Dice(), 0)
 	if !res.Success || res.Target != 8 {
 		t.Fatalf("Check = %+v, want success against target 8", res)
 	}
 	// A +2 mod raises the target; an Easy (1D) check uses one die.
-	easy := c.Check(dice.NewScripted(6), Strength, dice.Easy, 2)
+	easy := c.Check(dice.NewScripted(6), Strength, task.Easy.Dice(), 2)
 	if !easy.Success || easy.Target != 10 {
 		t.Fatalf("Easy check = %+v, want success against target 10", easy)
 	}

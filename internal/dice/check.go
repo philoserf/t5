@@ -1,13 +1,16 @@
 package dice
 
-// Difficulty is the number of dice a Check rolls. Traveller assumes an Average
-// (2D) check unless a rule states otherwise; Easy is 1D and Hard is 3D. Other
-// dice counts are specified directly (e.g. a 5D or 10D check).
-const (
-	Easy    = 1
-	Average = 2
-	Hard    = 3
-)
+// DefaultCheckDice is the dice count Resolve falls back to when a Check does not
+// state one: Traveller assumes a 2D check unless a rule says otherwise.
+//
+// It is the only dice count this package names. Difficulty is task's word, not
+// dice's — a Check field named Dice holds a *count*, while task.Difficulty is an
+// *index* into the Book 1 p. 120 ladder, and the two numbering schemes disagree
+// (task.Average is 1, but an Average check rolls 2D). This package once exported
+// Easy/Average/Hard as counts, one import away from the ladder's identically
+// named indices; callers wanting a difficulty's dice count ask the ladder for it
+// with task.Difficulty.Dice().
+const DefaultCheckDice = 2
 
 // A Check is a roll-low task resolution. Roll Dice D6, then apply the two
 // kinds of adjustment T5 distinguishes:
@@ -18,8 +21,8 @@ const (
 //     harder.
 //
 // The check succeeds when the adjusted roll is less than or equal to the
-// adjusted Target. A Dice count of zero or less defaults to Average (2D). See Book 1,
-// "Mods Versus DMs" (p. 19).
+// adjusted Target. Dice is a count of dice, not a difficulty level; zero or less
+// defaults to DefaultCheckDice. See Book 1, "Mods Versus DMs" (p. 19).
 type Check struct {
 	Dice   int
 	Target int
@@ -59,7 +62,7 @@ func (c CheckResult) Spectacular() Spectacular {
 func (r *Roller) Resolve(c Check) CheckResult {
 	n := c.Dice
 	if n <= 0 {
-		n = Average
+		n = DefaultCheckDice
 	}
 
 	faces := r.DiceFaces(n)

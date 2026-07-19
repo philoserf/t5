@@ -75,7 +75,7 @@ func Ranged(
 // Melee Number minus the Defender Melee Number, plus mods (spent Dexterity
 // points, Evasion -1). Success is a hit; the roles then reverse for the reply.
 func Melee(r *dice.Roller, attackerMN, defenderMN int, mods ...int) dice.CheckResult {
-	return task.ResolveDice(r, dice.Average, attackerMN-defenderMN, mods...)
+	return task.ResolveDice(r, task.Average.Dice(), attackerMN-defenderMN, mods...)
 }
 
 // Impact resolves an Impact Attack — a collision, ram, or fall (Book 1 p.202).
@@ -85,7 +85,7 @@ func Melee(r *dice.Roller, attackerMN, defenderMN int, mods ...int) dice.CheckRe
 // (The book's prose says "success is a hit", but its own worked example rolls
 // low to dodge — the example governs.)
 func Impact(r *dice.Roller, defenderC2, attackerSpeed int) dice.CheckResult {
-	return task.ResolveDice(r, dice.Average, defenderC2-attackerSpeed)
+	return task.ResolveDice(r, task.Average.Dice(), defenderC2-attackerSpeed)
 }
 
 // ImpactDamageDice is the number of damage dice an Impact inflicts: Speed

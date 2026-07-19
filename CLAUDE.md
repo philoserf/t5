@@ -85,7 +85,7 @@ Tooling (go, go-task, golangci-lint, poppler's `pdftotext`) is pinned in `Brewfi
   an orbit's moons belong to, which is **not** always the orbit's Kind: when the mainworld is itself
   a satellite, p.21 puts a gas giant (or a `GenerateHostWorld` BigWorld, floored at the mainworld's
   own Size) in its orbit, so the orbit's moons are counted and capped for that parent and render as
-  the mainworld's *sibling* moons. Orbit letters are orbit names, so `satelliteOrbits` keeps them
+  the mainworld's _sibling_ moons. Orbit letters are orbit names, so `satelliteOrbits` keeps them
   unique per parent, nudging a duplicate to the nearest free letter without touching the Flux roll
   (p.29, "adjust to an adjacent or the closest possible orbit"). The size cap is applied
   **inside** generation via `worldgen.GenerateSatelliteWorld` — Atmosphere is
@@ -182,7 +182,12 @@ Tooling (go, go-task, golangci-lint, poppler's `pdftotext`) is pinned in `Brewfi
 - `internal/task/` — the Universal Task Format (Book 1 pp. 120-131). A `Difficulty` ladder (Easy
   1D … Beyond Impossible 8D, with `Hasty`/`Cautious` pace) over the dice engine's roll-low
   `Resolve`: `task.Resolve(r, difficulty, target, mods...)`, target being characteristic+skill.
-  The play systems (senses, combat, personals) build on this.
+  The play systems (senses, combat, personals) build on this. **`task` owns the difficulty
+  vocabulary; `dice` speaks only dice counts** — a `Difficulty` is a ladder _index_ (Average = 1)
+  and a `dice.Check{Dice: …}` is a _count_ (an Average check is 2D), so never pass one as the
+  other: convert with `Difficulty.Dice()`. `dice` names exactly one count, `DefaultCheckDice`,
+  the 2D `Resolve` falls back to. `Dice()` **panics** off-ladder rather than returning a count
+  that would silently resolve as an ordinary check; `String()` stays total and renders `?`.
 - `internal/skill/` — a character's skills and knowledges (Book 1 pp. 132-171), a pure
   inventory (no dice). Cascade skills (Pilot/Gunner/Engineer/…) hold Knowledges; `GrantCascade`
   applies the Knowledge-Knowledge-Skill career progression; `TaskLevel` stacks parent+knowledge.
