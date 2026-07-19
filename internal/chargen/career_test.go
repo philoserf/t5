@@ -18,6 +18,14 @@ var testCareer = Career{
 	Continue:         ContinueRule{UseChar: true, Char: Intelligence},
 }
 
+// testBegin resolves a Begin under DefaultPolicy on a fresh run, the way
+// serveCareer does.
+func testBegin(r *dice.Roller, c *Character, career Career) bool {
+	run := newCareerRun(career)
+
+	return beginCareer(r, DefaultPolicy{}, c, &run, career)
+}
+
 // stopAfter is a policy that continues until a fixed number of terms is served.
 type stopAfter struct{ terms int }
 

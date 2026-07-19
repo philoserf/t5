@@ -117,11 +117,11 @@ func TestScoutBeginNoRetry(t *testing.T) {
 	c := Character{scores: [count]int{5, 5, 5, 7, 12, 7}} // Str/Dex/End 5, high Edu 12
 	// Begin 2D=8 > qualify 5 fails, and there is no retry — high Education does not
 	// rescue it, because that was the conflated R&R-retry stat, not a Begin retry.
-	if beginCareer(dice.NewScripted(6, 2), &c, ScoutCareer) {
+	if testBegin(dice.NewScripted(6, 2), &c, ScoutCareer) {
 		t.Error("a failed Scout Begin has no retry (8 > 5), even with high Education")
 	}
 	// A passing Begin still enters on the single roll.
-	if !beginCareer(dice.NewScripted(2, 1), &c, ScoutCareer) { // 2D=3 <= 5
+	if !testBegin(dice.NewScripted(2, 1), &c, ScoutCareer) { // 2D=3 <= 5
 		t.Error("a Scout Begin of 3 <= 5 should enter the career")
 	}
 }
@@ -132,7 +132,7 @@ func TestScoutBeginNoRetry(t *testing.T) {
 func TestFailedBeginCostsAYear(t *testing.T) {
 	c := Character{scores: [count]int{5, 5, 5, 7, 7, 7}, Age: startingAge}
 
-	if beginCareer(dice.NewScripted(6, 2), &c, ScoutCareer) { // 8 > best(Str/Dex/End) = 5
+	if testBegin(dice.NewScripted(6, 2), &c, ScoutCareer) { // 8 > best(Str/Dex/End) = 5
 		t.Fatal("Begin 8 > 5 should be refused")
 	}
 
@@ -140,7 +140,7 @@ func TestFailedBeginCostsAYear(t *testing.T) {
 		t.Errorf("after a refused Begin Age = %d, want %d", c.Age, startingAge+1)
 	}
 
-	if !beginCareer(dice.NewScripted(2, 1), &c, ScoutCareer) { // 3 <= 5, admitted
+	if !testBegin(dice.NewScripted(2, 1), &c, ScoutCareer) { // 3 <= 5, admitted
 		t.Fatal("Begin 3 <= 5 should be accepted")
 	}
 
@@ -149,7 +149,7 @@ func TestFailedBeginCostsAYear(t *testing.T) {
 	}
 	// The Citizen's Begin is automatic — no attempt, so no year. The scripted face
 	// is never drawn (drawing it would fail 6,... against no target at all).
-	if !beginCareer(dice.NewScripted(6), &c, CitizenCareer) {
+	if !testBegin(dice.NewScripted(6), &c, CitizenCareer) {
 		t.Fatal("the Citizen career auto-begins")
 	}
 

@@ -383,18 +383,27 @@ func GenerateCareered(r *dice.Roller, p Policy, homeworld worldgen.World, career
 // serveCareer attempts one career on a character: on a successful (or automatic)
 // begin it runs the term loop and, unless the character died, musters out. It
 // reports whether the character entered the career.
+// The run is created here rather than inside the term loop because a fixed-CC
+// career's Controlling Characteristic is chosen at Begin and then serves the
+// whole career (Book 1 p.84) — Begin and the terms must share one run.
 func serveCareer(r *dice.Roller, p Policy, c *Character, career Career) bool {
-	if !beginCareer(r, c, career) {
+	run := newCareerRun(career)
+	if !beginCareer(r, p, c, &run, career) {
 		return false
 	}
 
-	RunCareer(r, p, c, career)
+	runCareer(r, p, c, &run, career)
 
 	if rec := c.Careers[len(c.Careers)-1]; rec.Outcome != Died {
 		MusterOut(r, p, c, rec, career)
 	}
 
 	return true
+}
+
+// newCareerRun starts the per-career scratch state for one term loop.
+func newCareerRun(career Career) careerRun {
+	return careerRun{ccPool: append([]Characteristic(nil), career.ControllingChars...)}
 }
 
 // beginCareer resolves a career's Begin (Book 1 p. 63): an AutoBegin career (the
@@ -406,7 +415,14 @@ func serveCareer(r *dice.Roller, p Policy, c *Character, career Career) bool {
 // A refusal costs time: "Each failed attempt (both Begin or Retry) takes one
 // year" (Book 1 p.65). Only a rolled refusal does — an automatic entry makes no
 // attempt to fail.
-func beginCareer(r *dice.Roller, c *Character, career Career) bool {
+//
+// A fixed-CC career Begins against its own Controlling Characteristic, not
+// against a Qualification set: the Rogue's box reads "To Begin CC", and the CC
+// he picks is "then used throughout his career (not just in the current Term)"
+// (Book 1 p.84). Choosing it here — through the same selectCC the terms use, on
+// the run they share — is what makes Begin, Risk & Reward, and Continue all read
+// the one characteristic the book says they do.
+func beginCareer(r *dice.Roller, p Policy, c *Character, run *careerRun, career Career) bool {
 	if career.AutoBegin {
 		return true
 	}
@@ -417,7 +433,14 @@ func beginCareer(r *dice.Roller, c *Character, career Career) bool {
 		return true
 	}
 
-	if r.Resolve(dice.Check{Dice: 2, Target: career.Qualify.target(*c)}).Success {
+	var target int
+	if career.CCMode == FixedCC {
+		target = c.Score(selectCC(p, *c, run, career))
+	} else {
+		target = career.Qualify.target(*c)
+	}
+
+	if r.Resolve(dice.Check{Dice: 2, Target: target}).Success {
 		return true
 	}
 
@@ -427,13 +450,19 @@ func beginCareer(r *dice.Roller, c *Character, career Career) bool {
 }
 
 // RunCareer runs the term loop of one career on a character, appending a
-// CareerRecord.
+// CareerRecord. It starts a fresh run, so a fixed-CC career picks its
+// Controlling Characteristic on the first term; serveCareer instead picks it at
+// Begin and hands the same run to runCareer (Book 1 p.84).
 func RunCareer(r *dice.Roller, p Policy, c *Character, career Career) {
+	run := newCareerRun(career)
+	runCareer(r, p, c, &run, career)
+}
+
+// runCareer is RunCareer over a caller-owned run.
+func runCareer(r *dice.Roller, p Policy, c *Character, run *careerRun, career Career) {
 	if len(career.ControllingChars) == 0 && !career.FameCareer {
 		panic("chargen: career " + career.Name + " has no controlling characteristics")
 	}
-
-	run := careerRun{ccPool: append([]Characteristic(nil), career.ControllingChars...)}
 
 	rec := CareerRecord{Career: career.ID}
 	if career.hasRanks() {
@@ -464,7 +493,7 @@ func RunCareer(r *dice.Roller, p Policy, c *Character, career Career) {
 
 	for {
 		run.terms = rec.Terms // terms served before this one, for the Rogue's "Mod +Terms"
-		outcome := runTerm(r, p, c, &run, career)
+		outcome := runTerm(r, p, c, run, career)
 		rec.Terms++
 		c.Age += termYears
 		AgingCheck(r, c) // no-op before age 34; may set c.Dead
@@ -487,7 +516,7 @@ func RunCareer(r *dice.Roller, p Policy, c *Character, career Career) {
 			break
 		}
 
-		if !continues(r, p, *c, career, rec, &run) {
+		if !continues(r, p, *c, career, rec, run) {
 			rec.Outcome = MusteredOut
 
 			break

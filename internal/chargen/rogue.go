@@ -21,11 +21,12 @@ var allChars = []Characteristic{Strength, Dexterity, Endurance, Intelligence, Ed
 var soldierSkls = []string{"Fighter", "Gunner", "Heavy Weapons", "Tactics"}
 
 // RogueCareer is the Rogue (Book 1 p. 84): a fixed-CC career. To Begin, Risk &
-// Reward, and Continue all use the one selected Controlling Characteristic.
+// Reward, and Continue all use the one selected Controlling Characteristic, so
+// the career carries no Qualification — under FixedCC, beginCareer rolls against
+// the chosen CC and never reads one.
 var RogueCareer = Career{
 	ID:               Rogue,
 	Name:             "Rogue",
-	Qualify:          Qualification{Chars: allChars},
 	CCMode:           FixedCC,
 	ControllingChars: allChars,
 	Continue:         ContinueRule{UseCC: true, TermsMod: true}, // "Mod +Terms" (Book 1 p. 84)

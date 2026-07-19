@@ -72,6 +72,49 @@ func TestGoldenRogue(t *testing.T) {
 	}
 }
 
+// TestRogueBeginsAgainstItsFixedCC locks Book 1 p.84: the Rogue's box reads "To
+// Begin CC", and the CC he selects is "then used throughout his career (not just
+// in the current Term)". Begin therefore rolls against that one characteristic —
+// not against a best-of-all-six qualification set, which would let a stat the
+// Rogue never uses buy him into the career.
+func TestRogueBeginsAgainstItsFixedCC(t *testing.T) {
+	// Str 4 is the policy's pick (lowest, via lowCC); Soc 12 is the best of six.
+	c := Character{scores: [count]int{4, 4, 4, 4, 4, 12}, Age: startingAge}
+	run := newCareerRun(RogueCareer)
+
+	if beginCareer(dice.NewScripted(4, 4), lowCC{}, &c, &run, RogueCareer) {
+		t.Error("Begin 8 > the chosen CC (Str 4) should be refused, even with Soc 12")
+	}
+
+	if run.fixed != Strength {
+		t.Errorf("fixed CC = %v, want Strength (the policy's pick at Begin)", run.fixed)
+	}
+	// The same run carries that choice into the terms: no second selection.
+	run2 := newCareerRun(RogueCareer)
+	if !beginCareer(dice.NewScripted(1, 2), lowCC{}, &c, &run2, RogueCareer) { // 3 <= 4
+		t.Fatal("Begin 3 <= Str 4 should enter the career")
+	}
+
+	if got := selectCC(lowCC{}, c, &run2, RogueCareer); got != Strength {
+		t.Errorf("term CC = %v, want the Strength chosen at Begin", got)
+	}
+}
+
+// lowCC picks the lowest-scoring available characteristic, so the CC and the
+// best-of-six qualification target cannot be confused for each other.
+type lowCC struct{ DefaultPolicy }
+
+func (lowCC) ChooseCC(c Character, available []Characteristic) Characteristic {
+	best := available[0]
+	for _, ch := range available[1:] {
+		if c.Score(ch) < c.Score(best) {
+			best = ch
+		}
+	}
+
+	return best
+}
+
 // TestRogueSchemeInfamy drives a failed Risk directly: the Reward still lands
 // (halved payoff), the Rogue earns Infamy (Fame +1) and a prison sentence, and
 // the following prison term grants only In-Prison skills (Personal/Academic).

@@ -100,16 +100,16 @@ func TestResolveRankTenureGate(t *testing.T) {
 func TestScholarBegin(t *testing.T) {
 	// Edu 8: automatic (the dummy die is left unconsumed).
 	edu8 := &Character{scores: [count]int{7, 7, 7, 7, 8, 7}}
-	if !beginCareer(dice.NewScripted(1), edu8, ScholarCareer) {
+	if !testBegin(dice.NewScripted(1), edu8, ScholarCareer) {
 		t.Error("Edu 8 should auto-begin the Scholar")
 	}
 	// Edu 5, roll 4 (<= 5): begins as an Amateur.
 	edu5 := &Character{scores: [count]int{7, 7, 7, 7, 5, 7}}
-	if !beginCareer(dice.NewScripted(2, 2), edu5, ScholarCareer) {
+	if !testBegin(dice.NewScripted(2, 2), edu5, ScholarCareer) {
 		t.Error("Edu 5 rolling 4 (<= 5) should begin as an Amateur")
 	}
 	// Edu 5, roll 11 (> 5): fails to begin (falls through to the next career).
-	if beginCareer(dice.NewScripted(5, 6), edu5, ScholarCareer) {
+	if testBegin(dice.NewScripted(5, 6), edu5, ScholarCareer) {
 		t.Error("Edu 5 rolling 11 (> 5) should fail to begin the Scholar")
 	}
 }
