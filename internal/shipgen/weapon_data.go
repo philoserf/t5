@@ -408,10 +408,19 @@ const (
 // as 66.67 and 1.00. Following the book's arithmetic reproduces its tables to the
 // credit; being more precise than the book would not.
 //
-// defenseOK marks the ranges a defense may be built for. A defense reaches at
-// most Vdistant: Book 2 p.174 greys out Orbit, Far, and Geo on its copy of the
-// World table, and the Defense Ranges table (p.179) stops at R=7. A defense can
-// be built for less reach, never for more.
+// defenseOK marks the ranges a defense may be built for. The rule is one line of
+// the Defense Creation Process (Book 2 p.177): "Defense Range can be decreased but
+// not increased." The standard rung is the ceiling — "The Standard Defense Range
+// is R=7" (p.177), and every defense in the p.174 table stands at R=7, as does
+// every row of the p.176 catalog (R=05, R=06, R=07 and nothing higher).
+//
+// So Orbit, Far, and Geo are out on the world ladder, and Long Range and Deep
+// Space are out on the space one: S=7 Attack Range is that ladder's standard rung
+// (p.83 Table D, printed again for defenses on p.174), and the "decreased but not
+// increased" rule caps a defense there too. The space ladder is reachable at all
+// only because p.174 prints Table D "For Defenses using S= Space Range" and marks
+// the Hybrid S-L-M "S=7* R=7*" in the defenses table itself; p.177 calls the space
+// effects "rarely used for Defenses", which is the same thing said in prose.
 var rangeData = [...]struct {
 	name      string
 	scale     Scale
@@ -425,8 +434,8 @@ var rangeData = [...]struct {
 	FighterRange: {"Fighter Range", SpaceScale, 2, -2, 33, 33, true},
 	ShortRange:   {"Short Range", SpaceScale, 5, -1, 50, 50, true},
 	AttackRange:  {"Attack Range", SpaceScale, 7, 0, 100, 100, true},
-	LongRange:    {"Long Range", SpaceScale, 9, 1, 200, 300, true},
-	DeepSpace:    {"Deep Space", SpaceScale, 12, 2, 300, 500, true},
+	LongRange:    {"Long Range", SpaceScale, 9, 1, 200, 300, false},
+	DeepSpace:    {"Deep Space", SpaceScale, 12, 2, 300, 500, false},
 
 	Vlong:    {"Vlong", WorldScale, 5, -2, 33, 33, true},
 	Distant:  {"Distant", WorldScale, 6, -1, 50, 50, true},

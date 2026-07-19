@@ -215,7 +215,8 @@ func DesignDefense(spec DefenseSpec) Defense {
 	} else if !rng.defenseOK {
 		problems = append(
 			problems,
-			fmt.Sprintf("a defense cannot be built for %s (Vdistant is the furthest)", rng.name),
+			fmt.Sprintf("a defense cannot be built for %s: its range may be decreased but not "+
+				"increased, and %s is the standard", rng.name, standardRangeName(rng.scale)),
 		)
 	}
 
@@ -328,6 +329,18 @@ func (d Defense) LongName() string {
 	return fmt.Sprintf("%s %s %s %s Mod=%+d. %s. %s. R=%02d. (%s).",
 		d.Spec.Stage, rangeData[d.Spec.Range].name, mountName(d.Spec.Mount),
 		d.Name(), d.Mod, d.Tons.Phrase(), weaponMCr(d.Cost), d.Band, d.Principle)
+}
+
+// standardRangeName is the standard (unmodified) rung of a ladder — Attack Range
+// on the space one, Vdistant on the world one (Book 2 p.83 Tables D and E, printed
+// again for defenses on p.174). It is where a defense stands, and the furthest one
+// may be built for: "Defense Range can be decreased but not increased" (p.177).
+func standardRangeName(s Scale) string {
+	if s == WorldScale {
+		return rangeData[VDistant].name
+	}
+
+	return rangeData[AttackRange].name
 }
 
 func validDefense(id DefenseID) bool { return id >= 0 && int(id) < len(defenseData) }

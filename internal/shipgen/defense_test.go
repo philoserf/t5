@@ -187,10 +187,10 @@ func TestWeaponsAsDefenses(t *testing.T) {
 	}
 }
 
-// TestDefenseRangeLimit: a defense reaches at most Vdistant. Book 2 p.174 greys
-// out Orbit, Far, and Geo on the defenses' copy of the World range table, and the
-// Defense Ranges table (p.179) stops at R=7 — a defense can be built for less
-// reach, never for more.
+// TestDefenseRangeLimit: a defense stands at the standard rung of its ladder and
+// may be built for less reach, never for more — "Defense Range can be decreased
+// but not increased" (Book 2 p.177), where "The Standard Defense Range is R=7".
+// On the world ladder that rules out Orbit, Far, and Geo.
 func TestDefenseRangeLimit(t *testing.T) {
 	for _, r := range []Range{Orbit, Far, Geo} {
 		d := DesignDefense(DefenseSpec{Model: BlackGlobe, Mount: BoltIn, Stage: Standard, Range: r})
@@ -207,6 +207,40 @@ func TestDefenseRangeLimit(t *testing.T) {
 		) > 0 {
 			t.Errorf("%s is a legal defense range: %v", rangeData[r].name, d.Problems)
 		}
+	}
+}
+
+// TestDefenseSpaceRangeLimit: the same "decreased but not increased" rule caps the
+// space ladder at its own standard rung, S=7 Attack Range (Book 2 p.177; the space
+// table is p.83 Table D, printed again for defenses on p.174). The screens never
+// reach this check — they are all world-range devices — but the dual-scale Hybrid
+// S-L-M, which p.174 marks "S=7* R=7*" and lists among the Weapons As Defenses,
+// does. Before this rule was enforced it designed clean at S=12, a reach the code's
+// own comment said no defense has.
+func TestDefenseSpaceRangeLimit(t *testing.T) {
+	for _, r := range []Range{Boarding, FighterRange, ShortRange, AttackRange} {
+		if d := DesignWeaponAsDefense(
+			WeaponSpec{HybridSLM, SingleTurret, Standard, r},
+		); len(d.Problems) > 0 {
+			t.Errorf("%s is at or below the standard rung and is legal: %v",
+				rangeData[r].name, d.Problems)
+		}
+	}
+
+	for _, r := range []Range{LongRange, DeepSpace} {
+		if d := DesignWeaponAsDefense(
+			WeaponSpec{HybridSLM, SingleTurret, Standard, r},
+		); len(d.Problems) == 0 {
+			t.Errorf("a defense built for %s reaches past S=7 and should be reported, got a clean %s",
+				rangeData[r].name, d.LongName())
+		}
+	}
+	// Attacking, the same weapon at the same range is perfectly legal — the cap is
+	// the defense's, not the Hybrid's.
+	if w := DesignWeapon(
+		WeaponSpec{HybridSLM, SingleTurret, Standard, DeepSpace},
+	); len(w.Problems) > 0 {
+		t.Errorf("a Hybrid SLM attacking at Deep Space is legal: %v", w.Problems)
 	}
 }
 
