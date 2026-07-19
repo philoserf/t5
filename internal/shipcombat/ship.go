@@ -81,9 +81,23 @@ func guidanceAsset(g shipgen.Guidance, gunnerCSK, brainCSK int) int {
 // A weapon allocated to the Anti-Missile Defensive Fire mode (p.186) is a Defense
 // by the time it reaches here — build it with shipgen.DesignWeaponAsDefense — so it
 // defends through this same call.
+// A defense the designer refused is not aboard: shipgen already charges the ship
+// nothing for it, spends no tonnage on it, and renders it as a bare name. It must
+// not then intercept anything, or a refused screen becomes a free one — the ship
+// gets the protection precisely because it never paid for it.
 func Defend(r *dice.Roller, d shipgen.Defense, attackTL int) dice.CheckResult {
+	if !d.Installed() {
+		// No hardware, no interception. Resolve against an impossible target so the
+		// result reads as a clean miss rather than a special case for every caller.
+		return ResolveDefensiveFire(r, 0, attackTL, noDefenseMod)
+	}
+
 	return ResolveDefensiveFire(r, d.TL, attackTL, d.Mod)
 }
+
+// noDefenseMod is the modifier for defensive fire that has nothing to fire with:
+// large enough that no roll succeeds, so an absent defense never intercepts.
+const noDefenseMod = -100
 
 // ArmorLayers is a designed ship's armor as Penetrate wants it: one Armor Value
 // per layer (Book 2 p.86). Damage grinds through the layers in turn, so the shape

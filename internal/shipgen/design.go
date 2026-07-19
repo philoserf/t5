@@ -135,7 +135,13 @@ func Design(spec ShipSpec) Ship { //nolint:gocognit,cyclop,funlen // ship-design
 		// A yard cannot build above its own tech level: the weapon's TL is its
 		// base shifted by the range and the stage, so a long-range or advanced
 		// model can outrun the ship that carries it.
-		if w.TL > spec.TL {
+		//
+		// Only for something the ship actually carries. A component that already
+		// failed to design has its real problem recorded, and a second complaint
+		// about the TL it would have had is the double-complaint aboard exists to
+		// prevent — two complaints for one mistake, one of them about a ship that
+		// was never built.
+		if aboard(w.Problems) && w.TL > spec.TL {
 			problems = append(problems, fmt.Sprintf("%s is TL-%d, above the ship's TL-%d",
 				w.Name(), w.TL, spec.TL))
 		}
@@ -147,7 +153,7 @@ func Design(spec ShipSpec) Ship { //nolint:gocognit,cyclop,funlen // ship-design
 		ship.Defenses = append(ship.Defenses, d)
 
 		problems = append(problems, d.Problems...)
-		if d.TL > spec.TL {
+		if aboard(d.Problems) && d.TL > spec.TL {
 			problems = append(problems, fmt.Sprintf("%s is TL-%d, above the ship's TL-%d",
 				d.Name(), d.TL, spec.TL))
 		}

@@ -260,7 +260,7 @@ func TestRefusedComponentIsNotCharged(t *testing.T) {
 		t.Errorf("refused defense added Cr%d to the ship's cost", got.Cost-base.Cost)
 	}
 
-	if got.Defenses[0].installed() {
+	if got.Defenses[0].Installed() {
 		t.Error("a refused defense reports itself installed, so it renders a full line")
 	}
 }

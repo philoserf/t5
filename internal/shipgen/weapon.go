@@ -193,6 +193,12 @@ func (w Weapon) LongName() string {
 	if !validWeapon(w.Spec.Model) || !validMount(w.Spec.Mount) || !validRange(w.Spec.Range) {
 		return "?"
 	}
+
+	if !w.Installed() {
+		// The ship does not carry it, so its tonnage, cost and band are not facts
+		// about the ship. Name it and stop, as a refused defense does.
+		return w.Name()
+	}
 	// Stage may be omitted when it is Standard (p.155), but the book's own tables
 	// print it, so we always do.
 	return fmt.Sprintf("%s %s %s %s Mod=%+d. %s. %s. Hits= %dD. %s.",
@@ -374,3 +380,9 @@ func weaponMCr(cr int) string {
 
 	return "MCr" + s
 }
+
+// Installed reports whether this weapon is actually carried — whether its TL,
+// tonnage, cost and band mean anything. It is the same question, asked the same
+// way, as the mount, tonnage and cost accounting (aboard), and as
+// Defense.Installed: a component with a problem was not built.
+func (w Weapon) Installed() bool { return aboard(w.Problems) }

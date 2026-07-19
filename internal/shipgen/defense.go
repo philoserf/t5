@@ -302,7 +302,7 @@ func (d Defense) Name() string {
 		return "?"
 	}
 
-	if !d.installed() {
+	if !d.Installed() {
 		return d.Device
 	}
 
@@ -320,7 +320,7 @@ func (d Defense) LongName() string {
 	// A refused installation has no numbers: printing the full line would state its
 	// zero tonnage, zero cost, and R=00 as facts. Name it, and let the ship's own
 	// Problems carry the reason.
-	if !d.installed() {
+	if !d.Installed() {
 		return d.Name()
 	}
 
@@ -334,16 +334,19 @@ func (d Defense) LongName() string {
 // are distinct, so the band alone does not say how far a defense reaches.
 func (d Defense) RangeCode() string { return rangeCode(d.Scale, d.Band) }
 
-// installed reports whether this defense is actually carried — whether its TL,
+// Installed reports whether this defense is actually carried — whether its TL,
 // tonnage, and cost mean anything.
 //
-// It asks the same question, the same way, as the mount and tonnage accounting
-// (aboard): a component with a problem was not built. Inferring it from a
+// It is exported because the question outlives this package: shipcombat decides
+// whether a defense fires from it, and a caller that cannot ask would defend a
+// ship with hardware the design refused. It asks the same question, the same way,
+// as the mount and tonnage accounting (aboard): a component with a problem was
+// not built. Inferring it from a
 // positive TL instead is not equivalent, because DesignDefense records a
 // range or scale refusal and then still calls install — so a defense refused
 // for Long Range came out with a real TL and would render a full line, tonnage
 // and cost included, for something the ship does not carry.
-func (d Defense) installed() bool { return aboard(d.Problems) }
+func (d Defense) Installed() bool { return aboard(d.Problems) }
 
 // standardRangeName is the standard (unmodified) rung of a ladder — Attack Range
 // on the space one, Vdistant on the world one (Book 2 p.83 Tables D and E, printed
