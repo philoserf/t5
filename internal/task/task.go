@@ -80,7 +80,11 @@ func (d Difficulty) String() string {
 // characteristic plus a skill. The returned CheckResult carries the roll and
 // the success margin (Effect), with Success after the Spectacular override.
 func Resolve(r *dice.Roller, d Difficulty, target int, mods ...int) dice.CheckResult {
-	return applySpectacular(r.Resolve(dice.Check{Dice: d.Dice(), Target: target + sum(mods)}))
+	// One resolution path, so the Spectacular override, the mod arithmetic and the
+	// Check construction cannot drift apart between the two entry points. Dice()
+	// panics off-ladder and otherwise yields 1..8, so ResolveDice's floor is a
+	// no-op here.
+	return ResolveDice(r, d.Dice(), target, mods...)
 }
 
 // ResolveDice rolls a task with an explicit dice count, for callers using a

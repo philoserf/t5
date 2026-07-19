@@ -153,10 +153,14 @@ func (c Character) String() string {
 // task.Difficulty.Dice() — task.Easy.Dice() for 1D, task.Difficult.Dice() for 3D
 // — rather than passing the Difficulty itself, whose int value is a ladder index
 // one off from its dice count. The parameter stays a raw count rather than
-// narrowing to a task.Difficulty because p. 47 needs counts the ladder's three
-// low rungs do not name: "Non-Humans: If the Characteristic checked was
-// generated with other than 2D, check Characteristic with the number of Dice
-// used to generate it" — a sophont whose Str is 5D checks Str on 5D.
+// narrowing to a task.Difficulty because a Check's dice count is FIXED BY HOW
+// THE CHARACTERISTIC WAS GENERATED, not chosen as a judgment of difficulty:
+// "Non-Humans: If the Characteristic checked was generated with other than 2D,
+// check Characteristic with the number of Dice used to generate it" (p. 47), so
+// a sophont whose Str is 5D checks Str on 5D. The ladder does name every count
+// (Easy 1D through BeyondImpossible 8D, Staggering being that 5D) — but calling
+// that sophont's routine Strength check "Staggering" would misdescribe it, and a
+// Difficulty parameter would invite exactly that.
 //
 // The rulebook's escalating penalty for reusing a characteristic before two
 // others are used is session state, left to the caller.

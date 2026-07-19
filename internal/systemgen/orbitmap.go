@@ -216,11 +216,23 @@ func (s *System) placeOrbits(r *dice.Roller) { //nolint:gocognit,cyclop,funlen /
 				mw.Giant = &giants[0]
 				giants = giants[1:]
 			default:
+				// Size is read as a dimension here — the floor the host must clear.
+				// That is only sound because a belt mainworld never reaches this
+				// branch: placeMainworld returns an empty MainworldSatellite for one
+				// (mainworld.go), so IsSatellite is false. Ask rather than rely on
+				// that invariant holding from another file, because reading the
+				// belt code as a dimension is exactly how this package's last three
+				// bugs happened.
+				floor := s.Mainworld.Profile.Size
+				if s.Mainworld.Profile.IsBelt() {
+					floor = 0 // a belt has no dimension to clear
+				}
+
 				prof := worldgen.GenerateHostWorld(
 					r,
 					worldgen.BigWorld,
 					s.Mainworld.Profile.Population,
-					s.Mainworld.Profile.Size,
+					floor,
 				)
 				mw.Parent = &OtherWorld{Type: worldgen.BigWorld, Profile: prof}
 			}

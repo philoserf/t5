@@ -75,8 +75,9 @@ func (s *System) rollSatellites(r *dice.Roller) {
 // moonSpec is everything rollMoon needs that it does not roll: its parent's
 // orbit and habitable zone, the mainworld context its trade codes read, and the
 // parent-size cap. MaxSize is worldgen's own sentinel rather than a size/flag
-// pair, so "uncapped" has one representation and a capped moon cannot be spelled
-// as a cap of zero.
+// pair, so "uncapped" has one representation. A cap of zero is not a real cap —
+// Size 0 is the asteroid-belt code, not a dimension — so rollMoon reads any
+// non-positive MaxSize as absent, which also makes this struct's zero value safe.
 //
 // The world type is deliberately not a field. It was one, and the two call sites
 // filled it from different book tables (Other Worlds vs Satellites, which
@@ -101,17 +102,19 @@ type moonSpec struct {
 func rollMoon(r *dice.Roller, orbits *satelliteOrbits, spec moonSpec) Satellite {
 	wt := satelliteType(spec.Orbit, spec.HZOrbit, spec.HasHZ, r.Die())
 
-	// No parent caps its moons at Size 0 — satelliteBody resolves the
-	// asteroid-belt code to NoSizeCap — so treat any non-positive cap as absent
-	// rather than flattening the moon. This also keeps moonSpec's zero value
-	// safe: an unset MaxSize means uncapped, not "cap everything to Size 0".
+	// Production callers arrive normalized — satelliteBody resolves the
+	// asteroid-belt code to NoSizeCap, and the orbit map's captured-world site
+	// passes the sentinel outright — but this stays as the zero-value guard:
+	// moonSpec{} with an unset MaxSize must mean uncapped, not "flatten every
+	// moon to Size 0". Below, the cap is asked as a bound rather than compared
+	// to the sentinel, matching capSize.
 	maxSize := spec.MaxSize
 	if maxSize <= 0 {
 		maxSize = worldgen.NoSizeCap
 	}
 
 	prof := worldgen.GenerateSatelliteWorld(r, wt, spec.MWPop, maxSize)
-	double := maxSize != worldgen.NoSizeCap && prof.Size == maxSize
+	double := maxSize > worldgen.NoSizeCap && prof.Size == maxSize
 
 	far := r.Dice(2) >= 8
 	letter := orbits.claim(dice.FluxIndex(r.Flux()), far)
