@@ -3,7 +3,11 @@ package dice
 // A Spectacular classifies a roll's exceptional outcome (Book 1 p. 127): three
 // or more ones force a Spectacular Success, three or more sixes a Spectacular
 // Failure, and both together (only possible with six or more dice) is
-// Spectacularly Interesting. These override the ordinary pass/fail result.
+// Spectacularly Interesting.
+//
+// This package classifies; it does not act. Applying the override to a task's
+// outcome belongs to internal/task, which owns Book 1 pp.120-131 — see
+// task.Resolve. CheckResult.Success here is the arithmetic result alone.
 type Spectacular int
 
 // Spectacular classifications of a check (Book 1 p. 127).

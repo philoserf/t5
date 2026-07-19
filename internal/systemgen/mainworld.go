@@ -44,7 +44,7 @@ func placeMainworld(
 	// belt mainworld from the orbit map altogether. Floor it at the innermost orbit
 	// the primary allows — the clamp claim would apply anyway — which keeps a belt
 	// inside the orbit domain and clear of the sentinel.
-	if mainworld.Profile.Size == 0 {
+	if mainworld.Profile.IsBelt() {
 		return max(p2(r.Dice(2)).belt, firstOrbit(primary)), MainworldSatellite{}
 	}
 
@@ -74,7 +74,7 @@ func placeMainworld(
 // An asteroid-belt mainworld, placed without regard to the habitable zone, takes
 // none.
 func tagMainworldClimate(mainworld *worldgen.World, orbit, hz int, hasHZ bool) {
-	if mainworld.Profile.Size == 0 {
+	if mainworld.Profile.IsBelt() {
 		return
 	}
 

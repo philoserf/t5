@@ -37,10 +37,9 @@ Tooling (go, go-task, golangci-lint, poppler's `pdftotext`) is pinned in `Brewfi
   scripted `d6` for deterministic tests, as the tests do). It provides the primitives (`Dice`,
   `DiceFaces` for the individual dice, `Flux`/`GoodFlux`/`BadFlux`, `HalfDie`, even distributions),
   the roll-low `Check`/`Resolve` mechanic (Mod adjusts the Target, DM adjusts the roll; the result
-  carries `Faces` and a `Spectacular()` classifier for three-1s/three-6s, Book 1 p.127 — and
-  `Resolve` **applies** that override to `Success`: three 1s force success "even if the result
-  would otherwise be a failure", three 6s force failure. `Effect` stays arithmetic, and
-  Spectacularly Interesting (both at once, 6D+) leaves the arithmetic outcome to the referee), the
+  carries `Faces` and a `Spectacular()` classifier for three-1s/three-6s, Book 1 p.127 — but
+  `Resolve` only **classifies**, it does not act: `Success` here is plain arithmetic, and the
+  p.127 override is applied one layer up in `task`, which owns the chapter that states it), the
   Many-Dice fast methods for large pools (`ManyDice10`/`ManyDice2D`/`Average35`/`ManyDice35Flux`,
   Book 1 p.260), and a `Parse`/`Eval` for chart notation like `2D-2` and `Flux`. Build generators on top of this rather than calling
   `math/rand` directly. `dice.NewSource(func() int)` supplies a custom/scripted die source,
@@ -52,6 +51,9 @@ Tooling (go, go-task, golangci-lint, poppler's `pdftotext`) is pinned in `Brewfi
 - `internal/ehex/` — Traveller extended-hex digits (0-9, A-Z omitting I and O). `Digit`
   encodes, `ParseDigit` decodes. Every UWP characteristic is an eHex value.
 - `internal/uwp/` — the `Profile` type and its `String` in StSAHPGL-T form (e.g. `A788899-C`).
+  `Profile.IsBelt` names the one Size digit that is a **code, not a dimension**: `BeltSize` (0) means
+  a field of asteroids, so every rule reading Size as a measurement must resolve it first. Reading it
+  as a dimension has shipped three times (#213, #200, #309); ask `IsBelt` rather than comparing to 0.
 - `internal/worldgen/` — mainworld UWP creation (Book 3 pp. 16-25). The characteristic
   formulas are **pure functions** taking their rolls as arguments (test them at their edges);
   `Generate` rolls in checklist order and composes them. Validated against the book's Regina
@@ -85,7 +87,11 @@ Tooling (go, go-task, golangci-lint, poppler's `pdftotext`) is pinned in `Brewfi
   an orbit's moons belong to, which is **not** always the orbit's Kind: when the mainworld is itself
   a satellite, p.21 puts a gas giant (or a `GenerateHostWorld` BigWorld, floored at the mainworld's
   own Size) in its orbit, so the orbit's moons are counted and capped for that parent and render as
-  the mainworld's _sibling_ moons. Orbit letters are orbit names, so `satelliteOrbits` keeps them
+  the mainworld's _sibling_ moons. Any parent that has a UWP is classified by `satelliteBody`, the
+  **one** read that answers both halves at once — the count rule it takes and the cap it imposes —
+  because when those were separate decisions only the cap resolved the asteroid-belt code, so a belt
+  mainworld was capped as a belt but _counted_ as a world and rolled phantom moons (#309).
+  Orbit letters are orbit names, so `satelliteOrbits` keeps them
   unique per parent, nudging a duplicate to the nearest free letter without touching the Flux roll
   (p.29, "adjust to an adjacent or the closest possible orbit"). The size cap is applied
   **inside** generation via `worldgen.GenerateSatelliteWorld` — Atmosphere is
@@ -188,6 +194,15 @@ Tooling (go, go-task, golangci-lint, poppler's `pdftotext`) is pinned in `Brewfi
   other: convert with `Difficulty.Dice()`. `dice` names exactly one count, `DefaultCheckDice`,
   the 2D `Resolve` falls back to. `Dice()` **panics** off-ladder rather than returning a count
   that would silently resolve as an ordinary check; `String()` stays total and renders `?`.
+  `task` also owns the **p.127 Spectacular override** (`applySpectacular`, applied by both
+  `Resolve` and `ResolveDice`): three 1s force `Success` true "even if the result would otherwise
+  be a failure", three 6s force it false, `Effect` stays arithmetic, and Spectacularly Interesting
+  (both at once, 6D+) leaves the outcome to the referee. It lives here, not in `dice`, because
+  p.127 states the rule about _tasks_ ("Sometimes the task result is Spectacular") — `dice` keeps
+  the dice observation (`Classify` over `Faces`) and `task` keeps the consequence, so a caller
+  rolling a non-task `dice.Check` gets arithmetic with no opt-out flag to remember. This is why
+  `chargen.Character.Check` routes through `task.ResolveDice`: a 3D Hard Check is a "very hard
+  task" (p.47) and must stay Spectacular-eligible.
 - `internal/skill/` — a character's skills and knowledges (Book 1 pp. 132-171), a pure
   inventory (no dice). Cascade skills (Pilot/Gunner/Engineer/…) hold Knowledges; `GrantCascade`
   applies the Knowledge-Knowledge-Skill career progression; `TaskLevel` stacks parent+knowledge.

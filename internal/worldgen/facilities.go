@@ -248,7 +248,7 @@ func PortFacilities(p uwp.Profile) (Facilities, bool) {
 	}
 	// An asteroid-belt mainworld (Size 0) has a Beltport in place of a downport
 	// (Book 2 p.24).
-	if p.Size == 0 && f.Downport {
+	if p.IsBelt() && f.Downport {
 		f.Downport, f.Beltport = false, true
 	}
 

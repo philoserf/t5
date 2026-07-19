@@ -11,7 +11,8 @@ import (
 // TestGoldenSoldier traces a complete two-term Soldier, exercising the rank
 // engine end-to-end: a medal each term, an enlisted promotion (helped by that
 // medal), then a Commission to the officer track. Rolls are 3,4 (= 7) unless
-// noted. Scores: Str 8, Dex 7, End 8, Int 7, Edu 7, Soc 8 ("878778").
+// noted. Starting scores: Str 8, Dex 7, End 8, Int 7, Edu 10, Soc 8 ("8787A8");
+// the final UPP is "9787A8" after the Str +1 muster benefit.
 func TestGoldenSoldier(t *testing.T) {
 	seq := []int{
 		// UPP: Str 8(4,4), Dex 7(3,4), End 8(4,4), Int 7(3,4), Edu 10(5,5), Soc 8(4,4).

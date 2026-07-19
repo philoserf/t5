@@ -78,17 +78,57 @@ func (d Difficulty) String() string {
 // Resolve rolls a task: roll the difficulty's dice and succeed when the total
 // is at or under target + the sum of mods, where target is typically a
 // characteristic plus a skill. The returned CheckResult carries the roll and
-// the success margin (Effect).
+// the success margin (Effect), with Success after the Spectacular override.
 func Resolve(r *dice.Roller, d Difficulty, target int, mods ...int) dice.CheckResult {
-	return r.Resolve(dice.Check{Dice: d.Dice(), Target: target + sum(mods)})
+	// One resolution path, so the Spectacular override, the mod arithmetic and the
+	// Check construction cannot drift apart between the two entry points. Dice()
+	// panics off-ladder and otherwise yields 1..8, so ResolveDice's floor is a
+	// no-op here.
+	return ResolveDice(r, d.Dice(), target, mods...)
 }
 
 // ResolveDice rolls a task with an explicit dice count, for callers using a
 // Hasty or Cautious pace (see Difficulty.Hasty and Difficulty.Cautious, which
 // always return at least 1). A count below 1 is treated as 1D rather than
-// falling through to the roll-low default.
+// falling through to the roll-low default. Like Resolve, it applies the
+// Spectacular override.
 func ResolveDice(r *dice.Roller, numDice, target int, mods ...int) dice.CheckResult {
-	return r.Resolve(dice.Check{Dice: max(numDice, 1), Target: target + sum(mods)})
+	return applySpectacular(r.Resolve(dice.Check{Dice: max(numDice, 1), Target: target + sum(mods)}))
+}
+
+// applySpectacular overrides a task's arithmetic pass/fail with its Spectacular
+// result (Book 1 p. 127). Three ones make the task succeed "even if the result
+// would otherwise be a failure"; three sixes make it "fail to produce the
+// results desired".
+//
+// This lives here, not in dice, because p. 127 states the rule about tasks —
+// "Sometimes the task result is Spectacular" — and this package owns
+// pp. 120-131. dice keeps what is genuinely a dice observation (counting ones
+// and sixes on the faces, dice.Classify) and this layer keeps the consequence.
+// A caller rolling a dice.Check that is not a task therefore gets arithmetic,
+// with no flag to remember.
+//
+// Effect is deliberately left arithmetic: the book assigns no margin to a
+// spectacular outcome, so Effect keeps reporting what the dice did.
+//
+// SpectacularlyInteresting (three ones AND three sixes at once, only reachable
+// on 6D or more) is deliberately left alone: the book describes it as "a
+// situation involving both Spectacular Success and Spectacular Failure (and a
+// sign that the referee should make [the] situation a rousing, interesting
+// event)" and never states whether the task itself succeeds. That is a referee
+// call, so the arithmetic outcome stands and the caller can detect the case via
+// CheckResult.Spectacular.
+func applySpectacular(res dice.CheckResult) dice.CheckResult {
+	switch res.Spectacular() {
+	case dice.SpectacularSuccess:
+		res.Success = true
+	case dice.SpectacularFailure:
+		res.Success = false
+	case dice.NotSpectacular, dice.SpectacularlyInteresting:
+		// Arithmetic stands, per the comment above.
+	}
+
+	return res
 }
 
 func sum(xs []int) int {

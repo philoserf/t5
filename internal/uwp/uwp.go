@@ -27,6 +27,20 @@ type Profile struct {
 	TechLevel     int
 }
 
+// BeltSize is the Size digit of an asteroid belt. It is a *code*, not a
+// dimension: a belt has no diameter, so the digit means "this world is a field
+// of asteroids" and every rule that reads Size as a measurement — a satellite
+// cap, a parent body's classification, a downport's placement — must resolve the
+// code first. Reading it as a dimension is a defect this codebase has shipped
+// three times (#213, #200, #309); IsBelt is the one place to ask.
+const BeltSize = 0
+
+// IsBelt reports whether the profile describes an asteroid belt rather than a
+// solid world (Book 3 p.13; Book 2 p.24, "An Asteroid Mainworld has a Beltport
+// instead"). Prefer it to comparing Size against zero, so that the belt-ness of
+// a world is visible wherever it matters.
+func (p Profile) IsBelt() bool { return p.Size == BeltSize }
+
 // String renders the profile in standard UWP notation: the starport letter,
 // the six eHex characteristic digits, a hyphen, and the eHex Tech Level —
 // for example "A788899-C".

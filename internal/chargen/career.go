@@ -739,7 +739,7 @@ func runCitizenTerm(
 	career Career,
 	cc Characteristic,
 ) TermOutcome {
-	if r.Resolve(dice.Check{Dice: 2, Target: c.Score(cc)}).Success {
+	if c.Check(r, cc, 2, 0).Success {
 		awardCitizenLife(p, c, run)
 	}
 
@@ -850,10 +850,10 @@ func runPoliticsTerm(
 	career Career,
 	cc Characteristic,
 ) TermOutcome {
-	riskKept := r.Resolve(dice.Check{Dice: 2, Target: c.Score(cc)}).Success
+	riskKept := c.Check(r, cc, 2, 0).Success
 
 	elig := career.EligPerTerm
-	if r.Resolve(dice.Check{Dice: 2, Target: c.Score(cc)}).Success &&
+	if c.Check(r, cc, 2, 0).Success &&
 		run.rank < len(career.EnlistedRanks) {
 		promoteRank(c, run, career.EnlistedRanks)
 
@@ -886,10 +886,10 @@ func runIntrigueTerm(
 
 	switch {
 	case run.exiled:
-		if r.Resolve(dice.Check{Dice: 2, Target: c.Score(cc)}).Success {
+		if c.Check(r, cc, 2, 0).Success {
 			run.exiled = false // Return from Exile
 		}
-	case r.Resolve(dice.Check{Dice: 2, Target: c.Score(cc)}).Success:
+	case c.Check(r, cc, 2, 0).Success:
 		if r.Dice(2) >= c.Score(Social) && c.scores[Social] < maxCharacteristic {
 			c.scores[Social]++ // Elevation to the next Noble rank
 			c.LandGrants++

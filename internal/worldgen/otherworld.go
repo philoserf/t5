@@ -150,9 +150,16 @@ func typeSize(r *dice.Roller, t OtherWorldType) int {
 // capSize applies the satellite-size rule (Book 3 p.21) to a rolled Size.
 // A caller passing 0 gets a Size-0 world: whether a Size digit of 0 is a real
 // cap or the asteroid-belt code is the caller's question, not this function's
-// (systemgen's satelliteMaxSize answers it for satellites).
+// (systemgen's satelliteBody answers it for satellites).
+//
+// The sentinel is tested as a bound, not for equality. NoSizeCap is one value in
+// a field whose domain is "a Size", and GenerateSatelliteWorld is exported: an
+// equality test let every negative *other* than -1 fall through to min(), and
+// since generateOtherWorld floors the result at 0 the caller silently got Size 0
+// — uwp.BeltSize — turning any world into an asteroid belt. No cap below the
+// smallest real Size can mean anything but "no cap".
 func capSize(size, maxSize int) int {
-	if maxSize == NoSizeCap {
+	if maxSize <= NoSizeCap {
 		return size
 	}
 

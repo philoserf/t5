@@ -247,63 +247,124 @@ func TestRollMoonCappedProfileIsConsistent(t *testing.T) {
 	}
 }
 
-// TestBeltMainworldDoesNotFlattenItsMoons is the regression for the belt-code
-// cap: an asteroid-belt mainworld carries UWP Size 0, and reading that digit as
-// a satellite cap cut every one of its moons to Size 0 — losing Atmosphere,
-// Hydrographics and Tech Level with it, so a Big World rendered Y000000-0 and
-// every moon came back flagged a double planet with an As trade code.
-func TestBeltMainworldDoesNotFlattenItsMoons(t *testing.T) {
+// TestCappedMoonsStayConsistent is the end-to-end regression for #213: capping
+// a moon's Size used to overwrite that one field and leave Atmosphere and
+// Hydrographics as rolled for the larger world, so a moon rendered a UWP the
+// World Creation chart forbids.
+//
+// It replaces an earlier version that checked belt-mainworld moons. The #309 fix
+// gave belt mainworlds no moons at all, which made that version structurally
+// unable to check anything — it skipped rather than failed, so the guarantee
+// lapsed silently. This one asserts over every capped moon in generated systems,
+// which is the population that actually exercises the rule.
+func TestCappedMoonsStayConsistent(t *testing.T) {
 	checked := 0
 
-	for seed := uint64(1); seed <= 40; seed++ {
-		s := GenerateForMap(dice.NewWithSeed(seed), true, true)
-		if s.Mainworld.Profile.Size != 0 {
-			continue // not a belt mainworld for this seed
-		}
-
+	for seed := uint64(1); seed <= 300; seed++ {
+		s := Generate(dice.NewWithSeed(seed))
 		for _, o := range s.Orbits {
-			if o.Kind != KindMainworld {
-				continue
-			}
-
 			for _, sat := range o.Satellites {
 				if sat.Ring {
 					continue
 				}
 
 				checked++
-
-				// Worldlet (1D-3) and Planetoids roll Size 0 honestly; the types
-				// below have a nonzero minimum (BigWorld 2D+7, StormWorld and
-				// RadWorld 2D, Inferno 6+1D), so a Size-0 one can only be a cap
-				// artifact.
-				switch sat.Type {
-				case worldgen.BigWorld, worldgen.StormWorld, worldgen.RadWorld, worldgen.Inferno:
-					if sat.Profile.Size == 0 {
-						t.Errorf(
-							"seed %d: %v moon of a belt mainworld is Size 0 (%s); the belt's Size digit is a code, not a cap",
-							seed,
-							sat.Type,
-							sat.Profile,
-						)
-					}
-				default:
-					// Hospitable/InnerWorld/Iceworld/Worldlet/Planetoids may roll 0.
+				p := sat.Profile
+				// World Creation chart, Book 3 p.24.
+				if p.Size == 0 && p.Atmosphere != 0 {
+					t.Errorf("seed %d: moon %s has Size 0 but Atmosphere %d (p.24: If Siz=0, Atm=0)",
+						seed, p, p.Atmosphere)
 				}
 
-				if sat.DoublePlanet {
-					t.Errorf("seed %d: %v moon (%s) flagged a double planet with a belt parent",
-						seed, sat.Type, sat.Profile)
+				if p.Size < 2 && p.Hydrographics != 0 {
+					t.Errorf("seed %d: moon %s has Size %d but Hydrographics %d (p.24: If Siz <2, Hyd =0)",
+						seed, p, p.Size, p.Hydrographics)
 				}
 			}
 		}
 	}
 
 	if checked == 0 {
-		t.Skip("no belt-mainworld moons in the sampled seeds")
+		t.Fatal("no moons generated in 300 seeds; this test would pass vacuously")
 	}
 
-	t.Logf("checked %d moons of belt mainworlds", checked)
+	t.Logf("checked %d moons", checked)
+}
+
+// TestBeltMainworldRollsNoSatellites is the regression for #309, the count half
+// of the same belt-code defect TestBeltMainworldDoesNotFlattenItsMoons covers on
+// the cap side. A belt's moons were capped correctly but still *counted*: a belt
+// mainworld's orbit is KindMainworld, so satelliteCount's `kind == KindBelt`
+// guard never saw it and the belt fell through to the world rule, rolling 1D-5 /
+// 1D-4 / 1D-3 moons plus rings around a field of asteroids — and drawing dice for
+// them, so every later system in the stream shifted too.
+//
+// Book 3 p.29 gives a satellite count only to worlds and gas giants; the three
+// doc comments in satellites.go say so as well.
+func TestBeltMainworldRollsNoSatellites(t *testing.T) {
+	checked := 0
+
+	for seed := uint64(1); seed <= 200; seed++ {
+		s := GenerateForMap(dice.NewWithSeed(seed), true, true)
+		if !s.Mainworld.Profile.IsBelt() {
+			continue // not a belt mainworld for this seed
+		}
+
+		for _, o := range s.Orbits {
+			// A satellite mainworld's orbit belongs to its parent body, whose own
+			// moons are legitimate (see satelliteParent); only a belt sitting in
+			// its own orbit is at issue.
+			if o.Kind != KindMainworld || o.Giant != nil || o.Parent != nil {
+				continue
+			}
+
+			checked++
+
+			if len(o.Satellites) != 0 {
+				t.Errorf("seed %d: belt mainworld in orbit %d has %d satellites (%s); a belt has no moons",
+					seed, o.Orbit, len(o.Satellites), orbitLabel(o))
+			}
+		}
+	}
+
+	if checked == 0 {
+		t.Fatal("no belt mainworld placed in its own orbit across 200 seeds; the regression is unexercised")
+	}
+
+	t.Logf("checked %d belt mainworlds", checked)
+}
+
+// TestSatelliteBodyReadsTheBeltCode pins the single decision the #309 fix rests
+// on: kind and cap are decided together, so a body cannot be classified a world
+// by one half and a belt by the other.
+//
+// Belt-ness is a fact the caller determines, not one this function infers from
+// Size — because Size 0 means different things by context. For a mainworld it is
+// the asteroid-belt code; for a secondary world the belt is the Planetoids TYPE
+// and a Size-0 Worldlet (max(1D-3, 0)) is a genuinely tiny world that still
+// takes the world satellite rule. Inferring belt-ness from Size alone stripped
+// the moons from 209 of 500 sampled systems' small worlds.
+func TestSatelliteBodyReadsTheBeltCode(t *testing.T) {
+	for _, tc := range []struct {
+		name   string
+		size   int
+		isBelt bool
+		kind   OrbitKind
+		cap    int
+	}{
+		{"a belt", 0, true, KindBelt, worldgen.NoSizeCap},
+		{"ordinary world", 7, false, KindWorld, 7},
+		{"smallest real world", 1, false, KindWorld, 1},
+		{"Size-0 worldlet is a world, uncapped", 0, false, KindWorld, worldgen.NoSizeCap},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			kind, maxSize := satelliteBody(uwp.Profile{Size: tc.size}, tc.isBelt)
+			if kind != tc.kind || maxSize != tc.cap {
+				t.Errorf("satelliteBody(Size %d) = %v, %d; want %v, %d",
+					tc.size, kind, maxSize, tc.kind, tc.cap)
+			}
+		})
+	}
 }
 
 // TestSatellitesCarryTradeCodes: every generated non-ring satellite carries trade

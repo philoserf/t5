@@ -15,6 +15,56 @@ func TestSpaceport(t *testing.T) {
 	}
 }
 
+// TestCapSizeTreatsEveryNegativeAsNoCap pins the sentinel's whole domain rather
+// than its one canonical value. capSize tested `maxSize == NoSizeCap`, so every
+// *other* negative fell past the guard into min(size, maxSize). Unreachable from
+// inside the package — systemgen's satelliteBody and rollMoon both normalize —
+// but GenerateSatelliteWorld is exported and takes maxSize straight from a
+// caller.
+//
+// This is the shape of #200: a sentinel sharing a field with a domain, tested by
+// equality when values outside the domain can reach past it. A sentinel meaning
+// "no bound" has to be tested as a bound.
+func TestCapSizeTreatsEveryNegativeAsNoCap(t *testing.T) {
+	for _, maxSize := range []int{NoSizeCap, -2, -7, -100} {
+		if got := capSize(9, maxSize); got != 9 {
+			t.Errorf("capSize(9, %d) = %d, want 9; a negative cap is no cap", maxSize, got)
+		}
+	}
+
+	// A real cap still caps, and 0 is still the caller's question to answer
+	// (capSize's doc: whether a Size digit of 0 is a cap or the belt code is not
+	// this function's decision).
+	if got := capSize(9, 4); got != 4 {
+		t.Errorf("capSize(9, 4) = %d, want 4", got)
+	}
+
+	if got := capSize(9, 0); got != 0 {
+		t.Errorf("capSize(9, 0) = %d, want 0", got)
+	}
+}
+
+// TestGenerateSatelliteWorldNegativeCapIsNotABelt is the same guarantee at the
+// exported boundary, and it is where the hole actually bites. A negative Size
+// never escapes — generateOtherWorld floors at minSize 0 — so nothing renders
+// "?"; what a caller gets instead is Size 0, which is uwp.BeltSize. A stray
+// negative cap silently turned a Big World into an asteroid belt, the same
+// code-read-as-a-dimension confusion as #213 and #309 running the other way.
+func TestGenerateSatelliteWorldNegativeCapIsNotABelt(t *testing.T) {
+	fours := func() *dice.Roller { return dice.NewSource(func() int { return 4 }) }
+
+	want := GenerateSatelliteWorld(fours(), BigWorld, 8, NoSizeCap)
+	got := GenerateSatelliteWorld(fours(), BigWorld, 8, -3)
+
+	if got.IsBelt() {
+		t.Errorf("GenerateSatelliteWorld with maxSize -3 gave %s, an asteroid belt", got)
+	}
+
+	if got != want {
+		t.Errorf("maxSize -3 gave %s, want %s (every negative cap is NoSizeCap)", got, want)
+	}
+}
+
 func TestGenerateOtherWorldInferno(t *testing.T) {
 	// YSB0000-0, Siz = 6+1D: 1D=3 -> size 9, exotic (B) atmosphere, no spaceport.
 	p := GenerateOtherWorld(dice.NewScripted(3), Inferno, 8)

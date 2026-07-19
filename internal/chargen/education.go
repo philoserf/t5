@@ -165,7 +165,7 @@ func attendTradeSchool(r *dice.Roller, p Policy, c *Character) {
 	passCh := bestChar(*c, Intelligence, Education)
 	c.Age++ // Trade School's Duration is one year (Book 1 p.60 chart), spent either way
 
-	if !r.Resolve(dice.Check{Dice: 2, Target: c.Score(passCh)}).Success &&
+	if !c.Check(r, passCh, 2, 0).Success &&
 		!waiverGranted(r, p, c, &priorWaivers) {
 		return // failed the year out — no Major
 	}
@@ -185,7 +185,7 @@ func attemptED5(r *dice.Roller, c *Character) {
 		return
 	}
 
-	if r.Resolve(dice.Check{Dice: 2, Target: c.Score(Intelligence)}).Success {
+	if c.Check(r, Intelligence, 2, 0).Success {
 		c.scores[Education] = ed5RaisesTo
 	}
 }
@@ -215,7 +215,7 @@ func attendAcademic(r *dice.Roller, p Policy, c *Character, prog academicProgram
 	for range prog.years {
 		c.Age++ // each year of the program's Duration passes, however it turns out
 
-		if r.Resolve(dice.Check{Dice: 2, Target: c.Score(passCh)}).Success {
+		if c.Check(r, passCh, 2, 0).Success {
 			passes++
 			awardAcademicPass(c, p, prog, passes)
 		} else if !waiverGranted(r, p, c, &priorWaivers) {
@@ -231,7 +231,7 @@ func attendAcademic(r *dice.Roller, p Policy, c *Character, prog academicProgram
 // (Book 1 p.59) — the year is spent even when a Waiver then wins admission, and
 // the Waiver attempts themselves are free.
 func admitted(r *dice.Roller, p Policy, c *Character, ch Characteristic, priorWaivers *int) bool {
-	if r.Resolve(dice.Check{Dice: 2, Target: c.Score(ch)}).Success {
+	if c.Check(r, ch, 2, 0).Success {
 		return true
 	}
 
@@ -248,7 +248,7 @@ func waiverGranted(r *dice.Roller, p Policy, c *Character, priorWaivers *int) bo
 		return false
 	}
 
-	res := r.Resolve(dice.Check{Dice: 2, Target: c.Score(Social), Mod: -*priorWaivers})
+	res := c.Check(r, Social, 2, -*priorWaivers)
 	(*priorWaivers)++
 
 	return res.Success
