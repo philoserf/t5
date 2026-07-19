@@ -256,6 +256,13 @@ type Career struct {
 	Skills           SkillGrid
 	MusterOut        MusterTable
 
+	// AutoBenefits are the mustering-out awards a career grants unconditionally,
+	// outside its muster-out rolls — the "Automatic:" lines some career pages
+	// print under the table (Book 1 p. 87's Gold Watch). It is a function because
+	// such an award can be valued from the record (100 x Terms). nil for the
+	// careers whose pages print no automatic award.
+	AutoBenefits func(rec CareerRecord) []Benefit
+
 	// Rank ladders and promotion rules — set only for the armed-forces careers.
 	// EnlistedRanks empty means the career has no rank (Book 1 p. 64).
 	EnlistedRanks   []Rank
@@ -1368,6 +1375,16 @@ func MusterOut(r *dice.Roller, p Policy, c *Character, rec CareerRecord, career 
 		}
 
 		if !isDuplicateBenefit(*c, award) {
+			applyBenefit(c, award, career, rec)
+		}
+	}
+
+	// The career's automatic awards land last, after the rolled ones. Order is
+	// not a rule — the page prints them beside the table, not in it — but taking
+	// them last keeps an automatic named award out of the rolled awards'
+	// duplicate check, so adding one cannot shift a single die.
+	if career.AutoBenefits != nil {
+		for _, award := range career.AutoBenefits(rec) {
 			applyBenefit(c, award, career, rec)
 		}
 	}
