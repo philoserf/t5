@@ -10,12 +10,14 @@ import (
 )
 
 // A Band is one range band: its code on its scale, a descriptor, an optional
-// space-combat band letter, and a representative distance in meters.
+// space-combat band letter, a representative distance in meters, and the upper
+// bound of the span it covers.
 type Band struct {
 	Code       string  // R= "0","R","T","1".."9" or S= "0","B","1".."13"
 	Descriptor string  // e.g. "Medium", "Far Orbit", "Outer System"
 	Combat     string  // space-combat band letter (B/F1/F2/SR/AR/LR/DS), if any
 	Meters     float64 // representative distance from the zero point
+	Upper      float64 // inclusive top of the band's span; 0 when the book prints none
 }
 
 // Number returns the band's numeric index on its scale and whether it has one.
@@ -31,41 +33,51 @@ func (b Band) Number() (int, bool) {
 }
 
 // worldBands is the World-surface range ladder R= (Book 1 p.24). Contact,
-// Reading, and Talking are the lettered bands inside R=0.
+// Reading, and Talking are the lettered bands inside R=0. Upper is the p.24
+// Range Band Width column, whose spans are *not* the log midpoints between
+// representative distances — Vshort's 5 m band runs 3 m to 25 m, so 20 m is
+// still Vshort even though it is nearer 50 m on a log scale. The book prints
+// shared edges (Vshort "3 m to 25 m", Short "25 m to 100 m"), resolved here as
+// upper-inclusive. The lettered bands nest inside Contact's own 3 m span, so
+// they are ordered finest-first: a distance takes the narrowest band covering it.
 var worldBands = []Band{
-	{"0", "Contact", "", 0},
-	{"R", "Reading", "", 0.5},
-	{"T", "Talking", "", 1.5},
-	{"1", "Vshort", "", 5},
-	{"2", "Short", "", 50},
-	{"3", "Medium", "", 150},
-	{"4", "Long", "", 500},
-	{"5", "Vlong", "", 1_000},
-	{"6", "Distant", "", 5_000},
-	{"7", "Vdistant", "", 50_000},
-	{"8", "Orbit", "", 500_000},
-	{"9", "Far Orbit", "", 5_000_000},
+	{"0", "Contact", "", 0, 0.25},
+	{"R", "Reading", "", 0.5, 1},
+	{"T", "Talking", "", 1.5, 3},
+	{"1", "Vshort", "", 5, 25},
+	{"2", "Short", "", 50, 100},
+	{"3", "Medium", "", 150, 300},
+	{"4", "Long", "", 500, 750},
+	{"5", "Vlong", "", 1_000, 3_000},
+	{"6", "Distant", "", 5_000, 25_000},
+	{"7", "Vdistant", "", 50_000, 250_000},
+	{"8", "Orbit", "", 500_000, 2_500_000},
+	{"9", "Far Orbit", "", 5_000_000, 25_000_000},
 }
 
 // spaceBands is the Space range ladder S= (Book 1 p.29). Boarding (B) is the
 // lettered band between S=1 and S=0. Descriptors and combat-band letters are
-// transcribed from the p.29 Space Ranges chart.
+// transcribed from the p.29 Space Ranges chart. The chart's Band column stacks
+// each two-word combat-band name across the pair of rows it covers ("Short" on
+// S=5 above "Range" on S=4), so every combat letter spans two rows: SR on 4-5,
+// AR on 6-7, LR on 8-9, DS on 11-12. S=0, 3, 10, and 13 sit in no combat band.
+// The chart prints no Range Band Width column, so Upper is left zero here.
 var spaceBands = []Band{
-	{"0", "Contact", "", 0},
-	{"B", "Boarding", "B", 1_000},
-	{"1", "Close Fighter", "F1", 5_000},
-	{"2", "Fighter", "F2", 50_000},
-	{"3", "Orbit", "", 500_000},
-	{"4", "Far Orbit", "SR", 5_000_000},
-	{"5", "Short Range", "", 50_000_000},
-	{"6", "Attack Range", "AR", 250_000_000},
-	{"7", "Missile", "AR", 500_000_000},
-	{"8", "Long Range", "LR", 2_500_000_000},
-	{"9", "Long Range", "LR", 5_000_000_000},
-	{"10", "Siege", "", 50_000_000_000},
-	{"11", "Deep Space", "DS", 150_000_000_000},
-	{"12", "Deep Space", "DS", 500_000_000_000},
-	{"13", "Outer System", "", 1_500_000_000_000},
+	{"0", "Contact", "", 0, 0},
+	{"B", "Boarding", "B", 1_000, 0},
+	{"1", "Close Fighter", "F1", 5_000, 0},
+	{"2", "Fighter", "F2", 50_000, 0},
+	{"3", "Orbit", "", 500_000, 0},
+	{"4", "Far Orbit", "SR", 5_000_000, 0},
+	{"5", "Short Range", "SR", 50_000_000, 0},
+	{"6", "Attack Range", "AR", 250_000_000, 0},
+	{"7", "Missile", "AR", 500_000_000, 0},
+	{"8", "Long Range", "LR", 2_500_000_000, 0},
+	{"9", "Long Range", "LR", 5_000_000_000, 0},
+	{"10", "Siege", "", 50_000_000_000, 0},
+	{"11", "Deep Space", "DS", 150_000_000_000, 0},
+	{"12", "Deep Space", "DS", 500_000_000_000, 0},
+	{"13", "Outer System", "", 1_500_000_000_000, 0},
 }
 
 // WorldBands returns a copy of the World-surface range ladder, in order.
@@ -90,12 +102,31 @@ func find(bands []Band, code string) (Band, bool) {
 	return Band{}, false
 }
 
-// WorldForDistance returns the World-surface band nearest a distance in meters,
-// choosing the band whose representative distance is closest on a log scale
-// (each band covers roughly half-way to its neighbours; Book 1 p.24).
-func WorldForDistance(meters float64) Band { return nearest(worldBands, meters) }
+// WorldForDistance returns the World-surface band containing a distance in
+// meters, by the Range Band Width column printed on Book 1 p.24 — the first band
+// whose Upper bound the distance does not exceed, bands running finest-first so
+// the lettered Reading/Talking sub-bands win inside Contact's span. Beyond the
+// top of the ladder (25,000 km) the distance is Far Orbit. The p.24 widths are
+// not the log midpoints between representative distances, so this deliberately
+// does not use nearest: 20 m is Vshort (3-25 m), not Short.
+func WorldForDistance(meters float64) Band {
+	if meters <= 0 {
+		return worldBands[0] // Contact / zero point
+	}
 
-// SpaceForDistance returns the Space band nearest a distance in meters.
+	for _, b := range worldBands {
+		if meters <= b.Upper {
+			return b
+		}
+	}
+
+	return worldBands[len(worldBands)-1] // past Far Orbit's 25,000 km
+}
+
+// SpaceForDistance returns the Space band nearest a distance in meters on a log
+// scale. The p.29 Space Ranges chart prints no Range Band Width column — only a
+// representative distance per row — so unlike the World ladder there are no
+// published boundaries to select by.
 func SpaceForDistance(meters float64) Band { return nearest(spaceBands, meters) }
 
 func nearest(bands []Band, meters float64) Band {
@@ -120,22 +151,31 @@ func nearest(bands []Band, meters float64) Band {
 }
 
 // WorldToSpace converts an R= code to its S= code: S = R - 5. R=5 is Boarding
-// (B); R=4 or less collapses to S=0 (Book 1 p.29).
+// (B); R=4 or less collapses to S=0 (Book 1 p.29). It is the inverse of
+// SpaceToWorld over the whole shared ladder, so it accepts the extended numeric
+// codes R=10..18 that lie past the World scale's named bands but that the p.29
+// chart's own R= column prints (S=13 is R=18) and SpaceToWorld produces.
 func WorldToSpace(worldCode string) (string, bool) {
-	if _, ok := WorldBand(worldCode); !ok {
+	if worldCode == "5" {
+		return "B", true
+	}
+
+	if b, named := WorldBand(worldCode); named {
+		n, numeric := b.Number()
+		if !numeric || n < 5 { // 0, R, T, 1-4 all collapse to S=0
+			return "0", true
+		}
+
+		return strconv.Itoa(n - 5), true
+	}
+	// The extended tail of the shared ladder: R=10..18 name no World band of
+	// their own, but the chart pairs each with an S= row.
+	n, err := strconv.Atoi(worldCode)
+	if err != nil || n < 10 || n > 18 {
 		return "", false
 	}
 
-	switch worldCode {
-	case "5":
-		return "B", true
-	case "6", "7", "8", "9":
-		n, _ := strconv.Atoi(worldCode)
-
-		return strconv.Itoa(n - 5), true
-	default: // 0, R, T, 1-4 all collapse to S=0
-		return "0", true
-	}
+	return strconv.Itoa(n - 5), true
 }
 
 // SpaceToWorld converts an S= code to its R= code: R = S + 5. Boarding (B) maps
