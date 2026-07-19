@@ -1,7 +1,9 @@
 // Package personals implements Traveller5's social-interaction system, the
 // Personals (Book 1 pp. 180-185). A Personal is resolved roll-low: the Purpose
 // sets the dice, and Target = Strategy value × Tactic multiplier + the best
-// applicable Law + up to two situational Mods.
+// applicable Law + up to two situational Mods (three if the Personal is
+// Deliberate). That allowance is the caller's to keep: Resolve takes unbounded
+// variadic mods and sums them all.
 package personals
 
 import (
@@ -112,18 +114,54 @@ func LawMod(l Law, p Purpose) int {
 	return lawMods[l][p]
 }
 
-// Situational Mods (Book 1 p.185). Repeat is applied per repeated Strategy or
-// Tactic after its first use (required); Brazen is Query/Persuade only; Urgent
-// caps the Personal at a single attempt.
+// The flat Situational Mods of the Mods for Personals sidebar (Book 1 p.185).
+// Bluff and Threat of Violence are not flat and have their own functions below;
+// Deliberate is not a Mod at all — it is the permission to apply a third one.
 const (
-	Repeat = -1
+	// VoiceOnly is the Mod for a Personal conducted by communicator, voice only:
+	// the Actor forfeits every visual cue ("By Communicator. Voice. -4").
+	VoiceOnly = -4
+	// VoiceAndVisual is the lighter penalty when the communicator carries picture
+	// as well as sound ("By Communicator. Voice + Visual -2").
+	VoiceAndVisual = -2
+	// Brazen is the bonus for a bold approach, available to Query and Persuade
+	// only ("Brazen (Query or Persuade) +3").
 	Brazen = 3
+	// Urgent presses the Target for an immediate answer and may be applied only
+	// once ("Urgent (only once) +2").
 	Urgent = 2
+	// Repeat is the penalty for reusing a Strategy or a Tactic, applied once per
+	// subsequent use ("Subsequent Use of Strategies, per -1" and the identical
+	// line for Tactics). It is required, not optional.
+	Repeat = -1
 )
+
+// Bluff rolls the Flux Mod a bluff contributes ("Bluff (once) Flux", Book 1
+// p.185). Being Flux rather than a flat value, a bluff is a gamble: it ranges
+// -5..+5, so it can cost the Actor as easily as it pays. A Personal admits at
+// most one bluff.
+func Bluff(r *dice.Roller) int { return r.Flux() }
+
+// ThreatOfViolence is the Mod for backing a Personal with menace: the Actor adds
+// their Fighter skill, or any subordinate Knowledge ("Threat of Violence =
+// +Fighter Skill", Book 1 p.185). The page attaches a consequence this package
+// does not model — "failure converts the personal into a fight" — so a caller
+// applying this Mod is responsible for opening combat on a failed Resolve.
+//
+// This is not the Violence entry in lawMods. That is the Law of Violence, whose
+// per-Purpose Mod comes through LawMod; this is the p.185 situational Mod. A
+// Personal backed by menace may well draw both.
+func ThreatOfViolence(fighterSkill int) int { return fighterSkill }
 
 // Resolve resolves a Personal Interaction (Book 1 p.184): Target = strategyValue
 // × tacticMult + lawMod + the situational mods; the Purpose's dice are rolled at
 // or under the Target. A tacticMult of 1 means no Tactic multiplier is applied.
+//
+// Resolve sums every Mod it is handed and enforces no ceiling on their number.
+// The book allows two situational Mods, or three when the Personal is Deliberate
+// — the sidebar's one non-numeric entry, which carries no value of its own and
+// so is documented here rather than declared. Choosing which Mods apply, and
+// keeping to that allowance, is the caller's job.
 func Resolve(
 	r *dice.Roller,
 	purpose Purpose,

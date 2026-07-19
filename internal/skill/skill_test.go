@@ -1,6 +1,9 @@
 package skill
 
-import "testing"
+import (
+	"strconv"
+	"testing"
+)
 
 func TestRaiseAndCap(t *testing.T) {
 	var s Set
@@ -103,13 +106,39 @@ func TestGrantCascadeKKS(t *testing.T) {
 	}
 }
 
-func TestIsCascade(t *testing.T) {
-	if !IsCascade("Pilot") || !IsCascade("Gunner") {
-		t.Error("Pilot/Gunner should be cascade skills")
+// Book 1 p. 75 counts "up to FIVE Skills at level 6+ (or Knowledges at level-6)
+// (but not languages)" toward Master Points, so a level-6 knowledge counts and a
+// Language knowledge does not. KnowledgeMax is 6, so a qualifying knowledge is
+// always exactly at the threshold.
+func TestTopLevelsCountsKnowledges(t *testing.T) {
+	var s Set
+
+	s.Raise("Craftsman", 9)
+	s.RaiseKnowledge("Engineer", "J-Drive", KnowledgeMax)
+	s.RaiseKnowledge("Gunner", "Turret", KnowledgeMax)
+	s.RaiseKnowledge("Language", "Vilani", KnowledgeMax) // excluded: not languages
+	s.RaiseKnowledge("Pilot", "Small Craft", 5)          // below the threshold
+
+	// Engineer/J-Drive 6 + Gunner/Turret 6; Craftsman and Language are excluded
+	// and Pilot/Small Craft is under level 6.
+	if got := s.TopLevels(5, 6, "Craftsman", "Language"); got != 12 {
+		t.Errorf("TopLevels = %d, want 12", got)
+	}
+}
+
+// The five slots are shared between skills and knowledges, highest first.
+func TestTopLevelsSharesSlotsWithKnowledges(t *testing.T) {
+	var s Set
+
+	for _, lvl := range []int{10, 9, 8, 7} {
+		s.Raise("S"+strconv.Itoa(lvl), lvl)
 	}
 
-	if IsCascade("Navigation") {
-		t.Error("Navigation is not a cascade skill")
+	s.RaiseKnowledge("Engineer", "J-Drive", KnowledgeMax) // 6, takes the 5th slot
+	s.RaiseKnowledge("Gunner", "Turret", KnowledgeMax)    // 6, crowded out
+
+	if got := s.TopLevels(5, 6); got != 10+9+8+7+6 {
+		t.Errorf("TopLevels = %d, want %d", got, 10+9+8+7+6)
 	}
 }
 

@@ -80,6 +80,51 @@ func TestResolveWorkedExample(t *testing.T) {
 	}
 }
 
+// The full Mods for Personals sidebar (Book 1 p.185).
+func TestSituationalMods(t *testing.T) {
+	cases := map[string]struct{ got, want int }{
+		"By Communicator. Voice":            {VoiceOnly, -4},
+		"By Communicator. Voice + Visual":   {VoiceAndVisual, -2},
+		"Brazen (Query or Persuade)":        {Brazen, 3},
+		"Urgent (only once)":                {Urgent, 2},
+		"Subsequent Use of Strategies, per": {Repeat, -1},
+	}
+	for name, c := range cases {
+		if c.got != c.want {
+			t.Errorf("%s = %d, want %d", name, c.got, c.want)
+		}
+	}
+}
+
+// "Threat of Violence = +Fighter Skill" (Book 1 p.185).
+func TestThreatOfViolence(t *testing.T) {
+	for _, skill := range []int{0, 1, 4} {
+		if got := ThreatOfViolence(skill); got != skill {
+			t.Errorf("ThreatOfViolence(%d) = %d, want %d", skill, got, skill)
+		}
+	}
+}
+
+// "Bluff (once) Flux" (Book 1 p.185) — a Flux roll, so it can help or hurt.
+func TestBluff(t *testing.T) {
+	if got := Bluff(dice.NewScripted(6, 1)); got != 5 {
+		t.Errorf("Bluff = %d, want 5", got)
+	}
+
+	if got := Bluff(dice.NewScripted(1, 6)); got != -5 {
+		t.Errorf("Bluff = %d, want -5", got)
+	}
+}
+
+// Resolve sums whatever mods it is handed: the two-mod cap (three with
+// Deliberate) is the caller's to enforce, not Resolve's.
+func TestResolveDoesNotCapMods(t *testing.T) {
+	res := Resolve(dice.NewScripted(1, 1, 1), Persuade, 5, 1, 1, Brazen, Urgent, ThreatOfViolence(2))
+	if res.Target != 5+1+Brazen+Urgent+2 {
+		t.Errorf("target = %d, want %d", res.Target, 5+1+Brazen+Urgent+2)
+	}
+}
+
 func TestCamaraderieCap(t *testing.T) {
 	var c Camaraderie
 	for range 10 {
