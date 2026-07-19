@@ -121,8 +121,8 @@ func TestRollGoodsColumnUnknownColumnPanics(t *testing.T) {
 		}
 	}()
 
-	g := rollGoodsColumn(dice.NewScripted(1, 1), "Zz")
-	t.Errorf("rollGoodsColumn returned %+v for an unknown column", g)
+	g, col := rollGoodsColumn(dice.NewScripted(1, 1), "Zz")
+	t.Errorf("rollGoodsColumn returned %+v (column %q) for an unknown column", g, col)
 }
 
 // TestImbalanceHopCapTerminates guards the hop cap itself. The Na and Fl columns
@@ -151,7 +151,7 @@ func TestImbalanceHopCapTerminates(t *testing.T) {
 		}
 	})
 
-	g := rollGoodsColumn(r, "Na")
+	g, _ := rollGoodsColumn(r, "Na")
 	if drawn > len(prefix)+budget {
 		t.Fatalf("rollGoodsColumn drew %d dice (budget %d): the hop cap is re-rolling without bound",
 			drawn, len(prefix)+budget)
@@ -159,6 +159,30 @@ func TestImbalanceHopCapTerminates(t *testing.T) {
 
 	if g.Type == imbalancesBlock || goodsColumnEligible[g.Name] {
 		t.Errorf("good escaped as an Imbalances entry: %+v", g)
+	}
+}
+
+// TestRandomTradeGoodsDetailAfterRedirect locks the Trade Good Detail prefix to
+// the column the goods actually came from after an Imbalance redirect, not the
+// column the world started on. The book prints no worked example of the two
+// together, so these are hand-traced from the pp.218-219 charts.
+func TestRandomTradeGoodsDetailAfterRedirect(t *testing.T) {
+	// Redirected INTO As: a Ga/Va world starts on Ag-1, block 6 (Imbalances)
+	// entry 1 (As), then rolls Valuta/Platinum on the As column. Va's "Exotic"
+	// is redundant with an asteroid origin (p.219 footnote), so it is omitted —
+	// keying on the starting Ag-1 column would wrongly keep it.
+	into := RandomTradeGoods(dice.NewScripted(1, 6, 1, 3, 1), []string{"Ga", "Va"})
+	if into.Name != "Platinum" || into.Imbalance != "As" || into.Detail != "" {
+		t.Errorf("redirected into As: %+v, want Platinum via As with no detail", into)
+	}
+
+	// Redirected AWAY from As: an As/Va world starts on As, block 6 (Imbalances)
+	// entry 2 (De), then rolls Rares/Nectars on the De column. The goods are no
+	// longer of asteroid origin, so Va's "Exotic" applies — keying on the
+	// starting As column would wrongly drop it.
+	away := RandomTradeGoods(dice.NewScripted(1, 6, 2, 5, 3), []string{"As", "Va"})
+	if away.Name != "Nectars" || away.Imbalance != "De" || away.Detail != "Exotic" {
+		t.Errorf("redirected away from As: %+v, want Exotic Nectars via De", away)
 	}
 }
 

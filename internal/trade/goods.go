@@ -32,8 +32,10 @@ func (g Good) String() string {
 // a Trade Good Detail prefix from the world's other trade classes.
 func RandomTradeGoods(r *dice.Roller, worldTCs []string) Good {
 	col, sourceTC := selectGoodsColumn(r, worldTCs)
-	g := rollGoodsColumn(r, col)
-	g.Detail = tradeGoodsDetail(worldTCs, sourceTC, col)
+	// The detail's footnotes key on where the goods came from, which after an
+	// Imbalance redirect is no longer the column the world started on.
+	g, origin := rollGoodsColumn(r, col)
+	g.Detail = tradeGoodsDetail(worldTCs, sourceTC, origin)
 
 	return g
 }
@@ -102,8 +104,10 @@ func resolveColumn(r *dice.Roller, tc string) string {
 // from, which is what earns the +Cr1,000 selling bonus (see ImbalanceBonus). A
 // redirect chain can cycle, so past maxImbalanceHops a redirect is replaced by
 // the column's first block of real goods: a trade class must never escape as a
-// cargo name.
-func rollGoodsColumn(r *dice.Roller, column string) Good {
+// cargo name. It returns the good together with the column it finally came from,
+// which is the origin the Trade Good Detail footnotes key on (see tradeGoodsDetail)
+// and is not the starting column once a redirect has been followed.
+func rollGoodsColumn(r *dice.Roller, column string) (Good, string) {
 	imbalance := ""
 
 	for hop := 0; ; hop++ {
@@ -125,7 +129,7 @@ func rollGoodsColumn(r *dice.Roller, column string) Good {
 
 		entry := block.Goods[r.Die()-1]
 		if block.Type != imbalancesBlock {
-			return Good{Name: entry, Type: block.Type, Imbalance: imbalance}
+			return Good{Name: entry, Type: block.Type, Imbalance: imbalance}, column
 		}
 		// The chain continues on the named class's column; the last redirect is
 		// the oversupply that actually produced the goods.
