@@ -22,16 +22,16 @@ func TestGoldenSpacer(t *testing.T) {
 		5, // Branch: 5 + 2 = 7 -> Technical (mod 0, Ops DM 0)
 		// Term 1: 4 Operations rolls, each 1 + 0 + 2 = 3 -> Siege (mod 0); net 0.
 		1, 1, 1, 1,
-		3, 4, // risk survive; Reward -> Medal (1)
-		3, 4, // reward -> Medal 1
+		3, 4, // risk survive -> XS badge (mods +1)
+		3, 4, // reward: raw 7, enlisted -> Medals line 7 = XS (mods +2)
 		5, 5, // Commission vs Dex 8: 10 > 8, fails
-		4, 4, // Rating Promotion vs Dex 8 + Medal 1 = 9: 8 <= 9, promote to Able Spacer
+		4, 4, // Rating Promotion vs Dex 8 + Medal mods 2 = 10: 8 <= 10, promote to Able Spacer
 		1, 1, 1, 1, 1, // 4 + 1 (promotion) skill rolls, Patrol/Strike col row 1 = Astrogation
 		3, 4, // continue vs Str 8: 7, policy wants term 2
-		// Term 2: Operations again (net 0). Risk survive; Reward -> Medal (2).
+		// Term 2: Operations again (net 0). Risk survive -> XS; Reward 7 -> XS.
 		1, 1, 1, 1,
 		3, 4, // risk
-		3, 4, // reward -> Medal 2
+		3, 4, // reward: raw 7 -> XS (4 medals, mods +4)
 		3, 4, // Commission vs Dex 8: 7 <= 8, commissioned -> Ensign (Astrogation-1)
 		1, 1, 1, 1, 1, // Astrogation x5 (4 + 1 commission)
 		3, 4, // continue: policy stops after term 2
@@ -48,8 +48,10 @@ func TestGoldenSpacer(t *testing.T) {
 		t.Errorf("UPP = %q, want %q (Str 8 +1 muster benefit, Edu 10)", got, "9878A7")
 	}
 
-	if c.Medals != 2 {
-		t.Errorf("Medals = %d, want 2", c.Medals)
+	// Four medals over two terms: an XS for each Risk held (Book 1 pp.81/86) and an
+	// XS for each Reward passed (raw roll 7, enlisted, Medals table line 7).
+	if c.Medals != 4 || c.MedalMods != 4 {
+		t.Errorf("Medals = %d mods = %d, want 4 and 4", c.Medals, c.MedalMods)
 	}
 	// Astrogation: 5 (term 1 grid, 4 + 1 promotion) + 1 (Ensign auto-skill) +
 	// 5 (term 2 grid, 4 + 1 commission) = 11.
@@ -144,7 +146,8 @@ func spacerBranchScript(branch int, risk, reward [2]int) []int {
 	seq = append(seq, risk[0], risk[1])
 	seq = append(seq, reward[0], reward[1])
 
-	return append(seq,
+	return append(
+		seq,
 		5, 5, // Commission vs Dex 7: 10 > 7, fails
 		5, 5, // Rating Promotion vs Dex 7: 10 > 7, fails
 		1, 1, 1, 1, // 4 skill rolls, Patrol/Strike col row 1 = Astrogation
@@ -157,7 +160,7 @@ func spacerBranchScript(branch int, risk, reward [2]int) []int {
 // disagree: Officer "Line 1" but Enlisted "Engineer 0". A Spacer selects their
 // Branch at career start, where they are always an enlisted Rating (R1), so the
 // Enlisted mod 0 applies. Reward target is CC 7 + 0 = 7 and the roll is 8: no
-// Medal. Under the Officer column the mod would be 1, target 8, and the same
+// Reward medal (only the XS the held Risk earns). Under the Officer column the mod would be 1, target 8, and the same
 // roll would earn one.
 func TestSpacerEnlistedBranchRow3(t *testing.T) {
 	seq := spacerBranchScript(3, [2]int{2, 3}, [2]int{4, 4})
@@ -168,16 +171,19 @@ func TestSpacerEnlistedBranchRow3(t *testing.T) {
 		t.Fatalf("WoundBadges = %d, want 0 (Risk holds under either column)", c.WoundBadges)
 	}
 
-	if c.Medals != 0 {
-		t.Errorf("Medals = %d, want 0: branch 3 is Enlisted Engineer mod 0, "+
-			"so Reward is 8 vs 7 and misses; 1 Medal means the Officer column (Line mod 1) was read",
+	// One medal, not two: the held Risk earns an XS (Book 1 p.81), and the Reward
+	// misses. The Reward is still the discriminator — a SECOND medal would mean the
+	// Officer column (Line mod 1) had been read, putting the target at 8.
+	if c.Medals != 1 {
+		t.Errorf("Medals = %d, want 1 (the Risk XS alone): branch 3 is Enlisted Engineer mod 0, "+
+			"so Reward is 8 vs 7 and misses; 2 Medals means the Officer column (Line mod 1) was read",
 			c.Medals)
 	}
 }
 
 // TestSpacerEnlistedBranchRow6 covers NAVAL BRANCH row 6, where the columns
 // disagree: Officer "Flight 2" but Enlisted "Gunnery 1". The enlisted mod 1 puts
-// the Reward target at 8 against a roll of 9: no Medal. The Officer column's mod
+// the Reward target at 8 against a roll of 9: no Reward medal. The Officer column's mod
 // 2 would put it at 9 and earn one.
 func TestSpacerEnlistedBranchRow6(t *testing.T) {
 	seq := spacerBranchScript(6, [2]int{2, 3}, [2]int{3, 6})
@@ -188,9 +194,10 @@ func TestSpacerEnlistedBranchRow6(t *testing.T) {
 		t.Fatalf("WoundBadges = %d, want 0 (Risk holds under either column)", c.WoundBadges)
 	}
 
-	if c.Medals != 0 {
-		t.Errorf("Medals = %d, want 0: branch 6 is Enlisted Gunnery mod 1, "+
-			"so Reward is 9 vs 8 and misses; 1 Medal means the Officer column (Flight mod 2) was read",
+	// As in row 3: the held Risk earns an XS, so one medal means the Reward missed.
+	if c.Medals != 1 {
+		t.Errorf("Medals = %d, want 1 (the Risk XS alone): branch 6 is Enlisted Gunnery mod 1, "+
+			"so Reward is 9 vs 8 and misses; 2 Medals means the Officer column (Flight mod 2) was read",
 			c.Medals)
 	}
 }
@@ -205,7 +212,48 @@ func TestSpacerBranchRow5Agrees(t *testing.T) {
 
 	c := GenerateCareered(dice.NewScripted(seq...), oneTermPolicy{}, worldgen.World{}, SpacerCareer)
 
-	if c.Medals != 0 {
-		t.Errorf("Medals = %d, want 0 (branch 5 is Gunnery mod 1 in both columns)", c.Medals)
+	if c.Medals != 1 {
+		t.Errorf("Medals = %d, want 1 — the Risk XS alone (branch 5 is Gunnery mod 1 in both columns)",
+			c.Medals)
+	}
+}
+
+// TestMedalsTableEneri locks the Medals table lookup to the book's only
+// dice-traced example, "Eneri Dinsha 9AB58A Serves The Empire" (Book 1 p.72).
+// It is the fixture that decides both halves of the medal model, so it asserts
+// the book's own arithmetic rather than the engine's.
+func TestMedalsTableEneri(t *testing.T) {
+	// Term 1: "He applies the raw Reward roll (3) (and Officer Mod +1) to Medals
+	// table line 4 and receives an XS Exemplary Service."
+	if got := medalFor(3, true); got.Code != "XS" || got.Mod != 1 {
+		t.Errorf("medalFor(3, officer) = %+v, want XS +1 (p.72, table line 4)", got)
+	}
+
+	// Term 2: "He applies the raw Reward roll (9) Mod +1 (he is an Officer) to the
+	// Medals table line 10 and receives MCUF Meritorious Conduct Under Fire."
+	if got := medalFor(9, true); got.Code != "MCUF" || got.Mod != 2 {
+		t.Errorf("medalFor(9, officer) = %+v, want MCUF +2 (p.72, table line 10)", got)
+	}
+
+	// The promotion targets those two medals produce. Eneri is Soc 10 throughout.
+	// Term 1: "Soc plus Medal Mods (10 +1) = 11" — one XS, and the Wound Badge he
+	// took that same term is NOT in the sum.
+	eneri := Character{scores: [count]int{9, 10, 11, 5, 8, 10}, WoundBadges: 1}
+	awardMedal(&eneri, medalFor(3, true))
+
+	if got := eneri.Score(Social) + eneri.MedalMods; got != 11 {
+		t.Errorf("term-1 promotion target = %d, want 11 (Soc 10 +1; the Wound Badge does not count)", got)
+	}
+
+	// Term 2: "Soc plus Medal Mods (10 +1+2) = 13" — the first term's XS plus this
+	// term's MCUF. A flat one-point-per-medal model yields 12 and fails here.
+	awardMedal(&eneri, medalFor(9, true))
+
+	if got := eneri.Score(Social) + eneri.MedalMods; got != 13 {
+		t.Errorf("term-2 promotion target = %d, want 13 (Soc 10 +1+2)", got)
+	}
+
+	if eneri.Medals != 2 {
+		t.Errorf("Medals = %d, want 2 (two awards, worth +3 between them)", eneri.Medals)
 	}
 }

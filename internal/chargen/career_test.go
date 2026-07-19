@@ -511,7 +511,8 @@ func TestGenerateCareeredQualify(t *testing.T) {
 
 	// A qualify roll of 2 (<= Int) succeeds, so the character runs the career:
 	// one term of Risk, Reward and Continue, then the muster-out benefit die.
-	seq := append(append([]int{}, upp...),
+	seq := append(
+		append([]int{}, upp...),
 		1, 1, // qualify: 2
 		3, 4, // term 1 Risk: 7
 		3, 4, // term 1 Reward: 7

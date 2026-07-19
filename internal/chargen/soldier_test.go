@@ -9,8 +9,9 @@ import (
 )
 
 // TestGoldenSoldier traces a complete two-term Soldier, exercising the rank
-// engine end-to-end: a medal each term, an enlisted promotion (helped by that
-// medal), then a Commission to the officer track. Rolls are 3,4 (= 7) unless
+// engine end-to-end: two medals each term (one for holding Risk, one for passing
+// Reward), an enlisted promotion helped by their mods, then a Commission to the
+// officer track. Rolls are 3,4 (= 7) unless
 // noted. Starting scores: Str 8, Dex 7, End 8, Int 7, Edu 10, Soc 8 ("8787A8");
 // the final UPP is "9787A8" after the Str +1 muster benefit.
 func TestGoldenSoldier(t *testing.T) {
@@ -24,16 +25,16 @@ func TestGoldenSoldier(t *testing.T) {
 		5, // Branch: 5 + Edu bonus 2 = 7 -> Technical (mod 0, Ops DM 6)
 		// Term 1: 4 Operations rolls, each 1 + 6 + 2 = 9 -> Base (mod 0); net mod 0.
 		1, 1, 1, 1,
-		3, 4, // risk 7 survive; net mod 0
-		3, 4, // reward -> Medal 1
+		3, 4, // risk 7 survive; net mod 0 -> XS badge (mods +1)
+		3, 4, // reward: raw 7, enlisted -> Medals line 7 = XS (mods +2)
 		5, 5, // Commission vs End 8: 10 > 8, fails
-		4, 4, // Enlisted Promotion vs End 8 + Medal 1 = 9: 8 <= 9, promote to Corporal
+		4, 4, // Enlisted Promotion vs End 8 + Medal mods 2 = 10: 8 <= 10, promote to Corporal
 		1, 1, 1, 1, 1, // 4 + 1 (promotion) skill rolls, Peacekeeper col row 1 = Admin
 		3, 4, // continue vs End 8: 7, policy wants term 2
-		// Term 2: Operations again (net mod 0). Risk 7 survive; Reward 7 -> Medal (2).
+		// Term 2: Operations again (net mod 0). Risk 7 survive -> XS; Reward 7 -> XS.
 		1, 1, 1, 1,
 		3, 4, // risk
-		3, 4, // reward -> Medal 2
+		3, 4, // reward: raw 7 -> XS (4 medals, mods +4)
 		3, 4, // Commission vs End 8: 7 <= 8, commissioned -> 2nd Lieutenant (Leader-1)
 		1, 1, 1, 1, 1, // Admin x5 (4 + 1 commission)
 		3, 4, // continue: policy stops after term 2
@@ -50,8 +51,13 @@ func TestGoldenSoldier(t *testing.T) {
 		t.Errorf("UPP = %q, want %q (Str 8 +1 muster benefit, Edu 10)", got, "9787A8")
 	}
 
-	if c.Medals != 2 {
-		t.Errorf("Medals = %d, want 2 (a Reward success each term)", c.Medals)
+	// Four medals over two terms: each term holds its Risk (an XS, Book 1 p.82
+	// "Risk Success: Receive XS Exemplary Service Badge") and passes its Reward
+	// (raw roll 7, enlisted, so Medals table line 7 — also an XS). All four are
+	// XS, so the promotion mod is +4.
+	if c.Medals != 4 || c.MedalMods != 4 {
+		t.Errorf("Medals = %d mods = %d, want 4 and 4 (an XS for each Risk held and each Reward passed)",
+			c.Medals, c.MedalMods)
 	}
 
 	if c.Skills.Level("Fighter") != 1 || c.Skills.Level("Leader") != 1 ||
@@ -89,15 +95,24 @@ func TestGoldenSoldier(t *testing.T) {
 	}
 }
 
-func TestPromotedMedalsAndWounds(t *testing.T) {
-	c := Character{scores: [count]int{7, 7, 7, 7, 7, 6}, Medals: 2, WoundBadges: 1}
-	// Soc 6 + Medals 2 + Wound Badges 1 = target 9; a roll of 8 succeeds.
+func TestPromotedMedalMods(t *testing.T) {
+	// One XS (+1) and one MCUF (+2): two medals, but a +3 mod. The Wound Badge is
+	// deliberately present and deliberately not counted (Book 1 p.70, and the Eneri
+	// Dinsha example promotes at "Soc plus Medal Mods (10 +1)" while holding one).
+	c := Character{scores: [count]int{7, 7, 7, 7, 7, 6}, Medals: 2, MedalMods: 3, WoundBadges: 1}
+	// Soc 6 + Medal mods 3 = target 9; a roll of 8 succeeds.
 	if !promoted(dice.NewScripted(4, 4), c, PromotionRule{Char: Social, MedalsAndWounds: true}) {
-		t.Error("promotion with medal/wound mods should succeed at 8 vs target 9")
+		t.Error("promotion with medal mods should succeed at 8 vs target 9")
 	}
 	// Without the mods the target is just Soc 6; 8 fails.
 	if promoted(dice.NewScripted(4, 4), c, PromotionRule{Char: Social}) {
 		t.Error("promotion without mods should fail at 8 vs target 6")
+	}
+	// The Wound Badge must not contribute: Soc 6 + mods 0, with two badges, is
+	// still target 6 and 8 fails. A flat +WoundBadges model would make it 8 and pass.
+	wounded := Character{scores: [count]int{7, 7, 7, 7, 7, 6}, WoundBadges: 2}
+	if promoted(dice.NewScripted(4, 4), wounded, PromotionRule{Char: Social, MedalsAndWounds: true}) {
+		t.Error("Wound Badges must not raise the promotion target (Book 1 p.70)")
 	}
 }
 

@@ -618,13 +618,48 @@ func runCareer(r *dice.Roller, p Policy, c *Character, run *careerRun, career Ca
 	c.Careers = append(c.Careers, rec)
 }
 
+// resolveRiskInjury applies a failed Risk roll's consequence and reports the
+// term's verdict. The CC drops by any negative (bravery) mod and the Branch/
+// Operations mod, then Flux. This resolution comes before the Reward roll because
+// it is the Risk roll's own outcome (Book 1 p.65, and the Eneri Dinsha example on
+// p.72 applies the injury Flux before rolling Reward).
+func resolveRiskInjury(
+	r *dice.Roller,
+	c *Character,
+	cc Characteristic,
+	ccVal, mod, bo int,
+) TermOutcome {
+	negMods := bo
+	if mod < 0 {
+		negMods += -mod
+	}
+
+	injury, newVal := classifyInjury(ccVal, negMods, r.Flux())
+	switch injury {
+	case Unharmed:
+		// the Flux compensated for the mods: no injury
+	case Wounded:
+		c.scores[cc] = newVal
+		c.WoundBadges++
+	case Disabling:
+		c.scores[cc] = newVal
+
+		return Disabled
+	case Fatal:
+		c.scores[cc] = max(newVal, 0)
+		c.Dead = true
+
+		return Died
+	}
+
+	return Ongoing
+}
+
 // runTerm resolves one term (Book 1 p. 64). It selects the Controlling
 // Characteristic, rolls Risk (2D <= CC + mod) and, on survival, Reward
 // (2D <= CC - mod, mods flipped). A failed Risk injures the character; a
 // surviving armed-forces character then resolves rank. It returns Ongoing,
 // Disabled, or Died.
-//
-//nolint:cyclop // the term engine dispatches every career variant; irreducibly branchy
 func runTerm(r *dice.Roller, p Policy, c *Character, run *careerRun, career Career) TermOutcome {
 	if career.FameCareer {
 		return runFameTerm(r, p, c, run, career) // no CC — the Entertainer resolves Fame/Talent
@@ -669,45 +704,13 @@ func runTerm(r *dice.Roller, p Policy, c *Character, run *careerRun, career Care
 	// until after the Reward roll, which happens either way.
 	outcome := Ongoing
 
-	if !riskOK {
-		// Risk failed: the CC drops by any negative (bravery) mod and the Branch/
-		// Operations mod, then Flux. This resolution comes before the Reward roll
-		// because it is the Risk roll's own outcome (Book 1 p.65, and the Eneri
-		// Dinsha example on p.66 applies the injury Flux before rolling Reward).
-		negMods := bo
-		if mod < 0 {
-			negMods += -mod
-		}
+	awardExemplaryService(c, career, riskOK)
 
-		injury, newVal := classifyInjury(ccVal, negMods, r.Flux())
-		switch injury {
-		case Unharmed:
-			// the Flux compensated for the mods: no injury
-		case Wounded:
-			c.scores[cc] = newVal
-			c.WoundBadges++
-		case Disabling:
-			c.scores[cc] = newVal
-			outcome = Disabled
-		case Fatal:
-			c.scores[cc] = max(newVal, 0)
-			c.Dead = true
-			outcome = Died
-		}
+	if !riskOK {
+		outcome = resolveRiskInjury(r, c, cc, ccVal, mod, bo)
 	}
 
-	// Reward is rolled EVERY term, whether the Risk was held or lost (Book 1
-	// p.65: "The Character rolls for Risk ... and determines the outcome. He
-	// then rolls again for Reward ... and determines the consequences"). The
-	// Eneri Dinsha worked example (p.66) fails Risk in both of his terms — taking
-	// a Wound Badge in the first — and still rolls Reward and takes a Medal each
-	// time. The target keeps the ORIGINAL Controlling Characteristic: Eneri's
-	// second-term Reward is "10 +2 +1 -2" against his pre-injury Dexterity-10.
-	// The roll happens either way, so the dice stream does not depend on the Risk
-	// outcome, but a character the Risk roll killed collects nothing: the book
-	// has him "determine the consequences", and a corpse has none. Without this
-	// a Merchant killed in his term still banks Ship Shares, and a Scout still
-	// records a Discovery, both of which feed muster-out and the character sheet.
+	// Reward is rolled EVERY term, held Risk or lost — see rollReward's contract.
 	if reward := r.Resolve(dice.Check{Dice: 2, Target: ccVal - mod + bo}); reward.Success && outcome != Died {
 		grantReward(c, run, career, reward, ccVal)
 	}
@@ -738,9 +741,93 @@ func runTerm(r *dice.Roller, p Policy, c *Character, run *careerRun, career Care
 	return Ongoing
 }
 
+// A Medal is one award from the Imperial Medals table (Book 1 p.70). Mod is the
+// bonus it adds to a Soldier/Spacer/Marine promotion target.
+type Medal struct {
+	Code string
+	Name string
+	Mod  int
+}
+
+// medalsTable is the p.70 Medals table, indexed by the line the book names: the
+// *unmodified* successful Reward roll, +1 if the character is an Officer. 2D
+// gives 2..12, so the officer bump makes 13 the top line; index 0 and 1 are unused.
+//
+// The Eneri Dinsha worked example (p.72) locks both ends of the lookup: a raw
+// Reward roll of 3 with the Officer +1 reaches "Medals table line 4" for an XS,
+// and a raw 9 with the same +1 reaches "line 10" for an MCUF.
+var medalsTable = [14]Medal{
+	2:  {"XS", "Exemplary Service", 1},
+	3:  {"XS", "Exemplary Service", 1},
+	4:  {"XS", "Exemplary Service", 1},
+	5:  {"XS", "Exemplary Service", 1},
+	6:  {"XS", "Exemplary Service", 1},
+	7:  {"XS", "Exemplary Service", 1},
+	8:  {"XS", "Exemplary Service", 1},
+	9:  {"MCUF", "Meritorious Conduct Under Fire", 2},
+	10: {"MCUF", "Meritorious Conduct Under Fire", 2},
+	11: {"MCG", "Medal for Conspicuous Gallantry", 3},
+	12: {"SEH", "Starburst for Extreme Heroism", 4},
+	13: {"*SEH*", "SEH With Diamonds", 5},
+}
+
+// exemplaryService is the XS badge a held Risk earns ("Risk Success: Receive XS
+// Exemplary Service Badge", Book 1 pp.82/86 and the Spacer's p.81). It is the
+// table's own bottom entry, not a separate award.
+var exemplaryService = medalsTable[2]
+
+// awardMedal records one medal: the count drives the muster-out rolls, the mod
+// sum drives promotion targets. They are kept apart because the book uses them
+// apart — a character with one MCUF has one medal but a +2 promotion mod.
+func awardMedal(c *Character, m Medal) {
+	c.Medals++
+	c.MedalMods += m.Mod
+}
+
+// awardExemplaryService grants the XS badge a held Risk earns: "Risk Success:
+// Receive XS Exemplary Service Badge. Character is unharmed." (Book 1 pp.81/82/86,
+// printed on all three armed-forces pages). Medals were awarded only on Reward
+// successes, so a character who held his Risk went undercounted at every later
+// promotion roll.
+//
+// The gate is RewardMedal because the XS is an armed-forces award — a Scholar who
+// holds a Risk earns no badge. No dice are drawn: the badge follows from the Risk
+// roll already made, so this does not move the stream.
+func awardExemplaryService(c *Character, career Career, riskHeld bool) {
+	if riskHeld && career.RewardKind == RewardMedal {
+		awardMedal(c, exemplaryService)
+	}
+}
+
+// medalFor reads the award off the p.70 table for a successful Reward roll.
+// The roll is the raw 2D, before any Risk & Reward mods: "Rew= Successful
+// unmodified Reward Roll. If Officer, increase +1".
+func medalFor(rawRoll int, officer bool) Medal {
+	line := rawRoll
+	if officer {
+		line++
+	}
+
+	return medalsTable[min(max(line, 2), 13)]
+}
+
 // grantReward awards the career's reward token for a successful Reward roll
 // (Book 1 p.65). ccVal is the term's original Controlling Characteristic value,
 // which the Scholar's Award-Winning threshold is measured against.
+//
+// The Reward is rolled every term, whether the Risk was held or lost (p.65: "The
+// Character rolls for Risk ... and determines the outcome. He then rolls again for
+// Reward ... and determines the consequences"). The Eneri Dinsha worked example
+// (p.72) fails Risk in both of his terms — taking a Wound Badge in the first — and
+// still rolls Reward and takes a Medal each time. The target keeps the ORIGINAL
+// Controlling Characteristic: his second-term Reward is "10 +2 +1 -2" against his
+// pre-injury Dexterity-10.
+//
+// The roll happens either way, so the dice stream does not depend on the Risk
+// outcome — but a character the Risk roll killed collects nothing: the book has him
+// "determine the consequences", and a corpse has none. Without that guard a Merchant
+// killed in his term still banks Ship Shares and a Scout still records a Discovery,
+// both of which feed muster-out and the character sheet.
 func grantReward(
 	c *Character,
 	run *careerRun,
@@ -752,7 +839,7 @@ func grantReward(
 	case RewardNone:
 		// the reward is deferred (e.g. the Rogue's Scheme); nothing to grant
 	case RewardMedal:
-		c.Medals++
+		awardMedal(c, medalFor(reward.Roll, run.officer))
 	case RewardPublication:
 		c.Publications++
 		if reward.Roll <= ccVal-4 {
@@ -1297,11 +1384,25 @@ func attemptTenure(r *dice.Roller, c *Character, rule TenureRule) {
 }
 
 // promoted resolves one promotion roll: 2D at or under the rule's characteristic,
-// raised by Medals and Wound Badges, or Publications, when the rule allows.
+// raised by the character's Medal mods, or Publications, when the rule allows.
+//
+// Wound Badges do NOT count, though three places in the book say they do. The
+// Soldier/Spacer/Marine pages footnote their promotion lines "*+Medals and WB
+// Mods" (pp.81/82/86) and the Master Chargen Checklists repeat it (p.72). Against
+// them stand the Medals table's own footnote — "Medals (but not Wound Badges) are
+// Mods for Soldier / Spacer / Marine Promotion" (p.70) — and, decisively, the only
+// dice-traced example: Eneri Dinsha ends his first term holding a Wound Badge and
+// an XS, and promotes against "Soc plus Medal Mods (10 +1) = 11" (p.72). The badge
+// is not in that sum. A worked example beats a footnote, so the badge is excluded
+// and the field kept (it is still a muster-out and Fame input).
+//
+// The same example fixes the mod's SIZE: his second-term promotion is "(10 +1+2)
+// = 13", the first term's XS plus that term's MCUF. Medals contribute their table
+// mod, not one point each — a flat count would have made it 12.
 func promoted(r *dice.Roller, c Character, rule PromotionRule) bool {
 	target := c.Score(rule.Char)
 	if rule.MedalsAndWounds {
-		target += c.Medals + c.WoundBadges
+		target += c.MedalMods
 	}
 
 	if rule.PubsMod {
