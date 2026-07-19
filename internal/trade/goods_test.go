@@ -1,6 +1,7 @@
 package trade
 
 import (
+	"slices"
 	"testing"
 
 	"github.com/philoserf/t5/internal/dice"
@@ -109,6 +110,58 @@ func TestImbalanceNeverLeaksTradeCode(t *testing.T) {
 	}
 }
 
+// TestRollGoodsColumnUnknownColumnPanics guards the column lookup: the key is
+// always program data (a chart column or an Imbalances redirect target), so an
+// unknown one is a transcription bug and must fail loudly rather than yield an
+// empty cargo.
+func TestRollGoodsColumnUnknownColumnPanics(t *testing.T) {
+	defer func() {
+		if recover() == nil {
+			t.Error("rollGoodsColumn on an unknown column did not panic")
+		}
+	}()
+
+	g := rollGoodsColumn(dice.NewScripted(1, 1), "Zz")
+	t.Errorf("rollGoodsColumn returned %+v for an unknown column", g)
+}
+
+// TestImbalanceHopCapTerminates guards the hop cap itself. The Na and Fl columns
+// redirect to each other (Na block 6 entry 6 -> Fl; Fl block 6 entry 4 -> Na), so
+// this script ping-pongs to the cap and then offers nothing but 6s — the block
+// that is Imbalances in both columns. A re-rolling cap never escapes that.
+func TestImbalanceHopCapTerminates(t *testing.T) {
+	// Na -> Fl -> Na -> Fl -> (cap), then only sixes.
+	prefix := []int{6, 6, 6, 4, 6, 6, 6, 4}
+	// budget is generous room past the prefix for the capped hop's own rolls; a
+	// draw beyond it means the cap is looping. The source then yields 1s so the
+	// test reports a count rather than hanging.
+	const budget = 4
+
+	drawn := 0
+	r := dice.NewSource(func() int {
+		drawn++
+
+		switch {
+		case drawn <= len(prefix):
+			return prefix[drawn-1]
+		case drawn <= len(prefix)+budget:
+			return 6
+		default:
+			return 1
+		}
+	})
+
+	g := rollGoodsColumn(r, "Na")
+	if drawn > len(prefix)+budget {
+		t.Fatalf("rollGoodsColumn drew %d dice (budget %d): the hop cap is re-rolling without bound",
+			drawn, len(prefix)+budget)
+	}
+
+	if g.Type == imbalancesBlock || goodsColumnEligible[g.Name] {
+		t.Errorf("good escaped as an Imbalances entry: %+v", g)
+	}
+}
+
 func TestSelectGoodsColumnDefault(t *testing.T) {
 	// A world with no column-eligible trade class falls back to Non-Agricultural.
 	col, src := selectGoodsColumn(dice.NewScripted(1), []string{"Hi", "He"})
@@ -147,6 +200,35 @@ func TestGoodsDataWellFormed(t *testing.T) {
 					t.Errorf("%s block %d good %d is empty", col, i+1, j+1)
 				}
 			}
+
+			if b.Type != imbalancesBlock {
+				continue
+			}
+			// An Imbalances entry becomes the next column, so a typo here — a real
+			// trade class with no column of its own, say "Cs" — would send the roll
+			// to a key that does not exist. Cross-check every redirect target,
+			// including both halves of a bare Ag.
+			for j, tc := range b.Goods {
+				targets := []string{columnFor(tc)}
+				if tc == "Ag" {
+					targets = append(targets, "Ag-2")
+				}
+
+				for _, target := range targets {
+					if _, ok := tradeGoodsColumns[target]; !ok {
+						t.Errorf("%s Imbalances entry %d (%q) redirects to unknown column %q",
+							col, j+1, tc, target)
+					}
+				}
+			}
+		}
+	}
+
+	// Every column must offer real goods somewhere, or the hop cap has nothing to
+	// fall back on (see rollGoodsColumn).
+	for col, blocks := range tradeGoodsColumns {
+		if !slices.ContainsFunc(blocks[:], func(b goodsBlock) bool { return b.Type != imbalancesBlock }) {
+			t.Errorf("column %s is entirely Imbalances blocks", col)
 		}
 	}
 }
