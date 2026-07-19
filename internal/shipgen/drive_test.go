@@ -176,8 +176,10 @@ func TestDesignDriveStageEfficiency(t *testing.T) {
 	}
 }
 
-// The p.76 Table X footer states the rule in EP terms: "Standard Drive-C has 300
-// EP; [Experimental] Drive-C outputs 150 EP; Advanced Drive-C outputs 360 EP."
+// The p.76 Table X footer states the rule in EP terms. As printed: "Standard
+// Drive-C has 300 EP; Early Drive-C outputs 150 EP; Advanced Drive-C outputs 360
+// EP." Read "Early" as Experimental — 150 is 50% of 300, which is Experimental's
+// efficiency; Early is 90% and would print 270 (see drivePotential's note).
 // In a Hull-C that is P = (EP/Hull)*2 = 2, 1, and 2 (=2.4) respectively.
 func TestDrivePotentialEfficiencyIsEPBased(t *testing.T) {
 	cases := []struct{ drive, hull, eff, want int }{

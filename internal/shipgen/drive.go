@@ -15,14 +15,26 @@ import "fmt"
 // the combination cannot function.
 //
 // Efficiency is not a separate step applied to the Z1 number: it "modifies the
-// EP Energy Point output of a Drive" (p.76 Table X footer — Standard Drive-C has
-// 300 EP, Experimental 150, Advanced 360), and Potential is P = (EP/Hull)*2,
+// EP Energy Point output of a Drive", and Potential is P = (EP/Hull)*2,
 // "Maximum 9. Round Down" (p.63). So the scaling happens inside the division and
 // there is exactly one floor, at the end — p.127 puts it as "Efficiencies round
 // down (thus Early Jump-1 at 90% becomes Jump-0)", which flooring the Z1 value
 // first could not produce. Drive EP is the size ordinal x 100 (Drive-A = 100 EP,
 // Drive-K = 1000) and hull tons is the hull ordinal x 100, so both hundreds
 // cancel and only the percentage is left to divide out.
+//
+// Book conflict, p.76 Table X footer. As printed:
+//
+//	"Efficiency modifies the EP Energy Point output of a Drive. Standard
+//	 Drive-C has 300 EP; Early Drive-C outputs 150 EP; Advanced Drive-C
+//	 outputs 360 EP."
+//
+// Read "Early" as Experimental. 150 is 50% of 300, and 50% is Experimental's
+// efficiency in the same table's own column; Early is 90%, which would print
+// 270. Advanced checks out as printed (360 = 120% of 300). The footer is
+// illustration, not a rule input — the efficiency column beside it is what this
+// function is given — so nothing here changes either way; the note exists so
+// the next reader comparing code to p.76 finds the discrepancy explained.
 func drivePotential(driveOrd, hullOrd, effPct int) int {
 	if driveOrd < 1 || hullOrd < 1 {
 		return 0
