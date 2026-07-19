@@ -7,6 +7,8 @@
 package personals
 
 import (
+	"fmt"
+
 	"github.com/philoserf/t5/internal/dice"
 	"github.com/philoserf/t5/internal/task"
 )
@@ -23,20 +25,39 @@ const (
 	Command
 )
 
-// Dice is the number of dice the Purpose rolls (Carouse 1 … Command 4).
-func (p Purpose) Dice() int { return int(p) + 1 }
+var purposeNames = [...]string{
+	Carouse:  "Carouse",
+	Query:    "Query",
+	Persuade: "Persuade",
+	Command:  "Command",
+}
 
-func (p Purpose) String() string {
-	switch p {
-	case Query:
-		return "Query"
-	case Persuade:
-		return "Persuade"
-	case Command:
-		return "Command"
-	default:
-		return "Carouse"
+// Dice is the number of dice the Purpose rolls (Carouse 1 … Command 4).
+//
+// Purpose is a closed four-constant enum, so a value outside it is a programming
+// error and Dice panics rather than inventing a count. This is the strict half of
+// the same split task.Difficulty.Dice takes: a dice count feeds a mechanic and
+// has nowhere to put a "?" sentinel, and the unguarded int(p)+1 was quietly
+// plausible in both directions — Purpose(-1) yielded 0, which dice.Resolve treats
+// as its 2D default, and Purpose(99) yielded 100D. String below is the display
+// half, and stays total.
+func (p Purpose) Dice() int {
+	if p < Carouse || p > Command {
+		panic(fmt.Sprintf("personals: purpose %d out of range %d..%d",
+			int(p), int(Carouse), int(Command)))
 	}
+
+	return int(p) + 1
+}
+
+// String returns the purpose's name, or "?" for a value outside the enum — a
+// Stringer must be able to report a bad value rather than name it Carouse.
+func (p Purpose) String() string {
+	if p < Carouse || p > Command {
+		return "?"
+	}
+
+	return purposeNames[p]
 }
 
 // Strategy is the approach an Actor takes (Book 1 p.183). A strategy's base
