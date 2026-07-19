@@ -39,31 +39,7 @@ func MissileMassiveExplosion(szPlus1D int) MassiveExplosion {
 	}
 }
 
-// A MassiveExplosionMultiplier scales a missile option's effects when it hits via
-// the Space Weapon Task at close range (Book 2 p.196 Massive Explosion, Weapons
-// Task): a multiple of the target's Armor Value defeated, and of the Rad, Flash,
-// and EMP effects. EMP applies only to nuclear options.
-type MassiveExplosionMultiplier struct {
-	AV, Rad, Flash, EMP int
-}
-
-// weaponsMassiveExplosion is the Weapons-Task Massive Explosion table by missile
-// option (Book 2 p.196).
-var weaponsMassiveExplosion = map[string]MassiveExplosionMultiplier{
-	"AM":        {AV: 10, Flash: 1},
-	"Nuke":      {AV: 10, Rad: 1, Flash: 1, EMP: 1},
-	"EMP":       {AV: 1, EMP: 1},
-	"KK":        {AV: 1},
-	"DeadFall4": {AV: 1, Flash: 1},
-	"DeadFall5": {AV: 5, Flash: 2},
-	"DeadFall6": {AV: 10, Flash: 3},
-}
-
-// WeaponsMassiveExplosion returns the effect multipliers for a missile option
-// detonating via the Space Weapon Task (Book 2 p.196), and whether the option is
-// tabulated.
-func WeaponsMassiveExplosion(option string) (MassiveExplosionMultiplier, bool) {
-	m, ok := weaponsMassiveExplosion[option]
-
-	return m, ok
-}
+// The Weapons-Task Massive Explosion table (Book 2 p.196) is keyed by the missile
+// option that detonates, which is a designed round's warhead and size rather than
+// anything primitive — so it lives with the other designed-component bridges in
+// ship.go, as WeaponsMassiveExplosion.
