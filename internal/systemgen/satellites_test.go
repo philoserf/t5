@@ -306,6 +306,74 @@ func TestBeltMainworldDoesNotFlattenItsMoons(t *testing.T) {
 	t.Logf("checked %d moons of belt mainworlds", checked)
 }
 
+// TestBeltMainworldRollsNoSatellites is the regression for #309, the count half
+// of the same belt-code defect TestBeltMainworldDoesNotFlattenItsMoons covers on
+// the cap side. A belt's moons were capped correctly but still *counted*: a belt
+// mainworld's orbit is KindMainworld, so satelliteCount's `kind == KindBelt`
+// guard never saw it and the belt fell through to the world rule, rolling 1D-5 /
+// 1D-4 / 1D-3 moons plus rings around a field of asteroids — and drawing dice for
+// them, so every later system in the stream shifted too.
+//
+// Book 3 p.29 gives a satellite count only to worlds and gas giants; the three
+// doc comments in satellites.go say so as well.
+func TestBeltMainworldRollsNoSatellites(t *testing.T) {
+	checked := 0
+
+	for seed := uint64(1); seed <= 200; seed++ {
+		s := GenerateForMap(dice.NewWithSeed(seed), true, true)
+		if !s.Mainworld.Profile.IsBelt() {
+			continue // not a belt mainworld for this seed
+		}
+
+		for _, o := range s.Orbits {
+			// A satellite mainworld's orbit belongs to its parent body, whose own
+			// moons are legitimate (see satelliteParent); only a belt sitting in
+			// its own orbit is at issue.
+			if o.Kind != KindMainworld || o.Giant != nil || o.Parent != nil {
+				continue
+			}
+
+			checked++
+
+			if len(o.Satellites) != 0 {
+				t.Errorf("seed %d: belt mainworld in orbit %d has %d satellites (%s); a belt has no moons",
+					seed, o.Orbit, len(o.Satellites), orbitLabel(o))
+			}
+		}
+	}
+
+	if checked == 0 {
+		t.Fatal("no belt mainworld placed in its own orbit across 200 seeds; the regression is unexercised")
+	}
+
+	t.Logf("checked %d belt mainworlds", checked)
+}
+
+// TestSatelliteBodyReadsTheBeltCode pins the single decision the #309 fix rests
+// on: kind and cap come from one read of the parent's UWP, so a body whose Size
+// digit is the asteroid-belt code cannot be classified a world by one half and a
+// belt by the other.
+func TestSatelliteBodyReadsTheBeltCode(t *testing.T) {
+	for _, tc := range []struct {
+		name string
+		size int
+		kind OrbitKind
+		cap  int
+	}{
+		{"belt code", 0, KindBelt, worldgen.NoSizeCap},
+		{"ordinary world", 7, KindWorld, 7},
+		{"smallest real world", 1, KindWorld, 1},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			kind, maxSize := satelliteBody(uwp.Profile{Size: tc.size})
+			if kind != tc.kind || maxSize != tc.cap {
+				t.Errorf("satelliteBody(Size %d) = %v, %d; want %v, %d",
+					tc.size, kind, maxSize, tc.kind, tc.cap)
+			}
+		})
+	}
+}
+
 // TestSatellitesCarryTradeCodes: every generated non-ring satellite carries trade
 // codes, where before a non-mainworld satellite carried none (the Sa/Lk logic
 // itself is unit-tested in worldgen, where the assembler lives).

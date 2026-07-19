@@ -52,6 +52,9 @@ Tooling (go, go-task, golangci-lint, poppler's `pdftotext`) is pinned in `Brewfi
 - `internal/ehex/` — Traveller extended-hex digits (0-9, A-Z omitting I and O). `Digit`
   encodes, `ParseDigit` decodes. Every UWP characteristic is an eHex value.
 - `internal/uwp/` — the `Profile` type and its `String` in StSAHPGL-T form (e.g. `A788899-C`).
+  `Profile.IsBelt` names the one Size digit that is a **code, not a dimension**: `BeltSize` (0) means
+  a field of asteroids, so every rule reading Size as a measurement must resolve it first. Reading it
+  as a dimension has shipped three times (#213, #200, #309); ask `IsBelt` rather than comparing to 0.
 - `internal/worldgen/` — mainworld UWP creation (Book 3 pp. 16-25). The characteristic
   formulas are **pure functions** taking their rolls as arguments (test them at their edges);
   `Generate` rolls in checklist order and composes them. Validated against the book's Regina
@@ -85,7 +88,11 @@ Tooling (go, go-task, golangci-lint, poppler's `pdftotext`) is pinned in `Brewfi
   an orbit's moons belong to, which is **not** always the orbit's Kind: when the mainworld is itself
   a satellite, p.21 puts a gas giant (or a `GenerateHostWorld` BigWorld, floored at the mainworld's
   own Size) in its orbit, so the orbit's moons are counted and capped for that parent and render as
-  the mainworld's _sibling_ moons. Orbit letters are orbit names, so `satelliteOrbits` keeps them
+  the mainworld's _sibling_ moons. Any parent that has a UWP is classified by `satelliteBody`, the
+  **one** read that answers both halves at once — the count rule it takes and the cap it imposes —
+  because when those were separate decisions only the cap resolved the asteroid-belt code, so a belt
+  mainworld was capped as a belt but _counted_ as a world and rolled phantom moons (#309).
+  Orbit letters are orbit names, so `satelliteOrbits` keeps them
   unique per parent, nudging a duplicate to the nearest free letter without touching the Flux roll
   (p.29, "adjust to an adjacent or the closest possible orbit"). The size cap is applied
   **inside** generation via `worldgen.GenerateSatelliteWorld` — Atmosphere is
