@@ -40,12 +40,13 @@ func (s *System) rollSatellites(r *dice.Roller) {
 		o := &s.Orbits[i]
 		hz, hasHZ := HZOrbit(s.hostStar(o.Host))
 
-		moons, rings := satelliteCount(r, o.Kind, o.Orbit, hz, hasHZ)
+		parentKind, maxSize := s.satelliteParent(o)
+
+		moons, rings := satelliteCount(r, parentKind, o.Orbit, hz, hasHZ)
 		for range rings {
 			o.Satellites = append(o.Satellites, Satellite{Ring: true})
 		}
 
-		maxSize := s.satelliteMaxSize(o)
 		for range moons {
 			o.Satellites = append(o.Satellites, rollMoon(r, moonSpec{
 				Orbit:      o.Orbit,
@@ -143,29 +144,44 @@ func (s *System) hostStar(label string) Star {
 	}
 }
 
-// satelliteMaxSize returns the size cap a body's moons take (Book 3 p.21: a
-// satellite is never larger than its parent), or worldgen.NoSizeCap when they
-// take none. Gas-giant moons are never capped — a giant's size code far exceeds
-// any world size — and belts have no moons.
+// satelliteParent identifies the body an orbit's moons belong to: the kind that
+// selects their count rule (Book 3 p.29 "Number Of Satellites") and the Size that
+// caps them (p.29, "a satellite is always smaller than its parent"), or
+// worldgen.NoSizeCap when nothing caps them. Gas-giant moons are never capped — a
+// giant's size code far exceeds any world size — and belts have no moons.
+//
+// The body is not always the orbit's Kind. When the mainworld is itself a
+// satellite, p.21 places a gas giant (or, with no giant in the system, a
+// BigWorld) in the mainworld's orbit to accommodate it, so the body in that orbit
+// is the parent and the orbit's moons are the mainworld's siblings around it.
+// Rolling them as the mainworld's own gave a gas-giant parent the world zone
+// count instead of its 1D-1 and capped its moons to a fellow moon.
+//
+// The book does not spell out satellite handling for a satellite mainworld; this
+// is the reading consistent with its own parent-body semantics. It leaves one
+// point genuinely open: whether the mainworld is itself one of the parent's 1D-1
+// satellites or is additional to them. It is treated as additional, since the
+// count is rolled after the mainworld is already placed.
 //
 // A Size digit of 0 is not a cap. In a UWP it marks an asteroid belt (the same
 // convention PortFacilities reads to site a Beltport), so it is a code rather
 // than a dimension: capping to it would cut every moon of a belt mainworld to
 // Size 0, taking its Atmosphere, Hydrographics and Tech Level with it and
 // rendering a Big World as Y000000-0.
-func (s *System) satelliteMaxSize(o *PlacedOrbit) int {
-	switch o.Kind {
-	case KindMainworld:
-		return sizeCapOf(s.Mainworld.Profile.Size)
-	case KindWorld:
-		if o.World != nil {
-			return sizeCapOf(o.World.Profile.Size)
-		}
+func (s *System) satelliteParent(o *PlacedOrbit) (OrbitKind, int) {
+	switch {
+	case o.Kind == KindMainworld && o.Giant != nil:
+		return KindGasGiant, worldgen.NoSizeCap
+	case o.Kind == KindMainworld && o.Parent != nil:
+		return KindWorld, sizeCapOf(o.Parent.Profile.Size)
+	case o.Kind == KindMainworld:
+		return KindMainworld, sizeCapOf(s.Mainworld.Profile.Size)
+	case o.Kind == KindWorld && o.World != nil:
+		return KindWorld, sizeCapOf(o.World.Profile.Size)
 	default:
-		// KindGasGiant and KindBelt are uncapped; handled by the return below.
+		// A gas giant or a belt: uncapped, and the belt rolls no moons at all.
+		return o.Kind, worldgen.NoSizeCap
 	}
-
-	return worldgen.NoSizeCap
 }
 
 // sizeCapOf turns a parent's UWP Size digit into a satellite cap, treating 0 —

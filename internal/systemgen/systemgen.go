@@ -218,29 +218,42 @@ func orbitLabel(o PlacedOrbit) string {
 		}
 	}
 
-	if n := len(o.Satellites); n > 0 {
-		moons := make([]string, n)
-
-		for j, sat := range o.Satellites {
-			switch {
-			case sat.Ring:
-				moons[j] = "Ring"
-			case sat.DoublePlanet:
-				moons[j] = fmt.Sprintf("%s %s dp", sat.OrbitLetter, sat.Profile)
-			default:
-				moons[j] = fmt.Sprintf("%s %s", sat.OrbitLetter, sat.Profile)
-			}
-		}
-
-		suffix := ""
-		if n > 1 {
-			suffix = "s"
-		}
-
-		label += fmt.Sprintf(" (%d moon%s: %s)", n, suffix, strings.Join(moons, "; "))
+	if len(o.Satellites) > 0 {
+		label += " " + moonList(o)
 	}
 
 	return label
+}
+
+// moonList renders an orbit's satellites as a parenthesised list. A satellite
+// mainworld's orbit belongs to its parent body, so its satellites are the
+// mainworld's sibling moons around that parent rather than its own (see
+// satelliteParent).
+func moonList(o PlacedOrbit) string {
+	moons := make([]string, len(o.Satellites))
+
+	for j, sat := range o.Satellites {
+		switch {
+		case sat.Ring:
+			moons[j] = "Ring"
+		case sat.DoublePlanet:
+			moons[j] = fmt.Sprintf("%s %s dp", sat.OrbitLetter, sat.Profile)
+		default:
+			moons[j] = fmt.Sprintf("%s %s", sat.OrbitLetter, sat.Profile)
+		}
+	}
+
+	kind := "moon"
+	if o.Kind == KindMainworld && (o.Giant != nil || o.Parent != nil) {
+		kind = "sibling moon"
+	}
+
+	suffix := ""
+	if len(moons) > 1 {
+		suffix = "s"
+	}
+
+	return fmt.Sprintf("(%d %s%s: %s)", len(moons), kind, suffix, strings.Join(moons, "; "))
 }
 
 // String renders a one-block summary of the system.
