@@ -2,7 +2,7 @@ package shipcombat
 
 import "testing"
 
-// TestHullLocations golden-locks the Book 2 p.86 Table H compartment structure.
+// TestHullLocations golden-locks the Book 2 p.95 Table H compartment structure.
 func TestHullLocations(t *testing.T) {
 	cases := []struct {
 		ord  int
