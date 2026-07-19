@@ -113,8 +113,9 @@ var diceCols = map[CharName][]int{
 // Swimmer/Diver favors Gra/Vig/Tra). Each die count comes from chart 06B: the
 // physical slots (C1/C2/C3) are indexed by Flux+EnvironDM, C3 further shifted by
 // the carnivore sub-niche (+2 Chaser, -2 Pouncer); mental slots by Flux alone.
-// C5 Edu/Tra are a flat 2D (no table roll); C6 Caste is left at a placeholder 2D
-// until caste generation (a later phase) fixes it.
+// C5 Edu/Tra are a flat 2D (no table roll); a C6 Caste slot carries no rolled
+// value at all (0 dice) — the individual's caste comes from the Caste Generation
+// Table (p.229) instead.
 func rollCharacteristics(r *dice.Roller, env Environment) ([6]CharSpec, string) {
 	var names [6]CharName
 
@@ -166,7 +167,11 @@ func rollDice(r *dice.Roller, i int, name CharName, env Environment) int {
 		return 2
 	default: // C6
 		if name == Cas {
-			return 2 // placeholder until caste generation
+			// C6 *is* the caste: an individual's caste comes from a 2D roll on the
+			// species' Caste Generation Table (p.229), not from a characteristic
+			// value. The slot therefore carries no rolled value — 0 dice, not a
+			// placeholder 2D that would render as a meaningless digit.
+			return 0
 		}
 
 		return diceLookup(Soc, r.Flux())

@@ -50,6 +50,15 @@ func TestGenerateInvariants(t *testing.T) {
 		}
 
 		for i, c := range s.Chars {
+			// A Caste C6 is the one slot with no rolled value: exactly 0 dice.
+			if c.Name == Cas {
+				if c.Dice != 0 {
+					t.Errorf("seed %d: Caste C6 die count %d, want 0", seed, c.Dice)
+				}
+
+				continue
+			}
+
 			if c.Dice < 1 || c.Dice > 8 {
 				t.Errorf("seed %d: char %d die count %d out of range", seed, i, c.Dice)
 			}

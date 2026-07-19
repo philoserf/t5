@@ -41,6 +41,23 @@ func TestHumanCharacteristics(t *testing.T) {
 	}
 }
 
+// TestCasteC6CarriesNoDice: when C6 is the Caste characteristic the slot holds
+// no rolled value at all — the individual's caste comes from a 2D roll on the
+// species' Caste Generation Table, not from a characteristic. The slot's die
+// count is 0, and rollDice consumes no dice for it.
+func TestCasteC6CarriesNoDice(t *testing.T) {
+	// A single Flux worth of faces: if rollDice rolls for a Caste C6, it consumes
+	// them; the assertion below then also fails on the returned die count.
+	r := dice.NewScripted(fluxSeq(0)...)
+	if got := rollDice(r, 5, Cas, Environment{}); got != 0 {
+		t.Errorf("Caste C6 die count = %dD, want 0 (the slot carries no rolled value)", got)
+	}
+	// The Flux faces must be untouched, so a Soc C6 can still read them.
+	if got := rollDice(r, 5, Soc, Environment{}); got != 2 {
+		t.Errorf("Soc C6 die count = %dD, want 2D — rollDice(Cas) consumed dice", got)
+	}
+}
+
 // TestNameSlots exercises chart 06A: the variable name in each of slots C2/C3/C5/
 // C6 across the Flux range, plus the Flyer locomotion DM shifting C2 to an analog.
 func TestNameSlots(t *testing.T) {
