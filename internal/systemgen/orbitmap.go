@@ -202,16 +202,25 @@ func (s *System) placeOrbits(r *dice.Roller) { //nolint:gocognit,cyclop,funlen /
 		// "-2D+7", but that contradicts worldgen's own BigWorld (Siz 2D+7) and
 		// would make the parent smaller than its moon in violation of the
 		// satellite-size rule, so we create a standard BigWorld.)
+		//
+		// A standard BigWorld is not enough on its own: 2D+7 bottoms out at 9
+		// while a mainworld's Size reaches 15, so the parent's Size is floored at
+		// its own moon's (Book 3 p.29, "a satellite is always smaller than its
+		// parent"; equal sizes are the book's double planet). The mainworld is not
+		// shrunk to fit instead — its UWP is already generated and already carries
+		// the system's trade codes and extensions — so the adjustment falls on the
+		// body being created for it.
 		if s.MainworldSatellite.IsSatellite {
 			switch {
 			case len(giants) > 0:
 				mw.Giant = &giants[0]
 				giants = giants[1:]
 			default:
-				prof := worldgen.GenerateOtherWorld(
+				prof := worldgen.GenerateHostWorld(
 					r,
 					worldgen.BigWorld,
 					s.Mainworld.Profile.Population,
+					s.Mainworld.Profile.Size,
 				)
 				mw.Parent = &OtherWorld{Type: worldgen.BigWorld, Profile: prof}
 			}

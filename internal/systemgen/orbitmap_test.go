@@ -124,6 +124,36 @@ func TestPlaceOrbitsSatelliteMainworldNoGasGiant(t *testing.T) {
 	}
 }
 
+// TestPlaceOrbitsBigWorldParentIsNotSmallerThanItsMoon is the regression for
+// #215. The accommodating BigWorld parent rolls Size 2D+7 = 9..19, but a
+// mainworld's Size reaches 15 (rollSize's 2D-2, rerolling a 10 as 1D+9), so the
+// parent could come out smaller than the moon it exists to carry — the exact
+// violation of Book 3 p.29's "a satellite is always smaller than its parent" that
+// the adjacent comment invokes to reject the book's "-2D+7" printing.
+func TestPlaceOrbitsBigWorldParentIsNotSmallerThanItsMoon(t *testing.T) {
+	s := &System{
+		Primary:            Star{Type: "F", Decimal: 8, Size: "V"},
+		GasGiants:          0,
+		Worlds:             1, // others = 1 - 1 - 0 - 0 = 0
+		MainworldOrbit:     4,
+		MainworldSatellite: MainworldSatellite{IsSatellite: true},
+	}
+	s.Mainworld.Profile.Population = 8
+	s.Mainworld.Profile.Size = 15 // the largest a mainworld reaches
+	// All 1s: the parent's Size rolls 2D+7 = 9, below its own moon.
+	s.placeOrbits(dice.NewScripted(slices.Repeat([]int{1}, 20)...))
+
+	parent := s.Orbits[0].Parent
+	if parent == nil {
+		t.Fatal("satellite mainworld with no giants got no BigWorld parent")
+	}
+
+	if parent.Profile.Size < s.Mainworld.Profile.Size {
+		t.Errorf("BigWorld parent Size %d is smaller than its Size-%d satellite mainworld (%s)",
+			parent.Profile.Size, s.Mainworld.Profile.Size, parent.Profile)
+	}
+}
+
 func TestPlaceOrbitsWorldCapturedByGiant(t *testing.T) {
 	// Primary F8 V (HZ 4, floor 0). One SGG and one other world whose World2
 	// target lands on the giant's orbit, so the world becomes the giant's moon
