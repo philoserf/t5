@@ -289,7 +289,7 @@ func TestSubADriveDoesNotRefundTonnage(t *testing.T) {
 			t.Errorf("drive letter %d: cost Cr%d is negative", letter, got.Cost)
 		}
 
-		if letter < 1 && !hasProblem(got, "outside A..Z2") {
+		if letter < 1 && !hasProblem(got, "names no drive") {
 			t.Errorf("drive letter %d: no problem reported, got %v", letter, got.Problems)
 		}
 	}

@@ -53,10 +53,11 @@ func specProblems(spec ShipSpec) []string {
 		// negative, so a Letter of 0 yields -1 tons and -MCr2 — a drive that
 		// ADDS budget and frees hull space, which is the phantom the tonnage
 		// accounting exists to prevent.
-		if d.spec.Letter < 1 || d.spec.Letter > 2*maxLetter {
+		if !buildableDriveOrd(d.spec.Letter) {
 			problems = append(problems, fmt.Sprintf(
-				"%s drive size %d is outside A..Z2 (1..%d)",
-				d.kind, d.spec.Letter, 2*maxLetter))
+				"%s drive size %d names no drive: sizes are A..Z (1..%d) and the "+
+					"even Nexus pairs A2..Z2 (26..%d)",
+				d.kind, d.spec.Letter, maxLetter, 2*maxLetter))
 		}
 	}
 

@@ -153,3 +153,29 @@ func TestString(t *testing.T) {
 		t.Fatalf("String() =\n%q\nwant\n%q", got, want)
 	}
 }
+
+// TestTopLevelsCountsParentAndKnowledgeOnce: a cascade parent and a Knowledge
+// beneath it are one competency, not two. Counting both filled two of the five
+// Master Point slots from a single skill, inflating a Craftsman's Masterpoint
+// total and with it his Masterpiece chances.
+func TestTopLevelsCountsParentAndKnowledgeOnce(t *testing.T) {
+	var s Set
+
+	s.Raise("Engineer", 6)
+	s.RaiseKnowledge("Engineer", "J-Drive", 6)
+	s.Raise("Animals", 6)
+
+	// Two competencies at 6, not three: Engineer contributes once.
+	if got, want := s.TopLevels(5, 6), 12; got != want {
+		t.Errorf("TopLevels = %d, want %d (Engineer counted once, plus Animals)", got, want)
+	}
+
+	// And the knowledge alone still fills a slot when the parent is below the bar.
+	var t2 Set
+
+	t2.RaiseKnowledge("Gunner", "Turret", 6)
+
+	if got, want := t2.TopLevels(5, 6), 6; got != want {
+		t.Errorf("knowledge-only TopLevels = %d, want %d", got, want)
+	}
+}

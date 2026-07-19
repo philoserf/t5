@@ -210,7 +210,7 @@ var stageData = [...]struct {
 	Alternate:    {"Alternate", 0, 1, 1, 100, 100, 1, 1},
 	Improved:     {"Improved", 1, 1, 1, 110, 90, 1, 1},
 	Generic:      {"Generic", 1, 1, 2, 90, 110, 1, 1},
-	Modified:     {"Modified", 2, 1, 2, 110, 90, 1, 2},
+	Modified:     {"Modified", 2, 1, 1, 110, 90, 1, 2},
 	Advanced:     {"Advanced", 3, 2, 1, 120, 80, 1, 3},
 	Ultimate:     {"Ultimate", 4, 3, 1, 130, 70, 1, 4},
 }
@@ -226,6 +226,19 @@ func (s Stage) String() string {
 // driveLabel renders a drive size ordinal as its letter, or "letter2" for an
 // extended size (an even ordinal 26..48, where the "2" doubles the base letter's
 // ordinal — e.g. 26 = N x 2 = "N2").
+// buildableDriveOrd reports whether an ordinal names a drive this package can
+// build. It is driveLabel's domain stated as a predicate, and the two must agree:
+// an ordinal driveLabel renders as "?" is one no table row backs, so a spec
+// carrying it should be reported rather than silently designed.
+//
+// A..Z is 1..24. Past Z the book gangs drives with a Nexus (p.63), and only the
+// x2 gang is modelled — so the extended ordinals are exactly the EVEN 26..48. An
+// odd ordinal up there (25, 27, ...) is buildable in the book as an m-by-n gang
+// but is not modelled here, and previously designed silently as "Drive-?".
+func buildableDriveOrd(ord int) bool {
+	return driveLabel(ord) != "?"
+}
+
 func driveLabel(ord int) string {
 	switch {
 	case ord >= 1 && ord <= maxLetter:

@@ -54,10 +54,17 @@ func (s Set) TopLevels(n, minLevel int, exclude ...string) int {
 		skip[name] = true
 	}
 
-	levels := make([]int, 0, len(s.skills))
+	// One entry per competency. A cascade parent and a Knowledge beneath it are
+	// the same competency seen at two grains — TaskLevel already stacks them into
+	// one number — so counting both would fill two of the n slots with one skill.
+	// Book 1 p.75 reads "up to FIVE Skills at level 6+ (or Knowledges at
+	// level-6)": the parenthetical is an alternative way to fill a slot, not a
+	// second slot for a skill already counted.
+	best := make(map[string]int, len(s.skills))
+
 	for name, lvl := range s.skills {
-		if lvl >= minLevel && !skip[name] {
-			levels = append(levels, lvl)
+		if !skip[name] {
+			best[name] = max(best[name], lvl)
 		}
 	}
 
@@ -67,9 +74,15 @@ func (s Set) TopLevels(n, minLevel int, exclude ...string) int {
 		}
 
 		for _, lvl := range ks {
-			if lvl >= minLevel {
-				levels = append(levels, lvl)
-			}
+			best[parent] = max(best[parent], lvl)
+		}
+	}
+
+	levels := make([]int, 0, len(best))
+
+	for _, lvl := range best {
+		if lvl >= minLevel {
+			levels = append(levels, lvl)
 		}
 	}
 
