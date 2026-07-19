@@ -16,9 +16,9 @@ package chargen
 // rule that selects a Branch a second time. The page gives no rule that has an
 // officer select a Branch at all ("Officers may not change Branch"), so the
 // Officer column below is transcribed but currently unreachable — see
-// BranchOps.branchFor. Also deferred: the +1 skill for a Commission or
-// Promotion, branch automatic skills, the "Retire x2" muster pay (a named
-// benefit) and its +Officer-Rank Benefit DM, and Command College.
+// BranchOps.branchFor. Its remaining deferrals match the Soldier's: branch
+// automatic skills, the restriction on which skills a Commission or Promotion
+// may buy, and Command College.
 
 // spacerBranchOps is the Spacer's Naval Branch and Operations tables (Book 1
 // p. 81). Naval Operations use no per-branch DM, so every branch's OpsDM is 0.
