@@ -296,6 +296,11 @@ func (s *System) placeOrbits(r *dice.Roller) { //nolint:gocognit,cyclop,funlen /
 	worldRotate := rotator(hosts)
 
 	others := max(s.Worlds-1-s.GasGiants-s.Belts, 0)
+	// A captured world claims an orbit letter around its captor, and a giant can
+	// capture more than one, so the claims are kept per giant. rollSatellites
+	// re-reads them from the placed satellites when it adds the rest of the moons.
+	captorOrbits := map[int]*satelliteOrbits{}
+
 	for i := range others {
 		h := worldRotate()
 		row := p2(r.Dice(2))
@@ -318,7 +323,11 @@ func (s *System) placeOrbits(r *dice.Roller) { //nolint:gocognit,cyclop,funlen /
 			// other respect (Close/Far, an orbit letter, the parent-size rule),
 			// so it is typed as one. The two Outer tables differ in exactly one
 			// cell, 1D=4: Iceworld for a world, Stormworld for a satellite.
-			placed[gi].Satellites = append(placed[gi].Satellites, rollMoon(r, moonSpec{
+			if captorOrbits[gi] == nil {
+				captorOrbits[gi] = newSatelliteOrbits()
+			}
+
+			placed[gi].Satellites = append(placed[gi].Satellites, rollMoon(r, captorOrbits[gi], moonSpec{
 				Orbit:      placed[gi].Orbit,
 				HZOrbit:    h.hz,
 				HasHZ:      h.hasHZ,

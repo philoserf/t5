@@ -47,8 +47,20 @@ func (s *System) rollSatellites(r *dice.Roller) {
 			o.Satellites = append(o.Satellites, Satellite{Ring: true})
 		}
 
+		// The parent may already have moons: placeOrbits appends a captured world
+		// before this pass runs, and a satellite mainworld holds one of its own
+		// parent's orbit letters. Both are taken before any new moon claims one.
+		orbits := newSatelliteOrbits()
+		for _, sat := range o.Satellites {
+			orbits.take(sat.OrbitLetter)
+		}
+
+		if o.Kind == KindMainworld && (o.Giant != nil || o.Parent != nil) {
+			orbits.take(s.MainworldSatellite.OrbitLetter)
+		}
+
 		for range moons {
-			o.Satellites = append(o.Satellites, rollMoon(r, moonSpec{
+			o.Satellites = append(o.Satellites, rollMoon(r, orbits, moonSpec{
 				Orbit:      o.Orbit,
 				HZOrbit:    hz,
 				HasHZ:      hasHZ,
@@ -86,7 +98,7 @@ type moonSpec struct {
 // path — both the satellite pass and the orbit map's captured world (a world
 // whose orbit a gas giant already holds) go through it, so neither the dice order
 // (type, UWP, 2D far, Flux letter) nor the tables they read can drift apart.
-func rollMoon(r *dice.Roller, spec moonSpec) Satellite {
+func rollMoon(r *dice.Roller, orbits *satelliteOrbits, spec moonSpec) Satellite {
 	wt := satelliteType(spec.Orbit, spec.HZOrbit, spec.HasHZ, r.Die())
 
 	// No parent caps its moons at Size 0 — satelliteMaxSize resolves the
@@ -102,12 +114,7 @@ func rollMoon(r *dice.Roller, spec moonSpec) Satellite {
 	double := maxSize != worldgen.NoSizeCap && prof.Size == maxSize
 
 	far := r.Dice(2) >= 8
-	idx := dice.FluxIndex(r.Flux())
-
-	letter := closeOrbitLetters[idx]
-	if far {
-		letter = farOrbitLetters[idx]
-	}
+	letter := orbits.claim(dice.FluxIndex(r.Flux()), far)
 
 	return Satellite{
 		Far:          far,
@@ -229,4 +236,62 @@ func satelliteCount(r *dice.Roller, kind OrbitKind, orbit, hz int, hasHZ bool) (
 			rings++ // a ring, then re-roll the count
 		}
 	}
+}
+
+// satelliteOrbits tracks the orbit letters already taken around one parent body.
+// The letters are orbit *names* (Book 3 p.24 table 2C), so two moons of one
+// parent can no more share one than two worlds can share an orbit number; the
+// book's own resolution applies — "If an orbit is duplicated or precluded, adjust
+// to an adjacent or the closest possible orbit" (p.29 chart P2).
+//
+// Close and Far are separate tables of thirteen letters each, and a moon nudges
+// only within its own: Close and Far describe different physical distances, so a
+// Far moon cannot resolve a collision by moving into a Close orbit.
+type satelliteOrbits struct {
+	taken map[string]bool
+}
+
+func newSatelliteOrbits() *satelliteOrbits {
+	return &satelliteOrbits{taken: map[string]bool{}}
+}
+
+// take marks a letter as occupied by a body this type did not place — a moon the
+// orbit map already captured, or the satellite mainworld itself. The empty string
+// (a Ring, or a non-satellite mainworld) marks nothing.
+func (o *satelliteOrbits) take(letter string) {
+	if letter != "" {
+		o.taken[letter] = true
+	}
+}
+
+// claim returns the orbit letter at the rolled Flux index, or — when that orbit
+// is already occupied — the nearest free letter in the same table, spiralling
+// inward before outward exactly as orbitHost.claim does for world orbits.
+//
+// The Flux roll itself is untouched: the nudge reads an already-rolled index and
+// draws no dice, so resolving a collision cannot shift the system's dice stream.
+func (o *satelliteOrbits) claim(idx int, far bool) string {
+	table := closeOrbitLetters
+	if far {
+		table = farOrbitLetters
+	}
+
+	for d := range table {
+		if i := idx - d; i >= 0 && !o.taken[table[i]] {
+			o.taken[table[i]] = true
+
+			return table[i]
+		}
+
+		if i := idx + d; i < len(table) && !o.taken[table[i]] {
+			o.taken[table[i]] = true
+
+			return table[i]
+		}
+	}
+
+	// All thirteen orbits of this table are occupied. A parent with fourteen
+	// moons in one hemisphere is not something the book contemplates; keep the
+	// rolled letter rather than dropping a body that was generated.
+	return table[idx]
 }
