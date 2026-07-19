@@ -302,6 +302,16 @@ func validWeapon(id WeaponID) bool { return id >= 0 && int(id) < len(weaponData)
 func validMount(m Mount) bool      { return m >= 0 && int(m) < len(mountData) }
 func validRange(r Range) bool      { return r >= 0 && int(r) < len(rangeData) }
 
+// weaponName is the weapon model's name, for every renderer that prints one —
+// including the missiles, whose Type is the name of the launcher that throws them.
+func weaponName(id WeaponID) string {
+	if !validWeapon(id) {
+		return "?"
+	}
+
+	return weaponData[id].name
+}
+
 // mountName is the mount's name, for every renderer that prints one.
 func mountName(m Mount) string {
 	if !validMount(m) {
