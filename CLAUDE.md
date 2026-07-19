@@ -44,7 +44,11 @@ Tooling (go, go-task, golangci-lint, poppler's `pdftotext`) is pinned in `Brewfi
   Many-Dice fast methods for large pools (`ManyDice10`/`ManyDice2D`/`Average35`/`ManyDice35Flux`,
   Book 1 p.260), and a `Parse`/`Eval` for chart notation like `2D-2` and `Flux`. Build generators on top of this rather than calling
   `math/rand` directly. `dice.NewSource(func() int)` supplies a custom/scripted die source,
-  which is how cross-package tests pin exact rolls.
+  which is how cross-package tests pin exact rolls. `NewScripted` is **exact, not cyclic**:
+  it validates every face is a real 1..6 at construction and panics rather than wrapping when
+  a test outruns its script. That is what makes a green suite evidence that the dice stream is
+  unchanged — a script must enumerate **every** die the code under test draws, so a change in
+  dice consumption fails loudly instead of being served recycled faces.
 - `internal/ehex/` — Traveller extended-hex digits (0-9, A-Z omitting I and O). `Digit`
   encodes, `ParseDigit` decodes. Every UWP characteristic is an eHex value.
 - `internal/uwp/` — the `Profile` type and its `String` in StSAHPGL-T form (e.g. `A788899-C`).

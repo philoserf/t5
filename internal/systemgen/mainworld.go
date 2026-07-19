@@ -14,24 +14,38 @@ type MainworldSatellite struct {
 	OrbitLetter string // the satellite's orbit name, e.g. "Arr"
 }
 
-// placeMainworld gives the mainworld a concrete orbit around the primary and
-// tags its trade codes (Book 3 p.24). It rolls, in order: the HZ-variance Flux
-// (DM +2 for an M primary, −2 for O/B, Chart B) and the mainworld-type Flux
-// (Chart C, plus a satellite orbit-letter Flux when it is a satellite). A Far/
-// Close satellite mainworld earns Sa/Lk, and its climate codes (Tr/Tu/Fr/Tz)
-// are appended. It returns the mainworld orbit (−1 when the primary has no HZ)
-// and the satellite record.
+// placeMainworld rolls the orbit the mainworld wants around the primary and its
+// satellite record (Book 3 p.24). It rolls, in order: the HZ-variance Flux (DM +2
+// for an M primary, −2 for O/B, Chart B) and the mainworld-type Flux (Chart C,
+// plus a satellite orbit-letter Flux when it is a satellite). A Far/Close
+// satellite mainworld earns Sa/Lk. It returns the wanted orbit (−1 when the
+// primary has no habitable zone, so the mainworld cannot be placed) and the
+// satellite record.
+//
+// The climate codes are deliberately NOT tagged here. The wanted orbit is not yet
+// the orbit the mainworld gets: placeOrbits claims it, and claim may nudge it off
+// a reserved secondary-star orbit or clamp it to the star's precluded floor.
+// Keying the codes to the pre-claim orbit left the one-line record describing a
+// different orbit than the orbit map showed, so tagMainworldClimate runs on the
+// claimed orbit instead.
 func placeMainworld(
 	r *dice.Roller,
 	primary Star,
 	mainworld *worldgen.World,
 ) (int, MainworldSatellite) {
 	// An asteroid-belt mainworld (Size 0) is placed using the Belt column of the
-	// P2 chart without regard to the habitable zone (Book 3 p.21): no HZ variance,
-	// no gas-giant-satellite roll, and no climate codes — and it is placed even
-	// when the primary has no habitable zone.
+	// P2 chart as an absolute orbit, without regard to the habitable zone (Book 3
+	// p.21): no HZ variance, no gas-giant-satellite roll, and no climate codes —
+	// and it is placed even when the primary has no habitable zone.
+	//
+	// The Belt column is an offset table, so its low rows are negative (−1 at 2D=2,
+	// the only negative row a 2D roll reaches). An orbit is never negative, and −1
+	// is this function's "no orbit" sentinel, so emitting the raw offset dropped the
+	// belt mainworld from the orbit map altogether. Floor it at the innermost orbit
+	// the primary allows — the clamp claim would apply anyway — which keeps a belt
+	// inside the orbit domain and clear of the sentinel.
 	if mainworld.Profile.Size == 0 {
-		return p2(r.Dice(2)).belt, MainworldSatellite{}
+		return max(p2(r.Dice(2)).belt, firstOrbit(primary)), MainworldSatellite{}
 	}
 
 	hzVar := hzVarFromFlux(r.Flux() + hzVarDM(primary))
@@ -50,12 +64,23 @@ func placeMainworld(
 		return -1, sat
 	}
 
-	orbit := max(hz+hzVar, 0)
-	if codes := worldgen.ClimateCodes(mainworld.Profile, orbit, hz, true); len(codes) > 0 {
-		mainworld.TradeCodes = append(mainworld.TradeCodes, codes...)
+	return max(hz+hzVar, 0), sat
+}
+
+// tagMainworldClimate appends the climate / orbit-dependent trade codes the
+// mainworld earns from the concrete orbit it was finally placed in (Book 3 Chart
+// D, p.26). It runs after placeOrbits claims that orbit, so the mainworld's codes,
+// s.MainworldOrbit, and the orbit map always describe one orbit rather than three.
+// An asteroid-belt mainworld, placed without regard to the habitable zone, takes
+// none.
+func tagMainworldClimate(mainworld *worldgen.World, orbit, hz int, hasHZ bool) {
+	if mainworld.Profile.Size == 0 {
+		return
 	}
 
-	return orbit, sat
+	if codes := worldgen.ClimateCodes(mainworld.Profile, orbit, hz, hasHZ); len(codes) > 0 {
+		mainworld.TradeCodes = append(mainworld.TradeCodes, codes...)
+	}
 }
 
 // satellite orbit-letter names by Flux −6..+6 (Book 3 p.24 Chart C).

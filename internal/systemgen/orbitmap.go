@@ -102,6 +102,40 @@ func (h *orbitHost) claim(want int) (int, bool) {
 	return 0, false
 }
 
+// claimMainworldOrbit claims the mainworld's concrete orbit on the primary and
+// makes the rest of the system agree with it. The orbit placeMainworld rolled is
+// only what the mainworld wants: claim may nudge it off an orbit a secondary star
+// has reserved, or clamp it to the star's precluded floor. The claimed orbit is
+// therefore written back to s.MainworldOrbit and used to key the mainworld's
+// climate codes, so the one-line record, the field, and the orbit map cannot
+// describe three different orbits.
+//
+// It reports false when the mainworld has no orbit to claim.
+func (s *System) claimMainworldOrbit(primary *orbitHost) (int, bool) {
+	if s.MainworldOrbit < 0 {
+		return 0, false // the primary has no habitable zone to place it against
+	}
+
+	o, ok := primary.claim(s.MainworldOrbit)
+	if !ok {
+		// Unreachable today: nothing has been placed yet, the primary's floor is at
+		// most 10 (Book 1 p.31 sub-orbits) against a maxOrbit of 19, and at most
+		// three secondary-star orbits are reserved, so at least six orbits are free.
+		// Should a change to primaryMaxOrbit, the reservation pass, or the sub-orbit
+		// floors ever break that, drop the mainworld the way an excess world is
+		// dropped and say so in the field, rather than recording it at orbit 0 —
+		// an orbit claim never took, and which a star may already hold.
+		s.MainworldOrbit = -1
+
+		return 0, false
+	}
+
+	s.MainworldOrbit = o
+	tagMainworldClimate(&s.Mainworld, o, primary.hz, primary.hasHZ)
+
+	return o, true
+}
+
 // giantAt returns the index in placed of a gas giant occupying the given host's
 // orbit, or -1 if none does.
 func giantAt(placed []PlacedOrbit, host string, orbit int) int {
@@ -159,8 +193,7 @@ func (s *System) placeOrbits(r *dice.Roller) { //nolint:gocognit,cyclop,funlen /
 	}
 
 	giants := s.Giants
-	if s.MainworldOrbit >= 0 {
-		o, _ := primary.claim(s.MainworldOrbit)
+	if o, ok := s.claimMainworldOrbit(primary); ok {
 		mw := PlacedOrbit{Host: "Primary", Orbit: o, Kind: KindMainworld}
 		// A satellite mainworld needs a parent body in its orbit to accommodate
 		// it (Book 3 p.21). It rides the system's first gas giant; that giant is

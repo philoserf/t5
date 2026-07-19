@@ -1,6 +1,7 @@
 package chargen
 
 import (
+	"slices"
 	"testing"
 
 	"github.com/philoserf/t5/internal/dice"
@@ -41,7 +42,7 @@ func TestCharacteristicString(t *testing.T) {
 }
 
 func TestScorePanicsOutOfRange(t *testing.T) {
-	c := Generate(dice.NewScripted(4, 4))
+	c := Generate(dice.NewScripted(slices.Repeat([]int{4}, 12)...)) // six 2D characteristics
 
 	for _, ch := range []Characteristic{-1, count, 99} {
 		func() {

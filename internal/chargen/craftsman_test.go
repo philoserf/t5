@@ -1,6 +1,7 @@
 package chargen
 
 import (
+	"slices"
 	"testing"
 
 	"github.com/philoserf/t5/internal/dice"
@@ -76,7 +77,9 @@ func TestCraftsmanMasterpiece(t *testing.T) {
 		c.Skills.Raise(s, 6) // five skills at 6+
 	}
 	// Master Points = Str 8 + Craftsman 10 + (5 x 6) = 48. A 9D of nine 5s = 45 <= 48.
-	runCraftsmanTerm(dice.NewScripted(5), DefaultPolicy{}, &c, CraftsmanCareer, Strength)
+	// The term draws sixteen dice: the 9D Masterpiece attempt, then the term's
+	// skill and Continue rolls. Every one is a 5.
+	runCraftsmanTerm(dice.NewScripted(slices.Repeat([]int{5}, 16)...), DefaultPolicy{}, &c, CraftsmanCareer, Strength)
 
 	if c.Masterpieces != 1 {
 		t.Errorf("Masterpieces = %d, want 1", c.Masterpieces)

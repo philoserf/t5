@@ -1,6 +1,7 @@
 package chargen
 
 import (
+	"slices"
 	"testing"
 
 	"github.com/philoserf/t5/internal/dice"
@@ -20,7 +21,8 @@ func TestLifeStage(t *testing.T) {
 }
 
 func TestGenerateStartsAtEighteen(t *testing.T) {
-	c := Generate(dice.NewScripted(4, 4))
+	// Generate rolls six 2D characteristics: twelve dice.
+	c := Generate(dice.NewScripted(slices.Repeat([]int{4}, 12)...))
 	if c.Age != 18 || c.LifeStage() != 3 {
 		t.Fatalf("Generate age = %d (stage %d), want 18 (stage 3)", c.Age, c.LifeStage())
 	}
@@ -60,14 +62,15 @@ func TestAgingCheckDecrements(t *testing.T) {
 	// Age 34 (stage 5): every 2D of 4 (< 5) ages the three physical chars by 1;
 	// Intelligence (mental) is untouched until 66.
 	c := Character{scores: [count]int{8, 8, 8, 8, 8, 8}, Age: 34}
-	AgingCheck(dice.NewScripted(2), &c) // Dice(2) = 4 each
+	// One 2D check per physical characteristic: three rolls, six dice, each 2+2 = 4.
+	AgingCheck(dice.NewScripted(slices.Repeat([]int{2}, 6)...), &c)
 
 	if c.scores != [count]int{7, 7, 7, 8, 8, 8} {
 		t.Fatalf("after aging = %v, want [7 7 7 8 8 8]", c.scores)
 	}
 	// A high roll (12) never ages.
 	c2 := Character{scores: [count]int{8, 8, 8, 8, 8, 8}, Age: 34}
-	AgingCheck(dice.NewScripted(6), &c2)
+	AgingCheck(dice.NewScripted(slices.Repeat([]int{6}, 6)...), &c2)
 
 	if c2.scores != [count]int{8, 8, 8, 8, 8, 8} {
 		t.Fatalf("high rolls aged the character: %v", c2.scores)
@@ -94,17 +97,17 @@ func TestAgingCheckResetsZeroToOne(t *testing.T) {
 func TestAgingCheckDeathOnSecondExtreme(t *testing.T) {
 	// Three physical characteristics at 1: each aging check zeroes all three.
 	c := Character{scores: [count]int{1, 1, 1, 8, 8, 8}, Age: 34}
-	AgingCheck(dice.NewScripted(2), &c) // first extreme illness
+	AgingCheck(dice.NewScripted(slices.Repeat([]int{2}, 6)...), &c) // first extreme illness
 
 	if c.Dead || c.extremeAgings != 1 {
 		t.Fatalf("after first extreme: dead=%v extreme=%d, want alive, 1", c.Dead, c.extremeAgings)
 	}
 
-	AgingCheck(dice.NewScripted(2), &c) // second extreme illness kills
+	AgingCheck(dice.NewScripted(slices.Repeat([]int{2}, 6)...), &c) // second extreme illness kills
 
 	if !c.Dead {
 		t.Fatalf("second extreme illness did not kill")
 	}
 	// A dead character is not aged further.
-	AgingCheck(dice.NewScripted(2), &c)
+	AgingCheck(dice.NewScripted(slices.Repeat([]int{2}, 6)...), &c)
 }

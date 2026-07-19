@@ -1,6 +1,7 @@
 package chargen
 
 import (
+	"slices"
 	"testing"
 
 	"github.com/philoserf/t5/internal/dice"
@@ -89,7 +90,9 @@ func TestRunCareerRejectsEmptyCC(t *testing.T) {
 func TestRunCareerTermCount(t *testing.T) {
 	// Policy stops after 2 terms; Int 10 makes both Continue rolls (7) succeed.
 	c := Character{scores: [count]int{7, 7, 7, 10, 8, 6}, Age: 18}
-	RunCareer(dice.NewScripted(3, 4), stopAfter{2}, &c, testCareer)
+	// Each term rolls Risk, Reward and Continue, all 2D: two terms, six rolls,
+	// twelve dice, every one of them a 7.
+	RunCareer(dice.NewScripted(slices.Repeat([]int{3, 4}, 6)...), stopAfter{2}, &c, testCareer)
 
 	if len(c.Careers) != 1 || c.Careers[0].Terms != 2 || c.Age != 26 {
 		t.Fatalf("run = %+v age %d, want 2 terms, age 26", c.Careers, c.Age)
@@ -103,8 +106,17 @@ func TestRunCareerTermCount(t *testing.T) {
 func TestRunCareerMandatoryContinue(t *testing.T) {
 	// Policy wants to stop after 1 term, but a natural 2 forces a second term.
 	c := Character{scores: [count]int{7, 7, 7, 10, 8, 6}, Age: 18}
-	// Term 1 Continue rolls 2 (mandatory); term 2 Continue rolls 7 (honours the stop).
-	RunCareer(dice.NewScripted(1, 1, 3, 4), stopAfter{1}, &c, testCareer)
+	// Every term rolls Risk, Reward and Continue in that order, so the Continue
+	// rolls are the third and sixth 2D of the script: term 1 Continues on a
+	// natural 2 (mandatory), term 2 on a 7 (which honours the stop).
+	RunCareer(dice.NewScripted(
+		3, 4, // term 1 Risk: 7
+		3, 4, // term 1 Reward: 7
+		1, 1, // term 1 Continue: natural 2, mandatory
+		3, 4, // term 2 Risk: 7
+		3, 4, // term 2 Reward: 7
+		3, 4, // term 2 Continue: 7, the policy's stop is honoured
+	), stopAfter{1}, &c, testCareer)
 
 	if c.Careers[0].Terms != 2 {
 		t.Fatalf("mandatory continue: %d terms, want 2", c.Careers[0].Terms)
@@ -116,7 +128,9 @@ func TestRunCareerStopsAtAging(t *testing.T) {
 	// aging check (2D=7 < stage 5 is false) inflicts nothing. DefaultPolicy then
 	// serves until aging begins — four terms from 18 to 34.
 	c := Character{scores: [count]int{7, 7, 7, 10, 8, 6}, Age: 18}
-	RunCareer(dice.NewScripted(3, 4), DefaultPolicy{}, &c, testCareer)
+	// Four terms of Risk/Reward/Continue (24 dice) plus the age-34 aging check's
+	// three physical 2D rolls (6 dice): thirty dice, every roll a 7.
+	RunCareer(dice.NewScripted(slices.Repeat([]int{3, 4}, 15)...), DefaultPolicy{}, &c, testCareer)
 
 	if c.Careers[0].Terms != 4 || c.Age != 34 {
 		t.Fatalf("default policy: %d terms age %d, want 4 terms age 34", c.Careers[0].Terms, c.Age)
@@ -160,7 +174,8 @@ func runOneTerm(r *dice.Roller, c *Character, cc Characteristic) TermOutcome {
 func TestRunTermRiskSuccess(t *testing.T) {
 	// Strength 7, Risk target 7: a roll of 7 survives and the CC is untouched.
 	c := Character{scores: [count]int{7, 7, 7, 8, 8, 8}}
-	if got := runOneTerm(dice.NewScripted(3, 4), &c, Strength); got != Ongoing {
+	// Risk 7 (held), then the Reward roll every term makes (Book 1 p.65).
+	if got := runOneTerm(dice.NewScripted(3, 4, 3, 4), &c, Strength); got != Ongoing {
 		t.Fatalf("outcome = %v, want Ongoing", got)
 	}
 
@@ -484,8 +499,15 @@ func TestGenerateCareeredQualify(t *testing.T) {
 	// UPP rolls (12 dice) giving Int = 8; the qualify/retry rolls follow.
 	upp := []int{4, 4, 4, 4, 4, 4, 4, 4, 5, 5, 3, 3}
 
-	// A qualify roll of 2 (<= Int) succeeds, so the character runs the career.
-	seq := append(append([]int{}, upp...), 1, 1 /*qualify 2*/, 3, 4 /*continue*/)
+	// A qualify roll of 2 (<= Int) succeeds, so the character runs the career:
+	// one term of Risk, Reward and Continue, then the muster-out benefit die.
+	seq := append(append([]int{}, upp...),
+		1, 1, // qualify: 2
+		3, 4, // term 1 Risk: 7
+		3, 4, // term 1 Reward: 7
+		3, 4, // term 1 Continue: 7, the policy's one-term stop is honoured
+		4, // muster-out benefit
+	)
 
 	c := GenerateCareered(dice.NewScripted(seq...), stopAfter{1}, worldgen.World{}, testCareer)
 	if len(c.Careers) != 1 || c.Careers[0].Career != testCareer.ID {
@@ -495,7 +517,10 @@ func TestGenerateCareeredQualify(t *testing.T) {
 	// A failed qualify (12) has no Begin retry (Book 1 p.65: no career in this
 	// edition grants one), so the character falls straight back to the auto-begin
 	// Citizen life rather than getting a second roll or ending up careerless.
+	// After the failed qualify the character serves one auto-begin Citizen term:
+	// the Citizen Life roll, its skill roll, the Continue roll, and muster-out.
 	seqDraft := append(append([]int{}, upp...), 6, 6 /*qualify 12*/)
+	seqDraft = append(seqDraft, slices.Repeat([]int{4}, 9)...)
 
 	cDraft := GenerateCareered(
 		dice.NewScripted(seqDraft...),
@@ -528,8 +553,9 @@ func (p *twoCitizen) NextCareer(Character) (Career, bool) {
 func TestMultiCareer(t *testing.T) {
 	// The Citizen auto-begins, so a character serves two one-term Citizen careers
 	// in sequence regardless of the exact rolls.
+	// Thirty dice: the twelve UPP dice and then two one-term Citizen careers.
 	c := GenerateCareered(
-		dice.NewScripted(3, 4),
+		dice.NewScripted(slices.Repeat([]int{3, 4}, 15)...),
 		&twoCitizen{stopAfter: stopAfter{1}},
 		worldgen.World{},
 		CitizenCareer,

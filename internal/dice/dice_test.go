@@ -8,6 +8,52 @@ func scripted(vals ...int) *Roller {
 	return NewScripted(vals...)
 }
 
+// TestScriptedNeedsFaces covers the empty-script guard.
+func TestScriptedNeedsFaces(t *testing.T) {
+	defer func() {
+		if recover() == nil {
+			t.Error("NewScripted() with no faces did not panic")
+		}
+	}()
+
+	NewScripted()
+}
+
+// TestScriptedRejectsNonFaces is #237: a script is validated eagerly, so a
+// typo'd or off-by-one face fails at the offending line rather than flowing on
+// as a legal-looking roll and silently shifting a golden's expected value.
+func TestScriptedRejectsNonFaces(t *testing.T) {
+	for _, bad := range [][]int{{0}, {7}, {-1}, {3, 4, 7}} {
+		func() {
+			defer func() {
+				if recover() == nil {
+					t.Errorf("NewScripted(%v) accepted a non-die face", bad)
+				}
+			}()
+
+			NewScripted(bad...)
+		}()
+	}
+}
+
+// TestScriptedPanicsWhenExhausted is #289: the script is exact, not cyclic.
+// Wrapping would let a change in dice consumption pass every golden test
+// unnoticed, which is precisely what a scripted Roller exists to prevent.
+func TestScriptedPanicsWhenExhausted(t *testing.T) {
+	r := scripted(1, 2)
+	if got := r.Dice(2); got != 3 {
+		t.Fatalf("Dice(2) = %d, want 3", got)
+	}
+
+	defer func() {
+		if recover() == nil {
+			t.Error("drawing past the end of the script did not panic")
+		}
+	}()
+
+	r.Die()
+}
+
 func TestDie(t *testing.T) {
 	r := scripted(4)
 	if got := r.Die(); got != 4 {

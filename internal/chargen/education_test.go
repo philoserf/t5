@@ -328,6 +328,7 @@ func TestMastersRaisesMajor(t *testing.T) {
 	p := &eduPolicy{}
 
 	seq := []int{
+		1, 1, // admission Check: 2, admitted
 		1, 1, // year 1 Check Int(12): 2, pass -> Major History 1->2
 		1, 1, // year 2: pass -> Major 2->3, Minor Art 1->2 (2nd pass)
 	}

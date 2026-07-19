@@ -11,7 +11,10 @@
 // Dice Appendix (pp. 253-260).
 package dice
 
-import "math/rand/v2"
+import (
+	"fmt"
+	"math/rand/v2"
+)
 
 // A Roller is the single source of die rolls. Construct one with New (auto
 // seeded) or NewWithSeed (deterministic, for tests and reproducible worlds).
@@ -54,19 +57,39 @@ func NewSource(next func() int) *Roller {
 	return &Roller{d6: next}
 }
 
-// NewScripted returns a Roller that yields the given die faces in order,
-// cycling back to the start once they are exhausted. It is a convenience over
-// NewSource for deterministic tests and replay, and panics if no faces are
-// given.
+// NewScripted returns a Roller that yields the given die faces in order. It is
+// a convenience over NewSource for deterministic tests and replay.
+//
+// The script is exact, not cyclic: drawing past its end panics rather than
+// wrapping. A scripted Roller exists to pin the dice a golden test consumes, so
+// a test that outruns its script no longer describes the rolls being made —
+// silently serving it recycled faces would let a change in dice consumption
+// pass unnoticed. For the same reason the faces are validated eagerly: every
+// entry must be a real die face in 1..6, and a bad one panics at construction,
+// pointing at the offending script rather than at whichever roll later drew it.
+//
+// It panics if no faces are given.
 func NewScripted(faces ...int) *Roller {
 	if len(faces) == 0 {
 		panic("dice: NewScripted needs at least one face")
 	}
 
+	for i, f := range faces {
+		if f < 1 || f > 6 {
+			panic(fmt.Sprintf("dice: NewScripted face %d at index %d is not a die face (want 1..6)", f, i))
+		}
+	}
+
 	i := 0
 
 	return NewSource(func() int {
-		v := faces[i%len(faces)]
+		if i >= len(faces) {
+			panic(fmt.Sprintf("dice: NewScripted script exhausted after %d faces; "+
+				"the test consumed more dice than it scripted, so the script no longer "+
+				"describes the rolls being made — extend it to cover every roll", len(faces)))
+		}
+
+		v := faces[i]
 		i++
 
 		return v
