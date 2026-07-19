@@ -28,6 +28,8 @@ func (goldenPolicy) PursueGraduateSchool(Character) bool               { return 
 func (goldenPolicy) TakeWaiver(Character, int) bool                    { return true }
 func (goldenPolicy) NextCareer(Character) (Career, bool)               { return Career{}, false }
 func (goldenPolicy) ChooseExplorerDuty(Character) bool                 { return true }
+func (goldenPolicy) RerollBranch(Character, CareerRecord) bool         { return false }
+func (goldenPolicy) RerollBranchOnCommission(Character) bool           { return false }
 
 // TestGoldenScout traces a complete two-term Scout end-to-end from a scripted
 // roller and policy, locking the Scout transcription and the whole career

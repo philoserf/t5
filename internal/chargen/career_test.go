@@ -44,6 +44,8 @@ func (stopAfter) PursueGraduateSchool(Character) bool               { return fal
 func (stopAfter) TakeWaiver(Character, int) bool                    { return true }
 func (stopAfter) NextCareer(Character) (Career, bool)               { return Career{}, false }
 func (stopAfter) ChooseExplorerDuty(Character) bool                 { return true }
+func (stopAfter) RerollBranch(Character, CareerRecord) bool         { return false }
+func (stopAfter) RerollBranchOnCommission(Character) bool           { return false }
 
 func TestContinueTarget(t *testing.T) {
 	c := Character{scores: [count]int{7, 7, 7, 10, 8, 6}}
@@ -578,5 +580,86 @@ func TestMultiCareer(t *testing.T) {
 
 	if c.Careers[0].Career != Citizen || c.Careers[1].Career != Citizen {
 		t.Errorf("records = %+v, want two Citizen careers", c.Careers)
+	}
+}
+
+// rerollingPolicy always takes the p. 66 end-of-term Branch reroll, and rolls
+// for a new Branch on Commission — the opposite of every default.
+type rerollingPolicy struct{ stopAfter }
+
+func (rerollingPolicy) RerollBranch(Character, CareerRecord) bool { return true }
+func (rerollingPolicy) RerollBranchOnCommission(Character) bool   { return true }
+
+// TestCommissionBranchColumnSwitch locks the one Branch mapping Book 1 p. 66
+// names by hand: "for Spacers, Crew becomes Line". A commissioned Spacer keeps
+// his Branch, but reads it from the Officer column — Crew has no officer
+// counterpart and becomes Line, while a branch printed in both columns is
+// unchanged. A career with a single Branch table keeps exactly what it had.
+func TestCommissionBranchColumnSwitch(t *testing.T) {
+	for _, tc := range []struct {
+		roll int
+		want string
+	}{
+		{1, "Line"},     // enlisted Crew — the case the book spells out
+		{2, "Line"},     // enlisted Crew
+		{3, "Engineer"}, // present in both columns: unchanged
+		{5, "Gunnery"},
+		{7, "Technical"},
+		{8, "Medical"},
+	} {
+		if got := spacerBranchOps.commissionBranch(tc.roll).Name; got != tc.want {
+			t.Errorf("Spacer branch roll %d commissioned = %q, want %q", tc.roll, got, tc.want)
+		}
+	}
+
+	// The engine path: a commissioned Spacer who keeps his Branch (the default)
+	// rolls no die and takes the Officer column's mod for the same roll.
+	c := Character{scores: [count]int{7, 7, 7, 7, 7, 7}}
+	run := careerRun{officer: true, branchRoll: 1} // enlisted Crew, just commissioned
+	changeBranchOnCommission(dice.NewScripted(6), stopAfter{}, &c, &run, SpacerCareer)
+
+	if want := spacerBranchOps.Branches[1]; run.branchMod != want.Mod || run.branchRoll != 1 {
+		t.Errorf("commissioned Spacer = roll %d mod %d, want roll 1 mod %d (officer Line)",
+			run.branchRoll, run.branchMod, want.Mod)
+	}
+
+	// The Soldier prints one Branch table, so a Commission changes nothing.
+	for roll := 1; roll <= 8; roll++ {
+		want := soldierBranchOps.Branches[roll].Name
+		if got := soldierBranchOps.commissionBranch(roll).Name; got != want {
+			t.Errorf("Soldier branch roll %d commissioned = %q, want %q (single column)", roll, got, want)
+		}
+	}
+}
+
+// TestRerollBranchIsDiceNeutralByDefault is the guarantee that made this rule
+// safe to add: keeping the Branch — what every default policy does — rolls no
+// die, so the armed-forces goldens do not move. A policy that rerolls draws one
+// extra die per surviving term, and an officer never gets the offer.
+func TestRerollBranchIsDiceNeutralByDefault(t *testing.T) {
+	c := Character{scores: [count]int{7, 7, 7, 7, 7, 7}}
+	run := careerRun{branchRoll: 1, branchMod: 9, branchOpsDM: 9}
+
+	// Keeping: the script's lone 6 (enlisted Gunnery, mod 1) is never drawn, so
+	// the Branch keeps the mod 9 no table holds.
+	rerollBranch(dice.NewScripted(6), stopAfter{}, &c, &run, SpacerCareer, CareerRecord{})
+
+	if run.branchMod != 9 {
+		t.Errorf("keeping changed the Branch: mod = %d, want the untouched 9", run.branchMod)
+	}
+
+	// Rerolling: one die, read from the Enlisted column (roll 6 = Gunnery, mod 1).
+	rerollBranch(dice.NewScripted(6), rerollingPolicy{}, &c, &run, SpacerCareer, CareerRecord{})
+
+	if run.branchRoll != 6 || run.branchMod != 1 {
+		t.Errorf("reroll = roll %d mod %d, want roll 6 mod 1 (enlisted Gunnery)", run.branchRoll, run.branchMod)
+	}
+
+	// An Officer may not change Branch (p. 66), whatever the policy wants.
+	officer := careerRun{officer: true, branchRoll: 1, branchMod: 9}
+	rerollBranch(dice.NewScripted(6), rerollingPolicy{}, &c, &officer, SpacerCareer, CareerRecord{})
+
+	if officer.branchMod != 9 {
+		t.Errorf("an officer changed Branch: mod = %d, want the untouched 9", officer.branchMod)
 	}
 }

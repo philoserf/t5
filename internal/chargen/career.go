@@ -184,11 +184,31 @@ type Branch struct {
 // print one, which serves either status; the Spacer's NAVAL BRANCH (p. 81)
 // prints Officer and Enlisted columns that disagree on four of its eight rolls,
 // so a character reads the column matching their status when they select a Branch
-// (branchFor). Every character enters a career enlisted (Book 1 p. 64), and the
-// engine selects Branch once at career start, so today only the Enlisted column
-// is reachable — but the columns are kept apart rather than collapsed, because
-// the book's "Enlisted may select a new Branch upon Promotion" (deferred) makes
-// the status a real input to the lookup.
+// (branchFor). Every character enters a career enlisted (Book 1 p. 64), so the
+// Enlisted column is the one a career start reads; the Officer column is reached
+// at Commission (commissionBranch).
+//
+// WHEN Branch may change is a genuine conflict between two pages, resolved in
+// favor of the general rule. The career pages say "Enlisted may select a new
+// Branch upon Promotion" (p. 81), but p. 66 states the rule for the Armed Forces
+// entire: "A non-officer character may change (reselect or reroll) Branch at the
+// end of each Term. A character who receives a Commission may roll for Branch or
+// keep his current Branch (for Spacers, Crew becomes Line). An Officer may not
+// change Branch." The engine follows p. 66 — end of every term, not only a
+// promoted one — because p. 81 is a career-page shorthand for a rule the general
+// section spells out, and the wider trigger subsumes the narrower one.
+//
+// The choice itself is the policy's (Policy.RerollBranch, Policy.RerollBranchOnCommission),
+// defaulting to keeping the current Branch: keeping rolls no die, so a default
+// character's dice stream is exactly what it was before this rule existed.
+//
+// The p. 66 option to *select* rather than reroll a Branch is not offered. The
+// book gates selection on a roll — "He must roll Soc or less to select Branch"
+// (p. 66's worked example; the p. 72 checklists print "Select Branch Soc") — and
+// that gate is not implemented anywhere, at career start included, where the
+// engine simply rolls. Offering free selection without the gate would hand a
+// character their best Branch for nothing; the gate and the option belong in one
+// change.
 type BranchOps struct {
 	Branches [9]Branch // indexed 1-8 by the branch roll (index 0 unused)
 	// EnlistedBranches is the separate Enlisted column, for a career that prints
@@ -203,6 +223,33 @@ type BranchOps struct {
 func (bo *BranchOps) branchFor(officer bool, roll int) Branch {
 	if !officer && bo.EnlistedBranches != nil {
 		return bo.EnlistedBranches[roll]
+	}
+
+	return bo.Branches[roll]
+}
+
+// commissionBranch is the Branch a newly commissioned character keeps (Book 1
+// p. 66: "A character who receives a Commission may roll for Branch or keep his
+// current Branch (for Spacers, Crew becomes Line)"). roll is the branch roll
+// that chose their enlisted Branch.
+//
+// Keeping a Branch across the Commission means re-reading it from the Officer
+// column, and the book names the one case where the columns cannot agree: an
+// enlisted Spacer's Crew has no officer counterpart, so it becomes Line. That is
+// derived here rather than special-cased — the Branch is matched by name in the
+// Officer column, and only a name absent from it (Crew) falls back to the
+// officer entry at the same roll, which on the p. 81 table is Line. A career
+// printing a single Branch table returns the same Branch it already had.
+func (bo *BranchOps) commissionBranch(roll int) Branch {
+	if bo.EnlistedBranches == nil {
+		return bo.Branches[roll]
+	}
+
+	current := bo.EnlistedBranches[roll]
+	for i := 1; i < len(bo.Branches); i++ {
+		if bo.Branches[i].Name == current.Name {
+			return bo.Branches[i]
+		}
 	}
 
 	return bo.Branches[roll]
@@ -354,6 +401,7 @@ type careerRun struct {
 	commends    int              // Commendations earned this career (per-career muster rolls/DM)
 	branchMod   int              // the chosen armed-forces Branch's R&R mod
 	branchOpsDM int              // the chosen Branch's DM on Operations rolls
+	branchRoll  int              // the roll that chose the current Branch (re-read at Commission)
 	terms       int              // terms served before the current one (the Rogue's "Mod +Terms")
 	inPrison    bool             // the Rogue serves the coming term in prison (Book 1 p. 84)
 }
@@ -511,11 +559,11 @@ func runCareer(r *dice.Roller, p Policy, c *Character, run *careerRun, career Ca
 	}
 
 	if career.BranchOps != nil {
-		// Branch is chosen once, at career start — where every character is still
+		// Branch is chosen at career start — where every character is still
 		// enlisted (rank R1 above), so run.officer is false and a two-column table
-		// is read from its Enlisted side.
-		b := career.BranchOps.branchFor(run.officer, min(r.Die()+eduBonus(*c), 8))
-		run.branchMod, run.branchOpsDM = b.Mod, b.OpsDM
+		// is read from its Enlisted side. A non-officer may reselect it at the end
+		// of any later term (rerollBranch).
+		rollBranch(r, c, run, career)
 	}
 
 	for {
@@ -542,6 +590,12 @@ func runCareer(r *dice.Roller, p Policy, c *Character, run *careerRun, career Ca
 
 			break
 		}
+
+		// The term is over and the character survived it: a non-officer may change
+		// Branch (Book 1 p. 66, "at the end of each Term"). It runs before the
+		// Continue roll — the change belongs to the term that just ended, and the
+		// Continue roll reads no Branch, so the order is not observable.
+		rerollBranch(r, p, c, run, career, rec)
 
 		if !continues(r, p, *c, career, rec, run) {
 			rec.Outcome = MusteredOut
@@ -667,7 +721,7 @@ func runTerm(r *dice.Roller, p Policy, c *Character, run *careerRun, career Care
 	}
 
 	elig := career.EligPerTerm
-	if resolveRank(r, c, run, career) {
+	if resolveRank(r, p, c, run, career) {
 		elig++
 	}
 
@@ -707,6 +761,54 @@ func grantReward(
 		c.Commendations++
 		run.commends++
 	}
+}
+
+// rollBranch rolls a Branch (1D, +2 if Edu 10+; Book 1 pp. 81-86) and makes it
+// the run's current Branch, read from the column matching the character's
+// status. It serves both the career-start selection and a non-officer's
+// end-of-term reroll.
+func rollBranch(r *dice.Roller, c *Character, run *careerRun, career Career) {
+	run.branchRoll = min(r.Die()+eduBonus(*c), 8)
+	holdBranch(run, career.BranchOps.branchFor(run.officer, run.branchRoll))
+}
+
+// holdBranch makes b the run's current Branch.
+func holdBranch(run *careerRun, b Branch) {
+	run.branchMod, run.branchOpsDM = b.Mod, b.OpsDM
+}
+
+// rerollBranch offers a surviving non-officer the end-of-term Branch change of
+// Book 1 p. 66 ("A non-officer character may change (reselect or reroll) Branch
+// at the end of each Term"). An officer may not change Branch, and a career
+// without a Branch table has nothing to change. Keeping — the default policy —
+// rolls no die.
+func rerollBranch(r *dice.Roller, p Policy, c *Character, run *careerRun, career Career, rec CareerRecord) {
+	if career.BranchOps == nil || run.officer {
+		return
+	}
+
+	if p.RerollBranch(*c, rec) {
+		rollBranch(r, c, run, career)
+	}
+}
+
+// changeBranchOnCommission resolves the Branch of a character who has just been
+// commissioned (Book 1 p. 66: "A character who receives a Commission may roll
+// for Branch or keep his current Branch"). The policy chooses; the default keeps
+// it, which rolls no die but still re-reads the Branch from the Officer column
+// (BranchOps.commissionBranch), since that is the column an officer serves in.
+func changeBranchOnCommission(r *dice.Roller, p Policy, c *Character, run *careerRun, career Career) {
+	if career.BranchOps == nil {
+		return
+	}
+
+	if p.RerollBranchOnCommission(*c) {
+		rollBranch(r, c, run, career) // run.officer is already true: the Officer column
+
+		return
+	}
+
+	holdBranch(run, career.BranchOps.commissionBranch(run.branchRoll))
 }
 
 // branchOpsMod returns an armed-forces term's combined Branch & Operations mod
@@ -1125,7 +1227,7 @@ func awardCitizenLife(p Policy, c *Character, run *careerRun) {
 // Medals, Wound Badges, or Publications. Reaching a rank grants its auto-skill.
 // It reports whether the character commissioned or promoted this term (which
 // earns one extra skill, Book 1 p. 82).
-func resolveRank(r *dice.Roller, c *Character, run *careerRun, career Career) bool {
+func resolveRank(r *dice.Roller, p Policy, c *Character, run *careerRun, career Career) bool {
 	if !career.hasRanks() {
 		return false
 	}
@@ -1158,6 +1260,7 @@ func resolveRank(r *dice.Roller, c *Character, run *careerRun, career Career) bo
 		run.rank = 1
 
 		grantRankSkill(c, career.OfficerRanks, 1)
+		changeBranchOnCommission(r, p, c, run, career)
 
 		return true
 	}

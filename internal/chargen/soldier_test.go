@@ -101,7 +101,7 @@ func TestResolveRankCommission(t *testing.T) {
 	run := careerRun{rank: 2}
 	// Commission vs End 8: 7 <= 8. resolveRank reports the promotion (which earns
 	// the term's extra skill).
-	if !resolveRank(dice.NewScripted(3, 4), &c, &run, SoldierCareer) {
+	if !resolveRank(dice.NewScripted(3, 4), DefaultPolicy{}, &c, &run, SoldierCareer) {
 		t.Error("resolveRank should report true on a successful commission")
 	}
 
@@ -115,7 +115,7 @@ func TestResolveRankCommission(t *testing.T) {
 	// A failed commission and enlisted promotion report false (no extra skill).
 	stuck := careerRun{rank: 2}
 	// Two rolls of 12: the Commission fails, then the Enlisted Promotion.
-	if resolveRank(dice.NewScripted(slices.Repeat([]int{6}, 4)...), &c, &stuck, SoldierCareer) {
+	if resolveRank(dice.NewScripted(slices.Repeat([]int{6}, 4)...), DefaultPolicy{}, &c, &stuck, SoldierCareer) {
 		t.Error("resolveRank should report false when neither commission nor promotion succeeds")
 	}
 }
