@@ -216,23 +216,25 @@ func (s *System) placeOrbits(r *dice.Roller) { //nolint:gocognit,cyclop,funlen /
 				mw.Giant = &giants[0]
 				giants = giants[1:]
 			default:
-				// Size is read as a dimension here — the floor the host must clear.
-				// That is only sound because a belt mainworld never reaches this
-				// branch: placeMainworld returns an empty MainworldSatellite for one
-				// (mainworld.go), so IsSatellite is false. Ask rather than rely on
-				// that invariant holding from another file, because reading the
-				// belt code as a dimension is exactly how this package's last three
-				// bugs happened.
-				floor := s.Mainworld.Profile.Size
-				if s.Mainworld.Profile.IsBelt() {
-					floor = 0 // a belt has no dimension to clear
-				}
-
+				// Size is read as a dimension here — the floor the host must
+				// clear — which is the read that caused this package's last
+				// three bugs. It is sound in exactly one way, worth stating
+				// because it is not local: a belt mainworld never reaches this
+				// branch, since placeMainworld returns an empty
+				// MainworldSatellite for one (mainworld.go), leaving IsSatellite
+				// false.
+				//
+				// Deliberately no guard. Flooring at BeltSize would be a no-op —
+				// BeltSize is 0, and so is the Size it would replace — and a
+				// no-op that reads as protection is worse than none. If this
+				// ever needs enforcing, the enforcement belongs in the type
+				// (a Size that cannot be silently read as a dimension), not in
+				// a redundant branch here.
 				prof := worldgen.GenerateHostWorld(
 					r,
 					worldgen.BigWorld,
 					s.Mainworld.Profile.Population,
-					floor,
+					s.Mainworld.Profile.Size,
 				)
 				mw.Parent = &OtherWorld{Type: worldgen.BigWorld, Profile: prof}
 			}

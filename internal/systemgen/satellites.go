@@ -181,11 +181,16 @@ func (s *System) satelliteParent(o *PlacedOrbit) (OrbitKind, int) {
 	case o.Kind == KindMainworld && o.Giant != nil:
 		return KindGasGiant, worldgen.NoSizeCap
 	case o.Kind == KindMainworld && o.Parent != nil:
-		return satelliteBody(o.Parent.Profile)
+		// The accommodating host is a BigWorld (Siz 2D+7), never a belt.
+		return satelliteBody(o.Parent.Profile, false)
 	case o.Kind == KindMainworld:
-		return satelliteBody(s.Mainworld.Profile)
+		// A mainworld's belt-ness IS its Size digit: 0 is the asteroid-belt code
+		// (Book 3 p.16, and the convention PortFacilities reads for a Beltport).
+		return satelliteBody(s.Mainworld.Profile, s.Mainworld.Profile.IsBelt())
 	case o.Kind == KindWorld && o.World != nil:
-		return satelliteBody(o.World.Profile)
+		// A secondary world's belt-ness is its TYPE, not its Size: Planetoids is
+		// the belt (St000PGL-T), while a Size-0 Worldlet is a very small world.
+		return satelliteBody(o.World.Profile, o.World.Type == worldgen.Planetoids)
 	default:
 		// A gas giant or a belt orbit: uncapped, and a belt rolls no moons at all.
 		return o.Kind, worldgen.NoSizeCap
@@ -204,9 +209,16 @@ func (s *System) satelliteParent(o *PlacedOrbit) (OrbitKind, int) {
 // worlds and gas giants), and it caps nothing — capping to Size 0 would cut every
 // moon to Size 0, taking its Atmosphere, Hydrographics and Tech Level with it and
 // rendering a Big World as Y000000-0 (#213).
-func satelliteBody(p uwp.Profile) (OrbitKind, int) {
-	if p.IsBelt() {
+func satelliteBody(p uwp.Profile, isBelt bool) (OrbitKind, int) {
+	if isBelt {
 		return KindBelt, worldgen.NoSizeCap
+	}
+	// A non-belt can still be Size 0 — a Worldlet rolls max(1D-3, 0), and the
+	// 2D-2 types roll 0 on snake eyes. That is a genuinely tiny world, not a
+	// belt, so it keeps the world count rule; it simply has no dimension for a
+	// satellite to be smaller than, so nothing caps its moons.
+	if p.Size <= uwp.BeltSize {
+		return KindWorld, worldgen.NoSizeCap
 	}
 
 	return KindWorld, p.Size
