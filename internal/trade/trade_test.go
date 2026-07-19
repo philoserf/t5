@@ -36,6 +36,23 @@ func TestBeowulfJourney(t *testing.T) {
 	if got := CargoID(10, []string{"Ri"}, ""); got != "A-Ri Cr5,000" {
 		t.Errorf("Cargo ID = %q, want %q", got, "A-Ri Cr5,000")
 	}
+	// Carried to Uakye B439598-D Ni (TL 13): source Ri matches nothing on a
+	// Non-Industrial market, so the price stays at the Cr5,000 base and the TL
+	// effect is x(1 + 10%x(10-13)) = Cr3,500.
+	//
+	// The book's own line here is self-contradictory: it declares the
+	// post-match base "=Cr5,000 + [no TCs]", then multiplies "x 10% x 6,000",
+	// then states "= Cr4,200" (= 6,000 - 1,800). No reading reconciles the
+	// three numbers — 5,000 - 1,800 = 3,200 and 5,000 x 70% = 3,500. The
+	// Cr6,000 is the Alell leg's post-match base copied forward a paragraph.
+	//
+	// The two adjoining legs are the arbiter: both apply the TL percentage to
+	// the POST-MATCH price and both reconcile exactly (Alell 6,000 x 130% =
+	// 7,800; the Efate return 7,000 x 70% = 4,900), and the assertions above
+	// and below already lock them. Under that one formula Uakye is Cr3,500.
+	if got := Price(10, 13, []string{"Ri"}, []string{"Ni"}); got != 3500 {
+		t.Errorf("Uakye price = %d, want 3500", got)
+	}
 	// Carried to Efate (market Hi In, TL 13): source Ri matches Hi and In
 	// (+2,000) -> Cr7,000, x(1 + 10%x(10-13)) = Cr4,900.
 	priceEfate := Price(10, 13, []string{"Ri"}, []string{"Hi", "In", "An"})
