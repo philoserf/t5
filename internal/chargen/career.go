@@ -179,9 +179,33 @@ type Branch struct {
 // the highest mod. The combined mod (branch + best operations) makes Risk &
 // Reward riskier and more rewarding — negative on the Risk roll, positive on the
 // Reward roll.
+//
+// The Branch table can print two columns. The Soldier (p. 82) and Marine (p. 86)
+// print one, which serves either status; the Spacer's NAVAL BRANCH (p. 81)
+// prints Officer and Enlisted columns that disagree on four of its eight rolls,
+// so a character reads the column matching their status when they select a Branch
+// (branchFor). Every character enters a career enlisted (Book 1 p. 64), and the
+// engine selects Branch once at career start, so today only the Enlisted column
+// is reachable — but the columns are kept apart rather than collapsed, because
+// the book's "Enlisted may select a new Branch upon Promotion" (deferred) makes
+// the status a real input to the lookup.
 type BranchOps struct {
 	Branches [9]Branch // indexed 1-8 by the branch roll (index 0 unused)
-	OpsMods  [10]int   // indexed 1-9 by the operations roll (index 0 unused)
+	// EnlistedBranches is the separate Enlisted column, for a career that prints
+	// one (the Spacer). Where it is nil the career prints a single Branch table
+	// and Branches serves both officers and enlisted.
+	EnlistedBranches *[9]Branch
+	OpsMods          [10]int // indexed 1-9 by the operations roll (index 0 unused)
+}
+
+// branchFor returns the Branch for a branch roll, read from the column matching
+// the character's status at the moment they select a Branch (Book 1 p. 81).
+func (bo *BranchOps) branchFor(officer bool, roll int) Branch {
+	if !officer && bo.EnlistedBranches != nil {
+		return bo.EnlistedBranches[roll]
+	}
+
+	return bo.Branches[roll]
 }
 
 // eduBonus is the +2 Branch/Operations die modifier for a well-educated
@@ -421,7 +445,10 @@ func RunCareer(r *dice.Roller, p Policy, c *Character, career Career) {
 	}
 
 	if career.BranchOps != nil {
-		b := career.BranchOps.Branches[min(r.Die()+eduBonus(*c), 8)] // Branch chosen once
+		// Branch is chosen once, at career start — where every character is still
+		// enlisted (rank R1 above), so run.officer is false and a two-column table
+		// is read from its Enlisted side.
+		b := career.BranchOps.branchFor(run.officer, min(r.Die()+eduBonus(*c), 8))
 		run.branchMod, run.branchOpsDM = b.Mod, b.OpsDM
 	}
 

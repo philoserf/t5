@@ -79,8 +79,16 @@ Tooling (go, go-task, golangci-lint, poppler's `pdftotext`) is pinned in `Brewfi
   gives every placed body its moons — each a real satellite with a type (`satelliteType`, the p.29
   Satellites tables) and UWP, capped to its parent's size with a double-planet flag at equal size
   (Book 3 p.21), or a Ring. `rollMoon` is the **single** moon-assembly path (both the satellite pass
-  and the orbit map's gas-giant-captured world go through it, so their dice order cannot drift), and
-  the size cap is applied **inside** generation via `worldgen.GenerateSatelliteWorld` — Atmosphere is
+  and the orbit map's gas-giant-captured world go through it, so neither their dice order nor the
+  tables they read can drift — the Outer Worlds and Outer Satellites tables disagree at 1D=4, and a
+  captured world is created as a satellite, so it is typed as one). `satelliteParent` names the body
+  an orbit's moons belong to, which is **not** always the orbit's Kind: when the mainworld is itself
+  a satellite, p.21 puts a gas giant (or a `GenerateHostWorld` BigWorld, floored at the mainworld's
+  own Size) in its orbit, so the orbit's moons are counted and capped for that parent and render as
+  the mainworld's *sibling* moons. Orbit letters are orbit names, so `satelliteOrbits` keeps them
+  unique per parent, nudging a duplicate to the nearest free letter without touching the Flux roll
+  (p.29, "adjust to an adjacent or the closest possible orbit"). The size cap is applied
+  **inside** generation via `worldgen.GenerateSatelliteWorld` — Atmosphere is
   Flux+Size and Hydrographics is Flux+Atmosphere, so capping Size after the roll would leave a
   profile describing the larger world and break the World Creation chart's own structural rules
   ("If Siz=0, Atm=0", "If Siz <2, Hyd =0", p.24). Capping in place consumes identical dice, so it

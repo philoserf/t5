@@ -124,6 +124,36 @@ func TestPlaceOrbitsSatelliteMainworldNoGasGiant(t *testing.T) {
 	}
 }
 
+// TestPlaceOrbitsBigWorldParentIsNotSmallerThanItsMoon is the regression for
+// #215. The accommodating BigWorld parent rolls Size 2D+7 = 9..19, but a
+// mainworld's Size reaches 15 (rollSize's 2D-2, rerolling a 10 as 1D+9), so the
+// parent could come out smaller than the moon it exists to carry — the exact
+// violation of Book 3 p.29's "a satellite is always smaller than its parent" that
+// the adjacent comment invokes to reject the book's "-2D+7" printing.
+func TestPlaceOrbitsBigWorldParentIsNotSmallerThanItsMoon(t *testing.T) {
+	s := &System{
+		Primary:            Star{Type: "F", Decimal: 8, Size: "V"},
+		GasGiants:          0,
+		Worlds:             1, // others = 1 - 1 - 0 - 0 = 0
+		MainworldOrbit:     4,
+		MainworldSatellite: MainworldSatellite{IsSatellite: true},
+	}
+	s.Mainworld.Profile.Population = 8
+	s.Mainworld.Profile.Size = 15 // the largest a mainworld reaches
+	// All 1s: the parent's Size rolls 2D+7 = 9, below its own moon.
+	s.placeOrbits(dice.NewScripted(slices.Repeat([]int{1}, 20)...))
+
+	parent := s.Orbits[0].Parent
+	if parent == nil {
+		t.Fatal("satellite mainworld with no giants got no BigWorld parent")
+	}
+
+	if parent.Profile.Size < s.Mainworld.Profile.Size {
+		t.Errorf("BigWorld parent Size %d is smaller than its Size-%d satellite mainworld (%s)",
+			parent.Profile.Size, s.Mainworld.Profile.Size, parent.Profile)
+	}
+}
+
 func TestPlaceOrbitsWorldCapturedByGiant(t *testing.T) {
 	// Primary F8 V (HZ 4, floor 0). One SGG and one other world whose World2
 	// target lands on the giant's orbit, so the world becomes the giant's moon
@@ -172,6 +202,41 @@ func TestPlaceOrbitsWorldCapturedByGiant(t *testing.T) {
 	m := giant.Satellites[0]
 	if m.Type != worldgen.RadWorld || m.OrbitLetter != "Gee" || m.DoublePlanet {
 		t.Errorf("captured moon = %+v, want RadWorld, Gee, not a double planet", m)
+	}
+}
+
+// TestPlaceOrbitsCapturedWorldUsesSatelliteTable pins the one cell where Book 3
+// p.29's four type tables disagree: an outer-zone 1D=4 is an Iceworld on Outer
+// Worlds but a Stormworld on Outer Satellites. A world whose target orbit a gas
+// giant already holds is created as that giant's satellite — it takes a Close/Far
+// determination, an orbit letter, and the parent-size rule — so it is typed from
+// the Satellites table, like every other moon.
+//
+// TestPlaceOrbitsWorldCapturedByGiant scripts a type roll of 5 (RadWorld in both
+// tables), which is why the divergence went unnoticed; this test scripts the 4.
+func TestPlaceOrbitsCapturedWorldUsesSatelliteTable(t *testing.T) {
+	s := &System{
+		Primary:        Star{Type: "F", Decimal: 8, Size: "V"},
+		GasGiants:      1,
+		Worlds:         3, // others = 3 - 1 - 1 - 0 = 1
+		MainworldOrbit: 4,
+		Giants:         []GasGiant{{Size: 23, Class: SmallGasGiant}},
+	}
+	s.Mainworld.Profile.Population = 8
+	// As above: GG 2D=8 -> orbit 8 (outer, HZ 4), World 2D=11 -> World2 col = 8 ->
+	// capture. The type die is then a 4.
+	script := append([]int{4, 4, 5, 6, 4}, slices.Repeat([]int{3}, 30)...)
+	s.placeOrbits(dice.NewScripted(script...))
+
+	giant := s.Orbits[1]
+	if len(giant.Satellites) != 1 {
+		t.Fatalf("giant should have 1 captured moon, has %d: %+v",
+			len(giant.Satellites), giant.Satellites)
+	}
+
+	if got := giant.Satellites[0].Type; got != worldgen.StormWorld {
+		t.Errorf("captured moon type = %v, want %v (Outer Satellites 1D=4; Outer Worlds says %v)",
+			got, worldgen.StormWorld, worldgen.Iceworld)
 	}
 }
 

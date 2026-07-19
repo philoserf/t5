@@ -202,16 +202,25 @@ func (s *System) placeOrbits(r *dice.Roller) { //nolint:gocognit,cyclop,funlen /
 		// "-2D+7", but that contradicts worldgen's own BigWorld (Siz 2D+7) and
 		// would make the parent smaller than its moon in violation of the
 		// satellite-size rule, so we create a standard BigWorld.)
+		//
+		// A standard BigWorld is not enough on its own: 2D+7 bottoms out at 9
+		// while a mainworld's Size reaches 15, so the parent's Size is floored at
+		// its own moon's (Book 3 p.29, "a satellite is always smaller than its
+		// parent"; equal sizes are the book's double planet). The mainworld is not
+		// shrunk to fit instead — its UWP is already generated and already carries
+		// the system's trade codes and extensions — so the adjustment falls on the
+		// body being created for it.
 		if s.MainworldSatellite.IsSatellite {
 			switch {
 			case len(giants) > 0:
 				mw.Giant = &giants[0]
 				giants = giants[1:]
 			default:
-				prof := worldgen.GenerateOtherWorld(
+				prof := worldgen.GenerateHostWorld(
 					r,
 					worldgen.BigWorld,
 					s.Mainworld.Profile.Population,
+					s.Mainworld.Profile.Size,
 				)
 				mw.Parent = &OtherWorld{Type: worldgen.BigWorld, Profile: prof}
 			}
@@ -287,6 +296,11 @@ func (s *System) placeOrbits(r *dice.Roller) { //nolint:gocognit,cyclop,funlen /
 	worldRotate := rotator(hosts)
 
 	others := max(s.Worlds-1-s.GasGiants-s.Belts, 0)
+	// A captured world claims an orbit letter around its captor, and a giant can
+	// capture more than one, so the claims are kept per giant. rollSatellites
+	// re-reads them from the placed satellites when it adds the rest of the moons.
+	captorOrbits := map[int]*satelliteOrbits{}
+
 	for i := range others {
 		h := worldRotate()
 		row := p2(r.Dice(2))
@@ -300,8 +314,20 @@ func (s *System) placeOrbits(r *dice.Roller) { //nolint:gocognit,cyclop,funlen /
 		if gi := giantAt(placed, h.label, clamp(want, h.floor, h.maxOrbit)); gi >= 0 {
 			// The captor is a gas giant, whose size code exceeds any world's, so
 			// the moon takes no size cap (Book 3 p.21).
-			placed[gi].Satellites = append(placed[gi].Satellites, rollMoon(r, moonSpec{
-				Type:       otherWorldType(placed[gi].Orbit, h.hz, h.hasHZ, r.Die()),
+			//
+			// rollMoon types it from the Satellites tables, not the Other Worlds
+			// ones. Book 3 p.29 prints four type tables — Inner/HZ and Outer for
+			// worlds in orbits, Inner/HZ and Outer for satellites — and p.21
+			// directs that "similar tables direct Satellite creation as
+			// necessary". A captured world is created as a satellite in every
+			// other respect (Close/Far, an orbit letter, the parent-size rule),
+			// so it is typed as one. The two Outer tables differ in exactly one
+			// cell, 1D=4: Iceworld for a world, Stormworld for a satellite.
+			if captorOrbits[gi] == nil {
+				captorOrbits[gi] = newSatelliteOrbits()
+			}
+
+			placed[gi].Satellites = append(placed[gi].Satellites, rollMoon(r, captorOrbits[gi], moonSpec{
 				Orbit:      placed[gi].Orbit,
 				HZOrbit:    h.hz,
 				HasHZ:      h.hasHZ,

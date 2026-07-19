@@ -160,8 +160,12 @@ func writeOrbits(b *strings.Builder, s systemgen.System) {
 
 		fmt.Fprintf(b, "   %s%3d  %s\n", marker, o.Orbit, bodyLabel(o, s.Mainworld.Profile))
 
+		// A satellite mainworld's orbit is held by its parent body, so the moons
+		// listed under it are the mainworld's siblings around that parent, not its
+		// own (Book 3 p.21/p.29; see systemgen's satelliteParent).
+		sibling := o.Kind == systemgen.KindMainworld && (o.Giant != nil || o.Parent != nil)
 		for _, m := range o.Satellites {
-			fmt.Fprintf(b, "          · %s\n", moonLabel(m))
+			fmt.Fprintf(b, "          · %s\n", moonLabel(m, sibling))
 		}
 	}
 }
@@ -201,7 +205,9 @@ func bodyLabel(o systemgen.PlacedOrbit, mainworld uwp.Profile) string {
 
 // moonLabel describes one satellite: a ring, or a moon with its own world type
 // and UWP, its orbit name, and whether it forms a double planet with its parent.
-func moonLabel(m systemgen.Satellite) string {
+// A sibling moon shares its parent with the mainworld rather than orbiting the
+// body on the line above it.
+func moonLabel(m systemgen.Satellite, sibling bool) string {
 	if m.Ring {
 		return "Ring"
 	}
@@ -211,7 +217,12 @@ func moonLabel(m systemgen.Satellite) string {
 		orbit = "far"
 	}
 
-	s := fmt.Sprintf("moon %-5s %-12s %s", m.OrbitLetter, m.Type, m.Profile)
+	kind := "moon"
+	if sibling {
+		kind = "sibling moon"
+	}
+
+	s := fmt.Sprintf("%s %-5s %-12s %s", kind, m.OrbitLetter, m.Type, m.Profile)
 	// Stored in Chart D order by the assembler, so no render-time sort here.
 	if tcs := strings.Join(m.TradeCodes, " "); tcs != "" {
 		s += " " + tcs

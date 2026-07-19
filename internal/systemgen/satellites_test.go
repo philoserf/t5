@@ -5,8 +5,33 @@ import (
 	"testing"
 
 	"github.com/philoserf/t5/internal/dice"
+	"github.com/philoserf/t5/internal/uwp"
 	"github.com/philoserf/t5/internal/worldgen"
 )
+
+// countThenSixes is a die source giving one leading face — the satellite-count
+// die — and a 6 for everything after it. rollMoon's dice consumption varies with
+// the world type it rolls, so a fixed script cannot keep several moons aligned;
+// an unbounded source can.
+func countThenSixes(first int) func() int {
+	rolled := false
+
+	return func() int {
+		if !rolled {
+			rolled = true
+
+			return first
+		}
+
+		return 6
+	}
+}
+
+// moonScript builds a rollMoon die script: the leading type die, then n sixes for
+// everything the moon rolls after it.
+func moonScript(typeDie, n int) []int {
+	return append([]int{typeDie}, slices.Repeat([]int{6}, n)...)
+}
 
 func TestSatelliteCount(t *testing.T) {
 	hz := 4
@@ -181,9 +206,11 @@ func TestRollMoonSizeCap(t *testing.T) {
 	}
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
-			// A full moon draws twenty dice; every one is a 6.
-			m := rollMoon(dice.NewScripted(slices.Repeat([]int{6}, 20)...), moonSpec{
-				Type: worldgen.BigWorld, Orbit: 3, HZOrbit: 3, HasHZ: true,
+			// The leading 3 is the type die: orbit 3 = HZ 3 is hospitable, and
+			// the Inner/HZ Satellites table's 3 is a BigWorld. A full moon then
+			// draws twenty more dice; every one is a 6.
+			m := rollMoon(dice.NewScripted(moonScript(3, 20)...), newSatelliteOrbits(), moonSpec{
+				Orbit: 3, HZOrbit: 3, HasHZ: true,
 				MWPop: 8, MaxSize: c.maxSize,
 			})
 			if m.Profile.Size != c.wantSize {
@@ -206,8 +233,8 @@ func TestRollMoonSizeCap(t *testing.T) {
 func TestRollMoonCappedProfileIsConsistent(t *testing.T) {
 	// Size 1: Atmosphere follows Flux+Siz from the capped size, Hydrographics is
 	// forced dry.
-	m := rollMoon(dice.NewScripted(slices.Repeat([]int{6}, 20)...), moonSpec{
-		Type: worldgen.BigWorld, Orbit: 3, HZOrbit: 3, HasHZ: true,
+	m := rollMoon(dice.NewScripted(moonScript(3, 20)...), newSatelliteOrbits(), moonSpec{
+		Orbit: 3, HZOrbit: 3, HasHZ: true,
 		MWPop: 8, MaxSize: 1,
 	})
 	if m.Profile.Atmosphere != 1 {
@@ -282,6 +309,174 @@ func TestBeltMainworldDoesNotFlattenItsMoons(t *testing.T) {
 // TestSatellitesCarryTradeCodes: every generated non-ring satellite carries trade
 // codes, where before a non-mainworld satellite carried none (the Sa/Lk logic
 // itself is unit-tested in worldgen, where the assembler lives).
+// TestSatelliteMainworldOrbitRollsForItsParent is the regression for #214. When
+// the mainworld is itself a satellite, the body occupying the orbit is its
+// parent — Book 3 p.21 places a gas giant (or a BigWorld) in the mainworld's
+// orbit to accommodate it, and p.29 rolls satellites "for each world in the
+// system" against that body. So the orbit's moons are the mainworld's siblings
+// around the parent: counted by the parent's rule, capped by the parent's size.
+//
+// Before the fix the orbit was rolled as the mainworld's own: a gas-giant parent
+// got the world zone count (1D-4 here, not 1D-1) and its moons were capped to the
+// mainworld — a fellow moon.
+func TestSatelliteMainworldOrbitRollsForItsParent(t *testing.T) {
+	newSys := func() *System {
+		s := &System{
+			Primary: Star{Type: "F", Decimal: 8, Size: "V"}, // HZ 4
+			Orbits: []PlacedOrbit{{
+				Host: "Primary", Orbit: 4, Kind: KindMainworld,
+				Giant: &GasGiant{Size: 26, Class: LargeGasGiant},
+			}},
+			MainworldSatellite: MainworldSatellite{IsSatellite: true, Far: true},
+		}
+		s.Mainworld.Profile.Population = 8
+		s.Mainworld.Profile.Size = 3
+
+		return s
+	}
+	// Orbit 4 is the habitable zone. A count die of 5 is 1D-1 = 4 moons under the
+	// gas giant's rule, but 1D-4 = 1 under the world rule the orbit used to take.
+	// Every later die is a 6: type 6 is Hospitable, whose Size is rollSize's 2D-2 =
+	// 10 rerolled as 1D+9 = 15 — uncapped, or cut to the Size-3 mainworld (and
+	// flagged a double planet) under the old parent.
+	s := newSys()
+	s.rollSatellites(dice.NewSource(countThenSixes(5)))
+
+	moons := s.Orbits[0].Satellites
+	if len(moons) != 4 {
+		t.Fatalf("satellite mainworld orbit rolled %d moons, want 4 (the giant\u2019s 1D-1)", len(moons))
+	}
+
+	for i, m := range moons {
+		if m.Profile.Size != 15 {
+			t.Errorf("moon %d Size = %d, want 15 (a gas giant caps nothing)", i, m.Profile.Size)
+		}
+
+		if m.DoublePlanet {
+			t.Errorf("moon %d is flagged a double planet with a gas-giant parent", i)
+		}
+	}
+}
+
+// TestSatelliteMainworldBigWorldParentCapsItsMoons is the other half of #214: with
+// no gas giant in the system the mainworld rides an accommodating BigWorld, so
+// that BigWorld — not the mainworld — is the parent whose size caps the orbit's
+// other moons (Book 3 p.29).
+func TestSatelliteMainworldBigWorldParentCapsItsMoons(t *testing.T) {
+	s := &System{
+		Primary: Star{Type: "F", Decimal: 8, Size: "V"}, // HZ 4
+		Orbits: []PlacedOrbit{{
+			Host: "Primary", Orbit: 4, Kind: KindMainworld,
+			Parent: &OtherWorld{
+				Type:    worldgen.BigWorld,
+				Profile: uwp.Profile{Size: 11},
+			},
+		}},
+		MainworldSatellite: MainworldSatellite{IsSatellite: true},
+	}
+	s.Mainworld.Profile.Population = 8
+	s.Mainworld.Profile.Size = 3
+	// Count die 5 with the world rule 1D-4 = 1 moon (the BigWorld parent is a
+	// world, so the zone count is unchanged), then an all-6s Hospitable moon: Size
+	// 15 uncapped, cut to the parent's 11.
+	s.rollSatellites(dice.NewSource(countThenSixes(5)))
+
+	moons := s.Orbits[0].Satellites
+	if len(moons) != 1 {
+		t.Fatalf("rolled %d moons, want 1", len(moons))
+	}
+
+	if got := moons[0].Profile.Size; got != 11 {
+		t.Errorf("moon Size = %d, want 11 (capped to the BigWorld parent, not the Size-3 mainworld)", got)
+	}
+
+	if !moons[0].DoublePlanet {
+		t.Error("a moon at exactly its parent\u2019s size is a double planet (Book 3 p.29)")
+	}
+}
+
+// TestSiblingMoonsGetDistinctOrbitLetters is the regression for #216. A moon's
+// orbit letter is an orbit *name* (Book 3 p.24 table 2C), rolled independently
+// per moon, so a parent with several moons could roll the same letter twice and
+// render two bodies in one named orbit. Book 3 p.29's placement note — "If an
+// orbit is duplicated or precluded, adjust to an adjacent or the closest possible
+// orbit" — resolves it, so a duplicate is nudged to the nearest free letter.
+//
+// Every die is a 6: a gas giant rolls 1D-1 = 5 moons, and each one is Far (2D=12)
+// with Flux 0, which is farOrbitLetters[6] = "Tee" for all five.
+func TestSiblingMoonsGetDistinctOrbitLetters(t *testing.T) {
+	s := &System{
+		Primary: Star{Type: "F", Decimal: 8, Size: "V"},
+		Orbits:  []PlacedOrbit{{Host: "Primary", Orbit: 2, Kind: KindGasGiant}},
+	}
+	s.Mainworld.Profile.Population = 8
+	s.rollSatellites(dice.NewSource(func() int { return 6 }))
+
+	moons := s.Orbits[0].Satellites
+	if len(moons) != 5 {
+		t.Fatalf("rolled %d moons, want 5", len(moons))
+	}
+
+	seen := map[string]bool{}
+
+	for _, m := range moons {
+		if seen[m.OrbitLetter] {
+			t.Errorf("orbit letter %q used twice around one parent: %v",
+				m.OrbitLetter, letters(moons))
+		}
+
+		seen[m.OrbitLetter] = true
+
+		if !m.Far {
+			t.Errorf("moon %q should be Far (2D=12)", m.OrbitLetter)
+		}
+	}
+	// The rolled letter is kept for the first moon; the rest spiral outward from
+	// it, inward before outward, as orbitHost.claim does for world orbits.
+	if got, want := letters(moons), []string{"Tee", "Ess", "Yu", "Arr", "Vee"}; !slices.Equal(got, want) {
+		t.Errorf("letters = %v, want %v", got, want)
+	}
+}
+
+func letters(moons []Satellite) []string {
+	got := make([]string, len(moons))
+	for i, m := range moons {
+		got[i] = m.OrbitLetter
+	}
+
+	return got
+}
+
+// TestNoParentHasDuplicateOrbitLetters covers both moon-creation sites at once:
+// the satellite pass and the orbit map's gas-giant-captured world append to the
+// same parent, so they must not collide with each other either.
+func TestNoParentHasDuplicateOrbitLetters(t *testing.T) {
+	for seed := uint64(1); seed <= 500; seed++ {
+		s := Generate(dice.NewWithSeed(seed))
+		for _, o := range s.Orbits {
+			seen := map[string]bool{}
+			// A satellite mainworld shares its parent with the orbit's moons, so
+			// its own letter is taken too.
+			if o.Kind == KindMainworld && (o.Giant != nil || o.Parent != nil) {
+				seen[s.MainworldSatellite.OrbitLetter] = true
+			}
+
+			for _, m := range o.Satellites {
+				if m.Ring {
+					continue
+				}
+
+				if seen[m.OrbitLetter] {
+					t.Errorf("seed %d: %s orbit %d has two moons in orbit %q: %v",
+						seed, o.Kind, o.Orbit, m.OrbitLetter, letters(o.Satellites))
+				}
+
+				seen[m.OrbitLetter] = true
+			}
+		}
+	}
+}
+
 func TestSatellitesCarryTradeCodes(t *testing.T) {
 	sys := Generate(dice.NewWithSeed(11))
 	found := false

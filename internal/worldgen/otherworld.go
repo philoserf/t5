@@ -72,7 +72,23 @@ const NoSizeCap = -1
 // most populous), and DM-modified characteristics are read as a fresh 2D plus
 // the shown modifier, floored at zero and clamped to the characteristic maximum.
 func GenerateOtherWorld(r *dice.Roller, t OtherWorldType, mwPop int) uwp.Profile {
-	return GenerateSatelliteWorld(r, t, mwPop, NoSizeCap)
+	return generateOtherWorld(r, t, mwPop, 0, NoSizeCap)
+}
+
+// GenerateHostWorld rolls a secondary world that must accommodate a satellite of
+// a known size — the other end of the same rule GenerateSatelliteWorld enforces
+// ("a satellite is always smaller than its parent", Book 3 p.29). Its Size is
+// floored at minSize rather than the satellite's being cut, because the satellite
+// here is the mainworld: its UWP is already generated, already carries the
+// system's trade codes and extensions, and is already the record every other
+// renderer prints. Equal sizes are the book's double-planet case, so the floor is
+// inclusive.
+//
+// The floor lands in the same place the cap does — before Atmosphere (Flux+Size)
+// and Hydrographics (Flux+Atmosphere) derive from Size — so the profile describes
+// the world that was kept, not the smaller one that was rolled.
+func GenerateHostWorld(r *dice.Roller, t OtherWorldType, mwPop, minSize int) uwp.Profile {
+	return generateOtherWorld(r, t, mwPop, minSize, NoSizeCap)
 }
 
 // GenerateSatelliteWorld rolls a secondary world's UWP (Book 3 p.29) whose Size
@@ -94,10 +110,17 @@ func GenerateOtherWorld(r *dice.Roller, t OtherWorldType, mwPop int) uwp.Profile
 //     Size-driven rules ("If Siz=0, Atm=0", "If Siz <2, Hyd =0"). A new world
 //     type cannot produce an out-of-chart profile by forgetting a helper.
 func GenerateSatelliteWorld(r *dice.Roller, t OtherWorldType, mwPop, maxSize int) uwp.Profile {
+	return generateOtherWorld(r, t, mwPop, 0, maxSize)
+}
+
+// generateOtherWorld is the one pipeline the three entry points share, differing
+// only in the Size bounds they impose: none, a satellite's ceiling, or a host
+// body's floor.
+func generateOtherWorld(r *dice.Roller, t OtherWorldType, mwPop, minSize, maxSize int) uwp.Profile {
 	maxPop := max(mwPop-1, 0)
 	capPop := func(pop int) int { return clamp(pop, 0, maxPop) }
 
-	size := capSize(typeSize(r, t), maxSize)
+	size := max(capSize(typeSize(r, t), maxSize), minSize)
 
 	return chartProfile(rollOtherWorld(r, t, size, capPop))
 }

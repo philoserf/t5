@@ -40,16 +40,27 @@ func (s *System) rollSatellites(r *dice.Roller) {
 		o := &s.Orbits[i]
 		hz, hasHZ := HZOrbit(s.hostStar(o.Host))
 
-		moons, rings := satelliteCount(r, o.Kind, o.Orbit, hz, hasHZ)
+		parentKind, maxSize := s.satelliteParent(o)
+
+		moons, rings := satelliteCount(r, parentKind, o.Orbit, hz, hasHZ)
 		for range rings {
 			o.Satellites = append(o.Satellites, Satellite{Ring: true})
 		}
 
-		maxSize := s.satelliteMaxSize(o)
+		// The parent may already have moons: placeOrbits appends a captured world
+		// before this pass runs, and a satellite mainworld holds one of its own
+		// parent's orbit letters. Both are taken before any new moon claims one.
+		orbits := newSatelliteOrbits()
+		for _, sat := range o.Satellites {
+			orbits.take(sat.OrbitLetter)
+		}
+
+		if o.Kind == KindMainworld && (o.Giant != nil || o.Parent != nil) {
+			orbits.take(s.MainworldSatellite.OrbitLetter)
+		}
+
 		for range moons {
-			wt := satelliteType(o.Orbit, hz, hasHZ, r.Die())
-			o.Satellites = append(o.Satellites, rollMoon(r, moonSpec{
-				Type:       wt,
+			o.Satellites = append(o.Satellites, rollMoon(r, orbits, moonSpec{
 				Orbit:      o.Orbit,
 				HZOrbit:    hz,
 				HasHZ:      hasHZ,
@@ -61,13 +72,17 @@ func (s *System) rollSatellites(r *dice.Roller) {
 	}
 }
 
-// moonSpec is everything rollMoon needs that it does not roll: the moon's
-// already-determined world type, its parent's orbit and habitable zone, the
-// mainworld context its trade codes read, and the parent-size cap. MaxSize is
-// worldgen's own sentinel rather than a size/flag pair, so "uncapped" has one
-// representation and a capped moon cannot be spelled as a cap of zero.
+// moonSpec is everything rollMoon needs that it does not roll: its parent's
+// orbit and habitable zone, the mainworld context its trade codes read, and the
+// parent-size cap. MaxSize is worldgen's own sentinel rather than a size/flag
+// pair, so "uncapped" has one representation and a capped moon cannot be spelled
+// as a cap of zero.
+//
+// The world type is deliberately not a field. It was one, and the two call sites
+// filled it from different book tables (Other Worlds vs Satellites, which
+// disagree at outer-zone 1D=4), so the type roll moved inside rollMoon — where
+// there is exactly one of it.
 type moonSpec struct {
-	Type       worldgen.OtherWorldType
 	Orbit      int
 	HZOrbit    int
 	HasHZ      bool
@@ -76,13 +91,16 @@ type moonSpec struct {
 	MaxSize    int
 }
 
-// rollMoon builds one satellite: its UWP (size-capped to its parent, Book 3
-// p.21), then Close/Far (2D, 7- is Close) and the Flux-rolled orbit letter
-// (p.24 table 2C), then its trade codes in satellite context. It is the single
-// moon-assembly path — both the satellite pass and the orbit map's captured
-// world (a world whose orbit a gas giant already holds) go through it, so the
-// dice order (UWP, 2D far, Flux letter) cannot drift between them.
-func rollMoon(r *dice.Roller, spec moonSpec) Satellite {
+// rollMoon builds one satellite: its type (the Book 3 p.29 Satellites tables,
+// read at its parent's orbital zone), its UWP (size-capped to its parent, p.21),
+// then Close/Far (2D, 7- is Close) and the Flux-rolled orbit letter (p.24 table
+// 2C), then its trade codes in satellite context. It is the single moon-assembly
+// path — both the satellite pass and the orbit map's captured world (a world
+// whose orbit a gas giant already holds) go through it, so neither the dice order
+// (type, UWP, 2D far, Flux letter) nor the tables they read can drift apart.
+func rollMoon(r *dice.Roller, orbits *satelliteOrbits, spec moonSpec) Satellite {
+	wt := satelliteType(spec.Orbit, spec.HZOrbit, spec.HasHZ, r.Die())
+
 	// No parent caps its moons at Size 0 — satelliteMaxSize resolves the
 	// asteroid-belt code to NoSizeCap — so treat any non-positive cap as absent
 	// rather than flattening the moon. This also keeps moonSpec's zero value
@@ -92,21 +110,16 @@ func rollMoon(r *dice.Roller, spec moonSpec) Satellite {
 		maxSize = worldgen.NoSizeCap
 	}
 
-	prof := worldgen.GenerateSatelliteWorld(r, spec.Type, spec.MWPop, maxSize)
+	prof := worldgen.GenerateSatelliteWorld(r, wt, spec.MWPop, maxSize)
 	double := maxSize != worldgen.NoSizeCap && prof.Size == maxSize
 
 	far := r.Dice(2) >= 8
-	idx := dice.FluxIndex(r.Flux())
-
-	letter := closeOrbitLetters[idx]
-	if far {
-		letter = farOrbitLetters[idx]
-	}
+	letter := orbits.claim(dice.FluxIndex(r.Flux()), far)
 
 	return Satellite{
 		Far:          far,
 		OrbitLetter:  letter,
-		Type:         spec.Type,
+		Type:         wt,
 		Profile:      prof,
 		DoublePlanet: double,
 		TradeCodes: worldgen.TradeClassificationsWithContext(prof, worldgen.WorldContext{
@@ -138,29 +151,44 @@ func (s *System) hostStar(label string) Star {
 	}
 }
 
-// satelliteMaxSize returns the size cap a body's moons take (Book 3 p.21: a
-// satellite is never larger than its parent), or worldgen.NoSizeCap when they
-// take none. Gas-giant moons are never capped — a giant's size code far exceeds
-// any world size — and belts have no moons.
+// satelliteParent identifies the body an orbit's moons belong to: the kind that
+// selects their count rule (Book 3 p.29 "Number Of Satellites") and the Size that
+// caps them (p.29, "a satellite is always smaller than its parent"), or
+// worldgen.NoSizeCap when nothing caps them. Gas-giant moons are never capped — a
+// giant's size code far exceeds any world size — and belts have no moons.
+//
+// The body is not always the orbit's Kind. When the mainworld is itself a
+// satellite, p.21 places a gas giant (or, with no giant in the system, a
+// BigWorld) in the mainworld's orbit to accommodate it, so the body in that orbit
+// is the parent and the orbit's moons are the mainworld's siblings around it.
+// Rolling them as the mainworld's own gave a gas-giant parent the world zone
+// count instead of its 1D-1 and capped its moons to a fellow moon.
+//
+// The book does not spell out satellite handling for a satellite mainworld; this
+// is the reading consistent with its own parent-body semantics. It leaves one
+// point genuinely open: whether the mainworld is itself one of the parent's 1D-1
+// satellites or is additional to them. It is treated as additional, since the
+// count is rolled after the mainworld is already placed.
 //
 // A Size digit of 0 is not a cap. In a UWP it marks an asteroid belt (the same
 // convention PortFacilities reads to site a Beltport), so it is a code rather
 // than a dimension: capping to it would cut every moon of a belt mainworld to
 // Size 0, taking its Atmosphere, Hydrographics and Tech Level with it and
 // rendering a Big World as Y000000-0.
-func (s *System) satelliteMaxSize(o *PlacedOrbit) int {
-	switch o.Kind {
-	case KindMainworld:
-		return sizeCapOf(s.Mainworld.Profile.Size)
-	case KindWorld:
-		if o.World != nil {
-			return sizeCapOf(o.World.Profile.Size)
-		}
+func (s *System) satelliteParent(o *PlacedOrbit) (OrbitKind, int) {
+	switch {
+	case o.Kind == KindMainworld && o.Giant != nil:
+		return KindGasGiant, worldgen.NoSizeCap
+	case o.Kind == KindMainworld && o.Parent != nil:
+		return KindWorld, sizeCapOf(o.Parent.Profile.Size)
+	case o.Kind == KindMainworld:
+		return KindMainworld, sizeCapOf(s.Mainworld.Profile.Size)
+	case o.Kind == KindWorld && o.World != nil:
+		return KindWorld, sizeCapOf(o.World.Profile.Size)
 	default:
-		// KindGasGiant and KindBelt are uncapped; handled by the return below.
+		// A gas giant or a belt: uncapped, and the belt rolls no moons at all.
+		return o.Kind, worldgen.NoSizeCap
 	}
-
-	return worldgen.NoSizeCap
 }
 
 // sizeCapOf turns a parent's UWP Size digit into a satellite cap, treating 0 —
@@ -208,4 +236,62 @@ func satelliteCount(r *dice.Roller, kind OrbitKind, orbit, hz int, hasHZ bool) (
 			rings++ // a ring, then re-roll the count
 		}
 	}
+}
+
+// satelliteOrbits tracks the orbit letters already taken around one parent body.
+// The letters are orbit *names* (Book 3 p.24 table 2C), so two moons of one
+// parent can no more share one than two worlds can share an orbit number; the
+// book's own resolution applies — "If an orbit is duplicated or precluded, adjust
+// to an adjacent or the closest possible orbit" (p.29 chart P2).
+//
+// Close and Far are separate tables of thirteen letters each, and a moon nudges
+// only within its own: Close and Far describe different physical distances, so a
+// Far moon cannot resolve a collision by moving into a Close orbit.
+type satelliteOrbits struct {
+	taken map[string]bool
+}
+
+func newSatelliteOrbits() *satelliteOrbits {
+	return &satelliteOrbits{taken: map[string]bool{}}
+}
+
+// take marks a letter as occupied by a body this type did not place — a moon the
+// orbit map already captured, or the satellite mainworld itself. The empty string
+// (a Ring, or a non-satellite mainworld) marks nothing.
+func (o *satelliteOrbits) take(letter string) {
+	if letter != "" {
+		o.taken[letter] = true
+	}
+}
+
+// claim returns the orbit letter at the rolled Flux index, or — when that orbit
+// is already occupied — the nearest free letter in the same table, spiralling
+// inward before outward exactly as orbitHost.claim does for world orbits.
+//
+// The Flux roll itself is untouched: the nudge reads an already-rolled index and
+// draws no dice, so resolving a collision cannot shift the system's dice stream.
+func (o *satelliteOrbits) claim(idx int, far bool) string {
+	table := closeOrbitLetters
+	if far {
+		table = farOrbitLetters
+	}
+
+	for d := range table {
+		if i := idx - d; i >= 0 && !o.taken[table[i]] {
+			o.taken[table[i]] = true
+
+			return table[i]
+		}
+
+		if i := idx + d; i < len(table) && !o.taken[table[i]] {
+			o.taken[table[i]] = true
+
+			return table[i]
+		}
+	}
+
+	// All thirteen orbits of this table are occupied. A parent with fourteen
+	// moons in one hemisphere is not something the book contemplates; keep the
+	// rolled letter rather than dropping a body that was generated.
+	return table[idx]
 }
