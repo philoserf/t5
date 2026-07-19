@@ -17,6 +17,22 @@ import (
 // Professors ladder. Deferred: the professional and military institutions
 // (Service Academy, Medical/Law, Honors, OTC/NOTC, Flight School), the full
 // Available-Skills matrix, and the Tra-based training path.
+//
+// Education costs time (Book 1 p.59). Two rules set the price, and every
+// institution reads its years off the p.60 Educational Institutions chart's
+// Duration column:
+//
+//   - "A failure disallows admission and consumes one year" — a failed
+//     application costs the year whether or not a Waiver then rescues it. Waiver
+//     attempts themselves are free.
+//   - "Each Success is one year" — a program's Duration is spent year by year,
+//     and a year is spent whether it passed, was waived, or ended attendance
+//     (Book 1 p.62's training example: "he rolls 8 and fails. A year passes").
+//
+// ED5 alone is free ("no time required", p.60 chart and p.61). The book's own
+// Eneri Dinsha walkthrough (p.61) prices this out: he enters at 18, fails his
+// College application, is admitted on Waiver, and completes four years —
+// 18 + 1 + 4 = age 23, the age the book prints.
 
 const (
 	ed5MaxEdu   = 4 // ED5 admits a character of Edu 4 or less
@@ -147,6 +163,8 @@ func attendTradeSchool(r *dice.Roller, p Policy, c *Character) {
 	}
 
 	passCh := bestChar(*c, Intelligence, Education)
+	c.Age++ // Trade School's Duration is one year (Book 1 p.60 chart), spent either way
+
 	if !r.Resolve(dice.Check{Dice: 2, Target: c.Score(passCh)}).Success &&
 		!waiverGranted(r, p, c, &priorWaivers) {
 		return // failed the year out — no Major
@@ -159,7 +177,9 @@ func attendTradeSchool(r *dice.Roller, p Policy, c *Character) {
 // attemptED5 runs the ED5 remedial program (Book 1 p. 60): a character of Edu 4
 // or less may Check Int once to raise their Edu to 5, reaching the College
 // prerequisite. DefaultPolicy does not pursue education this low, so ED5 serves
-// policies that deliberately educate a low-Edu character.
+// policies that deliberately educate a low-Edu character. ED5 admission is
+// automatic and its Duration is "no time" (p.60 chart), so it never ages the
+// character — the one institution that does not.
 func attemptED5(r *dice.Roller, c *Character) {
 	if c.Score(Education) > ed5MaxEdu {
 		return
@@ -193,6 +213,8 @@ func attendAcademic(r *dice.Roller, p Policy, c *Character, prog academicProgram
 	passes := 0
 
 	for range prog.years {
+		c.Age++ // each year of the program's Duration passes, however it turns out
+
 		if r.Resolve(dice.Check{Dice: 2, Target: c.Score(passCh)}).Success {
 			passes++
 			awardAcademicPass(c, p, prog, passes)
@@ -205,11 +227,15 @@ func attendAcademic(r *dice.Roller, p Policy, c *Character, prog academicProgram
 }
 
 // admitted resolves the admission Check (2D at or under the characteristic),
-// falling back to a Waiver on failure.
+// falling back to a Waiver on failure. A failed application "consumes one year"
+// (Book 1 p.59) — the year is spent even when a Waiver then wins admission, and
+// the Waiver attempts themselves are free.
 func admitted(r *dice.Roller, p Policy, c *Character, ch Characteristic, priorWaivers *int) bool {
 	if r.Resolve(dice.Check{Dice: 2, Target: c.Score(ch)}).Success {
 		return true
 	}
+
+	c.Age++
 
 	return waiverGranted(r, p, c, priorWaivers)
 }

@@ -26,8 +26,12 @@ func (p *eduPolicy) ChooseSkill(_ Character, _ []string) string {
 // (9AB56A) goes to the College of Regina — rejected then admitted on a Waiver,
 // passes years 1 and 4, waives the failures of years 2 and 3, and graduates
 // with a BA (Edu 6 -> 8), a Psychology Major-2 and a Robotics Minor-1: 9AB58A.
+// The book also prints his age at the end of the walkthrough: he enters
+// character generation at 18, his failed application "consumes one year"
+// (p.59), and College runs four years — 18 + 1 + 4 = 23, the age on p.61.
 func TestGoldenCollege(t *testing.T) {
 	c := Character{scores: [count]int{9, 10, 11, 5, 6, 10}} // 9AB56A; Int 5, Edu 6, Soc 10
+	c.Age = startingAge
 	p := &eduPolicy{picks: []string{"Psychology", "Robotics"}}
 
 	seq := []int{
@@ -56,6 +60,83 @@ func TestGoldenCollege(t *testing.T) {
 
 	if len(c.Degrees) != 1 || c.Degrees[0] != "BA" {
 		t.Errorf("Degrees = %v, want [BA]", c.Degrees)
+	}
+
+	if c.Age != 23 {
+		t.Errorf("Age = %d, want 23 (18 + 1 rejected application + 4 College years)", c.Age)
+	}
+}
+
+// TestEducationConsumesYears prices each institution against the p.60 chart's
+// Duration column and p.59's "a failure disallows admission and consumes one
+// year".
+func TestEducationConsumesYears(t *testing.T) {
+	tests := []struct {
+		name string
+		run  func(r *dice.Roller, c *Character)
+		seq  []int
+		want int // years the character should age
+	}{
+		{
+			// ED5 is the one institution whose Duration is "no time".
+			name: "ED5 costs no time",
+			run:  func(r *dice.Roller, c *Character) { attemptED5(r, c) },
+			seq:  []int{3, 4}, // Check Int(8): 7, pass
+			want: 0,
+		},
+		{
+			name: "trade school is one year",
+			run:  func(r *dice.Roller, c *Character) { attendTradeSchool(r, DefaultPolicy{}, c) },
+			seq: []int{
+				1, 1, // apply Check Int(8): 2, admitted — no year lost
+				1, 1, // the one year: pass
+			},
+			want: 1,
+		},
+		{
+			name: "a rejected application costs its year even when waived",
+			run:  func(r *dice.Roller, c *Character) { attendTradeSchool(r, DefaultPolicy{}, c) },
+			seq: []int{
+				6, 6, // apply Check Int(8): 12, rejected — one year consumed
+				1, 1, // Waiver Check Soc(9): 2, admitted (the Waiver itself is free)
+				1, 1, // the one year: pass
+			},
+			want: 2,
+		},
+		{
+			// "Each Success is one year", and a year ends attendance rather than
+			// being refunded: all four College years are spent.
+			name: "college is four years",
+			run:  func(r *dice.Roller, c *Character) { attendAcademic(r, DefaultPolicy{}, c, college) },
+			seq: []int{
+				1, 1, // apply: 2, admitted
+				1, 1, 1, 1, 1, 1, 1, 1, // four passing years
+			},
+			want: 4,
+		},
+		{
+			// A year that ends attendance still passed (Book 1 p.62's training
+			// example: "he rolls 8 and fails. A year passes").
+			name: "a failed year still passes",
+			run:  func(r *dice.Roller, c *Character) { attendAcademic(r, noWaiver{}, c, college) },
+			seq: []int{
+				1, 1, // apply: 2, admitted
+				1, 1, // year 1: pass
+				6, 6, // year 2: 12, fail; the policy declines a Waiver, ending attendance
+			},
+			want: 2,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			c := Character{scores: [count]int{7, 7, 7, 8, 7, 9}, Age: startingAge}
+			tt.run(dice.NewScripted(tt.seq...), &c)
+
+			if got := c.Age - startingAge; got != tt.want {
+				t.Errorf("aged %d years, want %d", got, tt.want)
+			}
+		})
 	}
 }
 

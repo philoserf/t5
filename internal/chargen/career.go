@@ -402,6 +402,10 @@ func serveCareer(r *dice.Roller, p Policy, c *Character, career Career) bool {
 // the best qualifying characteristic (Book 1 p.65). The roll is made once: Begin
 // retry is a per-career property ("Some Careers allow Retry", shown on the career's
 // box), and no career in this edition grants one, so none is offered.
+//
+// A refusal costs time: "Each failed attempt (both Begin or Retry) takes one
+// year" (Book 1 p.65). Only a rolled refusal does — an automatic entry makes no
+// attempt to fail.
 func beginCareer(r *dice.Roller, c *Character, career Career) bool {
 	if career.AutoBegin {
 		return true
@@ -413,7 +417,13 @@ func beginCareer(r *dice.Roller, c *Character, career Career) bool {
 		return true
 	}
 
-	return r.Resolve(dice.Check{Dice: 2, Target: career.Qualify.target(*c)}).Success
+	if r.Resolve(dice.Check{Dice: 2, Target: career.Qualify.target(*c)}).Success {
+		return true
+	}
+
+	c.Age++
+
+	return false
 }
 
 // RunCareer runs the term loop of one career on a character, appending a

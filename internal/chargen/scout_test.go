@@ -126,6 +126,38 @@ func TestScoutBeginNoRetry(t *testing.T) {
 	}
 }
 
+// TestFailedBeginCostsAYear locks Book 1 p.65: "Each failed attempt (both Begin
+// or Retry) takes one year." Only a rolled refusal costs the year — an automatic
+// entry never attempts, so it never fails.
+func TestFailedBeginCostsAYear(t *testing.T) {
+	c := Character{scores: [count]int{5, 5, 5, 7, 7, 7}, Age: startingAge}
+
+	if beginCareer(dice.NewScripted(6, 2), &c, ScoutCareer) { // 8 > best(Str/Dex/End) = 5
+		t.Fatal("Begin 8 > 5 should be refused")
+	}
+
+	if c.Age != startingAge+1 {
+		t.Errorf("after a refused Begin Age = %d, want %d", c.Age, startingAge+1)
+	}
+
+	if !beginCareer(dice.NewScripted(2, 1), &c, ScoutCareer) { // 3 <= 5, admitted
+		t.Fatal("Begin 3 <= 5 should be accepted")
+	}
+
+	if c.Age != startingAge+1 {
+		t.Errorf("a successful Begin aged the character: Age = %d, want %d", c.Age, startingAge+1)
+	}
+	// The Citizen's Begin is automatic — no attempt, so no year. The scripted face
+	// is never drawn (drawing it would fail 6,... against no target at all).
+	if !beginCareer(dice.NewScripted(6), &c, CitizenCareer) {
+		t.Fatal("the Citizen career auto-begins")
+	}
+
+	if c.Age != startingAge+1 {
+		t.Errorf("an automatic Begin aged the character: Age = %d, want %d", c.Age, startingAge+1)
+	}
+}
+
 // courierPolicy is goldenPolicy but takes Courier duty (no Risk & Reward).
 type courierPolicy struct{ goldenPolicy }
 
