@@ -46,6 +46,7 @@ func (stopAfter) NextCareer(Character) (Career, bool)               { return Car
 func (stopAfter) ChooseExplorerDuty(Character) bool                 { return true }
 func (stopAfter) RerollBranch(Character, CareerRecord) bool         { return false }
 func (stopAfter) RerollBranchOnCommission(Character) bool           { return false }
+func (stopAfter) SelectBranch(Character, []Branch) (string, bool)   { return "", false }
 
 func TestContinueTarget(t *testing.T) {
 	c := Character{scores: [count]int{7, 7, 7, 10, 8, 6}}
@@ -622,8 +623,9 @@ func TestMultiCareer(t *testing.T) {
 // for a new Branch on Commission — the opposite of every default.
 type rerollingPolicy struct{ stopAfter }
 
-func (rerollingPolicy) RerollBranch(Character, CareerRecord) bool { return true }
-func (rerollingPolicy) RerollBranchOnCommission(Character) bool   { return true }
+func (rerollingPolicy) RerollBranch(Character, CareerRecord) bool       { return true }
+func (rerollingPolicy) RerollBranchOnCommission(Character) bool         { return true }
+func (rerollingPolicy) SelectBranch(Character, []Branch) (string, bool) { return "", false }
 
 // TestCommissionBranchColumnSwitch locks the one Branch mapping Book 1 p. 66
 // names by hand: "for Spacers, Crew becomes Line". A commissioned Spacer keeps

@@ -52,6 +52,13 @@ type Policy interface { //nolint:interfacebloat // intentionally aggregates ever
 	// Branch — is gated on a Soc roll the engine does not yet make, so it is not
 	// offered here; see BranchOps.
 	RerollBranch(c Character, rec CareerRecord) bool
+	// SelectBranch reports the Branch the character wishes to SELECT by name, and
+	// whether to attempt a selection at all (Book 1 p.66, "select or roll for
+	// Branch"). available is the column the character reads, rows 1-8.
+	//
+	// Selecting costs a Soc check; a policy that returns false rolls no dice. A
+	// failed check falls back to rolling, as does a name the career does not print.
+	SelectBranch(c Character, available []Branch) (string, bool)
 	// RerollBranchOnCommission reports whether a newly commissioned character
 	// rolls for a new Branch rather than keeping their current one (Book 1 p. 66).
 	// False keeps it, re-read from the Officer column.
@@ -220,6 +227,11 @@ func (DefaultPolicy) ChooseExplorerDuty(Character) bool { return true }
 // them a worse Risk & Reward mod as a better one — so the neutral choice is to
 // stay put. It is also the dice-free one: keeping rolls nothing.
 func (DefaultPolicy) RerollBranch(Character, CareerRecord) bool { return false }
+
+// SelectBranch declines to select, so the Branch is rolled and no Soc check is
+// made. Choosing a Branch is a player decision with a price, and the default
+// policy does not spend a character's Social Standing on one unasked.
+func (DefaultPolicy) SelectBranch(Character, []Branch) (string, bool) { return "", false }
 
 // RerollBranchOnCommission keeps the Branch the character was commissioned out
 // of, for the same reason — and because the Officer column of a two-column table

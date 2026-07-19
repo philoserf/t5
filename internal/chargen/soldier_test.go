@@ -158,3 +158,75 @@ func TestBranchOpsMod(t *testing.T) {
 		t.Errorf("Technical Branch/Ops mod = %d, want 0 (branch 0 + Base 0)", got)
 	}
 }
+
+// selectingPolicy attempts to select a named Branch rather than roll for one.
+type selectingPolicy struct {
+	goldenPolicy
+
+	want string
+}
+
+func (s selectingPolicy) SelectBranch(Character, []Branch) (string, bool) { return s.want, true }
+
+// TestSelectBranchSocCheck covers the "select" half of Book 1 p.66, priced by the
+// Eneri Dinsha example: "He must roll Soc or less to select Branch (roll 10 or
+// less; he rolls 7) and chooses Flight".
+func TestSelectBranchSocCheck(t *testing.T) {
+	// Soc 10, and a Soc check of 7: the selection succeeds and no Branch die is
+	// drawn. Medical is row 8 of the Soldier table, so branchRoll follows it there
+	// — a later Commission re-reads the Officer column through that row.
+	c := Character{scores: [count]int{7, 7, 7, 7, 7, 10}}
+	run := careerRun{}
+
+	if !selectBranch(dice.NewScripted(3, 4), selectingPolicy{want: "Medical"}, &c, &run, SoldierCareer) {
+		t.Fatal("a Soc check of 7 against Soc 10 should select the Branch")
+	}
+
+	if run.branchName != "Medical" || run.branchRoll != 8 {
+		t.Errorf("selected %q at roll %d, want Medical at 8", run.branchName, run.branchRoll)
+	}
+}
+
+// TestSelectBranchFailedSocFallsBack covers the gap the book leaves: its example
+// shows only a successful selection. p.66 offers select and roll as alternatives
+// ("select or roll for Branch"), so a failed check leaves the roll — the
+// character is never left without a Branch.
+func TestSelectBranchFailedSocFallsBack(t *testing.T) {
+	c := Character{scores: [count]int{7, 7, 7, 7, 7, 6}}
+	run := careerRun{}
+	// Soc 6 against a check of 12: the selection fails. chooseBranch then rolls,
+	// and the script provides exactly one die for it (a 3 -> Artillery).
+	chooseBranch(dice.NewScripted(6, 6, 3), selectingPolicy{want: "Medical"}, &c, &run, SoldierCareer)
+
+	if run.branchName != "Artillery" {
+		t.Errorf("after a failed Soc check the Branch is %q, want the rolled Artillery",
+			run.branchName)
+	}
+}
+
+// TestSelectBranchUnknownNameFallsBack guards the policy seam: a policy naming a
+// Branch this career does not print must not leave the character branchless.
+func TestSelectBranchUnknownNameFallsBack(t *testing.T) {
+	c := Character{scores: [count]int{7, 7, 7, 7, 7, 12}}
+	run := careerRun{}
+	// Soc 12 makes the check succeed, so the fallback is reached on the name alone.
+	chooseBranch(dice.NewScripted(3, 4, 3), selectingPolicy{want: "Flight"}, &c, &run, SoldierCareer)
+
+	if run.branchName != "Artillery" {
+		t.Errorf("unknown Branch name gave %q, want the rolled Artillery", run.branchName)
+	}
+}
+
+// TestDefaultPolicyDrawsNoSocCheck is why every existing golden is undisturbed:
+// a policy that does not select rolls no Soc check at all. NewScripted panics on
+// exhaustion, so a stray 2D here would fail loudly.
+func TestDefaultPolicyDrawsNoSocCheck(t *testing.T) {
+	c := Character{scores: [count]int{7, 7, 7, 7, 7, 7}}
+	run := careerRun{}
+	// Exactly one die: the Branch roll. A Soc check would need two more.
+	chooseBranch(dice.NewScripted(3), DefaultPolicy{}, &c, &run, SoldierCareer)
+
+	if run.branchName != "Artillery" {
+		t.Errorf("Branch = %q, want Artillery (rolled, unselected)", run.branchName)
+	}
+}

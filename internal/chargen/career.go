@@ -569,8 +569,10 @@ func runCareer(r *dice.Roller, p Policy, c *Character, run *careerRun, career Ca
 		// Branch is chosen at career start — where every character is still
 		// enlisted (rank R1 above), so run.officer is false and a two-column table
 		// is read from its Enlisted side. A non-officer may reselect it at the end
-		// of any later term (rerollBranch).
-		rollBranch(r, c, run, career)
+		// of any later term (rerollBranch). The character may SELECT rather than
+		// roll, at the price of a Soc check (Book 1 p.66); chooseBranch offers that
+		// and rolls when it is declined or failed.
+		chooseBranch(r, p, c, run, career)
 	}
 
 	for {
@@ -882,6 +884,73 @@ func grantReward(
 	}
 }
 
+// column returns the Branch table the character reads: the Enlisted column where
+// the career prints one and the character is not an officer, else Branches.
+func (bo *BranchOps) column(officer bool) *[9]Branch {
+	if !officer && bo.EnlistedBranches != nil {
+		return bo.EnlistedBranches
+	}
+
+	return &bo.Branches
+}
+
+// findBranch locates a Branch by name in the character's column, returning it
+// with the roll that would have produced it. A name appearing on more than one
+// row (Infantry holds rows 1 and 2 of the Soldier table) resolves to the first,
+// which is the lowest roll that reaches it.
+func (bo *BranchOps) findBranch(officer bool, name string) (Branch, int, bool) {
+	col := bo.column(officer)
+	for roll := 1; roll <= 8; roll++ {
+		if col[roll].Name == name {
+			return col[roll], roll, true
+		}
+	}
+
+	return Branch{}, 0, false
+}
+
+// selectBranch attempts the "select" half of Book 1 p.66, "the character Begins
+// in a service, select or roll for Branch". Selecting is not free: the Eneri
+// Dinsha example prices it — "He must roll Soc or less to select Branch (roll 10
+// or less; he rolls 7) and chooses Flight" — and the p.72 checklists print the
+// same gate for all three armed-forces careers as "Select Branch  Soc".
+//
+// It reports whether a Branch was selected. A policy that does not wish to
+// select rolls no dice at all, which is why DefaultPolicy's behaviour — and every
+// existing golden — is unchanged. A FAILED Soc check falls back to rolling: p.66
+// offers select and roll as alternatives, so failing to select leaves the roll,
+// and the character is not left without a Branch.
+func selectBranch(r *dice.Roller, p Policy, c *Character, run *careerRun, career Career) bool {
+	name, want := p.SelectBranch(*c, career.BranchOps.column(run.officer)[1:])
+	if !want {
+		return false
+	}
+
+	if !r.Resolve(dice.Check{Dice: 2, Target: c.Score(Social)}).Success {
+		return false
+	}
+
+	b, roll, ok := career.BranchOps.findBranch(run.officer, name)
+	if !ok {
+		return false // the policy named a Branch this career does not print
+	}
+
+	// branchRoll is kept in step with the Branch, since a later Commission re-reads
+	// the Officer column through it.
+	run.branchRoll = roll
+	holdBranch(run, b)
+
+	return true
+}
+
+// chooseBranch resolves a Branch at a selection point: the character may attempt
+// to select one, and otherwise — or on a failed Soc check — rolls for it.
+func chooseBranch(r *dice.Roller, p Policy, c *Character, run *careerRun, career Career) {
+	if !selectBranch(r, p, c, run, career) {
+		rollBranch(r, c, run, career)
+	}
+}
+
 // rollBranch rolls a Branch (1D, +2 if Edu 10+; Book 1 pp. 81-86) and makes it
 // the run's current Branch, read from the column matching the character's
 // status. It serves both the career-start selection and a non-officer's
@@ -907,7 +976,12 @@ func rerollBranch(r *dice.Roller, p Policy, c *Character, run *careerRun, career
 	}
 
 	if p.RerollBranch(*c, rec) {
-		rollBranch(r, c, run, career)
+		// p.66 says "change (reselect or reroll)" — both halves are offered here.
+		// #298 exposed only the reroll, deliberately: without the Soc gate a policy
+		// could hand a character his best Branch free, every term. The gate is what
+		// makes reselection a decision rather than a giveaway, so the two land
+		// together.
+		chooseBranch(r, p, c, run, career)
 	}
 }
 
