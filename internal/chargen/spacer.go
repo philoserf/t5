@@ -67,7 +67,6 @@ var SpacerCareer = Career{
 	CCMode:           RotateCC,
 	ControllingChars: []Characteristic{Strength, Dexterity, Intelligence}, // C1 C2 C4
 	Continue:         ContinueRule{UseChar: true, Char: Strength},         // C1
-	Advance:          RollLow,
 	EligPerTerm:      4,
 	BenefitDM:        DMOfficerRank,
 	RewardKind:       RewardMedal,

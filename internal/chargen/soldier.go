@@ -38,7 +38,6 @@ var SoldierCareer = Career{
 	CCMode:           RotateCC,
 	ControllingChars: []Characteristic{Strength, Endurance, Intelligence}, // C1 C3 C4
 	Continue:         ContinueRule{UseChar: true, Char: Endurance},        // C3
-	Advance:          RollLow,
 	EligPerTerm:      4,
 	BenefitDM:        DMOfficerRank,
 	RewardKind:       RewardMedal,

@@ -36,7 +36,6 @@ var MarineCareer = Career{
 	CCMode:           RotateCC,
 	ControllingChars: []Characteristic{Strength, Intelligence},    // C1 C4
 	Continue:         ContinueRule{UseChar: true, Char: Strength}, // C1
-	Advance:          RollLow,
 	EligPerTerm:      4,
 	BenefitDM:        DMOfficerRank,
 	RewardKind:       RewardMedal,

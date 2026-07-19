@@ -34,7 +34,6 @@ var RogueCareer = Career{
 	ControllingChars: allChars,
 	Continue:         ContinueRule{UseCC: true, TermsMod: true}, // "Mod +Terms" (Book 1 p. 84)
 	AutoFailOn12:     true,                                      // "But, 12 is always automatic failure" (p. 84)
-	Advance:          RollLow,
 	EligPerTerm:      2,
 	SchemeCareer:     true,
 	BenefitDM:        DMTerms,

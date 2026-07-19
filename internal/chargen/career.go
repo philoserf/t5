@@ -48,16 +48,6 @@ const (
 	FixedCC
 )
 
-// AdvanceRule controls how rank advancement rolls compare: roll-low (the T5
-// default) or roll-high (Noble elevation).
-type AdvanceRule int
-
-// Advancement roll directions.
-const (
-	RollLow AdvanceRule = iota
-	RollHigh
-)
-
 // A Qualification is a career's entry gate: roll 2D at or under the best of the
 // listed characteristics (plus a modifier).
 type Qualification struct {
@@ -250,7 +240,6 @@ type Career struct {
 	CCMode           CCMode
 	ControllingChars []Characteristic
 	Continue         ContinueRule
-	Advance          AdvanceRule
 	EligPerTerm      int        // number of skill rolls a surviving term grants
 	BenefitDM        MusterDM   // die modifier the muster Benefit column adds (Money always adds +Terms)
 	AutoBegin        bool       // the career is entered automatically, with no qualify roll (Citizen)

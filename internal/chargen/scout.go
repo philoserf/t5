@@ -74,7 +74,6 @@ var ScoutCareer = Career{
 	CCMode:           RotateCC,
 	ControllingChars: []Characteristic{Strength, Dexterity, Endurance},
 	Continue:         ContinueRule{UseChar: true, Char: Intelligence},
-	Advance:          RollLow,
 	EligPerTerm:      8, // Explorer duty
 	ScoutDuty:        true,
 	RewardKind:       RewardDiscovery, // a successful Explorer Reward is a Discovery
