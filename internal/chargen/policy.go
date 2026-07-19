@@ -46,6 +46,16 @@ type Policy interface { //nolint:interfacebloat // intentionally aggregates ever
 	// ChooseExplorerDuty reports whether a Scout takes Explorer duty this term
 	// (Risk & Reward, more skills) rather than the safer Courier duty (Book 1 p. 79).
 	ChooseExplorerDuty(c Character) bool
+	// RerollBranch reports whether a surviving non-officer rerolls their
+	// armed-forces Branch at the end of a term (Book 1 p. 66). False keeps the
+	// current Branch and rolls no die. The book's third option — *selecting* a
+	// Branch — is gated on a Soc roll the engine does not yet make, so it is not
+	// offered here; see BranchOps.
+	RerollBranch(c Character, rec CareerRecord) bool
+	// RerollBranchOnCommission reports whether a newly commissioned character
+	// rolls for a new Branch rather than keeping their current one (Book 1 p. 66).
+	// False keeps it, re-read from the Officer column.
+	RerollBranchOnCommission(c Character) bool
 }
 
 // DefaultPolicy makes reasonable automatic choices, so a character can be
@@ -204,3 +214,14 @@ func (DefaultPolicy) NextCareer(Character) (Career, bool) { return Career{}, fal
 
 // ChooseExplorerDuty takes the iconic Explorer duty — the risk buys more skills.
 func (DefaultPolicy) ChooseExplorerDuty(Character) bool { return true }
+
+// RerollBranch keeps the character's current Branch. A Branch a character has
+// served in is a career they are building, and a reroll is as likely to hand
+// them a worse Risk & Reward mod as a better one — so the neutral choice is to
+// stay put. It is also the dice-free one: keeping rolls nothing.
+func (DefaultPolicy) RerollBranch(Character, CareerRecord) bool { return false }
+
+// RerollBranchOnCommission keeps the Branch the character was commissioned out
+// of, for the same reason — and because the Officer column of a two-column table
+// is where that Branch continues (an enlisted Spacer's Crew becomes Line).
+func (DefaultPolicy) RerollBranchOnCommission(Character) bool { return false }

@@ -6,10 +6,10 @@ package chargen
 // Enlisted Promotion is vs Str, Officer Promotion vs Int, Continue vs Str), its
 // rank titles, skill grid, and muster table.
 //
-// Slice scope matches the Soldier's: the
-// +1 skill for a Commission or Promotion, branch automatic skills, the "Retire
-// x2" muster pay (recorded as a named benefit) and its +Officer-Rank Benefit DM,
-// and Command College are all deferred.
+// Slice scope matches the Soldier's: the branch-specific automatic skills, the
+// restriction on which skills a Commission or Promotion may buy, and Command
+// College are deferred. Everything else the Soldier's header once listed has
+// shipped — see there.
 
 // marineBranchOps is the Marine's Branch and Operations tables (Book 1 p. 86).
 var marineBranchOps = BranchOps{

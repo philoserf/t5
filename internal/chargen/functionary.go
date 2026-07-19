@@ -1,5 +1,7 @@
 package chargen
 
+import "fmt"
+
 // Functionary career data, transcribed from Book 1 p. 87. The Functionary plays
 // Office Politics (see runPoliticsTerm) instead of Risk & Reward: two unmodified
 // rolls against the Controlling Characteristic — a failed Risk ends the career
@@ -8,10 +10,36 @@ package chargen
 //
 // Slice scope: the "Total Terms x3" begin (Functionary is never a first career)
 // is deferred, so the career AutoBegins; the F7 UnderSecretary's 1D ordinal, the
-// prior-career-specific F6 titles (College President, etc.), the +1 skill per
-// promotion, and the +Officer-Rank muster Money DM (treated as +Terms) are also
-// deferred. The "Pension x2" muster pay doubles the Functionary's Cr15,000/year
-// pension (an entitlement; see entitlement.go).
+// prior-career-specific F6 titles (College President, etc.), and the
+// +Officer-Rank muster Money DM (treated as +Terms) are also deferred. The
+// "Pension x2" muster pay doubles the Functionary's Cr15,000/year pension (an
+// entitlement; see entitlement.go).
+//
+// The page prints two automatic muster-out awards beside the table. The Gold
+// Watch is granted (functionaryAutoBenefits). The second — "Automatic:
+// Directorship if Rank F6+" — is deferred: a Directorship's substance is its
+// annual Cr36,000 (p. 68), and there is no machinery to pay it. entitlement.go
+// computes only the professor's pension, armed-forces retirement pay, and the
+// civil pension, all of which are age-gated career pensions rather than a
+// benefit-granted annuity. Since the rolled row 11 already hands out an unvalued
+// "Directorship", granting a second one automatically would add a name and no
+// income; the annuity and the automatic grant should land together.
+
+// functionaryAutoBenefits is the Functionary's automatic muster-out award
+// (Book 1 p. 87): "Automatic: Gold Watch (Value= 100 x Terms as Functionary)".
+//
+// The value rides in the benefit's name rather than in Credits or a new Benefit
+// kind. A Gold Watch is an object with a resale value, not a payout — adding
+// Cr100/term to a character's cash would spend a keepsake they still own — and
+// the value is not mechanical: nothing in Book 1 reads it. So it wants a place
+// on the sheet, not in the engine, and Named already goes there. A dedicated
+// kind would buy a structured field no rule consults.
+func functionaryAutoBenefits(rec CareerRecord) []Benefit {
+	return []Benefit{named(fmt.Sprintf("Gold Watch (Cr%d)", goldWatchValuePerTerm*rec.Terms))}
+}
+
+// goldWatchValuePerTerm is the Gold Watch's Cr per term served (Book 1 p. 87).
+const goldWatchValuePerTerm = 100
 
 // FunctionaryCareer is the Functionary (Book 1 p. 87).
 var FunctionaryCareer = Career{
@@ -117,4 +145,5 @@ var FunctionaryCareer = Career{
 		11: {Money: pensionX2(), Benefit: named("Directorship")},
 		12: {Money: pensionX2(), Benefit: knighthood()},
 	},
+	AutoBenefits: functionaryAutoBenefits,
 }

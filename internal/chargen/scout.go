@@ -4,15 +4,17 @@ package chargen
 //
 // Each term a Scout chooses a Duty (Policy.ChooseExplorerDuty): Courier (avoid
 // Risk & Reward, 4 skill rolls) or Explorer (run Risk & Reward, EligPerTerm = 8
-// skill rolls). Deferred: the R&R reward (Discovery, Land Grant, Fame) and the
-// Major/Minor
-// academic awards, which require the education stage this generator does not yet
-// model — those grid cells are transcribed as NoAward ("lost" per the page's
-// footnote when the character has no Major/Minor). The Personal Soc bump carries
-// a second footnote ("lost if Soc is a Caste"); Caste is not modelled, so it is
-// applied unconditionally. The muster Benefit column's DM is +Fame/2 (BenefitDM
-// DMFameHalf); a Scout earns Fame +1 on each Discovery (a successful Explorer
-// Reward, RewardDiscovery), which also grants a Land Grant.
+// skill rolls). A successful Explorer Reward is a Discovery (RewardDiscovery):
+// a Land Grant and Fame +1, which in turn feeds the muster Benefit column's
+// +Fame/2 DM (BenefitDM DMFameHalf). The Academic column's Major/Minor awards
+// are live too — the education stage now runs, so those cells are real
+// AwardMajor/AwardMinor cells and it is applyCell, not the transcription, that
+// honors the page's "lost if the character has no Major/Minor" footnote.
+//
+// Deferred: the Personal Soc bump's second footnote, "lost if Soc is a Caste".
+// Caste is modelled now (chargen.Character.Caste, from a casted sophont species
+// — see sophont.go), so the input exists; what is missing is the rule reading
+// it, and the bump is still applied unconditionally.
 
 // Cell constructors keep the grid readable.
 func bump(ch Characteristic) Cell   { return Cell{Kind: AwardBump, Char: ch} }

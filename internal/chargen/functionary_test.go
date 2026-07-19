@@ -1,6 +1,7 @@
 package chargen
 
 import (
+	"slices"
 	"testing"
 
 	"github.com/philoserf/t5/internal/dice"
@@ -47,8 +48,13 @@ func TestGoldenFunctionary(t *testing.T) {
 		t.Errorf("UPP = %q, want %q (Str 7->8, Int 8->9 muster benefits)", got, "887987")
 	}
 
-	if len(c.Benefits) != 0 {
-		t.Errorf("Benefits = %v, want none (both muster rolls landed on characteristics)", c.Benefits)
+	// Both muster rolls landed on characteristics, so the only benefit on the
+	// sheet is the automatic one the p. 87 page prints beside the table: a Gold
+	// Watch worth "100 x Terms as Functionary" = 100 x 2 = Cr200. It costs no
+	// dice, which is why the script above is unchanged.
+	want := []string{"Gold Watch (Cr200)"}
+	if !slices.Equal(c.Benefits, want) {
+		t.Errorf("Benefits = %v, want %v", c.Benefits, want)
 	}
 
 	if c.Skills.Level("Bureaucrat") != 1 || c.Skills.Level("Admin") != 1 ||
@@ -79,6 +85,25 @@ func TestGoldenFunctionary(t *testing.T) {
 	clerk := CareerRecord{Career: Functionary, Rank: 1}
 	if got := benefitDM(FunctionaryCareer.BenefitDM, c, clerk); got != 0 {
 		t.Errorf("a Clerk's muster Benefit DM = %d, want 0 (F0)", got)
+	}
+}
+
+// TestFunctionaryGoldWatchScalesWithTerms locks the p. 87 valuation formula
+// itself: "Value= 100 x Terms as Functionary". A one-term clerk's watch is
+// Cr100, a five-term secretary's Cr500.
+func TestFunctionaryGoldWatchScalesWithTerms(t *testing.T) {
+	for _, tc := range []struct {
+		terms int
+		want  string
+	}{
+		{1, "Gold Watch (Cr100)"},
+		{2, "Gold Watch (Cr200)"},
+		{5, "Gold Watch (Cr500)"},
+	} {
+		got := functionaryAutoBenefits(CareerRecord{Career: Functionary, Terms: tc.terms})
+		if len(got) != 1 || got[0].Kind != Named || got[0].Name != tc.want {
+			t.Errorf("%d terms: auto benefits = %+v, want one Named %q", tc.terms, got, tc.want)
+		}
 	}
 }
 

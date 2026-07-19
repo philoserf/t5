@@ -11,14 +11,15 @@ package chargen
 // The Branch and Operations modifiers to Risk & Reward are wired via
 // spacerBranchOps and the engine's branchOpsMod.
 //
-// Same deferrals as the Soldier/Marine, plus one of the Spacer's own: the
-// enlisted spacer's option to "select a new Branch upon Promotion", the only
-// rule that selects a Branch a second time. The page gives no rule that has an
-// officer select a Branch at all ("Officers may not change Branch"), so the
-// Officer column below is transcribed but currently unreachable — see
-// BranchOps.branchFor. Also deferred: the +1 skill for a Commission or
-// Promotion, branch automatic skills, the "Retire x2" muster pay (a named
-// benefit) and its +Officer-Rank Benefit DM, and Command College.
+// The page's "Enlisted may select a new Branch upon Promotion" is the Spacer's
+// shorthand for the general rule at p. 66, which the engine follows instead: a
+// non-officer may change Branch at the end of every term, and a Commission
+// re-reads the Branch from the Officer column, where the Spacer's Crew becomes
+// Line. That is what makes the Officer column below reachable — see BranchOps.
+//
+// Its remaining deferrals match the Soldier's: branch automatic skills, the
+// restriction on which skills a Commission or Promotion may buy, and Command
+// College.
 
 // spacerBranchOps is the Spacer's Naval Branch and Operations tables (Book 1
 // p. 81). Naval Operations use no per-branch DM, so every branch's OpsDM is 0.
