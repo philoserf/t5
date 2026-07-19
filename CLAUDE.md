@@ -231,10 +231,15 @@ Tooling (go, go-task, golangci-lint, poppler's `pdftotext`) is pinned in `Brewfi
   (sub-ton mounts only), with the Bolt-In needing neither — which is why `Tonnage` is fixed-point
   hundredths. Golden-locked to the p.167 and p.176 catalogs, every row. Gotchas: the book divides by
   three by multiplying by **0.33** (a 200t Main at Vlong is "66 tons"), so range multipliers are
-  hundredths — do not "fix" this to exact division; and the drive stage table (p.76) and the weapon
-  one (p.83) genuinely differ in one cell (**Modified** costs a drive ×1 but a weapon /2), so each
-  governs its own components. Four book conflicts are resolved against the design tables and
-  documented at the point of transcription. Deferred: sensors, crew/accommodations, Quality,
+  hundredths — do not "fix" this to exact division; and the drive stage table and the weapon one
+  stay **separate tables that happen to agree**, because each is printed both ways in the book and
+  each is settled by its own worked examples (**Modified** costs /2 on both sides: pp.104/127/134/190
+  for drives against the x1 of pp.63/76, pp.83/225/226/251 for weapons against the p.279 appendix).
+  Drive stage tonnage **rounds up** and there is no tonnage floor — p.77's "no drive may be smaller
+  than the Drive-A of the class" is a floor on the size **letter**, which is the only reading under
+  which the worked tables' seven sub-Drive-A rows reproduce. Book conflicts are resolved against the
+  design tables and documented at the point of transcription; the p.127 and p.134 stage columns are
+  golden-locked cell by cell. Deferred: sensors, crew/accommodations, Quality,
   Batteries, world-surface defenses, and the pp.168–169 interference grid.
 - `internal/trade/` — the Trade & Commerce pricing engine (Book 2 pp. 209-221). Speculative cargo
   is bought at a source world for its `Cost` (Cr3,000 base + per-value-class cost mods + Cr100/TL)

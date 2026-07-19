@@ -87,6 +87,17 @@ func DriveForPotential(potential, hullOrd int) int {
 	return ord
 }
 
+// ceilDiv divides and rounds up, for non-negative operands. The stage tables
+// round "against advantage (up for tonnage; down for potential)" (Book 2 pp.104,
+// 127, 134), and Go's integer division rounds down.
+func ceilDiv(n, d int) int {
+	if d <= 0 {
+		return 0
+	}
+
+	return (n + d - 1) / d
+}
+
 // driveTonsBase is a drive's base tonnage before stage effects (Book 2 p.77 Y
 // table). Each drive type is a piecewise-linear function of the size ordinal —
 // verified against the p.77 grid (e.g. Jump-A = 10, Jump-Z = 125; Power-A = 4).
@@ -177,6 +188,17 @@ const (
 
 // stageData is the p.76 X table. Cost and tons are stored as fractions
 // (numerator/denominator) to stay exact; fuelPct and eff are percentages.
+//
+// Book conflict, the Modified cost cell. The same X table is printed six times
+// in Book 2. Four printings give Modified /2 (pp.104, 127, 134, 190); two give
+// it x1 (pp.63, 76) — and those two are the only printings that carry no worked
+// example beside them. The worked columns decide it: p.127's Jump-B column
+// reconciles all eleven of its rows under /2 (base 15t at MCr1/t, so Modified is
+// 8t for MCr4 = 8 x 1/2, against Advanced's 5t for MCr10 = 5 x 2 and Ultimate's
+// 4t for MCr12 = 4 x 3), and p.134's Power-B column independently prints
+// "Mod P-Plant-B ... 4 (=3.5) 1.7" — 3.5 x 1/2 = 1.75. So /2 it is, and the
+// weapon side (weapon_data.go's stageCostData) agrees rather than conflicting.
+// TestDesignDriveStageCatalogP127 locks the column that settles this.
 var stageData = [...]struct {
 	name             string
 	tlDelta          int
@@ -192,7 +214,7 @@ var stageData = [...]struct {
 	Alternate:    {"Alternate", 0, 1, 1, 100, 100, 1, 1},
 	Improved:     {"Improved", 1, 1, 1, 110, 90, 1, 1},
 	Generic:      {"Generic", 1, 1, 2, 90, 110, 1, 1},
-	Modified:     {"Modified", 2, 1, 1, 110, 90, 1, 2},
+	Modified:     {"Modified", 2, 1, 2, 110, 90, 1, 2},
 	Advanced:     {"Advanced", 3, 2, 1, 120, 80, 1, 3},
 	Ultimate:     {"Ultimate", 4, 3, 1, 130, 70, 1, 4},
 }
@@ -273,12 +295,26 @@ func designDrive(kind DriveKind, spec DriveSpec, hullOrd, tl int) (*Drive, strin
 	// would quietly free up hull space and could turn an over-budget ship into
 	// one that appears to fit — trading a reported mistake for a hidden one. The
 	// record shows the useless drive; Problems says why it is useless.
-	tons := driveTonsBase(kind, spec.Letter) * st.tonsNum / st.tonsDen
-	if floor := driveTonsBase(kind, 1); tons < floor {
-		tons = floor // no drive is smaller than the class Drive-A (Book 2 p.77)
-	}
-
-	cost := tons * driveCrPerTon(kind) * st.costNum / st.costDen
+	// Stage tonnage rounds UP, and there is no tonnage floor.
+	//
+	// Book conflict, p.77 versus the rounding footer printed on pp.104, 127, and
+	// 134: "Round against advantage (up for tonnage; down for potential)" against
+	// "No drive may be smaller than the Drive-A of the class, even after
+	// modifications like Stage Effects." Read as a floor on TONNAGE the second
+	// rule contradicts the worked tables in seven printed rows — p.127 prints a
+	// Modified/Advanced/Ultimate Jump-B at 8/5/4 tons where Jump-A is 10, p.134 a
+	// Power-B at 3/2 where Power-A is 4, p.104 a Maneuver-B at 1 where
+	// Maneuver-A is 2.
+	//
+	// The reconciling reading is p.77's own words: smaller than "the Drive-A of
+	// the class" is a floor on the size LETTER, not on tonnage. No drive is
+	// specified below A — and every worked example above is still a Drive-B,
+	// shrunk by its stage but not demoted. Under that reading all thirty-three
+	// printed rows across the three tables reproduce and no source is a typo, so
+	// the letter floor is enforced where letters are chosen (spec.Letter >= 1;
+	// drivePotential returns 0 below it) and tonnage simply rounds up.
+	tons := ceilDiv(driveTonsBase(kind, spec.Letter)*st.tonsNum, st.tonsDen)
+	cost := ceilDiv(tons*driveCrPerTon(kind)*st.costNum, st.costDen)
 
 	return &Drive{
 		Kind: kind, Letter: spec.Letter,
