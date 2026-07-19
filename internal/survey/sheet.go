@@ -182,6 +182,11 @@ func bodyLabel(o systemgen.PlacedOrbit, mainworld uwp.Profile) string {
 			s += fmt.Sprintf("  — moon of Gas Giant %s", o.Giant)
 		case o.Parent != nil:
 			s += fmt.Sprintf("  — moon of %s %s", o.Parent.Type, o.Parent.Profile)
+			// The same words moonLabel gives an equal-size moon: on this sheet a
+			// double planet is a double planet, whichever body is the mainworld.
+			if o.DoublePlanet {
+				s += "  [double planet]"
+			}
 		}
 
 		return s

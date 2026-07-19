@@ -201,14 +201,21 @@ func belts(r *dice.Roller) int {
 
 // orbitLabel renders one placed orbit's contents: the kind, plus a gas giant's
 // size/class or a world's type/UWP/trade-codes, plus any moons. A mainworld with
-// a giant is a satellite riding it.
+// a giant is a satellite riding it; one the same Size as its host is a double
+// planet, marked with the same " dp" moonList gives an equal-size moon so the
+// two halves of the same record read alike.
 func orbitLabel(o PlacedOrbit) string {
 	label := o.Kind.String()
 	switch {
 	case o.Kind == KindMainworld && o.Giant != nil:
 		label = fmt.Sprintf("Mainworld (moon of Gas Giant %s)", o.Giant)
 	case o.Kind == KindMainworld && o.Parent != nil:
-		label = fmt.Sprintf("Mainworld (moon of %s %s)", o.Parent.Type, o.Parent.Profile)
+		dp := ""
+		if o.DoublePlanet {
+			dp = " dp"
+		}
+
+		label = fmt.Sprintf("Mainworld (moon of %s %s%s)", o.Parent.Type, o.Parent.Profile, dp)
 	case o.Giant != nil:
 		label = fmt.Sprintf("%s %s", o.Kind, o.Giant)
 	case o.World != nil:
