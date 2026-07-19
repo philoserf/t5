@@ -232,6 +232,34 @@ func TestDefenseProblems(t *testing.T) {
 	}
 }
 
+// TestRefusedDefenseKeepsItsIdentity: a weapon that cannot serve as a defense is
+// still that weapon, and the ship card has to say which one it refused. The device
+// name survives the refusal; only a device the package cannot name at all is "?".
+// It is named WITHOUT a tech level and without the rest of the line, because install
+// never ran — the zeros would be fabrications, not facts.
+func TestRefusedDefenseKeepsItsIdentity(t *testing.T) {
+	d := DesignWeaponAsDefense(WeaponSpec{MesonGun, Main, Standard, VDistant})
+	if len(d.Problems) == 0 {
+		t.Fatalf("a Meson Gun is not point defence; it should be refused")
+	}
+
+	if d.Name() != "Meson Gun" {
+		t.Errorf("refused defense Name = %q, want %q", d.Name(), "Meson Gun")
+	}
+
+	if d.LongName() != "Meson Gun" {
+		t.Errorf("refused defense LongName = %q, want %q", d.LongName(), "Meson Gun")
+	}
+	// A device the package cannot name at all still reads "?".
+	if u := DesignWeaponAsDefense(WeaponSpec{Model: WeaponID(99)}); u.Name() != "?" {
+		t.Errorf("unknown weapon-as-defense Name = %q, want ?", u.Name())
+	}
+
+	if u := DesignDefense(DefenseSpec{Model: DefenseID(99)}); u.Name() != "?" {
+		t.Errorf("unknown defense Name = %q, want ?", u.Name())
+	}
+}
+
 // TestDefenseScale: a defense reaches on the world ladder. Without a scale check a
 // screen could be built for a Space range and would print an R= band from the wrong
 // ladder — "R=12" for a Black Globe at Deep Space, a reach the book says no defense

@@ -192,7 +192,11 @@ type device struct {
 func DesignDefense(spec DefenseSpec) Defense {
 	dev, problems := defenseDevice(spec)
 	if problems != nil {
-		return Defense{Spec: spec, Problems: problems}
+		// dev carries the device's name even on the failure paths that know one — a
+		// weapon that cannot serve as a defense is still that weapon, and the ship
+		// card should say which one it refused. defenseDevice zero-values dev for the
+		// truly unknown cases, so "?" is preserved where it belongs.
+		return Defense{Spec: spec, Device: dev.name, Problems: problems}
 	}
 
 	if !validDefenseMount(spec.Mount) || !validRange(spec.Range) {
@@ -285,13 +289,26 @@ func defenseDevice(spec DefenseSpec) (device, []string) {
 }
 
 // Name is the defense's name with its installed tech level, e.g. "Black Globe-16".
+// An installation that was refused outright is named without one: install never ran
+// for it, so it has no tech level to print.
 func (d Defense) Name() string {
 	if d.Device == "" {
 		return "?"
 	}
 
+	if !d.installed() {
+		return d.Device
+	}
+
 	return fmt.Sprintf("%s-%d", d.Device, d.TL)
 }
+
+// installed reports whether install actually ran for this defense — that is,
+// whether its TL, tonnage, and cost mean anything. DesignDefense returns early on
+// a refused device or an unknown mount or range, and every real defense comes out
+// of install with a positive tech level (the lowest base is 8 and the deepest
+// discount is -5), so a zero TL is exactly the un-built case.
+func (d Defense) installed() bool { return d.TL > 0 }
 
 // LongName renders the defense's identity as the book's own tables do (Book 2
 // p.176 "Identifying Defenses"):
@@ -300,6 +317,12 @@ func (d Defense) Name() string {
 func (d Defense) LongName() string {
 	if d.Device == "" || !validDefenseMount(d.Spec.Mount) || !validRange(d.Spec.Range) {
 		return "?"
+	}
+	// A refused installation has no numbers: printing the full line would state its
+	// zero tonnage, zero cost, and R=00 as facts. Name it, and let the ship's own
+	// Problems carry the reason.
+	if !d.installed() {
+		return d.Name()
 	}
 
 	return fmt.Sprintf("%s %s %s %s Mod=%+d. %s. %s. R=%02d. (%s).",
