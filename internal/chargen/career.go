@@ -383,7 +383,13 @@ type CareerRecord struct {
 	Rank          int  // rank number within the current track (0 for a rankless career)
 	Officer       bool // whether Rank is on the officer track
 	Commendations int  // Commendations earned in this career (drive its muster rolls/DM)
-	Outcome       TermOutcome
+	// Branch is the armed-forces Branch of service the character last held in this
+	// career ("" for a career with no Branch table). It is recorded per career
+	// rather than on the Character because a character may serve several, and it
+	// is the LAST branch held rather than the first: Book 1 p. 66 lets a non-officer
+	// reselect or reroll at the end of each Term, and the Commission re-reads it.
+	Branch  string
+	Outcome TermOutcome
 }
 
 // careerRun is the transient bookkeeping for one career, live only during
@@ -401,6 +407,7 @@ type careerRun struct {
 	commends    int              // Commendations earned this career (per-career muster rolls/DM)
 	branchMod   int              // the chosen armed-forces Branch's R&R mod
 	branchOpsDM int              // the chosen Branch's DM on Operations rolls
+	branchName  string           // the chosen Branch's name, for the career record
 	branchRoll  int              // the roll that chose the current Branch (re-read at Commission)
 	terms       int              // terms served before the current one (the Rogue's "Mod +Terms")
 	inPrison    bool             // the Rogue serves the coming term in prison (Book 1 p. 84)
@@ -607,6 +614,7 @@ func runCareer(r *dice.Roller, p Policy, c *Character, run *careerRun, career Ca
 	rec.Rank = run.rank
 	rec.Officer = run.officer
 	rec.Commendations = run.commends
+	rec.Branch = run.branchName
 	c.Careers = append(c.Careers, rec)
 }
 
@@ -774,7 +782,7 @@ func rollBranch(r *dice.Roller, c *Character, run *careerRun, career Career) {
 
 // holdBranch makes b the run's current Branch.
 func holdBranch(run *careerRun, b Branch) {
-	run.branchMod, run.branchOpsDM = b.Mod, b.OpsDM
+	run.branchMod, run.branchOpsDM, run.branchName = b.Mod, b.OpsDM, b.Name
 }
 
 // rerollBranch offers a surviving non-officer the end-of-term Branch change of

@@ -69,6 +69,13 @@ func TestGoldenSoldier(t *testing.T) {
 		t.Errorf("record = %+v, want Soldier/2 terms/MusteredOut", rec)
 	}
 
+	// The Branch the trace above selected (roll 5 + Edu bonus 2 = 7). Recording it
+	// is what makes the served branch recoverable after muster-out, and what the
+	// deferred branch-keyed automatic skills will key on.
+	if rec.Branch != "Technical" {
+		t.Errorf("record Branch = %q, want %q", rec.Branch, "Technical")
+	}
+
 	if !rec.Officer || rec.Rank != 1 {
 		t.Errorf(
 			"rank = %d officer %v, want officer rank 1 (2nd Lieutenant)",
