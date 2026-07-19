@@ -71,3 +71,141 @@ func TestGoldenSpacer(t *testing.T) {
 		t.Errorf("Benefits = %v, want [Wafer Jack]", c.Benefits)
 	}
 }
+
+// TestSpacerNavalBranchColumns locks both columns of the NAVAL BRANCH table
+// (Book 1 p. 81), which prints "1D Officer Mod Enlisted Mod". The two columns
+// disagree on rolls 1, 2, 3, and 6; every other roll is shared.
+func TestSpacerNavalBranchColumns(t *testing.T) {
+	for _, tc := range []struct {
+		roll                    int
+		officer, enlisted       string
+		officerMod, enlistedMod int
+	}{
+		{1, "Line", "Crew", 1, 1},           // differs: name only
+		{2, "Line", "Crew", 1, 1},           // differs: name only
+		{3, "Line", "Engineer", 1, 0},       // differs: name and mod
+		{4, "Engineer", "Engineer", 0, 0},   // agrees
+		{5, "Gunnery", "Gunnery", 1, 1},     // agrees
+		{6, "Flight", "Gunnery", 2, 1},      // differs: name and mod
+		{7, "Technical", "Technical", 0, 0}, // agrees
+		{8, "Medical", "Medical", 0, 0},     // agrees
+	} {
+		off := spacerBranchOps.branchFor(true, tc.roll)
+		if off.Name != tc.officer || off.Mod != tc.officerMod {
+			t.Errorf("branchFor(officer, %d) = %s/%d, want %s/%d",
+				tc.roll, off.Name, off.Mod, tc.officer, tc.officerMod)
+		}
+
+		enl := spacerBranchOps.branchFor(false, tc.roll)
+		if enl.Name != tc.enlisted || enl.Mod != tc.enlistedMod {
+			t.Errorf("branchFor(enlisted, %d) = %s/%d, want %s/%d",
+				tc.roll, enl.Name, enl.Mod, tc.enlisted, tc.enlistedMod)
+		}
+	}
+}
+
+// TestArmedForcesSingleBranchColumn guards the other two armed-forces Branch
+// tables: the Soldier (p. 82) and Marine (p. 86) print a single Branch column,
+// so both statuses read the same row and neither carries an Enlisted column.
+func TestArmedForcesSingleBranchColumn(t *testing.T) {
+	for _, career := range []Career{SoldierCareer, MarineCareer} {
+		if career.BranchOps.EnlistedBranches != nil {
+			t.Errorf("%s: EnlistedBranches set, but the book prints one Branch column", career.Name)
+		}
+
+		for roll := 1; roll <= 8; roll++ {
+			if career.BranchOps.branchFor(true, roll) != career.BranchOps.branchFor(false, roll) {
+				t.Errorf("%s: branch %d differs by status", career.Name, roll)
+			}
+		}
+	}
+}
+
+// oneTermPolicy is goldenPolicy that leaves after a single term.
+type oneTermPolicy struct{ goldenPolicy }
+
+func (oneTermPolicy) Continue(Character, CareerRecord) bool { return false }
+
+// spacerBranchScript builds a one-term Spacer whose only variable is the Branch
+// roll. Every characteristic is 7 (so Edu is under 10 and the Branch/Operations
+// +2 never applies), the four Operations rolls all land on Siege (mod 0) so the
+// term's combined mod IS the Branch mod, and Risk is rolled low enough to hold
+// under either column. That leaves the Reward roll — target CC + mod, so a
+// bigger Branch mod makes it EASIER — as the observable: reward is scripted to
+// miss the Enlisted target by exactly one, so reading the Officer column instead
+// hands the character a Medal they did not earn.
+func spacerBranchScript(branch int, risk, reward [2]int) []int {
+	seq := []int{
+		3, 4, 3, 4, 3, 4, 3, 4, 3, 4, 3, 4, // UPP: 777777
+		3, 4, // Begin vs Int 7: 7 <= 7, enters (Spacehand, Fighter-1)
+		branch,     // Branch (no Edu bonus, so the die is the row)
+		3, 3, 3, 3, // 4 Operations rolls -> Siege (mod 0); best of four is 0
+	}
+	seq = append(seq, risk[0], risk[1])
+	seq = append(seq, reward[0], reward[1])
+
+	return append(seq,
+		5, 5, // Commission vs Dex 7: 10 > 7, fails
+		5, 5, // Rating Promotion vs Dex 7: 10 > 7, fails
+		1, 1, 1, 1, // 4 skill rolls, Patrol/Strike col row 1 = Astrogation
+		5, 5, // Continue vs Str 7: 10 > 7, and the policy leaves anyway
+		1, // muster out: 1 term -> 1 roll, Benefit column, DM 0 -> row 1
+	)
+}
+
+// TestSpacerEnlistedBranchRow3 covers NAVAL BRANCH row 3, where the columns
+// disagree: Officer "Line 1" but Enlisted "Engineer 0". A Spacer selects their
+// Branch at career start, where they are always an enlisted Rating (R1), so the
+// Enlisted mod 0 applies. Reward target is CC 7 + 0 = 7 and the roll is 8: no
+// Medal. Under the Officer column the mod would be 1, target 8, and the same
+// roll would earn one.
+func TestSpacerEnlistedBranchRow3(t *testing.T) {
+	seq := spacerBranchScript(3, [2]int{2, 3}, [2]int{4, 4})
+
+	c := GenerateCareered(dice.NewScripted(seq...), oneTermPolicy{}, worldgen.World{}, SpacerCareer)
+
+	if c.WoundBadges != 0 {
+		t.Fatalf("WoundBadges = %d, want 0 (Risk holds under either column)", c.WoundBadges)
+	}
+
+	if c.Medals != 0 {
+		t.Errorf("Medals = %d, want 0: branch 3 is Enlisted Engineer mod 0, "+
+			"so Reward is 8 vs 7 and misses; 1 Medal means the Officer column (Line mod 1) was read",
+			c.Medals)
+	}
+}
+
+// TestSpacerEnlistedBranchRow6 covers NAVAL BRANCH row 6, where the columns
+// disagree: Officer "Flight 2" but Enlisted "Gunnery 1". The enlisted mod 1 puts
+// the Reward target at 8 against a roll of 9: no Medal. The Officer column's mod
+// 2 would put it at 9 and earn one.
+func TestSpacerEnlistedBranchRow6(t *testing.T) {
+	seq := spacerBranchScript(6, [2]int{2, 3}, [2]int{3, 6})
+
+	c := GenerateCareered(dice.NewScripted(seq...), oneTermPolicy{}, worldgen.World{}, SpacerCareer)
+
+	if c.WoundBadges != 0 {
+		t.Fatalf("WoundBadges = %d, want 0 (Risk holds under either column)", c.WoundBadges)
+	}
+
+	if c.Medals != 0 {
+		t.Errorf("Medals = %d, want 0: branch 6 is Enlisted Gunnery mod 1, "+
+			"so Reward is 9 vs 8 and misses; 1 Medal means the Officer column (Flight mod 2) was read",
+			c.Medals)
+	}
+}
+
+// TestSpacerBranchRow5Agrees is the control: row 5 is Gunnery mod 1 in BOTH
+// columns, so the same script that distinguishes rows 3 and 6 must behave
+// identically here whichever column is read — a Reward of 9 against target 8
+// misses. It guards against a "fix" that shifts every row rather than the
+// three that actually differ.
+func TestSpacerBranchRow5Agrees(t *testing.T) {
+	seq := spacerBranchScript(5, [2]int{2, 3}, [2]int{3, 6})
+
+	c := GenerateCareered(dice.NewScripted(seq...), oneTermPolicy{}, worldgen.World{}, SpacerCareer)
+
+	if c.Medals != 0 {
+		t.Errorf("Medals = %d, want 0 (branch 5 is Gunnery mod 1 in both columns)", c.Medals)
+	}
+}

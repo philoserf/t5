@@ -8,14 +8,31 @@ package chargen
 // Promotion are vs Dex, Officer Promotion vs Soc, Continue vs Str, plus its own
 // naval rank titles, skill grid, and muster table.
 //
-// Same deferrals as the Soldier/Marine: the Branch and Operations R&R modifiers,
-// the +1 skill for a Commission or Promotion, branch automatic skills, the
-// "Retire x2" muster pay (a named benefit) and its +Officer-Rank Benefit DM, and
-// Command College.
+// The Branch and Operations modifiers to Risk & Reward are wired via
+// spacerBranchOps and the engine's branchOpsMod.
+//
+// Same deferrals as the Soldier/Marine, plus one of the Spacer's own: the
+// enlisted spacer's option to "select a new Branch upon Promotion", the only
+// rule that selects a Branch a second time. The page gives no rule that has an
+// officer select a Branch at all ("Officers may not change Branch"), so the
+// Officer column below is transcribed but currently unreachable — see
+// BranchOps.branchFor. Also deferred: the +1 skill for a Commission or
+// Promotion, branch automatic skills, the "Retire x2" muster pay (a named
+// benefit) and its +Officer-Rank Benefit DM, and Command College.
 
 // spacerBranchOps is the Spacer's Naval Branch and Operations tables (Book 1
 // p. 81). Naval Operations use no per-branch DM, so every branch's OpsDM is 0.
+//
+// NAVAL BRANCH is the one Branch table in the book that prints two columns —
+// "1D Officer Mod Enlisted Mod" — and they disagree on four rolls: 1 and 2 are
+// Line for an officer but Crew for the enlisted; 3 is Line 1 for an officer but
+// Engineer 0 for the enlisted; 6 is Flight 2 for an officer but Gunnery 1 for
+// the enlisted. Rolls 4, 5, 7, and 8 agree. Every Spacer enters the career
+// enlisted, so the Enlisted column is the one that applies at the only point the
+// engine selects a Branch; both are transcribed so the lookup can read the
+// column matching the character's status (BranchOps.branchFor).
 var spacerBranchOps = BranchOps{
+	// The Officer column.
 	Branches: [9]Branch{
 		1: {"Line", 1, 0},
 		2: {"Line", 1, 0},
@@ -23,6 +40,17 @@ var spacerBranchOps = BranchOps{
 		4: {"Engineer", 0, 0},
 		5: {"Gunnery", 1, 0},
 		6: {"Flight", 2, 0},
+		7: {"Technical", 0, 0},
+		8: {"Medical", 0, 0},
+	},
+	// The Enlisted column.
+	EnlistedBranches: &[9]Branch{
+		1: {"Crew", 1, 0},
+		2: {"Crew", 1, 0},
+		3: {"Engineer", 0, 0},
+		4: {"Engineer", 0, 0},
+		5: {"Gunnery", 1, 0},
+		6: {"Gunnery", 1, 0},
 		7: {"Technical", 0, 0},
 		8: {"Medical", 0, 0},
 	},
