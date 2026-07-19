@@ -7,12 +7,35 @@ import (
 	"github.com/philoserf/t5/internal/dice"
 )
 
+// validGP is exactly the set of letters gpLetter can emit; TestValidGPIsExact
+// keeps it honest, so a Genetic Profile check against it is a real check.
+const validGP = "SDAGEVITKC"
+
+// TestValidGPIsExact pins the validGP set to charInfo: every emitted letter must
+// appear in the set, and every letter in the set must be emitted. The second
+// direction is what catches a stray character (a space, a typo) silently
+// widening the Genetic Profile validation in TestGenerateInvariants.
+func TestValidGPIsExact(t *testing.T) {
+	emitted := map[byte]bool{}
+	for name, info := range charInfo {
+		if !strings.ContainsRune(validGP, rune(info.gp)) {
+			t.Errorf("%v emits GP letter %q, absent from validGP %q", name, info.gp, validGP)
+		}
+
+		emitted[info.gp] = true
+	}
+
+	for i := range len(validGP) {
+		if !emitted[validGP[i]] {
+			t.Errorf("validGP %q contains %q, which no characteristic emits", validGP, validGP[i])
+		}
+	}
+}
+
 // TestGenerateInvariants runs Generate across many seeds and checks the
 // structural guarantees: six characteristics, a six-letter Genetic Profile of
 // valid letters, and a plausible homeworld (Atmosphere 2-9, Population 7+).
 func TestGenerateInvariants(t *testing.T) {
-	const validGP = "SDAGEVITK C" // the letters gpLetter can emit
-
 	for seed := uint64(1); seed <= 50; seed++ {
 		s := Generate(dice.NewWithSeed(seed))
 
