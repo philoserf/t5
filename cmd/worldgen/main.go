@@ -17,7 +17,9 @@ import (
 )
 
 func main() {
-	n, r := cli.SeededRoller("worlds")
+	n, r, reportSeed := cli.SeededRoller("worlds")
+	reportSeed() // no flags of its own to check, so the input is already good
+
 	for range n {
 		p := worldgen.Generate(r)
 		if tc := worldgen.TradeClassifications(p); len(tc) > 0 {

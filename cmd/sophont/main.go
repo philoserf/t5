@@ -24,7 +24,8 @@ import (
 
 func main() {
 	showChar := flag.Bool("char", false, "also print one individual member of each species")
-	n, r := cli.SeededRoller("species")
+	n, r, reportSeed := cli.SeededRoller("species")
+	reportSeed() // -char is a bool, so there is nothing further to check
 
 	for range n {
 		s := sophont.Generate(r)

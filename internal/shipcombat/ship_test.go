@@ -107,3 +107,17 @@ func TestDefendIgnoresRefusedDefense(t *testing.T) {
 		t.Errorf("a built defense failed to intercept on all 1s: %+v", got)
 	}
 }
+
+// A round DesignMissile refused has no tabulated Massive Explosion. Only the
+// DeadFall arm reads Size, so before the Problems check an undesignable Size-7
+// anti-matter round still reported a full 10x detonation.
+func TestWeaponsMassiveExplosionRejectsUndesignableRound(t *testing.T) {
+	bad := shipgen.Missile{
+		Spec:     shipgen.MissileSpec{Type: shipgen.AntiMatter, Size: 7},
+		Problems: []string{"anti-matter warhead is not available at size 7"},
+	}
+
+	if _, ok := WeaponsMassiveExplosion(bad); ok {
+		t.Error("a round that failed design reported a tabulated Massive Explosion")
+	}
+}

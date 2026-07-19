@@ -46,9 +46,11 @@ func main() {
 		"",
 		`defense(s) to install, comma-separated, each "name[:mount[:range]]" (e.g. "blackglobe,nucleardamper")`,
 	)
-	n, r := cli.SeededRoller("ships")
+	n, r, reportSeed := cli.SeededRoller("ships")
 
 	if *hull == "" {
+		reportSeed() // a random ship reads none of the design flags
+
 		for i := range n {
 			if i > 0 {
 				fmt.Println()
@@ -68,6 +70,9 @@ func main() {
 	if err != nil {
 		cli.Fatalf("%v", err)
 	}
+
+	reportSeed() // the spec is good, so this run will produce a ship
+
 	// The spec is fixed, so the ship is too: design it once and print it n times.
 	ship := shipgen.Design(spec)
 
@@ -100,6 +105,21 @@ func specFromFlags(f flags) (shipgen.ShipSpec, error) {
 			"invalid hull %q (want a letter A-Z, no I or O)",
 			f.hull,
 		)
+	}
+
+	// A Tech Level outside the design system's range is not a Tech Level: a
+	// negative one renders "TL--5" on the ship card and a malformed QSP, which
+	// would otherwise reach stdout at exit 0 as though it were a real record.
+	if f.tl < shipgen.MinTL || f.tl > shipgen.MaxTL {
+		return shipgen.ShipSpec{}, fmt.Errorf(
+			"invalid tech level %d (want %d-%d; the design system tops out at TL%d, Book 2 p.51)",
+			f.tl, shipgen.MinTL, shipgen.MaxTL, shipgen.MaxTL,
+		)
+	}
+
+	mission, err := missionCode(f.mission)
+	if err != nil {
+		return shipgen.ShipSpec{}, err
 	}
 
 	config, ok := shipgen.ConfigByLetter(f.config)
@@ -152,7 +172,7 @@ func specFromFlags(f flags) (shipgen.ShipSpec, error) {
 	}
 
 	return shipgen.ShipSpec{
-		Mission: f.mission, TL: f.tl, HullLetter: hullOrd, Config: config,
+		Mission: mission, TL: f.tl, HullLetter: hullOrd, Config: config,
 		Structure: structure, ArmorLayers: f.armor,
 		Maneuver:  maneuver,
 		Jump:      jump,
@@ -161,6 +181,50 @@ func specFromFlags(f flags) (shipgen.ShipSpec, error) {
 		Defenses:  defenseList,
 		FuelScoop: true,
 	}, nil
+}
+
+// missionCode checks a QSP mission code and returns it uppercased (hull and
+// drive letters are already case-insensitive, so -mission s is spelled the same
+// way).
+//
+// Book 2 Chart 02 (p.51): "State the mission as a one-, two- or (rarely) three-
+// letter code. Multiple identical letter codes (AA, AAA) may use a digit (A2,
+// A3)." So the shape is fixed — one to three letters, or a letter and the digit
+// standing in for its repeats — while the meaning is deliberately not: missions
+// are "defined to allow broad interpretation and substantial overlap", and
+// "actual meanings are subject to common sense, and may be ambiguous". Codes are
+// composed by the designer (Service-Activity-Type-Qualifier, plus Modifiers), so
+// there is no closed vocabulary to check against, and inventing one would refuse
+// legitimate referee codes.
+//
+// What is checked is therefore the shape alone. That is enough to keep the QSP
+// well formed: -mission "not-a-code" used to render "Ship  not-a-code-AS22".
+func missionCode(s string) (string, error) {
+	code := strings.ToUpper(s)
+
+	malformed := fmt.Errorf(
+		"invalid mission %q (want one to three letters, e.g. S, SDB, or a letter "+
+			"and the digit standing in for its repeats, e.g. A2 for AA)",
+		s,
+	)
+
+	if code == "" || len(code) > 3 {
+		return "", malformed
+	}
+
+	for i := range len(code) {
+		switch c := code[i]; {
+		case c >= 'A' && c <= 'Z':
+		// The digit shorthand abbreviates a repeated letter, and a code is at
+		// most three letters long, so it can only ever be a 2 or a 3, and only
+		// after the letter it repeats.
+		case i == 1 && len(code) == 2 && (c == '2' || c == '3'):
+		default:
+			return "", malformed
+		}
+	}
+
+	return code, nil
 }
 
 // An installation is one entry of -weapon or -defense: "name[:mount[:range]]". The

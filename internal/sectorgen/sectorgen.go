@@ -13,13 +13,17 @@ import (
 )
 
 // Sector dimensions (Book 3 p.12): 32 columns of 40 rows = 1280 hexes; each
-// subsector is 8 columns of 10 rows, so subsectorCols subsectors span a row band.
+// subsector is 8 columns of 10 rows, so four subsectors span a row band.
+//
+// The two horizontal constants measure different things and are named for their
+// units: subsectorWidth is hexes per subsector, subsectorsPerBand is subsectors
+// per row band. Swapping the two would still divide the grid and still compile.
 const (
-	Columns       = 32
-	Rows          = 40
-	subsectorCol  = 8
-	subsectorRow  = 10
-	subsectorCols = Columns / subsectorCol // 4 subsectors across a row band
+	Columns           = 32
+	Rows              = 40
+	subsectorWidth    = 8                        // hex columns in one subsector
+	subsectorHeight   = 10                       // hex rows in one subsector
+	subsectorsPerBand = Columns / subsectorWidth // 4 subsectors across a row band
 )
 
 // A Hex is a location on a sector map: column 1-32, row 1-40 (Book 3 p.12). The
@@ -28,8 +32,23 @@ type Hex struct {
 	Col, Row int
 }
 
-// String renders the hex as its four-digit CCRR location, e.g. "0803".
+// Valid reports whether the hex is on the sector map: column 1-Columns, row
+// 1-Rows. ParseHex and GenerateSector only ever build valid hexes, so this
+// matters for a Hex a caller composed itself.
+func (h Hex) Valid() bool {
+	return h.Col >= 1 && h.Col <= Columns && h.Row >= 1 && h.Row <= Rows
+}
+
+// String renders the hex as its four-digit CCRR location, e.g. "0803". An off-map
+// hex renders "????" rather than a location: this is the display path, so it stays
+// total like ehex.Format and Density.String, and a four-character sentinel keeps
+// the width of the positional record it prints into — while "3301" or "10005"
+// would read as a real (or unparseable) location.
 func (h Hex) String() string {
+	if !h.Valid() {
+		return "????"
+	}
+
 	return fmt.Sprintf("%02d%02d", h.Col, h.Row)
 }
 
@@ -49,13 +68,17 @@ func ParseHex(s string) (Hex, bool) {
 	}
 
 	col, _ := strconv.Atoi(s[:2])
-
 	row, _ := strconv.Atoi(s[2:])
-	if col < 1 || col > Columns || row < 1 || row > Rows {
+
+	// Ask Valid rather than restating its bounds — this is what makes its doc's
+	// claim ("ParseHex and GenerateSector only ever build valid hexes") true by
+	// construction rather than by two copies of the map's dimensions agreeing.
+	h := Hex{Col: col, Row: row}
+	if !h.Valid() {
 		return Hex{}, false
 	}
 
-	return Hex{Col: col, Row: row}, true
+	return h, true
 }
 
 // Distance returns the number of parsecs (jump distance) between two hexes on
@@ -88,11 +111,24 @@ func ParseSubsector(s string) (byte, bool) {
 
 // Subsector returns the hex's subsector letter A-P (Book 3 p.12): the sixteen
 // 8x10 subsectors are lettered left-to-right, top-to-bottom in a 4x4 grid.
+//
+// It panics on an off-map hex rather than returning a letter, the strict half of
+// the same split task.Difficulty.Dice draws: this letter is a filing decision
+// (survey groups its records by it), and the arithmetic is happy to hand back a
+// plausible wrong answer — Hex{33,1} bleeds into the next row band as 'E' and
+// Hex{0,0} truncates to 'A', indistinguishable from the real upper-left
+// subsector. A misfiled world would then be silent. Use Valid to pre-check a hex
+// a caller composed itself; ParseHex and GenerateSector only build valid ones.
 func (h Hex) Subsector() byte {
-	colBand := (h.Col - 1) / subsectorCol
-	rowBand := (h.Row - 1) / subsectorRow
+	if !h.Valid() {
+		panic(fmt.Sprintf("sectorgen: hex %d,%d is off the sector map (1..%d, 1..%d)",
+			h.Col, h.Row, Columns, Rows))
+	}
 
-	return byte('A' + rowBand*subsectorCols + colBand) //nolint:gosec // G115: value is a bounded 0-33 eHex digit
+	colBand := (h.Col - 1) / subsectorWidth
+	rowBand := (h.Row - 1) / subsectorHeight
+
+	return byte('A' + rowBand*subsectorsPerBand + colBand) //nolint:gosec // G115: value is a bounded 0-33 eHex digit
 }
 
 // Density is a region's stellar density (Book 3 p.13 Extended System Contents),

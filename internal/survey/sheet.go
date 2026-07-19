@@ -18,6 +18,12 @@ import (
 	"github.com/philoserf/t5/internal/worldgen"
 )
 
+// doublePlanetTag names the designation once. bodyLabel and moonLabel are fifty
+// lines apart and the invariant is that they read alike: an equal-size
+// mainworld/host pair and an equal-size sibling moon describe the same physical
+// situation, so a reworded tag must not apply to only one of them.
+const doublePlanetTag = "  [double planet]"
+
 // rule separates the sheet's header from its body.
 const rule = "────────────────────────────────────────────────────────────────"
 
@@ -182,6 +188,11 @@ func bodyLabel(o systemgen.PlacedOrbit, mainworld uwp.Profile) string {
 			s += fmt.Sprintf("  — moon of Gas Giant %s", o.Giant)
 		case o.Parent != nil:
 			s += fmt.Sprintf("  — moon of %s %s", o.Parent.Type, o.Parent.Profile)
+			// The same words moonLabel gives an equal-size moon: on this sheet a
+			// double planet is a double planet, whichever body is the mainworld.
+			if o.DoublePlanet {
+				s += doublePlanetTag
+			}
 		}
 
 		return s
@@ -230,7 +241,7 @@ func moonLabel(m systemgen.Satellite, sibling bool) string {
 
 	s += fmt.Sprintf("  (%s orbit)", orbit)
 	if m.DoublePlanet {
-		s += "  [double planet]"
+		s += doublePlanetTag
 	}
 
 	return s

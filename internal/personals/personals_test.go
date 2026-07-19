@@ -15,6 +15,36 @@ func TestPurposeDice(t *testing.T) {
 	}
 }
 
+// Issue #308: a Purpose outside the closed four-constant enum has no dice count.
+// Dice must not invent one — Purpose(-1) gave 0, which dice.Resolve then treats
+// as its 2D default, and Purpose(99) gave 100D. Same shape, and the same fix, as
+// task.Difficulty.Dice (#242).
+func TestPurposeDiceOffLadderPanics(t *testing.T) {
+	for _, p := range []Purpose{-1, Command + 1, 99} {
+		func() {
+			defer func() {
+				if recover() == nil {
+					t.Errorf("Purpose(%d).Dice() = %d, want panic", int(p), p.Dice())
+				}
+			}()
+
+			_ = p.Dice()
+		}()
+	}
+}
+
+// The other half of the strict/display split: String stays total, and reports a
+// bad value rather than naming it Carouse.
+func TestPurposeStringOffLadder(t *testing.T) {
+	if got := Purpose(99).String(); got != "?" {
+		t.Errorf("Purpose(99).String() = %q, want %q", got, "?")
+	}
+
+	if got := Carouse.String(); got != "Carouse" {
+		t.Errorf("Carouse.String() = %q, want %q", got, "Carouse")
+	}
+}
+
 func TestStrategyValue(t *testing.T) {
 	// The same strategy is valued differently per purpose (Book 1 p.183).
 	if v, ok := StrategyValue(Persuade, Charming); !ok || v != 5 {

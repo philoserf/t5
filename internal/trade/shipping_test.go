@@ -74,7 +74,8 @@ func TestPassageFareOutOfRange(t *testing.T) {
 }
 
 func TestPassageAttendingSkill(t *testing.T) {
-	cases := map[Passage]string{High: "Steward", Mid: "Admin", Low: "Streetwise"}
+	// Out-of-range classes take the same posture as Fare: no class, no answer.
+	cases := map[Passage]string{High: "Steward", Mid: "Admin", Low: "Streetwise", 3: "", -1: ""}
 	for class, want := range cases {
 		if got := class.AttendingSkill(); got != want {
 			t.Errorf("Passage(%d).AttendingSkill() = %q, want %q", class, got, want)

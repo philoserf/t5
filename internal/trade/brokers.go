@@ -5,9 +5,12 @@ package trade
 // starports of sufficient class.
 
 // BrokerDM is the Actual Value bonus a broker of the given skill provides: half
-// skill rounded up, capped at +4 (Book 2 p.221).
+// skill rounded up, capped at +4 (Book 2 p.221) and floored at 0. A broker is a
+// service one hires, never a penalty: a skill below 1 has no broker at all (see
+// BrokerAvailable), so it contributes nothing rather than shifting the sale the
+// wrong way. The floor also keeps BrokerCommissionPercent and NetSale honest.
 func BrokerDM(brokerSkill int) int {
-	return min((brokerSkill+1)/2, 4)
+	return min(max((brokerSkill+1)/2, 0), 4)
 }
 
 // BrokerCommissionPercent is the cut a broker of the given skill takes from a

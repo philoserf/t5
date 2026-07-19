@@ -32,8 +32,10 @@ func (g Good) String() string {
 // a Trade Good Detail prefix from the world's other trade classes.
 func RandomTradeGoods(r *dice.Roller, worldTCs []string) Good {
 	col, sourceTC := selectGoodsColumn(r, worldTCs)
-	g := rollGoodsColumn(r, col)
-	g.Detail = tradeGoodsDetail(worldTCs, sourceTC, col)
+	// The detail's footnotes key on where the goods came from, which after an
+	// Imbalance redirect is no longer the column the world started on.
+	g, origin := rollGoodsColumn(r, col)
+	g.Detail = tradeGoodsDetail(worldTCs, sourceTC, origin)
 
 	return g
 }
@@ -100,29 +102,53 @@ func resolveColumn(r *dice.Roller, tc string) string {
 // An Imbalances block names another trade class whose column the roll continues
 // on, and the good carries that class as its Imbalance — the oversupply it came
 // from, which is what earns the +Cr1,000 selling bonus (see ImbalanceBonus). A
-// redirect chain can cycle, so past maxImbalanceHops the block is re-rolled until
-// it yields real goods rather than another redirect: a trade class must never
-// escape as a cargo name.
-func rollGoodsColumn(r *dice.Roller, column string) Good {
+// redirect chain can cycle, so past maxImbalanceHops a redirect is replaced by
+// the column's first block of real goods: a trade class must never escape as a
+// cargo name. It returns the good together with the column it finally came from,
+// which is the origin the Trade Good Detail footnotes key on (see tradeGoodsDetail)
+// and is not the starting column once a redirect has been followed.
+func rollGoodsColumn(r *dice.Roller, column string) (Good, string) {
 	imbalance := ""
 
 	for hop := 0; ; hop++ {
-		blocks := tradeGoodsColumns[column]
+		blocks, ok := tradeGoodsColumns[column]
+		if !ok {
+			// The key is always program data — a chart column or an Imbalances
+			// redirect target — so an unknown one is a transcription bug, not
+			// runtime input. Fail loudly rather than serve an empty cargo.
+			panic("trade: unknown Random Trade Goods column " + column)
+		}
 
 		block := blocks[r.Die()-1]
-		for hop >= maxImbalanceHops && block.Type == imbalancesBlock {
-			block = blocks[r.Die()-1]
+		// Re-rolling here would be no safer than the chain it guards: a degenerate
+		// die source that keeps naming the Imbalances block would spin forever. Take
+		// the first real block instead, so termination does not depend on the dice.
+		if hop >= maxImbalanceHops && block.Type == imbalancesBlock {
+			block = firstGoodsBlock(blocks, column)
 		}
 
 		entry := block.Goods[r.Die()-1]
 		if block.Type != imbalancesBlock {
-			return Good{Name: entry, Type: block.Type, Imbalance: imbalance}
+			return Good{Name: entry, Type: block.Type, Imbalance: imbalance}, column
 		}
 		// The chain continues on the named class's column; the last redirect is
 		// the oversupply that actually produced the goods.
 		imbalance = entry
 		column = resolveColumn(r, entry)
 	}
+}
+
+// firstGoodsBlock returns a column's first block that holds real goods rather
+// than Imbalance redirects. Every column in the chart has one (TestGoodsDataWellFormed
+// asserts it), so a column without one is a transcription bug.
+func firstGoodsBlock(blocks [6]goodsBlock, column string) goodsBlock {
+	for _, b := range blocks {
+		if b.Type != imbalancesBlock {
+			return b
+		}
+	}
+
+	panic("trade: Random Trade Goods column " + column + " has no block of real goods")
 }
 
 // tradeGoodsDetail picks a Trade Good Detail prefix (Book 2 p.219) from the
@@ -135,7 +161,14 @@ func rollGoodsColumn(r *dice.Roller, column string) Good {
 // Asteroid column. Returns "" when no class carries a label.
 func tradeGoodsDetail(worldTCs []string, sourceTC, column string) string {
 	for _, tc := range tradeGoodsDetailOrder {
-		if tc == sourceTC || !slices.Contains(worldTCs, tc) {
+		// Skip both the class that chose the starting column and the class the
+		// goods actually came from. Those differ only after an Imbalance redirect,
+		// and there the origin is the one that matters: a world classified {As, Ri}
+		// whose As column redirects to Ri was yielding "Quality <Ri good>", a label
+		// restating the goods' own origin. That is what the chart's two footnotes
+		// below suppress for Hi/In and Va/As; a redirect is the same situation
+		// arising by a different route, so it takes the same answer.
+		if tc == sourceTC || tc == column || !slices.Contains(worldTCs, tc) {
 			continue
 		}
 
