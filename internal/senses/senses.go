@@ -60,7 +60,7 @@ func NoticeInContact(r *dice.Roller, s Sense, benchmark int, mods ...int) dice.C
 		return dice.CheckResult{}
 	}
 
-	return task.ResolveDice(r, dice.Average, s.Constant+benchmark, mods...)
+	return task.ResolveDice(r, task.Average.Dice(), s.Constant+benchmark, mods...)
 }
 
 // RangeBand returns the sense Range band (0-9) for a distance in meters, using

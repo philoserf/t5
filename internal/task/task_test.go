@@ -46,6 +46,19 @@ func TestPaceOffLadderPanics(t *testing.T) {
 	_ = Difficulty(99).Hasty()
 }
 
+// Issue #261: task.Difficulty is the only difficulty vocabulary. The dice
+// package must speak dice counts alone — its former Easy/Average/Hard constants
+// held counts (1/2/3) under names this ladder uses for indices (0/1/2), so
+// dice.Check{Dice: int(task.Average)} silently rolled 1D. dice keeps exactly one
+// named count, the default Resolve falls back to, and it must agree with the
+// ladder's Average.
+func TestDiceVocabularyDoesNotCollide(t *testing.T) {
+	if dice.DefaultCheckDice != Average.Dice() {
+		t.Errorf("dice.DefaultCheckDice = %d, want Average.Dice() = %d",
+			dice.DefaultCheckDice, Average.Dice())
+	}
+}
+
 func TestPace(t *testing.T) {
 	// Hasty is +1D; Cautious is -1D, floored at 1D (Book 1 p. 129 columns).
 	cases := []struct {
