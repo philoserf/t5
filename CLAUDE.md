@@ -37,10 +37,9 @@ Tooling (go, go-task, golangci-lint, poppler's `pdftotext`) is pinned in `Brewfi
   scripted `d6` for deterministic tests, as the tests do). It provides the primitives (`Dice`,
   `DiceFaces` for the individual dice, `Flux`/`GoodFlux`/`BadFlux`, `HalfDie`, even distributions),
   the roll-low `Check`/`Resolve` mechanic (Mod adjusts the Target, DM adjusts the roll; the result
-  carries `Faces` and a `Spectacular()` classifier for three-1s/three-6s, Book 1 p.127 — and
-  `Resolve` **applies** that override to `Success`: three 1s force success "even if the result
-  would otherwise be a failure", three 6s force failure. `Effect` stays arithmetic, and
-  Spectacularly Interesting (both at once, 6D+) leaves the arithmetic outcome to the referee), the
+  carries `Faces` and a `Spectacular()` classifier for three-1s/three-6s, Book 1 p.127 — but
+  `Resolve` only **classifies**, it does not act: `Success` here is plain arithmetic, and the
+  p.127 override is applied one layer up in `task`, which owns the chapter that states it), the
   Many-Dice fast methods for large pools (`ManyDice10`/`ManyDice2D`/`Average35`/`ManyDice35Flux`,
   Book 1 p.260), and a `Parse`/`Eval` for chart notation like `2D-2` and `Flux`. Build generators on top of this rather than calling
   `math/rand` directly. `dice.NewSource(func() int)` supplies a custom/scripted die source,
@@ -188,6 +187,15 @@ Tooling (go, go-task, golangci-lint, poppler's `pdftotext`) is pinned in `Brewfi
   other: convert with `Difficulty.Dice()`. `dice` names exactly one count, `DefaultCheckDice`,
   the 2D `Resolve` falls back to. `Dice()` **panics** off-ladder rather than returning a count
   that would silently resolve as an ordinary check; `String()` stays total and renders `?`.
+  `task` also owns the **p.127 Spectacular override** (`applySpectacular`, applied by both
+  `Resolve` and `ResolveDice`): three 1s force `Success` true "even if the result would otherwise
+  be a failure", three 6s force it false, `Effect` stays arithmetic, and Spectacularly Interesting
+  (both at once, 6D+) leaves the outcome to the referee. It lives here, not in `dice`, because
+  p.127 states the rule about _tasks_ ("Sometimes the task result is Spectacular") — `dice` keeps
+  the dice observation (`Classify` over `Faces`) and `task` keeps the consequence, so a caller
+  rolling a non-task `dice.Check` gets arithmetic with no opt-out flag to remember. This is why
+  `chargen.Character.Check` routes through `task.ResolveDice`: a 3D Hard Check is a "very hard
+  task" (p.47) and must stay Spectacular-eligible.
 - `internal/skill/` — a character's skills and knowledges (Book 1 pp. 132-171), a pure
   inventory (no dice). Cascade skills (Pilot/Gunner/Engineer/…) hold Knowledges; `GrantCascade`
   applies the Knowledge-Knowledge-Skill career progression; `TaskLevel` stacks parent+knowledge.
