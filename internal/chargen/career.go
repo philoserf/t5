@@ -715,30 +715,54 @@ func runTerm(r *dice.Roller, p Policy, c *Character, run *careerRun, career Care
 		grantReward(c, run, career, reward, ccVal)
 	}
 
-	// A dead or disabled character stops here; a surviving (even wounded) one
-	// finishes the term below.
-	if outcome != Ongoing {
+	// A character the Risk roll killed stops here; everyone else, including a
+	// character it disabled, finishes the term below.
+	//
+	// A Disabled character serves out the term he was disabled in: Book 1 p.65 has
+	// him "Muster Out at the end of the Term", which is the term COMPLETING rather
+	// than aborting, so the skill eligibilities he earned by serving it are his. He
+	// takes no rank roll — a promotion for a man being invalided out has no support
+	// in the text, and the book states no rule either way, so the narrower reading
+	// is taken and recorded here rather than inferred at each reading.
+	if outcome == Died {
 		return outcome
 	}
 
-	// A surviving (even wounded) character gains skills. An Agent runs an
-	// Undercover Assignment; everyone else takes their term skills, with one
-	// extra on a term they commission or promote (Book 1 p. 82: "1 skill because
-	// he was promoted").
+	// An Agent runs an Undercover Assignment; everyone else takes their term
+	// skills, with one extra on a term they commission or promote (Book 1 p. 82:
+	// "1 skill because he was promoted").
 	if career.UndercoverCareer {
 		awardUndercover(r, p, c, career, riskOK)
 
-		return Ongoing
+		return outcome
 	}
 
-	elig := career.EligPerTerm
-	if resolveRank(r, p, c, run, career) {
-		elig++
+	awardSkillsN(r, p, c, career, termEligibility(r, p, c, run, career, outcome))
+
+	return outcome
+}
+
+// termEligibility is how many skills a term grants: the career's base, plus one
+// for a term the character commissioned or promoted in (Book 1 p.82, "1 skill
+// because he was promoted").
+//
+// The rank roll happens here, so it is skipped for a Disabled character — he
+// serves the term out and earns its skills, but is not promoted on his way to
+// the infirmary. Skipping it also keeps his dice stream free of a roll whose
+// result could never apply.
+func termEligibility(
+	r *dice.Roller,
+	p Policy,
+	c *Character,
+	run *careerRun,
+	career Career,
+	outcome TermOutcome,
+) int {
+	if outcome == Ongoing && resolveRank(r, p, c, run, career) {
+		return career.EligPerTerm + 1
 	}
 
-	awardSkillsN(r, p, c, career, elig)
-
-	return Ongoing
+	return career.EligPerTerm
 }
 
 // A Medal is one award from the Imperial Medals table (Book 1 p.70). Mod is the
