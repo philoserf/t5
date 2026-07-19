@@ -13,7 +13,7 @@ func TestGenderAyFixture(t *testing.T) {
 	// Flux 0 for the structure, then Flux 0 for entries 4-12 (9 rolls), then the
 	// Male gender's five difference rolls, C1..C5. Flux 0 structure -> Dual.
 	seq := fluxSeq(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
-	g := rollGender(dice.NewScripted(seq...))
+	g := rollGender(dice.NewScripted(seq...), true)
 
 	if g.Structure != Dual {
 		t.Fatalf("structure = %v, want Dual", g.Structure)
@@ -50,7 +50,7 @@ func TestGroupEntryThreeIsRolled(t *testing.T) {
 	// rolls) -> "One"; then five difference rolls (C1..C5) for each of the five
 	// non-base genders.
 	seq := fluxSeq(append([]int{4}, make([]int, 35)...)...)
-	g := rollGender(dice.NewScripted(seq...))
+	g := rollGender(dice.NewScripted(seq...), true)
 
 	if g.Structure != Group {
 		t.Fatalf("structure = %v, want Group", g.Structure)
@@ -74,11 +74,49 @@ func TestGroupEntryThreeIsRolled(t *testing.T) {
 func TestGenderDifferenceIsUncorrelated(t *testing.T) {
 	// Flux 0 structure -> Dual; nine Flux-0 entry rolls; then Male's C1..C5.
 	seq := fluxSeq(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, -4, 0, 2, 5)
-	g := rollGender(dice.NewScripted(seq...))
+	g := rollGender(dice.NewScripted(seq...), true)
 
 	want := Difference{C1Dice: 1, Mods: [5]int{0, -4, 0, 2, 5}}
 	if got := g.Differences["Male"]; got != want {
 		t.Errorf("Male difference = %+v, want %+v", got, want)
+	}
+}
+
+// TestGenderC5OnlyForIns: chart 08B's footnote reads "Roll once within each
+// Gender for each Characteristic. C5 is Ins (not Edu or Tra)." (Book 3 p.230) —
+// so a gender-based difference adjusts C5 only for a species whose C5 is the
+// Instinct analog. Chart 06B states the same asymmetry for the die counts, which
+// this package already honors.
+func TestGenderC5OnlyForIns(t *testing.T) {
+	insFlux := 5 // the C5 column's largest cell, so a leak is unmissable
+
+	ins := rollGenderDifference(dice.NewScripted(fluxSeq(0, 0, 0, 0, insFlux)...), true)
+	if ins.Mods[4] != insFlux {
+		t.Errorf("Ins C5 difference = %+d, want %+d", ins.Mods[4], insFlux)
+	}
+	// An Edu or Tra C5 takes no difference, and draws no C5 Flux: the script
+	// below covers only C1..C4, so a fifth draw exhausts it.
+	notIns := rollGenderDifference(dice.NewScripted(fluxSeq(0, 0, 0, 0)...), false)
+	if notIns.Mods[4] != 0 {
+		t.Errorf("Edu/Tra C5 difference = %+d, want 0 (chart 08B: C5 is Ins)", notIns.Mods[4])
+	}
+}
+
+// TestGenerateGendersC5Condition checks the condition is wired through Generate:
+// no species whose C5 is Edu or Tra may carry a gender C5 difference.
+func TestGenerateGendersC5Condition(t *testing.T) {
+	for seed := uint64(1); seed <= 200; seed++ {
+		s := Generate(dice.NewWithSeed(seed))
+		if s.Chars[4].Name == Ins {
+			continue
+		}
+
+		for name, d := range s.Gender.Differences {
+			if d.Mods[4] != 0 {
+				t.Errorf("seed %d: C5 is %v, but gender %q carries a C5 difference of %+d",
+					seed, s.Chars[4].Name, name, d.Mods[4])
+			}
+		}
 	}
 }
 
@@ -99,10 +137,16 @@ func TestGenderStructureSelection(t *testing.T) {
 // dice transition at +3 ("+1D", "+2D", "+3D").
 func TestGenderC1Column(t *testing.T) {
 	cases := []struct{ flux, wantDice, wantMod int }{
-		{-5, 0, -5}, {-3, 0, -3}, {-2, 0, -2},
-		{-1, 0, 0}, {0, 0, 0},
-		{1, 0, 1}, {2, 0, 2},
-		{3, 1, 0}, {4, 2, 0}, {5, 3, 0},
+		{-5, 0, -5},
+		{-3, 0, -3},
+		{-2, 0, -2},
+		{-1, 0, 0},
+		{0, 0, 0},
+		{1, 0, 1},
+		{2, 0, 2},
+		{3, 1, 0},
+		{4, 2, 0},
+		{5, 3, 0},
 	}
 	for _, c := range cases {
 		gotDice, gotMod := genderC1(c.flux)
@@ -131,7 +175,7 @@ func TestDifferenceModColumn(t *testing.T) {
 // difference perfectly correlated, a distribution the rule cannot produce.
 func TestGenderDifferencePerCharacteristic(t *testing.T) {
 	r := dice.NewScripted(fluxSeq(3, -4, 0, 2, 5)...) // C1..C5, deliberately unequal
-	got := rollGenderDifference(r)
+	got := rollGenderDifference(r, true)
 	want := Difference{C1Dice: 1, Mods: [5]int{0, -4, 0, 2, 5}}
 
 	if got != want {

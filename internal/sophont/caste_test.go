@@ -78,9 +78,15 @@ func TestSkilledCasteDeferred(t *testing.T) {
 // no flat-positive cell: +1 is "--" and +2 onward are dice ("+2D".."+5D").
 func TestCasteC1Column(t *testing.T) {
 	cases := []struct{ flux, wantDice, wantMod int }{
-		{-5, 0, -5}, {-4, 0, -4}, {-2, 0, -2},
-		{-1, 0, 0}, {0, 0, 0}, {1, 0, 0},
-		{2, 2, 0}, {3, 3, 0}, {5, 5, 0},
+		{-5, 0, -5},
+		{-4, 0, -4},
+		{-2, 0, -2},
+		{-1, 0, 0},
+		{0, 0, 0},
+		{1, 0, 0},
+		{2, 2, 0},
+		{3, 3, 0},
+		{5, 5, 0},
 	}
 	for _, c := range cases {
 		gotDice, gotMod := casteC1(c.flux)

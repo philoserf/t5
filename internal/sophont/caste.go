@@ -126,10 +126,11 @@ var casteUnique = map[CasteStructure]string{
 }
 
 // casteC1 reads the C1 column of the Caste-Based Differences table (chart 07C)
-// at a Flux, returning extra Strength dice and a flat modifier — never both.
+// at a Flux, returning extra Strength dice and a flat modifier (in that order)
+// — never both.
 // Unlike gender's C1, this column never goes flat-positive: every positive cell
 // from +2 up is dice ("+2D".."+5D"), and -1/0/+1 impose no change.
-func casteC1(flux int) (numDice, mod int) {
+func casteC1(flux int) (int, int) {
 	flux = clamp(flux, -5, 5)
 	switch {
 	case flux <= -2:

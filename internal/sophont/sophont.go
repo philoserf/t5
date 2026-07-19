@@ -41,7 +41,7 @@ func Generate(r *dice.Roller) Species {
 	home := plausibleHomeworld(r)
 	env := rollEnvironment(r, home.Profile)
 	chars, gp := rollCharacteristics(r, env)
-	gender := rollGender(r)
+	gender := rollGender(r, chars[4].Name == Ins)
 
 	s := Species{
 		Homeworld:      home,

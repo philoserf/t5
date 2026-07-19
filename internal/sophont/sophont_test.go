@@ -17,6 +17,7 @@ const validGP = "SDAGEVITKC"
 // widening the Genetic Profile validation in TestGenerateInvariants.
 func TestValidGPIsExact(t *testing.T) {
 	emitted := map[byte]bool{}
+
 	for name, info := range charInfo {
 		if !strings.ContainsRune(validGP, rune(info.gp)) {
 			t.Errorf("%v emits GP letter %q, absent from validGP %q", name, info.gp, validGP)
