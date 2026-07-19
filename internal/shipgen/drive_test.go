@@ -36,6 +36,37 @@ func TestDriveForPotential(t *testing.T) {
 	}
 }
 
+// Every ordinal the Z2 inverse hands back has to be a drive a yard can actually
+// build: a lettered size (1..24) or a "letter2" gang (an even 26..48, Book 2
+// p.63 Drive Nexi). An odd extended ordinal is neither — driveLabel renders it
+// "?" and driveTonsBase's >24 branch prices it as a doubling it is not.
+func TestDriveForPotentialIsBuildable(t *testing.T) {
+	// Jump-5 in a Hull-K: ceil(5*10/2) = 25, which is no drive at all. The
+	// smallest real one is 26 = N2, and it does deliver Potential-5.
+	if got := DriveForPotential(5, 10); got != 26 || driveLabel(got) != "N2" {
+		t.Errorf("DriveForPotential(5, 10) = %d (%s), want 26 (N2)", got, driveLabel(got))
+	}
+
+	for potential := 1; potential <= 9; potential++ {
+		for hullOrd := 1; hullOrd <= maxLetter; hullOrd++ {
+			ord := DriveForPotential(potential, hullOrd)
+			if ord == 0 {
+				continue
+			}
+
+			if driveLabel(ord) == "?" {
+				t.Errorf("DriveForPotential(%d, %d) = %d, which is not a buildable size",
+					potential, hullOrd, ord)
+			}
+
+			if got := drivePotential(ord, hullOrd); got < potential {
+				t.Errorf("DriveForPotential(%d, %d) = %d, which only yields Potential-%d",
+					potential, hullOrd, ord, got)
+			}
+		}
+	}
+}
+
 func TestDriveTonsBase(t *testing.T) {
 	cases := []struct {
 		kind DriveKind

@@ -23,13 +23,26 @@ func drivePotential(driveOrd, hullOrd int) int {
 // DriveForPotential is the Z2 inverse: the smallest drive size ordinal that
 // yields at least the desired Potential in the given hull (Book 2 p.78), or 0 if
 // no drive (up to Z2 = 48) can. E.g. Jump-6 in a Hull-K needs ordinal 30 = Q2.
+//
+// The result is always a size a yard can build. Past Drive-Z the only sizes this
+// package models are the "letter2" gangs — two identical drives joined by a
+// Nexus (Book 2 p.63) — so the extended ordinals are exactly the even 26..48,
+// and an odd product is rounded up to the next one. (The book's Nexi are more
+// general: any m x letter x n up to 9Z9, so ordinal 25 is really buildable as
+// E5. Nothing else here models those, and driveLabel/driveTonsBase's >24 branch
+// are both written for the doubling, so the inverse stays inside that set rather
+// than naming a size the rest of the package would misprice.)
 func DriveForPotential(potential, hullOrd int) int {
 	if potential < 1 || hullOrd < 1 {
 		return 0
 	}
 
 	ord := (potential*hullOrd + 1) / 2 // ceil(potential*hull/2)
-	if ord > 48 {
+	if ord > maxLetter && ord%2 == 1 {
+		ord++ // extended sizes are letter2 doublings — even only
+	}
+
+	if ord > 2*maxLetter { // past Z2
 		return 0
 	}
 
