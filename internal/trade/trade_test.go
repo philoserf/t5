@@ -91,11 +91,22 @@ func TestCostChartExample(t *testing.T) {
 }
 
 func TestBrokerDM(t *testing.T) {
-	cases := map[int]int{0: 0, 1: 1, 2: 1, 3: 2, 4: 2, 8: 4, 9: 4, 12: 4}
+	// A negative skill is no broker at all (see BrokerAvailable), so the DM floors
+	// at 0 rather than penalising the sale.
+	cases := map[int]int{-3: 0, -1: 0, 0: 0, 1: 1, 2: 1, 3: 2, 4: 2, 8: 4, 9: 4, 12: 4}
 	for skill, want := range cases {
 		if got := BrokerDM(skill); got != want {
 			t.Errorf("BrokerDM(%d) = %d, want %d", skill, got, want)
 		}
+	}
+
+	// A negative skill must not turn the commission into a bonus.
+	if got := BrokerCommissionPercent(-3); got != 0 {
+		t.Errorf("BrokerCommissionPercent(-3) = %d, want 0", got)
+	}
+
+	if got := NetSale(10_000, -3); got != 10_000 {
+		t.Errorf("NetSale(10000, -3) = %d, want 10000 (no commission, no bonus)", got)
 	}
 }
 

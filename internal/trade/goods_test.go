@@ -152,6 +152,7 @@ func TestImbalanceHopCapTerminates(t *testing.T) {
 	})
 
 	g, _ := rollGoodsColumn(r, "Na")
+
 	if drawn > len(prefix)+budget {
 		t.Fatalf("rollGoodsColumn drew %d dice (budget %d): the hop cap is re-rolling without bound",
 			drawn, len(prefix)+budget)
