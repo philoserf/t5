@@ -17,6 +17,15 @@ import "fmt"
 // allocated to them instead of to its single HardPoint (Book 2 p.156).
 const firmPointsPerBlock = 3
 
+// aboard reports whether a designed component is actually carried. One that failed
+// to design is not: it claims no mount point and it spends no tonnage. Counting it
+// either way would invent a second complaint on top of the real problem that
+// stopped it being built — two complaints for one mistake, one of them false.
+//
+// Both accountings of the same component list go through this, so they cannot drift
+// into disagreeing about which components exist.
+func aboard(problems []string) bool { return len(problems) == 0 }
+
 // mountPoints reports whether a hull of the given tonnage can carry the weapons
 // and defenses, and the shortfall message if it cannot. Mounts of one ton or more
 // need a HardPoint each; sub-ton mounts ride FirmPoints, three to a block.
@@ -33,11 +42,9 @@ const firmPointsPerBlock = 3
 // any other split, and more are never required.
 func mountPoints(h Hull, weapons []Weapon, defenses []Defense) string {
 	hard, firm := 0, 0
-	// A component that failed to design occupies no mount. Counting it would invent
-	// a mount shortfall on top of the real problem that stopped it being built — two
-	// complaints for one mistake, one of them false.
+
 	count := func(t Tonnage, problems []string) {
-		if len(problems) > 0 || t == 0 {
+		if !aboard(problems) || t == 0 {
 			return
 		}
 
@@ -95,10 +102,19 @@ func mountPhrase(hard, firm int) string {
 // budget. A mount on a HardPoint "is at least 1 ton (round up)" (Book 2 p.83), so
 // a full mount is charged whole tons; sub-ton mounts on FirmPoints keep their
 // fractions, and the total rounds up once at the end.
+//
+// It skips what mountPoints skips: a component that failed to design is not aboard,
+// so it neither claims a mount nor spends budget tonnage. Charging one anyway could
+// push Payload negative and add an "over budget" complaint the ship does not
+// deserve — the same false second complaint, on the other axis.
 func armamentTonnage(weapons []Weapon, defenses []Defense) int {
 	var total Tonnage
 
-	charge := func(t Tonnage) {
+	charge := func(t Tonnage, problems []string) {
+		if !aboard(problems) {
+			return
+		}
+
 		if t.SubTon() {
 			total += t
 
@@ -108,11 +124,11 @@ func armamentTonnage(weapons []Weapon, defenses []Defense) int {
 		total += t.RoundUp()
 	}
 	for _, w := range weapons {
-		charge(w.Tons)
+		charge(w.Tons, w.Problems)
 	}
 
 	for _, d := range defenses {
-		charge(d.Tons)
+		charge(d.Tons, d.Problems)
 	}
 
 	return total.Ceil()

@@ -168,6 +168,7 @@ type Defense struct {
 	Tons      Tonnage
 	Cost      int // Cr
 	Band      int
+	Scale     Scale // which ladder Band is on, so the record prints R= or S=
 	Principle Principle
 	Problems  []string
 }
@@ -192,7 +193,11 @@ type device struct {
 func DesignDefense(spec DefenseSpec) Defense {
 	dev, problems := defenseDevice(spec)
 	if problems != nil {
-		return Defense{Spec: spec, Problems: problems}
+		// dev carries the device's name even on the failure paths that know one — a
+		// weapon that cannot serve as a defense is still that weapon, and the ship
+		// card should say which one it refused. defenseDevice zero-values dev for the
+		// truly unknown cases, so "?" is preserved where it belongs.
+		return Defense{Spec: spec, Device: dev.name, Problems: problems}
 	}
 
 	if !validDefenseMount(spec.Mount) || !validRange(spec.Range) {
@@ -211,7 +216,8 @@ func DesignDefense(spec DefenseSpec) Defense {
 	} else if !rng.defenseOK {
 		problems = append(
 			problems,
-			fmt.Sprintf("a defense cannot be built for %s (Vdistant is the furthest)", rng.name),
+			fmt.Sprintf("a defense cannot be built for %s: its range may be decreased but not "+
+				"increased, and %s is the standard", rng.name, standardRangeName(rng.scale)),
 		)
 	}
 
@@ -238,10 +244,14 @@ func DesignDefense(spec DefenseSpec) Defense {
 		TL:     tl,
 		// The mount's Mod alone. A defense takes none from its tech stage, which is
 		// why the stage's Mod column is not even in scope here (weaponStageMod).
-		Mod:       m.mod,
-		Tons:      tons,
-		Cost:      cost,
-		Band:      band,
+		Mod:  m.mod,
+		Tons: tons,
+		Cost: cost,
+		Band: band,
+		// The range decides which ladder this installation reaches on — the same
+		// thing Weapon.Scale records, and for the same reason: the band is
+		// meaningless without it.
+		Scale:     rng.scale,
 		Principle: dev.principle,
 		Problems:  problems,
 	}
@@ -285,9 +295,15 @@ func defenseDevice(spec DefenseSpec) (device, []string) {
 }
 
 // Name is the defense's name with its installed tech level, e.g. "Black Globe-16".
+// An installation that was refused outright is named without one: install never ran
+// for it, so it has no tech level to print.
 func (d Defense) Name() string {
 	if d.Device == "" {
 		return "?"
+	}
+
+	if !d.installed() {
+		return d.Device
 	}
 
 	return fmt.Sprintf("%s-%d", d.Device, d.TL)
@@ -301,10 +317,40 @@ func (d Defense) LongName() string {
 	if d.Device == "" || !validDefenseMount(d.Spec.Mount) || !validRange(d.Spec.Range) {
 		return "?"
 	}
+	// A refused installation has no numbers: printing the full line would state its
+	// zero tonnage, zero cost, and R=00 as facts. Name it, and let the ship's own
+	// Problems carry the reason.
+	if !d.installed() {
+		return d.Name()
+	}
 
-	return fmt.Sprintf("%s %s %s %s Mod=%+d. %s. %s. R=%02d. (%s).",
+	return fmt.Sprintf("%s %s %s %s Mod=%+d. %s. %s. %s. (%s).",
 		d.Spec.Stage, rangeData[d.Spec.Range].name, mountName(d.Spec.Mount),
-		d.Name(), d.Mod, d.Tons.Phrase(), weaponMCr(d.Cost), d.Band, d.Principle)
+		d.Name(), d.Mod, d.Tons.Phrase(), weaponMCr(d.Cost), d.RangeCode(), d.Principle)
+}
+
+// RangeCode renders the defense's range band as the book writes it — "R=07" for a
+// world-range defense, "S=07" for one built on the space ladder. The two ladders
+// are distinct, so the band alone does not say how far a defense reaches.
+func (d Defense) RangeCode() string { return rangeCode(d.Scale, d.Band) }
+
+// installed reports whether install actually ran for this defense — that is,
+// whether its TL, tonnage, and cost mean anything. DesignDefense returns early on
+// a refused device or an unknown mount or range, and every real defense comes out
+// of install with a positive tech level (the lowest base is 8 and the deepest
+// discount is -5), so a zero TL is exactly the un-built case.
+func (d Defense) installed() bool { return d.TL > 0 }
+
+// standardRangeName is the standard (unmodified) rung of a ladder — Attack Range
+// on the space one, Vdistant on the world one (Book 2 p.83 Tables D and E, printed
+// again for defenses on p.174). It is where a defense stands, and the furthest one
+// may be built for: "Defense Range can be decreased but not increased" (p.177).
+func standardRangeName(s Scale) string {
+	if s == WorldScale {
+		return rangeData[VDistant].name
+	}
+
+	return rangeData[AttackRange].name
 }
 
 func validDefense(id DefenseID) bool { return id >= 0 && int(id) < len(defenseData) }
