@@ -37,7 +37,6 @@ var ScholarCareer = Career{
 		Char:    Education,
 		PubsMod: true,
 	}, // Edu, Mod +Pubs
-	Advance:         RollLow,
 	EligPerTerm:     4,
 	BenefitDM:       DMTerms,
 	RewardKind:      RewardPublication,

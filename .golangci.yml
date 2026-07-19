@@ -62,7 +62,12 @@ linters:
       # The cmd/ CLIs print records to stdout via fmt.Print*; that is their job.
       # forbidigo stays enabled for the library packages, where a bare print is
       # a real smell (records there should be returned, not printed).
-      - path: ^cmd/
+      #
+      # Unanchored on purpose. Run from a git worktree, golangci-lint reports
+      # paths relative to the worktree ("../../../cmd/worldgen/main.go"), so a
+      # ^-anchored pattern silently stops matching and the CLIs light up with
+      # phantom findings that do not reproduce from the repo root.
+      - path: (^|/)cmd/
         linters:
           - forbidigo
       # White-box tests are intentional, and table-driven tests trip several

@@ -25,7 +25,6 @@ var EntertainerCareer = Career{
 	}, // Begin Actor: C2 or C3
 	FameCareer:  true,
 	Continue:    ContinueRule{UseFame: true}, // Continue vs Fame
-	Advance:     RollLow,
 	EligPerTerm: 4,
 	BenefitDM:   DMTerms,
 	Skills: SkillGrid{

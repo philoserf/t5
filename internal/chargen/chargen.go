@@ -136,10 +136,15 @@ func (c Character) String() string {
 	return c.UPP()
 }
 
-// Check resolves a Check Characteristic: roll numDice (0 defaults to the
-// standard 2D; use dice.Easy or dice.Hard for 1D or 3D) against the
+// Check resolves a Check Characteristic: roll numDice against the
 // characteristic, succeeding on a roll of the score or less. mod adjusts the
 // target the usual way (a positive mod makes success easier).
+//
+// numDice is a count of dice, not a difficulty level; 0 defaults to the standard
+// 2D. A caller working from the Book 1 p. 120 ladder converts with
+// task.Difficulty.Dice() — task.Easy.Dice() for 1D, task.Difficult.Dice() for 3D
+// — rather than passing the Difficulty itself, whose int value is a ladder index
+// one off from its dice count.
 //
 // The rulebook's escalating penalty for reusing a characteristic before two
 // others are used is session state, left to the caller.

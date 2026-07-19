@@ -6,6 +6,8 @@
 package task
 
 import (
+	"fmt"
+
 	"github.com/philoserf/t5/internal/dice"
 )
 
@@ -32,8 +34,22 @@ var difficultyNames = [...]string{
 }
 
 // Dice returns the number of dice a task at this difficulty rolls (Easy 1D …
-// Beyond Impossible 8D).
+// Beyond Impossible 8D). It panics on a Difficulty outside the ladder.
+//
+// This is the strict path, not a display one. The ladder is a closed set of
+// eight constants and the book defines no task above or below it, so a value
+// outside it is a programming error. Returning a count anyway would conceal
+// that error rather than surface it: a non-positive count falls through to
+// dice.Resolve's 2D default, so an off-ladder difficulty would quietly resolve
+// as an ordinary Average check. Compare ehex.Digit and Character.Score, which
+// panic for the same reason, against the display paths (String below,
+// ehex.Format) that render an out-of-domain value as a visible "?".
 func (d Difficulty) Dice() int {
+	if d < Easy || d > BeyondImpossible {
+		panic(fmt.Sprintf("task: difficulty %d out of range %d..%d",
+			int(d), int(Easy), int(BeyondImpossible)))
+	}
+
 	return int(d) + 1
 }
 
@@ -48,7 +64,9 @@ func (d Difficulty) Cautious() int {
 	return max(d.Dice()-1, 1)
 }
 
-// String returns the difficulty's name.
+// String returns the difficulty's name, or "?" for a value outside the ladder.
+// Unlike Dice it never panics: it is a display path, and an fmt.Stringer must be
+// total so that logging a bad value can report it rather than crash.
 func (d Difficulty) String() string {
 	if d < Easy || d > BeyondImpossible {
 		return "?"

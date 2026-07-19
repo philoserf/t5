@@ -21,7 +21,6 @@ var MerchantCareer = Career{
 	AutoBegin:        true,                                                           // Temp start
 	ControllingChars: []Characteristic{Strength, Dexterity, Endurance, Intelligence}, // C1 C2 C3 C4
 	Continue:         ContinueRule{UseChar: true, Char: Strength},                    // Str
-	Advance:          RollLow,
 	EligPerTerm:      4,
 	BenefitDM:        DMOfficerRank,
 	RewardKind:       RewardShipShares,

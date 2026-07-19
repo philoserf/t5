@@ -48,16 +48,6 @@ const (
 	FixedCC
 )
 
-// AdvanceRule controls how rank advancement rolls compare: roll-low (the T5
-// default) or roll-high (Noble elevation).
-type AdvanceRule int
-
-// Advancement roll directions.
-const (
-	RollLow AdvanceRule = iota
-	RollHigh
-)
-
 // A Qualification is a career's entry gate: roll 2D at or under the best of the
 // listed characteristics (plus a modifier).
 type Qualification struct {
@@ -138,12 +128,20 @@ const (
 	DMNone        MusterDM = iota // no modifier (the zero value)
 	DMTerms                       // + terms served
 	DMOfficerRank                 // + rank, only while on the officer track (armed forces, Merchant)
-	DMRank                        // + rank on any track (single-ladder Scholar, Functionary)
+	DMRank                        // + rank on any track, ladder numbered from 1 (the Scholar)
+	DMRankF0                      // + rank on a ladder numbered from 0 (the Functionary; see below)
 	DMFameHalf                    // + Fame/2 (the Scout)
 	DMCommends                    // + Commendations (the Agent)
 )
 
 // benefitDM returns the value of a Benefit-column muster DM for a character.
+//
+// A rank DM is the rank *number the career prints*, and two careers number their
+// ladders differently. The Scholar begins at Scholar1 (Book 1 p.65, "Scholars
+// begin with formal rank (Scholar = Scholar1)"), so its first rung is 1. The
+// Functionary's ladder runs F0 Clerk … F8 Secretary (p.87), so its first rung is
+// 0 — a Clerk's "+Officer Rank" muster DM is +0, not +1. run.rank is always a
+// 1-based ladder index, so DMRankF0 subtracts the difference.
 func benefitDM(dm MusterDM, c Character, rec CareerRecord) int {
 	switch dm {
 	case DMTerms:
@@ -156,6 +154,8 @@ func benefitDM(dm MusterDM, c Character, rec CareerRecord) int {
 		return 0
 	case DMRank:
 		return rec.Rank
+	case DMRankF0:
+		return max(rec.Rank-1, 0)
 	case DMFameHalf:
 		return c.Fame / 2
 	case DMCommends:
@@ -240,7 +240,6 @@ type Career struct {
 	CCMode           CCMode
 	ControllingChars []Characteristic
 	Continue         ContinueRule
-	Advance          AdvanceRule
 	EligPerTerm      int        // number of skill rolls a surviving term grants
 	BenefitDM        MusterDM   // die modifier the muster Benefit column adds (Money always adds +Terms)
 	AutoBegin        bool       // the career is entered automatically, with no qualify roll (Citizen)
@@ -251,6 +250,7 @@ type Career struct {
 	ReturnIntrigue   bool       // the term resolves Return & Intrigue instead of Risk & Reward (Noble)
 	ScoutDuty        bool       // the term picks Courier (no R&R, 4 skills) or Explorer (R&R, EligPerTerm skills) (Scout)
 	SchemeCareer     bool       // the term masterminds a Rogue Scheme instead of Risk & Reward (Rogue)
+	AutoFailOn12     bool       // a natural 12 always fails, whatever the target (Rogue; see autoFails)
 	UndercoverCareer bool       // the term runs an Undercover Assignment alongside Risk & Reward (Agent)
 	RewardKind       RewardKind // what a successful Reward roll earns
 	Skills           SkillGrid
@@ -268,6 +268,20 @@ type Career struct {
 
 	PromoteEduMin int         // minimum Education to hold rank 1+ and to promote (Scholar 8); 0 = no gate
 	Tenure        *TenureRule // gates promotion beyond a rank until Tenure is earned (Scholar); nil for the rest
+}
+
+// held reports whether a career roll succeeded, applying the career's
+// automatic-failure rule.
+//
+// The Rogue's box (Book 1 p. 84) prints three targets — "To Begin CC", "Risk &
+// Reward CC*", "Continue CC*" — and then two footnotes under the block:
+// "*Mod +Terms." and "But, 12 is always automatic failure." The first is already
+// read as covering every starred line; the second sits at the same level and is
+// unstarred, so it covers the block entire — Begin, Risk, Reward, and Continue.
+// It has to: "Mod +Terms" pushes those targets past 12 with experience, and
+// without the footnote a veteran Rogue would become literally unfailable.
+func (c Career) held(res dice.CheckResult) bool {
+	return res.Success && (!c.AutoFailOn12 || res.Roll != 12)
 }
 
 // hasRanks reports whether a career runs the rank/promotion machinery.
@@ -383,12 +397,16 @@ func GenerateCareered(r *dice.Roller, p Policy, homeworld worldgen.World, career
 // serveCareer attempts one career on a character: on a successful (or automatic)
 // begin it runs the term loop and, unless the character died, musters out. It
 // reports whether the character entered the career.
+// The run is created here rather than inside the term loop because a fixed-CC
+// career's Controlling Characteristic is chosen at Begin and then serves the
+// whole career (Book 1 p.84) — Begin and the terms must share one run.
 func serveCareer(r *dice.Roller, p Policy, c *Character, career Career) bool {
-	if !beginCareer(r, c, career) {
+	run := newCareerRun(career)
+	if !beginCareer(r, p, c, &run, career) {
 		return false
 	}
 
-	RunCareer(r, p, c, career)
+	runCareer(r, p, c, &run, career)
 
 	if rec := c.Careers[len(c.Careers)-1]; rec.Outcome != Died {
 		MusterOut(r, p, c, rec, career)
@@ -397,12 +415,28 @@ func serveCareer(r *dice.Roller, p Policy, c *Character, career Career) bool {
 	return true
 }
 
+// newCareerRun starts the per-career scratch state for one term loop.
+func newCareerRun(career Career) careerRun {
+	return careerRun{ccPool: append([]Characteristic(nil), career.ControllingChars...)}
+}
+
 // beginCareer resolves a career's Begin (Book 1 p. 63): an AutoBegin career (the
 // Citizen) enters unconditionally; otherwise the character rolls 2D at or under
 // the best qualifying characteristic (Book 1 p.65). The roll is made once: Begin
 // retry is a per-career property ("Some Careers allow Retry", shown on the career's
 // box), and no career in this edition grants one, so none is offered.
-func beginCareer(r *dice.Roller, c *Character, career Career) bool {
+//
+// A refusal costs time: "Each failed attempt (both Begin or Retry) takes one
+// year" (Book 1 p.65). Only a rolled refusal does — an automatic entry makes no
+// attempt to fail.
+//
+// A fixed-CC career Begins against its own Controlling Characteristic, not
+// against a Qualification set: the Rogue's box reads "To Begin CC", and the CC
+// he picks is "then used throughout his career (not just in the current Term)"
+// (Book 1 p.84). Choosing it here — through the same selectCC the terms use, on
+// the run they share — is what makes Begin, Risk & Reward, and Continue all read
+// the one characteristic the book says they do.
+func beginCareer(r *dice.Roller, p Policy, c *Character, run *careerRun, career Career) bool {
 	if career.AutoBegin {
 		return true
 	}
@@ -413,17 +447,36 @@ func beginCareer(r *dice.Roller, c *Character, career Career) bool {
 		return true
 	}
 
-	return r.Resolve(dice.Check{Dice: 2, Target: career.Qualify.target(*c)}).Success
+	var target int
+	if career.CCMode == FixedCC {
+		target = c.Score(selectCC(p, *c, run, career))
+	} else {
+		target = career.Qualify.target(*c)
+	}
+
+	if career.held(r.Resolve(dice.Check{Dice: 2, Target: target})) {
+		return true
+	}
+
+	c.Age++
+
+	return false
 }
 
 // RunCareer runs the term loop of one career on a character, appending a
-// CareerRecord.
+// CareerRecord. It starts a fresh run, so a fixed-CC career picks its
+// Controlling Characteristic on the first term; serveCareer instead picks it at
+// Begin and hands the same run to runCareer (Book 1 p.84).
 func RunCareer(r *dice.Roller, p Policy, c *Character, career Career) {
+	run := newCareerRun(career)
+	runCareer(r, p, c, &run, career)
+}
+
+// runCareer is RunCareer over a caller-owned run.
+func runCareer(r *dice.Roller, p Policy, c *Character, run *careerRun, career Career) {
 	if len(career.ControllingChars) == 0 && !career.FameCareer {
 		panic("chargen: career " + career.Name + " has no controlling characteristics")
 	}
-
-	run := careerRun{ccPool: append([]Characteristic(nil), career.ControllingChars...)}
 
 	rec := CareerRecord{Career: career.ID}
 	if career.hasRanks() {
@@ -436,12 +489,18 @@ func RunCareer(r *dice.Roller, p Policy, c *Character, career Career) {
 	}
 
 	if career.FameCareer {
-		talent := r.Dice(2) // initial Talent (and starting Fame) are one 2D roll (Book 1 p. 77)
-
-		c.Talent = talent
-		if c.Fame == 0 {
-			c.Fame = talent // don't overwrite Fame carried in from a prior career
+		// One 2D roll opens the career (Book 1 p. 77: "roll initial Fame and Talent
+		// (with one 2D roll; they are equal)"). Returning to it is a Comeback, and
+		// the p.64/p.77 Fame-and-Talent table says what a Comeback does with the
+		// same roll: "Comeback: Reset Fame to 2D; Talent is unchanged." A career of
+		// Talent earned across earlier terms is not un-learned by walking away —
+		// only the audience's memory resets.
+		roll := r.Dice(2)
+		if c.Talent == 0 {
+			c.Talent = roll // a first Entertainer career: Fame and Talent are equal
 		}
+
+		c.Fame = roll
 	}
 
 	if career.BranchOps != nil {
@@ -454,7 +513,7 @@ func RunCareer(r *dice.Roller, p Policy, c *Character, career Career) {
 
 	for {
 		run.terms = rec.Terms // terms served before this one, for the Rogue's "Mod +Terms"
-		outcome := runTerm(r, p, c, &run, career)
+		outcome := runTerm(r, p, c, run, career)
 		rec.Terms++
 		c.Age += termYears
 		AgingCheck(r, c) // no-op before age 34; may set c.Dead
@@ -477,7 +536,7 @@ func RunCareer(r *dice.Roller, p Policy, c *Character, career Career) {
 			break
 		}
 
-		if !continues(r, p, *c, career, rec, &run) {
+		if !continues(r, p, *c, career, rec, run) {
 			rec.Outcome = MusteredOut
 
 			break
@@ -922,11 +981,11 @@ func runRogueTerm(
 	// "Mod +Terms": experience eases both rolls; Caution/Bravery flips sign for
 	// the Reward (Book 1 p. 84, "opposite sign Mods").
 	risk := r.Resolve(dice.Check{Dice: 2, Target: ccVal + riskMod + run.terms})
-	riskOK := risk.Roll != 12 && risk.Success
+	riskOK := career.held(risk)
 	rewardMods := -riskMod + run.terms
 
 	reward := r.Resolve(dice.Check{Dice: 2, Target: ccVal + rewardMods})
-	if reward.Success {
+	if career.held(reward) {
 		payScheme(c, scheme, ccVal+rewardMods, reward.Roll, riskOK)
 	}
 
@@ -1520,7 +1579,7 @@ func continues(
 		return true // Mandatory Continue
 	}
 
-	return p.Continue(c, rec) && res.Success
+	return p.Continue(c, rec) && career.held(res)
 }
 
 // removeChar returns chars without the first occurrence of ch.

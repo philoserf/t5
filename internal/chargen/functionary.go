@@ -28,9 +28,8 @@ var FunctionaryCareer = Career{
 	Continue: ContinueRule{
 		Fixed: 15,
 	}, // Office Politics decides continuation; the policy chooses
-	Advance:     RollLow,
 	EligPerTerm: 4,
-	BenefitDM:   DMRank,
+	BenefitDM:   DMRankF0, // the ladder prints F0..F8, so a Clerk's muster DM is +0 (p. 87)
 	// The F0-F8 rank ladder (Book 1 p. 87); rank 1 is Clerk (F0).
 	EnlistedRanks: []Rank{
 		{Title: "Clerk", Skill: "Bureaucrat"},

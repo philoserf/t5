@@ -4,13 +4,13 @@ import "testing"
 
 func TestResolveRollLow(t *testing.T) {
 	// 2D = 5 against Target 7: success with Effect +2.
-	got := scripted(2, 3).Resolve(Check{Dice: Average, Target: 7})
+	got := scripted(2, 3).Resolve(Check{Dice: DefaultCheckDice, Target: 7})
 	if !got.Success || got.Effect != 2 || got.Roll != 5 || got.Total != 5 {
 		t.Fatalf("Resolve = %+v, want success roll 5 effect 2", got)
 	}
 }
 
-func TestResolveDefaultsToAverage(t *testing.T) {
+func TestResolveDefaultsToDefaultCheckDice(t *testing.T) {
 	// Dice unset -> 2D. Two dice consumed.
 	got := scripted(4, 4).Resolve(Check{Target: 9})
 	if got.Roll != 8 || !got.Success {

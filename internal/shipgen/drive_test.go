@@ -1,6 +1,9 @@
 package shipgen
 
-import "testing"
+import (
+	"strings"
+	"testing"
+)
 
 func TestDrivePotential(t *testing.T) {
 	// The Z1 formula, verified against the book's own worked cells (p.78).
@@ -173,8 +176,10 @@ func TestDesignDriveStageEfficiency(t *testing.T) {
 	}
 }
 
-// The p.76 Table X footer states the rule in EP terms: "Standard Drive-C has 300
-// EP; [Experimental] Drive-C outputs 150 EP; Advanced Drive-C outputs 360 EP."
+// The p.76 Table X footer states the rule in EP terms. As printed: "Standard
+// Drive-C has 300 EP; Early Drive-C outputs 150 EP; Advanced Drive-C outputs 360
+// EP." Read "Early" as Experimental — 150 is 50% of 300, which is Experimental's
+// efficiency; Early is 90% and would print 270 (see drivePotential's note).
 // In a Hull-C that is P = (EP/Hull)*2 = 2, 1, and 2 (=2.4) respectively.
 func TestDrivePotentialEfficiencyIsEPBased(t *testing.T) {
 	cases := []struct{ drive, hull, eff, want int }{
@@ -209,5 +214,94 @@ func TestDesignDriveAvailabilityCap(t *testing.T) {
 	j, problem := designDrive(Jump, DriveSpec{Letter: 5}, 1, 12)
 	if j.Potential != 3 || problem == "" {
 		t.Errorf("expected Jump capped to 3 with a problem, got %+v (%q)", j, problem)
+	}
+}
+
+// The stage TL delta shifts the availability lookup DOWN, not up: a stage-d
+// drive at a TL-t yard reaches what a Standard drive reaches at TL t-d. Book 2
+// p.76 says so twice in worked prose — "Standard TL-10 Maneuver-F ... Advanced
+// (TL-13) Maneuver Drive-F" and "Standard TL-12 Jump-F ... Modified Jump
+// Drive-F (available at TL-14)" — an advanced stage RAISES the TL a yard needs.
+// p.76 also puts the other end: "Early, Prototype, and Experimental mechanisms
+// are available locally", i.e. below the standard TL.
+func TestDesignDriveStageShiftsAvailabilityDown(t *testing.T) {
+	// Experimental (-3) at a TL-6 yard reads availability at TL-9, where Jump
+	// reaches Potential-1. Its 50% efficiency rates it at 1, so it is buildable.
+	j, problem := designDrive(Jump, DriveSpec{Letter: 2, Stage: Experimental}, 2, 6)
+	if j.Potential != 1 || problem != "" {
+		t.Errorf("Experimental J-Drive-B at TL-6 = Potential %d (%q), want 1 and no problem",
+			j.Potential, problem)
+	}
+
+	// Advanced (+3) at a TL-9 yard reads availability at TL-6, where no jump
+	// drive exists at all. Its 120% efficiency rates it at 2; the yard cannot
+	// build it.
+	j, problem = designDrive(Jump, DriveSpec{Letter: 2, Stage: Advanced}, 2, 9)
+	if j.Potential != 0 || problem == "" {
+		t.Errorf("Advanced J-Drive-B at TL-9 = Potential %d (%q), want 0 with a problem",
+			j.Potential, problem)
+	}
+
+	// The problem names the shifted TL that did the capping, not just the yard's.
+	if !strings.Contains(problem, "TL-9") || !strings.Contains(problem, "TL-6") {
+		t.Errorf("problem %q should name both the yard TL-9 and the shifted TL-6", problem)
+	}
+}
+
+// A drive whose Potential computes to 0 cannot function (Book 2 p.63, and p.127
+// names the case: "Early Jump-1 at 90% becomes Jump-0"). That is a design
+// failure and has to be reported, not billed in silence.
+func TestDesignDrivePotentialZeroIsReported(t *testing.T) {
+	// Too small for the hull: Jump-A in a Hull-C is 2*1/3 = 0.
+	j, problem := designDrive(Jump, DriveSpec{Letter: 1}, 3, 15)
+	if j.Potential != 0 || problem == "" {
+		t.Errorf("Jump-A in Hull-C = Potential %d (%q), want 0 with a problem",
+			j.Potential, problem)
+	}
+
+	// Rounded away by efficiency: the book's own Early Jump-1 case.
+	j, problem = designDrive(Jump, DriveSpec{Letter: 1, Stage: Early}, 2, 15)
+	if j.Potential != 0 || problem == "" {
+		t.Errorf("Early Jump-A in Hull-B = Potential %d (%q), want 0 with a problem",
+			j.Potential, problem)
+	}
+
+	// One mistake, one message: a Potential-0 drive is not also complained about
+	// for the TL cap (design.go's `aboard` policy).
+	if strings.Count(problem, ";") != 0 {
+		t.Errorf("expected a single problem, got %q", problem)
+	}
+}
+
+// DriveForPotential answers the Standard-stage question only — the book's Z2 is
+// a plain Potential-by-Hull grid with no efficiency dimension, and p.76 says the
+// Drive Potential Tables "show standard tech levels". This pins both halves of
+// that contract: it holds at 100%, and it demonstrably does not hold elsewhere,
+// which is what the doc used to claim without qualification.
+func TestDriveForPotentialIsStandardStageOnly(t *testing.T) {
+	for hullOrd := 1; hullOrd <= maxLetter; hullOrd++ {
+		for potential := 1; potential <= 9; potential++ {
+			ord := DriveForPotential(potential, hullOrd)
+			if ord == 0 {
+				continue
+			}
+
+			if got := drivePotential(ord, hullOrd, 100); got < potential {
+				t.Errorf("DriveForPotential(%d, %d) = %d yields only Potential-%d at Standard",
+					potential, hullOrd, ord, got)
+			}
+		}
+	}
+
+	// Below 100% the named size falls short, and no caller may assume otherwise.
+	// Jump-2 in a Hull-B is Drive-B; at Early's 90% that is 2*2*90/200 = 1.
+	if ord := DriveForPotential(2, 2); ord != 2 || drivePotential(ord, 2, 90) != 1 {
+		t.Errorf("DriveForPotential(2, 2) = %d, yielding %d at 90%% — expected 2 yielding 1",
+			ord, drivePotential(ord, 2, 90))
+	}
+
+	// Above 100% it overshoots, which is harmless but is also not "at least".
+	if got := drivePotential(DriveForPotential(2, 2), 2, 130); got != 2 {
+		t.Errorf("Drive-B in Hull-B at 130%% = Potential %d, want 2", got)
 	}
 }

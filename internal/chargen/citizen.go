@@ -20,7 +20,6 @@ var CitizenCareer = Career{
 	CitizenLife:      true,
 	ControllingChars: []Characteristic{Strength, Dexterity, Endurance, Intelligence}, // C1 C2 C3 C4
 	Continue:         ContinueRule{Fixed: 10},                                        // 10-
-	Advance:          RollLow,
 	EligPerTerm:      4,
 	BenefitDM:        DMTerms,
 	Skills: SkillGrid{

@@ -24,7 +24,6 @@ var CraftsmanCareer = Career{
 		UseSkill:  "Craftsman",
 		SkillMult: 2,
 	}, // Craftsman x2
-	Advance:     RollLow,
 	EligPerTerm: 4,
 	BenefitDM:   DMTerms,
 	Skills: SkillGrid{

@@ -25,7 +25,6 @@ var AgentCareer = Career{
 		Char:     Strength,
 		TermsMod: true,
 	}, // Str, Mod +Terms
-	Advance:          RollLow,
 	EligPerTerm:      2, // Per Term 2 (Undercover 1 and Successful Mission 4 are added in awardUndercover)
 	UndercoverCareer: true,
 	RewardKind:       RewardCommendation,
