@@ -7,6 +7,9 @@ import (
 
 	"github.com/philoserf/t5/internal/dice"
 	"github.com/philoserf/t5/internal/sectorgen"
+	"github.com/philoserf/t5/internal/systemgen"
+	"github.com/philoserf/t5/internal/uwp"
+	"github.com/philoserf/t5/internal/worldgen"
 )
 
 func TestSurveyAt(t *testing.T) {
@@ -161,5 +164,30 @@ func TestSheetMarksCapital(t *testing.T) {
 		if strings.Contains(plain, title) {
 			t.Errorf("a non-capital world's sheet claims %q:\n%s", title, plain)
 		}
+	}
+}
+
+// TestBodyLabelMarksAnEqualSizeHostPair is the survey half of #310: a mainworld
+// the same size as the host body it rides is a double planet (Book 3 p.21), and
+// the sheet says so in the same words moonLabel uses for an equal-size moon.
+func TestBodyLabelMarksAnEqualSizeHostPair(t *testing.T) {
+	mainworld := uwp.Profile{Starport: 'C', Size: 9, Atmosphere: 5, Hydrographics: 4}
+	host := systemgen.OtherWorld{
+		Type:    worldgen.BigWorld,
+		Profile: uwp.Profile{Starport: 'X', Size: 9, Atmosphere: 5, Hydrographics: 4},
+	}
+
+	double := bodyLabel(systemgen.PlacedOrbit{
+		Kind: systemgen.KindMainworld, Parent: &host, DoublePlanet: true,
+	}, mainworld)
+	if !strings.Contains(double, "[double planet]") {
+		t.Errorf("bodyLabel = %q, want moonLabel's double-planet designation", double)
+	}
+
+	plain := bodyLabel(systemgen.PlacedOrbit{
+		Kind: systemgen.KindMainworld, Parent: &host,
+	}, mainworld)
+	if strings.Contains(plain, "double planet") {
+		t.Errorf("bodyLabel = %q, want no double-planet designation", plain)
 	}
 }

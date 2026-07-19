@@ -2,6 +2,7 @@ package systemgen
 
 import (
 	"slices"
+	"strings"
 	"testing"
 
 	"github.com/philoserf/t5/internal/dice"
@@ -151,6 +152,61 @@ func TestPlaceOrbitsBigWorldParentIsNotSmallerThanItsMoon(t *testing.T) {
 	if parent.Profile.Size < s.Mainworld.Profile.Size {
 		t.Errorf("BigWorld parent Size %d is smaller than its Size-%d satellite mainworld (%s)",
 			parent.Profile.Size, s.Mainworld.Profile.Size, parent.Profile)
+	}
+}
+
+// TestPlaceOrbitsEqualSizeHostIsADoublePlanet is the regression for #310. The
+// accommodating BigWorld host's Size is floored at its satellite mainworld's
+// *inclusively*, because equal sizes are the book's double planet (Book 3 p.21),
+// so the pair can come out identically sized. That relationship has to be
+// recorded, or the record disagrees with itself: an equal-size moon rolled by
+// rollMoon around the same host prints the designation and the mainworld does not.
+func TestPlaceOrbitsEqualSizeHostIsADoublePlanet(t *testing.T) {
+	newSystem := func(mwSize int) *System {
+		s := &System{
+			Primary:            Star{Type: "F", Decimal: 8, Size: "V"},
+			GasGiants:          0,
+			Worlds:             1, // others = 1 - 1 - 0 - 0 = 0
+			MainworldOrbit:     4,
+			MainworldSatellite: MainworldSatellite{IsSatellite: true},
+		}
+		s.Mainworld.Profile.Population = 8
+		s.Mainworld.Profile.Size = mwSize
+
+		return s
+	}
+
+	// All 1s: the host's Size rolls 2D+7 = 9, so the floor decides the outcome. A
+	// Size-15 mainworld pulls the host up to exactly 15 — the double planet. A
+	// Size-3 mainworld leaves the rolled 9 standing, well clear of it.
+	script := func() *dice.Roller { return dice.NewScripted(slices.Repeat([]int{1}, 20)...) }
+
+	double := newSystem(15)
+	double.placeOrbits(script())
+
+	plain := newSystem(3)
+	plain.placeOrbits(script())
+
+	if got := double.Orbits[0].Parent.Profile.Size; got != 15 {
+		t.Fatalf("host Size = %d, want 15 (floored to its equal-size mainworld)", got)
+	}
+
+	if !double.Orbits[0].DoublePlanet {
+		t.Errorf("equal-size mainworld and host are not marked a double planet: %+v",
+			double.Orbits[0])
+	}
+
+	if plain.Orbits[0].DoublePlanet {
+		t.Errorf("Size-3 mainworld on a Size-%d host marked a double planet",
+			plain.Orbits[0].Parent.Profile.Size)
+	}
+
+	if label := orbitLabel(double.Orbits[0]); !strings.Contains(label, " dp)") {
+		t.Errorf("orbitLabel = %q, want moonList's double-planet designation", label)
+	}
+
+	if label := orbitLabel(plain.Orbits[0]); strings.Contains(label, " dp") {
+		t.Errorf("orbitLabel = %q, want no double-planet designation", label)
 	}
 }
 

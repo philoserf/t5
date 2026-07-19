@@ -38,6 +38,14 @@ func (k OrbitKind) String() string {
 // Mainworld with a non-nil Giant is a satellite riding that gas giant; one with
 // a non-nil Parent rides an accommodating BigWorld created because the system
 // has no gas giant (Book 3 p.21).
+//
+// DoublePlanet lives here rather than on MainworldSatellite because it is a fact
+// about the *pair*, and the pair only exists once Parent does: placeMainworld
+// fills MainworldSatellite in an earlier pass, before any host has been rolled,
+// so a field there could only be back-patched from placeOrbits — a write that
+// reads fine and rots later. Beside Parent it is set in the same statement that
+// creates the body it describes, and is unreachable garbage nowhere else: an
+// orbit with no Parent has no pair to be half of.
 type PlacedOrbit struct {
 	Host       string // "Primary", "Close", "Near", or "Far"
 	Orbit      int
@@ -46,6 +54,11 @@ type PlacedOrbit struct {
 	Parent     *OtherWorld // BigWorld hosting a satellite mainworld when no gas giant exists
 	World      *OtherWorld
 	Satellites []Satellite
+
+	// DoublePlanet reports that the satellite mainworld and its Parent host came
+	// out the same Size — the book's double planet (Book 3 p.21), the same
+	// designation Satellite.DoublePlanet carries for an equal-size moon.
+	DoublePlanet bool
 }
 
 // hostRank orders the host stars for a stable orbit-map sort.
@@ -237,6 +250,14 @@ func (s *System) placeOrbits(r *dice.Roller) { //nolint:gocognit,cyclop,funlen /
 					s.Mainworld.Profile.Size,
 				)
 				mw.Parent = &OtherWorld{Type: worldgen.BigWorld, Profile: prof}
+				// The floor is inclusive, so the host can land exactly on its
+				// moon's Size. That is not a near miss to be nudged apart — it
+				// is the book's double planet, and it consumes no dice to
+				// notice: both Sizes are already rolled. Recording it here is
+				// what keeps the record from disagreeing with itself, since an
+				// equal-size sibling moon of this same host prints the
+				// designation (rollMoon's own DoublePlanet).
+				mw.DoublePlanet = prof.Size == s.Mainworld.Profile.Size
 			}
 		}
 
