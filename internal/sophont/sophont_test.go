@@ -90,4 +90,19 @@ func TestHumanPredicate(t *testing.T) {
 	if alien.Human() {
 		t.Error("a Caste C6 should not be Human")
 	}
+	// Die counts vary independently of the names: chart 06B can hand an
+	// all-standard-name species a 6D Strength (average 21). That is not Human.
+	strong := human
+
+	strong.Chars[0].Dice = 6
+	if strong.Human() {
+		t.Error("an SDEIES species with 6D Strength should not be Human")
+	}
+
+	frail := human
+
+	frail.Chars[2].Dice = 1
+	if frail.Human() {
+		t.Error("an SDEIES species with 1D Endurance should not be Human")
+	}
 }

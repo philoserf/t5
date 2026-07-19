@@ -15,8 +15,9 @@ import "github.com/philoserf/t5/internal/dice"
 
 // A CharName is one of the fourteen characteristic identities a sophont slot may
 // take (Book 3 p.228). The four Human-standard names (Dex, End, Edu, Soc) sit
-// beside their non-human analogs; a species is Human only if all six slots hold
-// Human-standard names.
+// beside their non-human analogs. A Human-standard name in every slot is only
+// half of being Human: the die counts are rolled separately, so Species.Human
+// also requires the reference all-2D profile.
 type CharName int
 
 // The sophont characteristic slots C1..C6.

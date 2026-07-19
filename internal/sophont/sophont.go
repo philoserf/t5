@@ -78,9 +78,16 @@ func plausibleHomeworld(r *dice.Roller) worldgen.World {
 	}
 }
 
-// Human reports whether every characteristic is Human-standard.
+// Human reports whether the species is the Human reference: every slot holds a
+// Human-standard name *and* rolls the Human-standard 2D. The two conditions are
+// independent — chart 06B can give an "SDEIES" species a 6D Strength (average
+// 21) or a 1D Endurance — so a name-only test would call those Human.
 func (s Species) Human() bool {
 	for _, c := range s.Chars {
+		if c.Dice != 2 {
+			return false
+		}
+
 		switch c.Name {
 		case Str, Dex, End, Int, Edu, Soc:
 		default:
