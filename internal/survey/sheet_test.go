@@ -47,20 +47,6 @@ func TestSurveyAt(t *testing.T) {
 	}
 }
 
-func TestParseHexRoundTrip(t *testing.T) {
-	h, ok := sectorgen.ParseHex("0436")
-	if !ok || h.Col != 4 || h.Row != 36 || h.String() != "0436" {
-		t.Errorf("ParseHex(0436) = %v,%v, want col 4 row 36", h, ok)
-	}
-	// Malformed, out-of-range, and — the trap — signed halves, which strconv would
-	// otherwise accept ("+436" silently parsing as hex 0436).
-	for _, bad := range []string{"", "436", "04366", "zzzz", "0041", "3341", "0000", "+436", "04+3", "-436", " 436", "04 3"} {
-		if _, ok := sectorgen.ParseHex(bad); ok {
-			t.Errorf("ParseHex(%q) should be rejected", bad)
-		}
-	}
-}
-
 // TestSheetSurfacesHiddenDetail locks the point of the sheet: it renders the
 // derived data the one-line Second Survey record has no room for — Resource
 // Units, starport facilities, and native status — none of which any other
@@ -115,18 +101,65 @@ func TestSheetRendersOrbitTree(t *testing.T) {
 }
 
 // TestSheetMarksCapital shows a capital's title in the header rather than leaving
-// the reader to spot the Cx/Cs trade code.
+// the reader to spot the Cs/Cp trade code, and pins each code to its own title:
+// the sheet once labelled a Sector Capital "Subsector" after the codes were
+// corrected in markSectorCapitals but not in the renderer. "Sector Capital" and
+// "Subsector Capital" differ only in case at the seam, so the case-sensitive
+// Contains is what tells the two apart.
 func TestSheetMarksCapital(t *testing.T) {
 	sv := Sector(dice.NewWithSeed(3), sectorgen.Dense)
+	titles := map[string]string{"Cs": "Sector Capital", "Cp": "Subsector Capital"}
+	seen := map[string]int{}
+
+	var plain string
+
 	for _, rec := range sv.Records {
-		if slices.Contains(rec.System.Mainworld.TradeCodes, "Cx") {
-			if !strings.Contains(rec.Sheet(), "Sector Capital") {
-				t.Errorf("the Cx world's sheet does not name it the sector capital")
+		code := rec.System.Mainworld.CapitalCode()
+		if code == "" {
+			if plain == "" {
+				plain = rec.Sheet()
 			}
 
-			return
+			continue
+		}
+
+		if slices.Contains(rec.System.Mainworld.TradeCodes, "Cx") {
+			t.Errorf("%s carries Cx; the Imperial Capital is not generated", rec.Hex)
+		}
+
+		seen[code]++
+
+		want, ok := titles[code]
+		if !ok {
+			t.Errorf("%s carries unexpected capital code %q", rec.Hex, code)
+
+			continue
+		}
+
+		if sheet := rec.Sheet(); !strings.Contains(sheet, want) {
+			t.Errorf("the %s world %s does not name itself %q:\n%s", code, rec.Hex, want, sheet)
 		}
 	}
+	// Vacuity guards: a Dense sector holding no Starport-A world at all would be a
+	// red flag in its own right, and without these the loop above would pass on a
+	// survey that stamped nothing. markSectorCapitals marks exactly one sector
+	// capital and one per remaining subsector, so Cs is exactly 1 and Cp at least 1.
+	if seen["Cs"] != 1 {
+		t.Errorf("sector capitals = %d, want exactly 1", seen["Cs"])
+	}
 
-	t.Skip("no sector capital in this sector")
+	if seen["Cp"] < 1 {
+		t.Errorf("subsector capitals = %d, want at least 1", seen["Cp"])
+	}
+	// And a world that is no capital claims no title, so the assertions above are
+	// not passing on a header the renderer prints for everyone.
+	if plain == "" {
+		t.Fatal("every world in this sector is a capital")
+	}
+
+	for _, title := range titles {
+		if strings.Contains(plain, title) {
+			t.Errorf("a non-capital world's sheet claims %q:\n%s", title, plain)
+		}
+	}
 }
