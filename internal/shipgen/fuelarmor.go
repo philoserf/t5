@@ -10,18 +10,44 @@ const (
 	liquidHydrogenCr = 500       // Cr500 per ton
 )
 
-// fuel computes a ship's fuel tankage and cost (Book 2 p.79). Jump fuel is
-// P*hull/10 and power-plant operations fuel is P*hull/100 (one month's supply),
-// each scaled by its drive's stage fuel multiplier. Maneuver fuel is included in
-// operations. Cost is the liquid hydrogen plus any scoop/purifier fittings.
-func fuel(hullTons int, jump, power *Drive, scoop, purifier bool) Fuel {
-	tankage := 0
-	if jump != nil {
-		tankage += fuelMul(jump.Potential*hullTons/10, jump.Stage)
+// driveFuel is one drive's own fuel demand in tons (Book 2 p.79): jump fuel is
+// P*hull/10 per jump and power-plant operations fuel is P*hull/100 (one month's
+// supply), each scaled by the stage's fuel multiplier — p.127 states the same
+// thing the other way round, "(H x P/10) divided by Efficiency", the Fuel column
+// being the reciprocal of the Efficiency column. Maneuver drives draw no fuel of
+// their own; their consumption is part of power-plant operations.
+func driveFuel(hullTons int, d *Drive) int {
+	if d == nil {
+		return 0
 	}
 
-	if power != nil {
-		tankage += fuelMul(power.Potential*hullTons/100, power.Stage)
+	switch d.Kind {
+	case Jump:
+		return fuelMul(d.Potential*hullTons/10, d.Stage)
+	case Power:
+		return fuelMul(d.Potential*hullTons/100, d.Stage)
+	case Maneuver:
+		return 0
+	}
+
+	return 0
+}
+
+// fuel computes a ship's fuel tankage and cost (Book 2 p.79) as the sum of what
+// each drive demands. It records each drive's share on the Drive itself, since
+// the split is real information — the p.127 example table prints a Fuel Tons
+// column per drive — and the ship total is the only other place it appears.
+// Cost is the liquid hydrogen plus any scoop/purifier fittings.
+func fuel(hullTons int, jump, power *Drive, scoop, purifier bool) Fuel {
+	tankage := 0
+
+	for _, d := range []*Drive{jump, power} {
+		if d == nil {
+			continue
+		}
+
+		d.Fuel = driveFuel(hullTons, d)
+		tankage += d.Fuel
 	}
 
 	cost := tankage * liquidHydrogenCr

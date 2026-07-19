@@ -2,6 +2,33 @@ package shipgen
 
 import "testing"
 
+// Fuel is a per-drive demand before it is a ship total (Book 2 p.79, and the
+// p.127 example table, which prints a Fuel Tons column per drive). Drive.Fuel
+// promises that breakdown, so the parts have to add up to Ship.Fuel.Tons.
+func TestDriveFuelIsPopulated(t *testing.T) {
+	// Murphy Scout: Jump-A Potential-2 in a 100t hull = 2*100/10 = 20t, Power-A
+	// Potential-2 = 2*100/100 = 2t, and 20+2 = the ship's 22t.
+	s := Design(murphySpec())
+	if s.Jump.Fuel != 20 || s.Power.Fuel != 2 || s.Maneuver.Fuel != 0 {
+		t.Errorf("Murphy per-drive fuel = J%dt P%dt M%dt, want J20t P2t M0t",
+			s.Jump.Fuel, s.Power.Fuel, s.Maneuver.Fuel)
+	}
+
+	if sum := s.Jump.Fuel + s.Power.Fuel + s.Maneuver.Fuel; sum != s.Fuel.Tons {
+		t.Errorf("per-drive fuel sums to %dt but the ship carries %dt", sum, s.Fuel.Tons)
+	}
+
+	// And the stage's fuel multiplier lands on the drive that earned it: an
+	// Advanced jump drive at x0.8 (p.76 Table X).
+	spec := murphySpec()
+	spec.Jump = &DriveSpec{Letter: 1, Stage: Advanced}
+
+	adv := Design(spec)
+	if adv.Jump.Fuel != 16 || adv.Power.Fuel != 2 {
+		t.Errorf("Advanced-jump Murphy = J%dt P%dt, want J16t P2t", adv.Jump.Fuel, adv.Power.Fuel)
+	}
+}
+
 func TestFuelMurphy(t *testing.T) {
 	// Murphy Scout: Jump-2 in 100t = 20t jump fuel; Power potential 2 = 2t
 	// operations fuel; total 22t. Scoops + purifier fittings add cost.

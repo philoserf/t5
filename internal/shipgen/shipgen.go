@@ -205,7 +205,11 @@ type Drive struct {
 	Potential  int // thrust-G / jump-N / EP tier
 	Stage      Stage
 	Tons, Cost int // Cost in Cr
-	Fuel       int // tons of fuel this drive demands
+	// Fuel is the tons of fuel this drive demands, set in the fuel phase (it
+	// needs the hull tonnage, which the drive does not know). A Maneuver drive
+	// is always 0: its consumption is part of power-plant operations (Book 2
+	// p.79).
+	Fuel int
 }
 
 // Armor is a hull's armor: layer count, armor value, and tonnage. Armor imposes
