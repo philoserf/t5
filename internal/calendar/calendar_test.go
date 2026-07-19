@@ -38,6 +38,33 @@ func TestString(t *testing.T) {
 	}
 }
 
+func TestStringInvalidDay(t *testing.T) {
+	// Mirrors TestWeekdayInvalidDay: an out-of-range Day renders a visible
+	// sentinel, not a well-formed-looking record ("000-1105", "400-1105").
+	for _, day := range []int{0, -5, 366, 1000} {
+		if got := (Date{Year: 1105, Day: day}).String(); got != "???-1105" {
+			t.Errorf("String(day=%d) = %q, want ???-1105", day, got)
+		}
+	}
+}
+
+func TestAddInvalidDayStaysInvalid(t *testing.T) {
+	// Add must not launder an out-of-range Day into a valid-looking date: the
+	// result stays out of range, so Weekday/String keep flagging it.
+	for _, start := range []Date{{1105, 366}, {1105, 0}, {1105, -5}} {
+		for _, days := range []int{0, 1, -1, 400} {
+			got := start.Add(days)
+			if got.Day >= 1 && got.Day <= DaysPerYear {
+				t.Errorf("%+v.Add(%d) = %+v, want an out-of-range Day", start, days, got)
+			}
+
+			if got.Weekday() != "?" {
+				t.Errorf("%+v.Add(%d).Weekday() = %q, want ?", start, days, got.Weekday())
+			}
+		}
+	}
+}
+
 func TestNew(t *testing.T) {
 	if _, err := New(1105, 1); err != nil {
 		t.Errorf("New(1105, 1) errored: %v", err)
