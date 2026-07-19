@@ -1,6 +1,9 @@
 package shipgen
 
-import "testing"
+import (
+	"strings"
+	"testing"
+)
 
 // TestIdentifyingDefenses is the golden for the defense engine: rows of the
 // book's own IDENTIFYING DEFENSES catalog (Book 2 p.176), derived from the p.174
@@ -241,6 +244,34 @@ func TestDefenseSpaceRangeLimit(t *testing.T) {
 		WeaponSpec{HybridSLM, SingleTurret, Standard, DeepSpace},
 	); len(w.Problems) > 0 {
 		t.Errorf("a Hybrid SLM attacking at Deep Space is legal: %v", w.Problems)
+	}
+}
+
+// TestDefenseRangeCodeScale: a defense built on the space ladder prints S=, not R=.
+// The two ladders are distinct (Book 2 p.83 Tables D and E; p.174 prints both for
+// defenses), and p.175 says the band "duplicates the Defense name Range information"
+// — so an S=07 Attack Range installation labelled R=07 would claim a 50 km reach for
+// a weapon covering the whole Attack Range band. Screens never reach this, being
+// world-range devices; the dual-scale Hybrid S-L-M does.
+func TestDefenseRangeCodeScale(t *testing.T) {
+	space := DesignWeaponAsDefense(WeaponSpec{HybridSLM, SingleTurret, Standard, AttackRange})
+	if len(space.Problems) > 0 {
+		t.Fatalf("a Hybrid SLM defending at Attack Range is legal: %v", space.Problems)
+	}
+
+	if space.Scale != SpaceScale || space.RangeCode() != "S=07" {
+		t.Errorf("space-range defense band = %q, want S=07", space.RangeCode())
+	}
+
+	if !strings.HasSuffix(space.LongName(), "S=07. (Electronic).") {
+		t.Errorf("space-range defense LongName = %q, want it to end S=07. (Electronic).",
+			space.LongName())
+	}
+	// The same weapon on the world ladder still prints R=, as the whole p.176
+	// catalog does.
+	world := DesignWeaponAsDefense(WeaponSpec{HybridSLM, SingleTurret, Standard, VDistant})
+	if world.Scale != WorldScale || world.RangeCode() != "R=07" {
+		t.Errorf("world-range defense band = %q, want R=07", world.RangeCode())
 	}
 }
 

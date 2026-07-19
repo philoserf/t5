@@ -168,6 +168,7 @@ type Defense struct {
 	Tons      Tonnage
 	Cost      int // Cr
 	Band      int
+	Scale     Scale // which ladder Band is on, so the record prints R= or S=
 	Principle Principle
 	Problems  []string
 }
@@ -243,10 +244,14 @@ func DesignDefense(spec DefenseSpec) Defense {
 		TL:     tl,
 		// The mount's Mod alone. A defense takes none from its tech stage, which is
 		// why the stage's Mod column is not even in scope here (weaponStageMod).
-		Mod:       m.mod,
-		Tons:      tons,
-		Cost:      cost,
-		Band:      band,
+		Mod:  m.mod,
+		Tons: tons,
+		Cost: cost,
+		Band: band,
+		// The range decides which ladder this installation reaches on — the same
+		// thing Weapon.Scale records, and for the same reason: the band is
+		// meaningless without it.
+		Scale:     rng.scale,
 		Principle: dev.principle,
 		Problems:  problems,
 	}
@@ -304,13 +309,6 @@ func (d Defense) Name() string {
 	return fmt.Sprintf("%s-%d", d.Device, d.TL)
 }
 
-// installed reports whether install actually ran for this defense — that is,
-// whether its TL, tonnage, and cost mean anything. DesignDefense returns early on
-// a refused device or an unknown mount or range, and every real defense comes out
-// of install with a positive tech level (the lowest base is 8 and the deepest
-// discount is -5), so a zero TL is exactly the un-built case.
-func (d Defense) installed() bool { return d.TL > 0 }
-
 // LongName renders the defense's identity as the book's own tables do (Book 2
 // p.176 "Identifying Defenses"):
 //
@@ -326,10 +324,22 @@ func (d Defense) LongName() string {
 		return d.Name()
 	}
 
-	return fmt.Sprintf("%s %s %s %s Mod=%+d. %s. %s. R=%02d. (%s).",
+	return fmt.Sprintf("%s %s %s %s Mod=%+d. %s. %s. %s. (%s).",
 		d.Spec.Stage, rangeData[d.Spec.Range].name, mountName(d.Spec.Mount),
-		d.Name(), d.Mod, d.Tons.Phrase(), weaponMCr(d.Cost), d.Band, d.Principle)
+		d.Name(), d.Mod, d.Tons.Phrase(), weaponMCr(d.Cost), d.RangeCode(), d.Principle)
 }
+
+// RangeCode renders the defense's range band as the book writes it — "R=07" for a
+// world-range defense, "S=07" for one built on the space ladder. The two ladders
+// are distinct, so the band alone does not say how far a defense reaches.
+func (d Defense) RangeCode() string { return rangeCode(d.Scale, d.Band) }
+
+// installed reports whether install actually ran for this defense — that is,
+// whether its TL, tonnage, and cost mean anything. DesignDefense returns early on
+// a refused device or an unknown mount or range, and every real defense comes out
+// of install with a positive tech level (the lowest base is 8 and the deepest
+// discount is -5), so a zero TL is exactly the un-built case.
+func (d Defense) installed() bool { return d.TL > 0 }
 
 // standardRangeName is the standard (unmodified) rung of a ladder — Attack Range
 // on the space one, Vdistant on the world one (Book 2 p.83 Tables D and E, printed

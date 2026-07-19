@@ -167,13 +167,19 @@ func (w Weapon) Name() string {
 
 // RangeCode renders the weapon's range band as the book writes it, e.g. "R=08"
 // for a world-range weapon or "S=07" for a space-range one.
-func (w Weapon) RangeCode() string {
-	scale := 'S'
-	if w.Scale == WorldScale {
-		scale = 'R'
+func (w Weapon) RangeCode() string { return rangeCode(w.Scale, w.Band) }
+
+// rangeCode renders a range band with the letter of the ladder it is on (Book 2
+// pp.155, 175: "R= (or S=) is the Range Band"). Weapons and defenses share it,
+// because the two ladders are distinct wherever a band is printed — a defense
+// built for a space range prints S=, exactly as a weapon does.
+func rangeCode(s Scale, band int) string {
+	letter := 'S'
+	if s == WorldScale {
+		letter = 'R'
 	}
 
-	return fmt.Sprintf("%c=%02d", scale, w.Band)
+	return fmt.Sprintf("%c=%02d", letter, band)
 }
 
 // LongName renders the weapon's full identity, the way the book's own weapon
