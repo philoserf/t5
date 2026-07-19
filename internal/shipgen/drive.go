@@ -32,8 +32,23 @@ func drivePotential(driveOrd, hullOrd, effPct int) int {
 }
 
 // DriveForPotential is the Z2 inverse: the smallest drive size ordinal that
-// yields at least the desired Potential in the given hull (Book 2 p.78), or 0 if
-// no drive (up to Z2 = 48) can. E.g. Jump-6 in a Hull-K needs ordinal 30 = Q2.
+// yields at least the desired Potential in the given hull at STANDARD stage
+// (Book 2 p.78), or 0 if no drive (up to Z2 = 48) can. E.g. Jump-6 in a Hull-K
+// needs ordinal 30 = Q2.
+//
+// Standard stage is the whole contract, and deliberately so: the book's Z2 is a
+// plain Potential-by-Hull grid with no efficiency dimension, the exact transpose
+// of Z1, and p.76 says "The Drive Potential Tables show standard tech levels."
+// Stage efficiency is a Table X effect layered on top, not part of this table.
+//
+// So this is the inverse of drivePotential at effPct=100 only. Below 100%
+// (Experimental 50%, Prototype 80%, Early/Basic/Generic 90%) the size it names
+// falls short of the Potential asked for; above it (Improved/Modified 110%,
+// Advanced 120%, Ultimate 130%) it overshoots. The shortfall cannot be undone by
+// scaling the argument — the efficiency divides inside drivePotential's single
+// floor — so a stage-aware caller must check the answer with drivePotential at
+// its own efficiency and step the size up until it satisfies. No caller needs
+// that today: Generate builds Standard drives and passes effPct=100 explicitly.
 //
 // The result is always a size a yard can build. Past Drive-Z the only sizes this
 // package models are the "letter2" gangs — two identical drives joined by a

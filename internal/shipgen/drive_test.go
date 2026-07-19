@@ -270,3 +270,36 @@ func TestDesignDrivePotentialZeroIsReported(t *testing.T) {
 		t.Errorf("expected a single problem, got %q", problem)
 	}
 }
+
+// DriveForPotential answers the Standard-stage question only — the book's Z2 is
+// a plain Potential-by-Hull grid with no efficiency dimension, and p.76 says the
+// Drive Potential Tables "show standard tech levels". This pins both halves of
+// that contract: it holds at 100%, and it demonstrably does not hold elsewhere,
+// which is what the doc used to claim without qualification.
+func TestDriveForPotentialIsStandardStageOnly(t *testing.T) {
+	for hullOrd := 1; hullOrd <= maxLetter; hullOrd++ {
+		for potential := 1; potential <= 9; potential++ {
+			ord := DriveForPotential(potential, hullOrd)
+			if ord == 0 {
+				continue
+			}
+
+			if got := drivePotential(ord, hullOrd, 100); got < potential {
+				t.Errorf("DriveForPotential(%d, %d) = %d yields only Potential-%d at Standard",
+					potential, hullOrd, ord, got)
+			}
+		}
+	}
+
+	// Below 100% the named size falls short, and no caller may assume otherwise.
+	// Jump-2 in a Hull-B is Drive-B; at Early's 90% that is 2*2*90/200 = 1.
+	if ord := DriveForPotential(2, 2); ord != 2 || drivePotential(ord, 2, 90) != 1 {
+		t.Errorf("DriveForPotential(2, 2) = %d, yielding %d at 90%% — expected 2 yielding 1",
+			ord, drivePotential(ord, 2, 90))
+	}
+
+	// Above 100% it overshoots, which is harmless but is also not "at least".
+	if got := drivePotential(DriveForPotential(2, 2), 2, 130); got != 2 {
+		t.Errorf("Drive-B in Hull-B at 130%% = Potential %d, want 2", got)
+	}
+}
