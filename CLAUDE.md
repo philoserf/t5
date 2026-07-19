@@ -227,6 +227,10 @@ Tooling (go, go-task, golangci-lint, poppler's `pdftotext`) is pinned in `Brewfi
   defends better. `DesignWeapon` (23 models), `DesignDefense` (10 screens, plus the nine weapons
   p.174 allows in the Anti-Missile Defensive Fire mode), and `DesignMissile` (size 1–7 × warhead ×
   guidance, each constraining the others) render the book's `LongName` — a weapon's UWP analog.
+  `MinTL`/`MaxTL` bound the designable Tech Level (0..21, Book 2 p.51 — 21 is the design system's
+  own ceiling, distinct from the TL-15 Imperial shipyard limit). `Design` does not enforce them (it
+  is total); they exist for callers taking a TL from outside, since a negative one renders a ship
+  card whose TL field is not an eHex value at all.
   `Design` mounts them against the hull: one HardPoint per 100t, or three FirmPoints instead
   (sub-ton mounts only), with the Bolt-In needing neither — which is why `Tonnage` is fixed-point
   hundredths. Golden-locked to the p.167 and p.176 catalogs, every row. Gotchas: the book divides by
@@ -300,6 +304,12 @@ Tooling (go, go-task, golangci-lint, poppler's `pdftotext`) is pinned in `Brewfi
   reports it via `Notef` ("`sectorgen: seed 16919235832026294750`"), so a run worth keeping can always
   be replayed — re-run with that `-seed` for byte-identical records, or to select another view of the
   same survey (`-hex`, `-sector`). The report is on stderr, so piped records are unaffected.
+  It is **deferred, not printed at construction**: `Roller`/`SeededRoller` hand back a `reportSeed`
+  func alongside the roller, and each command calls it only once its own flags validate, so a run
+  that dies on bad input never names a seed for records it did not generate. `Roller` merely
+  parses — every per-command check (an unknown density, a bad hull letter) happens after it returns,
+  which is why the ordering has to be the caller's. A command with a view flag validates it up front
+  for the same reason (`sectorgen.selectView` resolves `-hex`/`-subsector` before the survey runs).
 
 When adding a generator, transcribe the rule tables/formulas from `docs/reference/` and lock
 them with a golden test built from a worked example in the books.

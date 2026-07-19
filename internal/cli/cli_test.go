@@ -87,6 +87,49 @@ func TestRollerReportsFreshSeed(t *testing.T) {
 	}
 }
 
+// TestRollerDefersSeedReport is the other half of the contract, and the reason
+// the report is a returned function at all (#293): Roller runs before the
+// command has checked its own flags, so it must stay silent until the command
+// says its input is good. A command that rejects a flag and exits never calls
+// reportSeed, and so never names a seed for a run that generated nothing.
+func TestRollerDefersSeedReport(t *testing.T) {
+	if os.Getenv("CLI_TEST_QUIET") == "1" {
+		quietChild()
+
+		return // not reached
+	}
+
+	cmd := exec.Command(os.Args[0], "-test.run=TestRollerDefersSeedReport")
+
+	cmd.Env = append(os.Environ(), "CLI_TEST_QUIET=1")
+
+	var stdout, stderr strings.Builder
+
+	cmd.Stdout = &stdout
+	cmd.Stderr = &stderr
+
+	if err := cmd.Run(); err != nil {
+		t.Fatalf("child failed: %v (stderr %q)", err, stderr.String())
+	}
+
+	if strings.Contains(stderr.String(), "seed ") {
+		t.Errorf("Roller named a seed before the caller reported it: %q", stderr.String())
+	}
+}
+
+// quietChild builds an unseeded roller and rolls with it, but never calls
+// reportSeed — standing in for a command that rejects a flag after Roller
+// returns. Nothing about a seed may reach either stream.
+func quietChild() {
+	flag.CommandLine = flag.NewFlagSet(os.Args[0], flag.ExitOnError)
+	os.Args = []string{"rollgen"}
+
+	r, _ := Roller()
+	_ = r.Dice(2)
+
+	os.Exit(0)
+}
+
 // rollChild is the subprocess half of TestRollerReportsFreshSeed: it builds a
 // roller from its own command line and prints a short roll sequence to stdout,
 // standing in for a generator's records.
@@ -98,7 +141,8 @@ func rollChild() {
 
 	os.Args = append([]string{"rollgen"}, rollerArgs...)
 
-	r := Roller()
+	r, reportSeed := Roller()
+	reportSeed() // a real command calls this once its own flags check out
 
 	rolls := make([]string, 0, 10)
 
