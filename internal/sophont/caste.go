@@ -125,18 +125,48 @@ var casteUnique = map[CasteStructure]string{
 	Body: "Brain", Economic: "Director", Family: "Archon", Military: "General", Social: "Ruler",
 }
 
-// casteDifference reads the Caste-Based Differences table (chart 07C) at a Flux.
-// C1 gains dice on any positive roll; -1/0/+1 impose no change.
-func casteDifference(flux int) Difference {
+// casteC1 reads the C1 column of the Caste-Based Differences table (chart 07C)
+// at a Flux, returning extra Strength dice and a flat modifier — never both.
+// Unlike gender's C1, this column never goes flat-positive: every positive cell
+// from +2 up is dice ("+2D".."+5D"), and -1/0/+1 impose no change.
+func casteC1(flux int) (numDice, mod int) {
 	flux = clamp(flux, -5, 5)
 	switch {
 	case flux <= -2:
-		return Difference{Mods: [5]int{flux, flux, flux, flux, flux}}
+		return 0, flux
 	case flux <= 1:
-		return Difference{} // -1, 0, +1: no change
-	default: // +2..+5: C1 gains `flux` dice, C2-C5 flat +flux
-		return Difference{C1Dice: flux, Mods: [5]int{0, flux, flux, flux, flux}}
+		return 0, 0 // -1, 0, +1: no change
+	default:
+		return flux, 0 // +2..+5: +2D..+5D
 	}
+}
+
+// differenceMod reads a C2..C5 column of either differences chart at a Flux.
+// Charts 07C and 08B print the same progression for these four columns —
+// negative Flux is a flat penalty, -1/0/+1 is no change, and +2..+5 is a flat
+// bonus — so one function serves both; only the C1 column differs between them.
+func differenceMod(flux int) int {
+	flux = clamp(flux, -5, 5)
+	if flux >= -1 && flux <= 1 {
+		return 0
+	}
+
+	return flux
+}
+
+// rollCasteDifference rolls one caste's characteristic differences on chart 07C:
+// "Roll in each Caste Type (except Common) for each Characteristic" (Book 3
+// p.229) — five independent Flux rolls, C1 through C5, each read from its own
+// column.
+func rollCasteDifference(r *dice.Roller) Difference {
+	var d Difference
+
+	d.C1Dice, d.Mods[0] = casteC1(r.Flux())
+	for i := 1; i < 5; i++ {
+		d.Mods[i] = differenceMod(r.Flux())
+	}
+
+	return d
 }
 
 // rollCaste rolls a species' caste structure and builds its Generation Table:
@@ -181,7 +211,7 @@ func rollCaste(r *dice.Roller, gender Gender) Caste {
 
 	diffs := make(map[string]Difference, len(distinct))
 	for _, name := range distinct {
-		diffs[name] = casteDifference(r.Flux())
+		diffs[name] = rollCasteDifference(r)
 	}
 
 	return Caste{Structure: structure, Table: table, Differences: diffs}

@@ -11,8 +11,8 @@ import (
 // is Male, and every other entry is Female — giving a 34-female / 2-male census.
 func TestGenderAyFixture(t *testing.T) {
 	// Flux 0 for the structure, then Flux 0 for entries 4-12 (9 rolls), then the
-	// Male gender's difference roll (1). Flux 0 structure column -> Dual.
-	seq := fluxSeq(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+	// Male gender's five difference rolls, C1..C5. Flux 0 structure -> Dual.
+	seq := fluxSeq(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
 	g := rollGender(dice.NewScripted(seq...))
 
 	if g.Structure != Dual {
@@ -47,9 +47,9 @@ func TestGenderAyFixture(t *testing.T) {
 // floor of 2/36 and no Group species could ever lose it.
 func TestGroupEntryThreeIsRolled(t *testing.T) {
 	// Flux +4 for the structure -> Group; then Flux 0 for entries 3-12 (ten
-	// rolls) -> "One"; then a difference roll for each of the five non-base
-	// genders.
-	seq := fluxSeq(4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+	// rolls) -> "One"; then five difference rolls (C1..C5) for each of the five
+	// non-base genders.
+	seq := fluxSeq(append([]int{4}, make([]int, 35)...)...)
 	g := rollGender(dice.NewScripted(seq...))
 
 	if g.Structure != Group {
@@ -67,6 +67,21 @@ func TestGroupEntryThreeIsRolled(t *testing.T) {
 	}
 }
 
+// TestGenderDifferenceIsUncorrelated is the same rule seen through rollGender:
+// a Dual species whose Male difference draws five deliberately unequal Fluxes
+// must record all five, not one row replicated. This is the shape a single
+// per-gender roll can never produce.
+func TestGenderDifferenceIsUncorrelated(t *testing.T) {
+	// Flux 0 structure -> Dual; nine Flux-0 entry rolls; then Male's C1..C5.
+	seq := fluxSeq(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 3, -4, 0, 2, 5)
+	g := rollGender(dice.NewScripted(seq...))
+
+	want := Difference{C1Dice: 1, Mods: [5]int{0, -4, 0, 2, 5}}
+	if got := g.Differences["Male"]; got != want {
+		t.Errorf("Male difference = %+v, want %+v", got, want)
+	}
+}
+
 // TestGenderStructureSelection checks the Structure column of chart 08A.
 func TestGenderStructureSelection(t *testing.T) {
 	cases := []struct {
@@ -80,22 +95,46 @@ func TestGenderStructureSelection(t *testing.T) {
 	}
 }
 
-// TestGenderDifferences locks chart 08B, including the C1 dice-vs-flat split.
-func TestGenderDifferences(t *testing.T) {
-	cases := []struct {
-		flux int
-		want Difference
-	}{
-		{-3, Difference{Mods: [5]int{-3, -3, -3, -3, -3}}},
-		{0, Difference{}},
-		{1, Difference{Mods: [5]int{1, 0, 0, 0, 0}}},
-		{2, Difference{Mods: [5]int{2, 2, 2, 2, 2}}},
-		{3, Difference{C1Dice: 1, Mods: [5]int{0, 3, 3, 3, 3}}},
-		{5, Difference{C1Dice: 3, Mods: [5]int{0, 5, 5, 5, 5}}},
+// TestGenderC1Column locks the C1 column of chart 08B, including the flat-to-
+// dice transition at +3 ("+1D", "+2D", "+3D").
+func TestGenderC1Column(t *testing.T) {
+	cases := []struct{ flux, wantDice, wantMod int }{
+		{-5, 0, -5}, {-3, 0, -3}, {-2, 0, -2},
+		{-1, 0, 0}, {0, 0, 0},
+		{1, 0, 1}, {2, 0, 2},
+		{3, 1, 0}, {4, 2, 0}, {5, 3, 0},
 	}
 	for _, c := range cases {
-		if got := genderDifference(c.flux); got != c.want {
-			t.Errorf("genderDifference(%+d) = %+v, want %+v", c.flux, got, c.want)
+		gotDice, gotMod := genderC1(c.flux)
+		if gotDice != c.wantDice || gotMod != c.wantMod {
+			t.Errorf("genderC1(%+d) = %dD/%+d, want %dD/%+d",
+				c.flux, gotDice, gotMod, c.wantDice, c.wantMod)
 		}
+	}
+}
+
+// TestDifferenceModColumn locks the C2..C5 columns shared by charts 07C and 08B.
+func TestDifferenceModColumn(t *testing.T) {
+	cases := []struct{ flux, want int }{
+		{-5, -5}, {-2, -2}, {-1, 0}, {0, 0}, {1, 0}, {2, 2}, {5, 5},
+	}
+	for _, c := range cases {
+		if got := differenceMod(c.flux); got != c.want {
+			t.Errorf("differenceMod(%+d) = %+d, want %+d", c.flux, got, c.want)
+		}
+	}
+}
+
+// TestGenderDifferencePerCharacteristic: chart 08B says "Roll once within each
+// Gender for each Characteristic" (Book 3 p.230) — five independent Flux rolls,
+// not one row applied across the board. A single roll would make every
+// difference perfectly correlated, a distribution the rule cannot produce.
+func TestGenderDifferencePerCharacteristic(t *testing.T) {
+	r := dice.NewScripted(fluxSeq(3, -4, 0, 2, 5)...) // C1..C5, deliberately unequal
+	got := rollGenderDifference(r)
+	want := Difference{C1Dice: 1, Mods: [5]int{0, -4, 0, 2, 5}}
+
+	if got != want {
+		t.Errorf("rollGenderDifference = %+v, want %+v", got, want)
 	}
 }

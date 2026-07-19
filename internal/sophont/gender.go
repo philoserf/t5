@@ -117,22 +117,37 @@ var genderColumns = map[GenderStructure][]string{
 	Group: {"Six", "Six", "Four", "Four", "Two", "One", "Three", "Five", "Five", "Six", "Six"},
 }
 
-// genderDifference reads the Gender-Based Differences table (chart 08B) at a
-// Flux. Note C1 is flat at +1/+2 but gains dice at +3/+4/+5.
-func genderDifference(flux int) Difference {
+// genderC1 reads the C1 column of the Gender-Based Differences table (chart 08B)
+// at a Flux, returning extra Strength dice and a flat modifier — never both.
+// C1 is flat at +1/+2 but gains dice at +3/+4/+5 (the printed cells are "+1D",
+// "+2D", "+3D", i.e. Flux-2 dice).
+func genderC1(flux int) (numDice, mod int) {
 	flux = clamp(flux, -5, 5)
 	switch {
 	case flux <= -2:
-		return Difference{Mods: [5]int{flux, flux, flux, flux, flux}}
+		return 0, flux
 	case flux <= 0:
-		return Difference{} // -1, 0: no change
-	case flux == 1:
-		return Difference{Mods: [5]int{1, 0, 0, 0, 0}}
-	case flux == 2:
-		return Difference{Mods: [5]int{2, 2, 2, 2, 2}}
-	default: // +3/+4/+5: C1 gains (flux-2) dice, C2-C5 flat +flux
-		return Difference{C1Dice: flux - 2, Mods: [5]int{0, flux, flux, flux, flux}}
+		return 0, 0 // -1, 0: no change
+	case flux <= 2:
+		return 0, flux // +1, +2: flat
+	default:
+		return flux - 2, 0 // +3/+4/+5: +1D/+2D/+3D
 	}
+}
+
+// rollGenderDifference rolls one gender's characteristic differences on chart
+// 08B: "Roll once within each Gender for each Characteristic" (Book 3 p.230) —
+// five independent Flux rolls, C1 through C5, each read from its own column.
+// The five columns are printed separately precisely because C1 differs.
+func rollGenderDifference(r *dice.Roller) Difference {
+	var d Difference
+
+	d.C1Dice, d.Mods[0] = genderC1(r.Flux())
+	for i := 1; i < 5; i++ {
+		d.Mods[i] = differenceMod(r.Flux())
+	}
+
+	return d
 }
 
 // autoFillsGenderTwo reports whether chart 08A pins Gender 2 at table entry 3.
@@ -172,7 +187,7 @@ func rollGender(r *dice.Roller) Gender {
 
 	diffs := make(map[string]Difference, len(genders)-1)
 	for _, g := range genders[1:] {
-		diffs[g] = genderDifference(r.Flux())
+		diffs[g] = rollGenderDifference(r)
 	}
 
 	return Gender{Structure: structure, Genders: genders, Table: table, Differences: diffs}
