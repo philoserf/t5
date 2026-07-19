@@ -115,6 +115,21 @@ func specFromFlags(f flags) (shipgen.ShipSpec, error) {
 		)
 	}
 
+	maneuver, err := driveSpec("maneuver", f.maneuver)
+	if err != nil {
+		return shipgen.ShipSpec{}, err
+	}
+
+	jump, err := driveSpec("jump", f.jump)
+	if err != nil {
+		return shipgen.ShipSpec{}, err
+	}
+
+	power, err := driveSpec("power", f.power)
+	if err != nil {
+		return shipgen.ShipSpec{}, err
+	}
+
 	weapons, err := weaponSpecs(f.weapons)
 	if err != nil {
 		return shipgen.ShipSpec{}, err
@@ -128,9 +143,9 @@ func specFromFlags(f flags) (shipgen.ShipSpec, error) {
 	return shipgen.ShipSpec{
 		Mission: f.mission, TL: f.tl, HullLetter: hullOrd, Config: config,
 		Structure: structure, ArmorLayers: f.armor,
-		Maneuver:  driveSpec(f.maneuver),
-		Jump:      driveSpec(f.jump),
-		Power:     driveSpec(f.power),
+		Maneuver:  maneuver,
+		Jump:      jump,
+		Power:     power,
 		Weapons:   weapons,
 		Defenses:  defenseList,
 		FuelScoop: true,
@@ -274,13 +289,25 @@ func defenseSpecs(list string) ([]shipgen.DefenseSpec, error) {
 	return specs, nil
 }
 
-// driveSpec returns a standard DriveSpec for a size letter, or nil for a blank.
-func driveSpec(letter string) *shipgen.DriveSpec {
-	if ord := letterOrdinal(letter); ord != 0 {
-		return &shipgen.DriveSpec{Letter: ord}
+// driveSpec returns a standard DriveSpec for a size letter. Only a blank means
+// "no such drive" — a non-starship has no jump drive at all. Anything else that
+// is not a hull/drive letter is a typo, and a typo must not quietly design a
+// driveless ship: it is an error, exactly as the same bad value is for -hull.
+func driveSpec(name, letter string) (*shipgen.DriveSpec, error) {
+	if letter == "" {
+		return nil, nil //nolint:nilnil // a blank drive letter legitimately means "no drive"
 	}
 
-	return nil
+	ord := letterOrdinal(letter)
+	if ord == 0 {
+		return nil, fmt.Errorf(
+			"invalid %s drive %q (want a letter A-Z, no I or O, or blank for none)",
+			name,
+			letter,
+		)
+	}
+
+	return &shipgen.DriveSpec{Letter: ord}, nil
 }
 
 // letterOrdinal maps a hull/drive letter A-Z (no I/O) to its ordinal 1..24, or 0.
