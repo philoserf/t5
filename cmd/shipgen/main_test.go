@@ -109,6 +109,10 @@ func TestSpecFromFlagsRejects(t *testing.T) {
 		"jump I":              func(f *flags) { f.jump = "I" },
 		"power O":             func(f *flags) { f.power = "O" },
 		"non-letter power":    func(f *flags) { f.power = "?" },
+		// Layer 1 is integral to the hull, so the library floors a low count — but
+		// a typed 0 or negative is a mistake, not a request for the minimum.
+		"zero armor":     func(f *flags) { f.armor = 0 },
+		"negative armor": func(f *flags) { f.armor = -3 },
 	}
 	for name, mutate := range cases {
 		f := murphyFlags()
@@ -160,6 +164,8 @@ func TestMainRejectsBadFlags(t *testing.T) {
 		"invalid jump drive":     {"-jump", "I"},
 		"multi-char jump drive":  {"-jump", "AB"},
 		"numeric maneuver drive": {"-maneuver", "3"},
+		"zero armor":             {"-armor", "0"},
+		"negative armor":         {"-armor", "-3"},
 	}
 	for name, args := range cases {
 		t.Run(name, func(t *testing.T) {

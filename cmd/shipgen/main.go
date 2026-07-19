@@ -130,6 +130,17 @@ func specFromFlags(f flags) (shipgen.ShipSpec, error) {
 		return shipgen.ShipSpec{}, err
 	}
 
+	// Layer 1 is integral to the hull, so armor() floors a low count at 1 — a
+	// sound library default, but a typed -armor 0 or -armor -3 is a mistake, and
+	// the command says so rather than designing something the caller did not ask
+	// for.
+	if f.armor < 1 {
+		return shipgen.ShipSpec{}, fmt.Errorf(
+			"invalid armor %d (want at least 1 layer, integral to the hull)",
+			f.armor,
+		)
+	}
+
 	weapons, err := weaponSpecs(f.weapons)
 	if err != nil {
 		return shipgen.ShipSpec{}, err
