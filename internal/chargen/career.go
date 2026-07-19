@@ -500,12 +500,18 @@ func runCareer(r *dice.Roller, p Policy, c *Character, run *careerRun, career Ca
 	}
 
 	if career.FameCareer {
-		talent := r.Dice(2) // initial Talent (and starting Fame) are one 2D roll (Book 1 p. 77)
-
-		c.Talent = talent
-		if c.Fame == 0 {
-			c.Fame = talent // don't overwrite Fame carried in from a prior career
+		// One 2D roll opens the career (Book 1 p. 77: "roll initial Fame and Talent
+		// (with one 2D roll; they are equal)"). Returning to it is a Comeback, and
+		// the p.64/p.77 Fame-and-Talent table says what a Comeback does with the
+		// same roll: "Comeback: Reset Fame to 2D; Talent is unchanged." A career of
+		// Talent earned across earlier terms is not un-learned by walking away —
+		// only the audience's memory resets.
+		roll := r.Dice(2)
+		if c.Talent == 0 {
+			c.Talent = roll // a first Entertainer career: Fame and Talent are equal
 		}
+
+		c.Fame = roll
 	}
 
 	if career.BranchOps != nil {
