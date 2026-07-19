@@ -176,6 +176,244 @@ func TestDesignDriveStageEfficiency(t *testing.T) {
 	}
 }
 
+// The p.127 X-table worked column, cell by cell: a J-Drive-B in a 200-ton
+// Hull-B, "Variations based on Standard P-Plant-B TL-9 ... with Drive
+// Potential=2", at MCr1 per ton against a Jump-B base of 15 tons. This is the
+// column that settles both Book-2 drive-table conflicts at once, so it is locked
+// whole — TL, Potential, Tons, and MCr for all eleven stages:
+//
+//   - The Modified cost cell is /2, not the x1 that pp.63 and 76 print. Modified
+//     is 8 tons for MCr4; only 8 x 1/2 gives 4 (see stageData's note).
+//   - Tonnage rounds UP: Modified is printed "8 (=7.5)" and Ultimate "4 (=3.7)"
+//     for 15/4 = 3.75, per the footer's "Round against advantage".
+//   - Three of those rows (8, 5, and 4 tons) sit below the 10-ton Jump-A, so
+//     p.77's "no drive may be smaller than the Drive-A of the class" is a floor
+//     on the size letter, not on tonnage (see designDrive).
+//
+// The TL column is the base TL-9 shifted by the stage's TL delta; the MCr column
+// is the book's own display rounding of the exact cost, which is why Basic and
+// Generic print 8 for an exact MCr7.5.
+// The Modified stage's COST is deliberately not asserted in either catalog.
+//
+// Book 2 prints that cell six times: x1 on pp.63 and 76, /2 on pp.104, 127, 134
+// and 190. The worked columns on pp.127 and 134 compute with /2 — but Book 2
+// p.48 states the opposite in prose, for two drives, and its figures reproduce
+// exactly here:
+//
+//	"Standard Fusion Plant-S2 104 tons, MCr104 ... The Modified version is TL+2,
+//	 half-tonnage, SAME PRICING PER TON, 90% fuel use: Modified Power Plant-S2,
+//	 52 tons, MCr52."   (note 14; note 13 is Modified Jump Drive-Z, 125t, MCr125)
+//
+// So there are worked examples on both sides and no reading satisfies all of
+// them. The code keeps x1 — the status quo, and the reading whose worked example
+// is stated in prose rather than derived from a table column. The tonnage half of
+// both pages still reproduces exactly, which is what corroborates the round-up
+// ruling independently of this.
+//
+// Tracked in #300. Until it is settled, asserting either value here would dress
+// a coin-flip as a golden.
+func TestDesignDriveStageCatalogP127(t *testing.T) {
+	cases := []struct {
+		stage    Stage
+		tl       int
+		pot      int
+		tons     int
+		mcr      int
+		parenSay string // the book's own unrounded tonnage, where it prints one
+	}{
+		{Experimental, 6, 1, 45, 450, ""},
+		{Prototype, 7, 1, 30, 150, ""},
+		{Early, 8, 1, 15, 30, ""},
+		{Standard, 9, 2, 15, 15, ""},
+		{Basic, 9, 1, 15, 8, ""},
+		{Alternate, 9, 2, 15, 15, ""},
+		{Improved, 10, 2, 15, 15, ""},
+		{Generic, 10, 1, 15, 8, ""},
+		{Modified, 11, 2, 8, 0, "=7.5"}, // cost disputed: p.127 prints MCr4 (/2), p.48 prints x1 — see note below
+		{Advanced, 12, 2, 5, 10, ""},
+		{Ultimate, 13, 2, 4, 12, "=3.7"},
+	}
+
+	const baseTL = 9
+
+	for _, c := range cases {
+		// TL-18 keeps availability out of the way; the book's TL column is the
+		// stage delta, checked separately against the base TL-9.
+		j, problem := designDrive(Jump, DriveSpec{Letter: 2, Stage: c.stage}, 2, 18)
+		if problem != "" {
+			t.Errorf("%s J-Drive-B in Hull-B: unexpected problem %q", c.stage, problem)
+		}
+
+		if got := baseTL + stageData[c.stage].tlDelta; got != c.tl {
+			t.Errorf("%s J-Drive-B: TL %d, want %d", c.stage, got, c.tl)
+		}
+
+		if j.Potential != c.pot {
+			t.Errorf("%s J-Drive-B: Potential %d, want %d", c.stage, j.Potential, c.pot)
+		}
+
+		if j.Tons != c.tons {
+			t.Errorf("%s J-Drive-B: %d tons, want %d (book prints %q)",
+				c.stage, j.Tons, c.tons, c.parenSay)
+		}
+
+		// The book's MCr column is the exact cost rounded for display, up like
+		// every other figure in the table: Basic's exact MCr7.5 prints as 8.
+		// mcr == 0 marks the Modified row, whose cost cell the book contradicts
+		// itself on — see the note above this test.
+		if c.mcr != 0 {
+			if got := ceilDiv(j.Cost, 1_000_000); got != c.mcr {
+				t.Errorf("%s J-Drive-B: MCr%d (Cr%d), want MCr%d", c.stage, got, j.Cost, c.mcr)
+			}
+		}
+	}
+}
+
+// The p.134 X-table column, the same eleven stages for a P-Plant-B (base 7 tons,
+// MCr1 per ton) in the same 200-ton Hull-B. It reproduces the tonnage column
+// whole — including Modified 4 "(=3.5)", Advanced 3 "(=2.3)", and Ultimate 2
+// "(=1.7)", two of which are below the 4-ton Power-A — and the cost column for
+// every row whose tonnage came out a whole number.
+//
+// The other three costs are NOT lockable, and the reason is worth recording: the
+// page computes them from the unrounded tonnage and then from its own truncated
+// display of it. Modified prints MCr1.7 (3.5 x 1/2 = 1.75), Advanced MCr4.6
+// (2.3 x 2, from a real 2.333), Ultimate MCr5.1 (1.7 x 3, from a real 1.75 whose
+// honest product is 5.25). p.127 does the opposite and follows the shared
+// footnote, "using final tonnage and cost multiplier" — Modified there is 8 x
+// 1/2 = MCr4, not 7.5 x 1/2. The footnote and p.127 agree, so the code follows
+// them and p.134's three trailing costs are left as the outlier they are.
+func TestDesignDriveStageCatalogP134(t *testing.T) {
+	cases := []struct {
+		stage     Stage
+		tl        int
+		pot       int
+		tons      int
+		mcr       int // 0 where the page's own figure is not reproducible
+		fractCost string
+	}{
+		{Experimental, 6, 1, 21, 210, ""},
+		{Prototype, 7, 1, 14, 70, ""},
+		{Early, 8, 1, 7, 14, ""},
+		{Standard, 9, 2, 7, 7, ""},
+		{Basic, 9, 1, 7, 4, "3.5"}, // exact Cr3,500,000
+		{Alternate, 9, 2, 7, 7, ""},
+		{Improved, 10, 2, 7, 7, ""},
+		{Generic, 10, 1, 7, 4, "3.5"},
+		{Modified, 11, 2, 4, 0, "1.7"}, // cost disputed, as p.127
+		{Advanced, 12, 2, 3, 0, "4.6"},
+		{Ultimate, 13, 2, 2, 0, "5.1"},
+	}
+
+	const baseTL = 9
+
+	for _, c := range cases {
+		p, problem := designDrive(Power, DriveSpec{Letter: 2, Stage: c.stage}, 2, 18)
+		if problem != "" {
+			t.Errorf("%s P-Plant-B in Hull-B: unexpected problem %q", c.stage, problem)
+		}
+
+		if got := baseTL + stageData[c.stage].tlDelta; got != c.tl {
+			t.Errorf("%s P-Plant-B: TL %d, want %d", c.stage, got, c.tl)
+		}
+
+		if p.Potential != c.pot {
+			t.Errorf("%s P-Plant-B: Potential %d, want %d", c.stage, p.Potential, c.pot)
+		}
+
+		if p.Tons != c.tons {
+			t.Errorf("%s P-Plant-B: %d tons, want %d", c.stage, p.Tons, c.tons)
+		}
+
+		if c.mcr != 0 {
+			if got := ceilDiv(p.Cost, 1_000_000); got != c.mcr {
+				t.Errorf("%s P-Plant-B: MCr%d (Cr%d), want MCr%d", c.stage, got, p.Cost, c.mcr)
+			}
+
+			continue
+		}
+		// mcr == 0 marks a row whose printed cost this page derives from its
+		// unrounded tonnage rather than the shared footnote's "final tonnage"
+		// (see the note below). Assert the divergence rather than skipping it
+		// silently, so the row is pinned to a decision instead of to nothing —
+		// and name the page's own figure, which fractCost carries.
+		if got := ceilDiv(p.Cost, 1_000_000); got == 0 {
+			t.Errorf("%s P-Plant-B: cost is zero; p.134 prints MCr%s", c.stage, c.fractCost)
+		}
+	}
+
+	// The three that p.134 gets from unrounded tonnage: what the footnote's rule
+	// actually yields, pinned so the divergence stays visible and deliberate.
+	for _, c := range []struct {
+		stage Stage
+		cost  int
+	}{
+		// Modified is omitted: its cost multiplier is the disputed cell (#300).
+		{Advanced, 6_000_000}, // p.134 prints MCr4.6 (2.3 x 2)
+		{Ultimate, 6_000_000}, // p.134 prints MCr5.1 (1.7 x 3)
+	} {
+		p, _ := designDrive(Power, DriveSpec{Letter: 2, Stage: c.stage}, 2, 18)
+		if p.Cost != c.cost {
+			t.Errorf("%s P-Plant-B: Cr%d, want Cr%d (final tonnage x cost multiplier)",
+				c.stage, p.Cost, c.cost)
+		}
+	}
+}
+
+// The p.104 X-table column (M-Drive-B, base 3 tons at MCr2 per ton, in Hulls
+// A-B-C) is NOT lockable as a whole, and this records exactly how far it goes.
+//
+// Its tonnage column reproduces on ten of eleven rows — Alternate prints 7 tons
+// where every other 100%-efficiency, x1-tonnage stage on the page prints 3, an
+// isolated typo. Its TL column is off by one from Basic downward (Standard is
+// TL-10 as the caption says, but Basic through Ultimate are numbered from 9).
+// Its cost column drops the cost multiplier entirely on the three
+// tonnage-reduced stages: Advanced prints MCr2 where the page's own footnote
+// ("Base cost of MCr2 per ton using final tonnage and cost multiplier") gives
+// 1 ton x MCr2 x 2 = MCr4.
+//
+// What it does corroborate is the rounding: Modified 3/2 = 1.5 prints 2 and
+// Ultimate 3/4 = 0.75 prints 1, both rounded up, and that Ultimate 1 is below
+// the 2-ton Maneuver-A — a third page's worth of sub-Drive-A tonnage.
+func TestDesignDriveStageCatalogP104(t *testing.T) {
+	cases := []struct {
+		stage Stage
+		tons  int
+	}{
+		{Experimental, 9},
+		{Prototype, 6},
+		{Early, 3},
+		{Standard, 3},
+		{Basic, 3},
+		// Alternate omitted: the page prints 7 tons, which no rule on it produces.
+		{Improved, 3},
+		{Generic, 3},
+		{Modified, 2}, // 1.5, rounded up
+		{Advanced, 1},
+		{Ultimate, 1}, // 0.75, rounded up — and below the 2-ton Maneuver-A
+	}
+	for _, c := range cases {
+		m, problem := designDrive(Maneuver, DriveSpec{Letter: 2, Stage: c.stage}, 2, 18)
+		if problem != "" {
+			t.Errorf("%s M-Drive-B in Hull-B: unexpected problem %q", c.stage, problem)
+		}
+
+		if m.Tons != c.tons {
+			t.Errorf("%s M-Drive-B: %d tons, want %d", c.stage, m.Tons, c.tons)
+		}
+	}
+
+	// The page's Alternate row is the same drive as Standard in every column that
+	// matters, whatever its tonnage cell says.
+	alt, _ := designDrive(Maneuver, DriveSpec{Letter: 2, Stage: Alternate}, 2, 18)
+	std, _ := designDrive(Maneuver, DriveSpec{Letter: 2, Stage: Standard}, 2, 18)
+
+	if alt.Tons != std.Tons || alt.Cost != std.Cost {
+		t.Errorf("Alternate M-Drive-B = %dt/Cr%d, want Standard's %dt/Cr%d",
+			alt.Tons, alt.Cost, std.Tons, std.Cost)
+	}
+}
+
 // The p.76 Table X footer states the rule in EP terms. As printed: "Standard
 // Drive-C has 300 EP; Early Drive-C outputs 150 EP; Advanced Drive-C outputs 360
 // EP." Read "Early" as Experimental — 150 is 50% of 300, which is Experimental's

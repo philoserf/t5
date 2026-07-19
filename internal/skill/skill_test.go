@@ -1,6 +1,9 @@
 package skill
 
-import "testing"
+import (
+	"strconv"
+	"testing"
+)
 
 func TestRaiseAndCap(t *testing.T) {
 	var s Set
@@ -103,13 +106,39 @@ func TestGrantCascadeKKS(t *testing.T) {
 	}
 }
 
-func TestIsCascade(t *testing.T) {
-	if !IsCascade("Pilot") || !IsCascade("Gunner") {
-		t.Error("Pilot/Gunner should be cascade skills")
+// Book 1 p. 75 counts "up to FIVE Skills at level 6+ (or Knowledges at level-6)
+// (but not languages)" toward Master Points, so a level-6 knowledge counts and a
+// Language knowledge does not. KnowledgeMax is 6, so a qualifying knowledge is
+// always exactly at the threshold.
+func TestTopLevelsCountsKnowledges(t *testing.T) {
+	var s Set
+
+	s.Raise("Craftsman", 9)
+	s.RaiseKnowledge("Engineer", "J-Drive", KnowledgeMax)
+	s.RaiseKnowledge("Gunner", "Turret", KnowledgeMax)
+	s.RaiseKnowledge("Language", "Vilani", KnowledgeMax) // excluded: not languages
+	s.RaiseKnowledge("Pilot", "Small Craft", 5)          // below the threshold
+
+	// Engineer/J-Drive 6 + Gunner/Turret 6; Craftsman and Language are excluded
+	// and Pilot/Small Craft is under level 6.
+	if got := s.TopLevels(5, 6, "Craftsman", "Language"); got != 12 {
+		t.Errorf("TopLevels = %d, want 12", got)
+	}
+}
+
+// The five slots are shared between skills and knowledges, highest first.
+func TestTopLevelsSharesSlotsWithKnowledges(t *testing.T) {
+	var s Set
+
+	for _, lvl := range []int{10, 9, 8, 7} {
+		s.Raise("S"+strconv.Itoa(lvl), lvl)
 	}
 
-	if IsCascade("Navigation") {
-		t.Error("Navigation is not a cascade skill")
+	s.RaiseKnowledge("Engineer", "J-Drive", KnowledgeMax) // 6, takes the 5th slot
+	s.RaiseKnowledge("Gunner", "Turret", KnowledgeMax)    // 6, crowded out
+
+	if got := s.TopLevels(5, 6); got != 10+9+8+7+6 {
+		t.Errorf("TopLevels = %d, want %d", got, 10+9+8+7+6)
 	}
 }
 
@@ -122,5 +151,31 @@ func TestString(t *testing.T) {
 	want := "Navigation-2 Pilot-0 Pilot/Small Craft-1 Vacc Suit-1"
 	if got := s.String(); got != want {
 		t.Fatalf("String() =\n%q\nwant\n%q", got, want)
+	}
+}
+
+// TestTopLevelsCountsParentAndKnowledgeOnce: a cascade parent and a Knowledge
+// beneath it are one competency, not two. Counting both filled two of the five
+// Master Point slots from a single skill, inflating a Craftsman's Masterpoint
+// total and with it his Masterpiece chances.
+func TestTopLevelsCountsParentAndKnowledgeOnce(t *testing.T) {
+	var s Set
+
+	s.Raise("Engineer", 6)
+	s.RaiseKnowledge("Engineer", "J-Drive", 6)
+	s.Raise("Animals", 6)
+
+	// Two competencies at 6, not three: Engineer contributes once.
+	if got, want := s.TopLevels(5, 6), 12; got != want {
+		t.Errorf("TopLevels = %d, want %d (Engineer counted once, plus Animals)", got, want)
+	}
+
+	// And the knowledge alone still fills a slot when the parent is below the bar.
+	var t2 Set
+
+	t2.RaiseKnowledge("Gunner", "Turret", 6)
+
+	if got, want := t2.TopLevels(5, 6), 6; got != want {
+		t.Errorf("knowledge-only TopLevels = %d, want %d", got, want)
 	}
 }

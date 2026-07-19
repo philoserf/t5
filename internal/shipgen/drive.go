@@ -87,6 +87,13 @@ func DriveForPotential(potential, hullOrd int) int {
 	return ord
 }
 
+// ceilDiv divides and rounds up, for non-negative operands. The stage tables
+// round "against advantage (up for tonnage; down for potential)" (Book 2 pp.104,
+// 127, 134), and Go's integer division rounds down.
+func ceilDiv(n, d int) int {
+	return (n + d - 1) / d
+}
+
 // driveTonsBase is a drive's base tonnage before stage effects (Book 2 p.77 Y
 // table). Each drive type is a piecewise-linear function of the size ordinal —
 // verified against the p.77 grid (e.g. Jump-A = 10, Jump-Z = 125; Power-A = 4).
@@ -177,6 +184,17 @@ const (
 
 // stageData is the p.76 X table. Cost and tons are stored as fractions
 // (numerator/denominator) to stay exact; fuelPct and eff are percentages.
+//
+// Book conflict, the Modified cost cell. The same X table is printed six times
+// in Book 2. Four printings give Modified /2 (pp.104, 127, 134, 190); two give
+// it x1 (pp.63, 76) — and those two are the only printings that carry no worked
+// example beside them. The worked columns decide it: p.127's Jump-B column
+// reconciles all eleven of its rows under /2 (base 15t at MCr1/t, so Modified is
+// 8t for MCr4 = 8 x 1/2, against Advanced's 5t for MCr10 = 5 x 2 and Ultimate's
+// 4t for MCr12 = 4 x 3), and p.134's Power-B column independently prints
+// "Mod P-Plant-B ... 4 (=3.5) 1.7" — 3.5 x 1/2 = 1.75. So /2 it is, and the
+// weapon side (weapon_data.go's stageCostData) agrees rather than conflicting.
+// TestDesignDriveStageCatalogP127 locks the column that settles this.
 var stageData = [...]struct {
 	name             string
 	tlDelta          int
@@ -208,6 +226,19 @@ func (s Stage) String() string {
 // driveLabel renders a drive size ordinal as its letter, or "letter2" for an
 // extended size (an even ordinal 26..48, where the "2" doubles the base letter's
 // ordinal — e.g. 26 = N x 2 = "N2").
+// buildableDriveOrd reports whether an ordinal names a drive this package can
+// build. It is driveLabel's domain stated as a predicate, and the two must agree:
+// an ordinal driveLabel renders as "?" is one no table row backs, so a spec
+// carrying it should be reported rather than silently designed.
+//
+// A..Z is 1..24. Past Z the book gangs drives with a Nexus (p.63), and only the
+// x2 gang is modelled — so the extended ordinals are exactly the EVEN 26..48. An
+// odd ordinal up there (25, 27, ...) is buildable in the book as an m-by-n gang
+// but is not modelled here, and previously designed silently as "Drive-?".
+func buildableDriveOrd(ord int) bool {
+	return driveLabel(ord) != "?"
+}
+
 func driveLabel(ord int) string {
 	switch {
 	case ord >= 1 && ord <= maxLetter:
@@ -273,12 +304,39 @@ func designDrive(kind DriveKind, spec DriveSpec, hullOrd, tl int) (*Drive, strin
 	// would quietly free up hull space and could turn an over-budget ship into
 	// one that appears to fit — trading a reported mistake for a hidden one. The
 	// record shows the useless drive; Problems says why it is useless.
-	tons := driveTonsBase(kind, spec.Letter) * st.tonsNum / st.tonsDen
-	if floor := driveTonsBase(kind, 1); tons < floor {
-		tons = floor // no drive is smaller than the class Drive-A (Book 2 p.77)
-	}
+	// Stage tonnage rounds UP, and there is no tonnage floor.
+	//
+	// Book conflict, p.77 versus the rounding footer printed on pp.104, 127, and
+	// 134: "Round against advantage (up for tonnage; down for potential)" against
+	// "No drive may be smaller than the Drive-A of the class, even after
+	// modifications like Stage Effects." Read as a floor on TONNAGE the second
+	// rule contradicts the worked tables in seven printed rows — p.127 prints a
+	// Modified/Advanced/Ultimate Jump-B at 8/5/4 tons where Jump-A is 10, p.134 a
+	// Power-B at 3/2 where Power-A is 4, p.104 a Maneuver-B at 1 where
+	// Maneuver-A is 2.
+	//
+	// The reconciling reading is p.77's own words: smaller than "the Drive-A of
+	// the class" is a floor on the size LETTER, not on tonnage. No drive is
+	// specified below A — and every worked example above is still a Drive-B,
+	// shrunk by its stage but not demoted. Under that reading all thirty-three
+	// printed rows across the three tables reproduce and no source is a typo, so
+	// tonnage simply rounds up here.
+	//
+	// The letter floor itself is enforced in specProblems, not here — a sub-A
+	// ordinal makes driveTonsBase run negative, and a drive with negative tons
+	// and cost would add budget rather than spend it. That check has to sit
+	// where the spec is validated; this function is total and must build
+	// something for whatever it is handed.
+	// A sub-A ordinal is reported by specProblems, but this function is total and
+	// still has to build something. Price it as the smallest real drive rather
+	// than letting driveTonsBase run negative: negative tonnage would ADD budget
+	// and free hull space, turning an over-budget ship into one that appears to
+	// fit — the same phantom the Potential-0 case is deliberately billed to
+	// avoid. Clamp and report, as stageIndex and configIndex do for their fields.
+	letter := max(spec.Letter, 1)
 
-	cost := tons * driveCrPerTon(kind) * st.costNum / st.costDen
+	tons := ceilDiv(driveTonsBase(kind, letter)*st.tonsNum, st.tonsDen)
+	cost := ceilDiv(tons*driveCrPerTon(kind)*st.costNum, st.costDen)
 
 	return &Drive{
 		Kind: kind, Letter: spec.Letter,

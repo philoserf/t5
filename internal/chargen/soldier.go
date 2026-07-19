@@ -7,9 +7,15 @@ package chargen
 // and Wound Badges.
 //
 // The Branch and Operations modifiers to Risk & Reward (p. 82) are wired via
-// soldierBranchOps and the engine's branchOpsMod. Deferred: the +1 skill for a
-// Commission or Promotion, the branch-specific automatic skills (Medic / Trade),
-// the muster "Retire x2" pay (recorded as a named benefit), and the Command
+// soldierBranchOps and the engine's branchOpsMod; the term's extra skill for a
+// Commission or Promotion is granted by runTerm; "Retire x2" is a real
+// RetirementX2 benefit that doubles the character's retirement pay (see
+// entitlement.go), not a bare name; and the muster Benefit column takes its
+// +Officer-Rank DM (BenefitDM below).
+//
+// Deferred: the branch-specific automatic skills (Medic / Trade), the
+// restriction on which skills a Commission or Promotion may buy (the extra
+// skill is currently drawn from the policy's usual column), and the Command
 // College at O4.
 
 // soldierBranchOps is the Soldier's Branch and Operations tables (Book 1 p. 82).

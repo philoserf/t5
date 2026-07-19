@@ -50,10 +50,19 @@ func TargetSize(size, rng int, stance Stance) int {
 }
 
 // Ranged resolves a Ranged Attack (Book 1 p.204): it rolls R=Range dice (a Range
-// below 1 counts as 1D; a Range greater than the weapon skill adds +1D for the
-// "This Is Hard!" rule) at or under the Shooting Number + target size + mods.
+// below 1 counts as 1D; a dice count greater than the weapon skill adds +1D for
+// the "This Is Hard!" rule) at or under the Shooting Number + target size + mods.
 // Success is a hit. A target size below zero (Size minus Range) means the target
 // cannot be attacked, and the attack automatically fails (Book 1 p.203).
+//
+// TIH! is stated in dice, not range: "If a task requires more dice than the
+// character has applicable skill levels, then increase the difficulty one level"
+// (p.128), and it is switched off when "Skill plus JOT is equal to or greater
+// than the number of dice being rolled on a task". So the comparison is against
+// the floored dice count, not the raw Range. At Range 0 the two differ: the
+// floor is there because "there is always some slight chance, even at such very
+// close range, that an unskilled attacker may miss" (p.204), and comparing the
+// raw Range would make 0 > 0 false and delete exactly that case.
 func Ranged(
 	r *dice.Roller,
 	shootingNumber, weaponSkill, targetSize, rng int,
@@ -64,8 +73,8 @@ func Ranged(
 	}
 
 	nd := max(rng, 1)
-	if rng > weaponSkill {
-		nd++ // This Is Hard!: Range exceeds skill
+	if nd > weaponSkill {
+		nd++ // This Is Hard!: the roll needs more dice than the attacker has skill
 	}
 
 	return task.ResolveDice(r, nd, shootingNumber+targetSize, mods...)

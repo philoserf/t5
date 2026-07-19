@@ -18,16 +18,6 @@ const (
 	KnowledgeMax = 6
 )
 
-// cascades are the skills that contain Knowledges.
-var cascades = map[string]bool{
-	"Animals": true, "Driver": true, "Engineer": true, "Fighter": true,
-	"Flyer": true, "Gunner": true, "Heavy Weapons": true, "Language": true,
-	"Musician": true, "Pilot": true, "Seafarer": true,
-}
-
-// IsCascade reports whether a skill contains Knowledges.
-func IsCascade(name string) bool { return cascades[name] }
-
 // A Set is a character's skills and knowledges. The zero value is ready to use.
 type Set struct { //nolint:recvcheck // deliberate value-reader / pointer-mutator split
 	skills     map[string]int            // plain skill or cascade parent -> level
@@ -50,19 +40,48 @@ func (s Set) TaskLevel(parent, knowledge string) int {
 	return s.Level(parent) + s.KnowledgeLevel(parent, knowledge)
 }
 
-// TopLevels returns the summed levels of the highest n skills at or above
-// minLevel, skipping any skill named in exclude. Used for Craftsman Master Points
-// (Book 1 p. 75: the Craftsman skill and up to five other skills at level 6+, not
-// languages).
+// TopLevels returns the summed levels of the highest n skills *and knowledges* at
+// or above minLevel, skipping any skill named in exclude (a knowledge is skipped
+// when its parent skill is excluded — which is how "but not languages" is
+// expressed, "Language" being both the parent skill's name and its cascade key).
+// Used for Craftsman Master Points (Book 1 p. 75: the Craftsman skill and "up to
+// FIVE Skills at level 6+ (or Knowledges at level-6) (but not languages)"). The
+// n slots are shared between skills and knowledges, highest first. Since
+// KnowledgeMax is 6, a qualifying knowledge sits exactly at the p. 75 threshold.
 func (s Set) TopLevels(n, minLevel int, exclude ...string) int {
 	skip := make(map[string]bool, len(exclude))
 	for _, name := range exclude {
 		skip[name] = true
 	}
 
-	levels := make([]int, 0, len(s.skills))
+	// One entry per competency. A cascade parent and a Knowledge beneath it are
+	// the same competency seen at two grains — TaskLevel already stacks them into
+	// one number — so counting both would fill two of the n slots with one skill.
+	// Book 1 p.75 reads "up to FIVE Skills at level 6+ (or Knowledges at
+	// level-6)": the parenthetical is an alternative way to fill a slot, not a
+	// second slot for a skill already counted.
+	best := make(map[string]int, len(s.skills))
+
 	for name, lvl := range s.skills {
-		if lvl >= minLevel && !skip[name] {
+		if !skip[name] {
+			best[name] = max(best[name], lvl)
+		}
+	}
+
+	for parent, ks := range s.knowledges {
+		if skip[parent] {
+			continue
+		}
+
+		for _, lvl := range ks {
+			best[parent] = max(best[parent], lvl)
+		}
+	}
+
+	levels := make([]int, 0, len(best))
+
+	for _, lvl := range best {
+		if lvl >= minLevel {
 			levels = append(levels, lvl)
 		}
 	}

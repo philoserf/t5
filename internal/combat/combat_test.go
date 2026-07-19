@@ -57,10 +57,21 @@ func TestRangedThisIsHard(t *testing.T) {
 	if res.Target != 13 || len(res.Faces) != 2 {
 		t.Errorf("ranged = %+v, want target 13 on 2D", res)
 	}
-	// Range 4 with skill 2: Range exceeds skill, so +1D -> 5D.
+	// Range 4 with skill 2: the 4D roll exceeds skill, so +1D -> 5D.
 	res2 := Ranged(dice.NewScripted(1, 1, 1, 1, 1), 10, 2, TargetSize(5, 4, Standing), 4)
 	if len(res2.Faces) != 5 {
 		t.Errorf("This Is Hard! rolled %d dice, want 5", len(res2.Faces))
+	}
+	// Range 0 (Contact Range) with skill 0. The floor makes this a 1D roll
+	// (p.204: ranges below 1 "are all treated as 1D (since there is always some
+	// slight chance ... that an unskilled attacker may miss)"), and TIH! is
+	// stated in dice, not range: "If a task requires more dice than the
+	// character has applicable skill levels, then increase the difficulty one
+	// level" (p.128). 1D > skill-0, so the unskilled attacker rolls 2D — which
+	// is exactly the miss chance the 1D floor exists to preserve.
+	res3 := Ranged(dice.NewScripted(1, 1), 10, 0, TargetSize(5, 0, Standing), 0)
+	if len(res3.Faces) != 2 {
+		t.Errorf("Range 0 / Skill 0 rolled %d dice, want 2 (This Is Hard!)", len(res3.Faces))
 	}
 }
 

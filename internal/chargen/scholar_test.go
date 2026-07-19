@@ -78,7 +78,7 @@ func TestResolveRankTenureGate(t *testing.T) {
 	run := &careerRun{rank: 3}
 
 	// Tenure application: 2D=4 <= Publications×3 = 9 -> tenured, no promotion.
-	if resolveRank(dice.NewScripted(2, 2), c, run, ScholarCareer) {
+	if resolveRank(dice.NewScripted(2, 2), DefaultPolicy{}, c, run, ScholarCareer) {
 		t.Error("a Tenure application is not a promotion")
 	}
 
@@ -86,7 +86,7 @@ func TestResolveRankTenureGate(t *testing.T) {
 		t.Errorf("after tenure: Tenured=%v rank=%d, want true/3", c.Tenured, run.rank)
 	}
 	// Now tenured: 2D=4 <= Int 10 + Pubs 3 = 13 -> promote to Associate Professor.
-	if !resolveRank(dice.NewScripted(2, 2), c, run, ScholarCareer) {
+	if !resolveRank(dice.NewScripted(2, 2), DefaultPolicy{}, c, run, ScholarCareer) {
 		t.Error("a tenured Scholar should promote past rank 3")
 	}
 
@@ -119,7 +119,7 @@ func TestResolveRankAmateur(t *testing.T) {
 	c := &Character{scores: [count]int{7, 7, 7, 12, 6, 7}} // Edu 6, high Int
 
 	run := &careerRun{rank: 0}
-	if resolveRank(dice.NewScripted(2, 2), c, run, ScholarCareer) || run.rank != 0 {
+	if resolveRank(dice.NewScripted(2, 2), DefaultPolicy{}, c, run, ScholarCareer) || run.rank != 0 {
 		t.Errorf("an Amateur promoted to rank %d (Edu 6 < 8 should bar promotion)", run.rank)
 	}
 }

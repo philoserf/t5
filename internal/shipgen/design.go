@@ -32,10 +32,32 @@ func specProblems(spec ShipSpec) []string {
 		spec *DriveSpec
 	}{{Maneuver, spec.Maneuver}, {Jump, spec.Jump}, {Power, spec.Power}}
 	for _, d := range drives {
-		if d.spec != nil && stageIndex(d.spec.Stage) != d.spec.Stage {
+		if d.spec == nil {
+			continue
+		}
+
+		if stageIndex(d.spec.Stage) != d.spec.Stage {
 			problems = append(problems, fmt.Sprintf(
 				"%s drive stage %d is not one of Standard..Ultimate; built as %s",
 				d.kind, d.spec.Stage, Standard))
+		}
+		// Book 2 p.77: "No drive may be smaller than the Drive-A of the class."
+		// Read as a floor on the size LETTER, not on tonnage — which is what
+		// reconciles p.77 with the worked columns on pp.104/127/134, where seven
+		// stage-reduced rows print below their class's Drive-A tonnage while all
+		// of them remain a Drive-B.
+		//
+		// Enforced here rather than in designDrive because this is where the
+		// package reports a spec field naming no row of the book's tables. A
+		// sub-A ordinal is not merely wrong, it inverts: driveTonsBase runs
+		// negative, so a Letter of 0 yields -1 tons and -MCr2 — a drive that
+		// ADDS budget and frees hull space, which is the phantom the tonnage
+		// accounting exists to prevent.
+		if !buildableDriveOrd(d.spec.Letter) {
+			problems = append(problems, fmt.Sprintf(
+				"%s drive size %d names no drive: sizes are A..Z (1..%d) and the "+
+					"even Nexus pairs A2..Z2 (26..%d)",
+				d.kind, d.spec.Letter, maxLetter, 2*maxLetter))
 		}
 	}
 

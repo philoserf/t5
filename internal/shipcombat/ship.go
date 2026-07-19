@@ -121,7 +121,7 @@ func ArmorLayers(s shipgen.Ship) []int {
 }
 
 // Card is a designed ship's combat record: the compartments a hit is located in,
-// and how much damage each can take. The hull ordinal keys the same p.86 Table H
+// and how much damage each can take. The hull ordinal keys the same p.95 Table H
 // this package already carried — a designed hull has always known this about
 // itself, and nothing asked.
 func Card(s shipgen.Ship) (HullLocation, bool) {

@@ -73,7 +73,7 @@ func mountPoints(h Hull, weapons []Weapon, defenses []Defense) string {
 	}
 	// Hull.Hardpoints is the hull's mount capacity, one per 100 tons. Recomputing
 	// the division here would give the field a second home and let the two drift.
-	need := hard + (firm+firmPointsPerBlock-1)/firmPointsPerBlock
+	need := hard + ceilDiv(firm, firmPointsPerBlock)
 	if need <= h.Hardpoints {
 		return ""
 	}
