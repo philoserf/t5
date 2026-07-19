@@ -19,13 +19,28 @@ func TestDriveFuelIsPopulated(t *testing.T) {
 	}
 
 	// And the stage's fuel multiplier lands on the drive that earned it: an
-	// Advanced jump drive at x0.8 (p.76 Table X).
+	// Advanced jump drive at x0.8 (p.76 Table X). This Advanced drive is a
+	// mutation of the Murphy invented here to exercise the multiplier; it is not
+	// a printed book design, so its numbers derive from the engine.
+	//
+	// Advanced is 120% efficient, so Jump-A in a Hull-A rates 2*1*120/100 = 2.
+	// But Advanced is TL+3, so the Murphy's TL-12 yard reads jump availability at
+	// TL-9, where Table W allows only Potential-1 — the drive is capped to 1 and
+	// the design says so. Fuel is then P*hull/10 = 1*100/10 = 10t, times the
+	// stage's x0.8 = 8t. (The pre-cap figure was 16t, from the uncapped
+	// Potential-2 a TL-12 yard cannot actually build at this stage.)
 	spec := murphySpec()
 	spec.Jump = &DriveSpec{Letter: 1, Stage: Advanced}
 
 	adv := Design(spec)
-	if adv.Jump.Fuel != 16 || adv.Power.Fuel != 2 {
-		t.Errorf("Advanced-jump Murphy = J%dt P%dt, want J16t P2t", adv.Jump.Fuel, adv.Power.Fuel)
+	if adv.Jump.Potential != 1 || adv.Jump.Fuel != 8 || adv.Power.Fuel != 2 {
+		t.Errorf("Advanced-jump Murphy = J-%d J%dt P%dt, want J-1 J8t P2t",
+			adv.Jump.Potential, adv.Jump.Fuel, adv.Power.Fuel)
+	}
+
+	if len(adv.Problems) != 1 {
+		t.Errorf("Advanced jump at a TL-12 yard should report exactly one problem, got %v",
+			adv.Problems)
 	}
 }
 

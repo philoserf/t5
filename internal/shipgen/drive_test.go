@@ -1,6 +1,9 @@
 package shipgen
 
-import "testing"
+import (
+	"strings"
+	"testing"
+)
 
 func TestDrivePotential(t *testing.T) {
 	// The Z1 formula, verified against the book's own worked cells (p.78).
@@ -209,5 +212,61 @@ func TestDesignDriveAvailabilityCap(t *testing.T) {
 	j, problem := designDrive(Jump, DriveSpec{Letter: 5}, 1, 12)
 	if j.Potential != 3 || problem == "" {
 		t.Errorf("expected Jump capped to 3 with a problem, got %+v (%q)", j, problem)
+	}
+}
+
+// The stage TL delta shifts the availability lookup DOWN, not up: a stage-d
+// drive at a TL-t yard reaches what a Standard drive reaches at TL t-d. Book 2
+// p.76 says so twice in worked prose — "Standard TL-10 Maneuver-F ... Advanced
+// (TL-13) Maneuver Drive-F" and "Standard TL-12 Jump-F ... Modified Jump
+// Drive-F (available at TL-14)" — an advanced stage RAISES the TL a yard needs.
+// p.76 also puts the other end: "Early, Prototype, and Experimental mechanisms
+// are available locally", i.e. below the standard TL.
+func TestDesignDriveStageShiftsAvailabilityDown(t *testing.T) {
+	// Experimental (-3) at a TL-6 yard reads availability at TL-9, where Jump
+	// reaches Potential-1. Its 50% efficiency rates it at 1, so it is buildable.
+	j, problem := designDrive(Jump, DriveSpec{Letter: 2, Stage: Experimental}, 2, 6)
+	if j.Potential != 1 || problem != "" {
+		t.Errorf("Experimental J-Drive-B at TL-6 = Potential %d (%q), want 1 and no problem",
+			j.Potential, problem)
+	}
+
+	// Advanced (+3) at a TL-9 yard reads availability at TL-6, where no jump
+	// drive exists at all. Its 120% efficiency rates it at 2; the yard cannot
+	// build it.
+	j, problem = designDrive(Jump, DriveSpec{Letter: 2, Stage: Advanced}, 2, 9)
+	if j.Potential != 0 || problem == "" {
+		t.Errorf("Advanced J-Drive-B at TL-9 = Potential %d (%q), want 0 with a problem",
+			j.Potential, problem)
+	}
+
+	// The problem names the shifted TL that did the capping, not just the yard's.
+	if !strings.Contains(problem, "TL-9") || !strings.Contains(problem, "TL-6") {
+		t.Errorf("problem %q should name both the yard TL-9 and the shifted TL-6", problem)
+	}
+}
+
+// A drive whose Potential computes to 0 cannot function (Book 2 p.63, and p.127
+// names the case: "Early Jump-1 at 90% becomes Jump-0"). That is a design
+// failure and has to be reported, not billed in silence.
+func TestDesignDrivePotentialZeroIsReported(t *testing.T) {
+	// Too small for the hull: Jump-A in a Hull-C is 2*1/3 = 0.
+	j, problem := designDrive(Jump, DriveSpec{Letter: 1}, 3, 15)
+	if j.Potential != 0 || problem == "" {
+		t.Errorf("Jump-A in Hull-C = Potential %d (%q), want 0 with a problem",
+			j.Potential, problem)
+	}
+
+	// Rounded away by efficiency: the book's own Early Jump-1 case.
+	j, problem = designDrive(Jump, DriveSpec{Letter: 1, Stage: Early}, 2, 15)
+	if j.Potential != 0 || problem == "" {
+		t.Errorf("Early Jump-A in Hull-B = Potential %d (%q), want 0 with a problem",
+			j.Potential, problem)
+	}
+
+	// One mistake, one message: a Potential-0 drive is not also complained about
+	// for the TL cap (design.go's `aboard` policy).
+	if strings.Count(problem, ";") != 0 {
+		t.Errorf("expected a single problem, got %q", problem)
 	}
 }

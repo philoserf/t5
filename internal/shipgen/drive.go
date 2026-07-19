@@ -111,7 +111,11 @@ var driveAvail = map[DriveKind][]struct{ tl, max int }{
 }
 
 // availabilityMax is the highest Potential a standard drive of the kind can
-// reach at the given tech level (Book 2 p.76 W); 0 if none is available.
+// reach at the given tech level (Book 2 p.76 W); 0 means no drive of that kind
+// is available that low. driveAvail covers every DriveKind, so 0 is only ever
+// the "TL too low" answer — the scan's unguarded low end is not also standing in
+// for an unknown kind. Callers may pass a TL below any breakpoint (designDrive
+// shifts the yard's TL down by the stage delta), and 0 is the right answer there.
 func availabilityMax(kind DriveKind, tl int) int {
 	m := 0
 
@@ -191,20 +195,57 @@ func driveLabel(ord int) string {
 // designDrive builds one drive for a hull (Book 2 pp. 76-78): its Potential from
 // Z1 — scaled by the stage's efficiency, then capped by TL availability at the
 // stage's shifted TL — and its stage-adjusted tonnage and cost. It returns the
-// drive and a problem string when TL availability caps the Potential below the
-// drive's rating. The stage's fuel multiplier is applied later, in the fuel
-// phase, from Drive.Stage.
+// drive and a problem string when the combination cannot function or TL
+// availability caps the Potential below the drive's rating. The stage's fuel
+// multiplier is applied later, in the fuel phase, from Drive.Stage.
+//
+// The stage shifts the availability lookup DOWN by its TL delta. An advanced
+// stage RAISES the tech level a yard needs, so a yard at TL t builds a stage-d
+// drive only as far as a Standard drive reaches at TL t-d. Book 2 p.76 states
+// it twice in worked prose — "Standard TL-10 Maneuver-F ... Advanced (TL-13)
+// Maneuver Drive-F" (+3: 10 -> 13) and "Standard TL-12 Jump-F ... Modified Jump
+// Drive-F (available at TL-14)" (+2: 12 -> 14) — and puts the other end as
+// "Early, Prototype, and Experimental mechanisms are available locally", i.e.
+// buildable below the standard TL.
+//
+// Note the sign is opposite to the weapon/defense side, where stageTL ADDS the
+// same delta: there it shifts the device's own TL rating upward, here it shifts
+// the yard's reach downward. The shared stageData.tlDelta column is correct for
+// both; only the direction of use differs, so this is corrected here rather
+// than in the table.
 func designDrive(kind DriveKind, spec DriveSpec, hullOrd, tl int) (*Drive, string) {
 	st := stageData[stageIndex(spec.Stage)]
 	raw := drivePotential(spec.Letter, hullOrd, st.eff)
+	availTL := tl - st.tlDelta
 
 	pot, problem := raw, ""
-	if capMax := availabilityMax(kind, tl+st.tlDelta); capMax < raw {
+
+	switch {
+	case raw == 0:
+		// The combination cannot function at all (Book 2 p.63): the drive is too
+		// small for the hull, or the stage's efficiency rounded its Potential
+		// away — p.127's own "Early Jump-1 at 90% becomes Jump-0". Reported
+		// instead of the TL cap, never alongside it: capMax < 0 is impossible, so
+		// one mistake still yields one message (see design.go's `aboard` note).
+		problem = fmt.Sprintf("%s-%s in a Hull-%s yields Potential 0: too small to drive this hull",
+			kind, driveLabel(spec.Letter), driveLabel(hullOrd))
+	case availabilityMax(kind, availTL) < raw:
+		capMax := availabilityMax(kind, availTL)
 		pot = capMax
 		problem = fmt.Sprintf("%s-%s rated %d but TL-%d caps it at %d",
 			kind, driveLabel(spec.Letter), raw, tl, capMax)
+
+		if st.tlDelta != 0 {
+			problem += fmt.Sprintf(" (%s reads availability at TL-%d)", spec.Stage, availTL)
+		}
 	}
 
+	// A Potential-0 drive is still built, weighed, and billed. Design is total
+	// and reports infeasibility rather than correcting it (see the package doc):
+	// the designer asked for this drive, and a phantom that occupied no tonnage
+	// would quietly free up hull space and could turn an over-budget ship into
+	// one that appears to fit — trading a reported mistake for a hidden one. The
+	// record shows the useless drive; Problems says why it is useless.
 	tons := driveTonsBase(kind, spec.Letter) * st.tonsNum / st.tonsDen
 	if floor := driveTonsBase(kind, 1); tons < floor {
 		tons = floor // no drive is smaller than the class Drive-A (Book 2 p.77)
