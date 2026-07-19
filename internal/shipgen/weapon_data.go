@@ -454,11 +454,16 @@ var rangeData = [...]struct {
 // level shifts with the drives' X table (stageData, drive.go), but it is not the
 // same table:
 //
-//   - The cost multipliers agree on every stage but one. Modified costs a drive
-//     x1 (and saves it half its tonnage); it costs a weapon /2. The book prints
-//     both, and each table governs its own kind of component — the defense
-//     catalog's Modified White Globe (p.176, MCr7) only works at /2, and the
-//     drives have no worked Modified example to contradict their own table.
+//   - The cost multipliers now agree on every stage, but the table is kept
+//     separate because the two sides reach that agreement independently. Each
+//     side prints its Modified cell BOTH ways: the weapon table gives /2 on
+//     pp.83, 225-226, and 251 and x1 only in the p.279 appendix reprint, and the drive
+//     table gives /2 on pp.104, 127, 134, and 190 against x1 on pp.63 and 76.
+//     Each is settled by its own worked examples — the defense catalog's
+//     Modified White Globe (p.176, MCr7) for weapons, the p.127 Jump-B and
+//     p.134 Power-B columns for drives (see stageData in drive.go) — and both
+//     land on /2. A future correction to one side should not silently move the
+//     other.
 //   - The Mod column is weapons-only; drives have no attack. It is NOT the tech
 //     level shift under another name: Generic raises tech level by +1 but grants
 //     no Mod.
