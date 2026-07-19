@@ -18,6 +18,34 @@ func TestDifficultyDice(t *testing.T) {
 	}
 }
 
+// Issue #242: a Difficulty outside the ladder has no dice count. Dice must not
+// invent one — a non-positive count would fall through to dice.Resolve's 2D
+// default and silently become an ordinary Average check.
+func TestDiceOffLadderPanics(t *testing.T) {
+	for _, d := range []Difficulty{-1, BeyondImpossible + 1, 99} {
+		func() {
+			defer func() {
+				if recover() == nil {
+					t.Errorf("Difficulty(%d).Dice() = %d, want panic", int(d), d.Dice())
+				}
+			}()
+
+			_ = d.Dice()
+		}()
+	}
+}
+
+// Hasty and Cautious are built on Dice, so they inherit the domain check.
+func TestPaceOffLadderPanics(t *testing.T) {
+	defer func() {
+		if recover() == nil {
+			t.Error("Difficulty(99).Hasty() did not panic")
+		}
+	}()
+
+	_ = Difficulty(99).Hasty()
+}
+
 func TestPace(t *testing.T) {
 	// Hasty is +1D; Cautious is -1D, floored at 1D (Book 1 p. 129 columns).
 	cases := []struct {
