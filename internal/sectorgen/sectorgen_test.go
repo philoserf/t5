@@ -197,6 +197,20 @@ func TestParseSubsector(t *testing.T) {
 	}
 }
 
+func TestParseHexRoundTrip(t *testing.T) {
+	h, ok := ParseHex("0436")
+	if !ok || h.Col != 4 || h.Row != 36 || h.String() != "0436" {
+		t.Errorf("ParseHex(0436) = %v,%v, want col 4 row 36", h, ok)
+	}
+	// Malformed, out-of-range, and — the trap — signed halves, which strconv would
+	// otherwise accept ("+436" silently parsing as hex 0436).
+	for _, bad := range []string{"", "436", "04366", "zzzz", "0041", "3341", "0000", "+436", "04+3", "-436", " 436", "04 3"} {
+		if _, ok := ParseHex(bad); ok {
+			t.Errorf("ParseHex(%q) should be rejected", bad)
+		}
+	}
+}
+
 func TestGenerateSectorDeterministicAndDense(t *testing.T) {
 	a := GenerateSector(dice.NewWithSeed(42), Standard)
 
