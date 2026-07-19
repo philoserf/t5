@@ -123,6 +123,15 @@ func (s *Set) Raise(skill string, n int) {
 // 0..KnowledgeMax. The parent skill is registered (at least level 0) so the
 // character is known to hold the cascade skill.
 func (s *Set) RaiseKnowledge(parent, knowledge string, n int) {
+	// The same no-op guard Raise carries, for the same reason: a non-positive
+	// change to a knowledge the character does not hold clamps to 0 anyway, and
+	// registering it would claim they hold both the knowledge and — through the
+	// parent registration below — the whole cascade skill. The parent-at-0 entry
+	// is deliberate for a real raise; it must not be reachable by a no-op one.
+	if _, held := s.knowledges[parent][knowledge]; !held && n <= 0 {
+		return
+	}
+
 	if s.skills == nil {
 		s.skills = make(map[string]int)
 	}

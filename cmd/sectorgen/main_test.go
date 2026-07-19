@@ -133,7 +133,7 @@ func runMainChild(t *testing.T, args ...string) (string, string, int) {
 
 	cmd := exec.Command(
 		os.Args[0],
-		append([]string{"-test.run=TestMainSeedFollowsValidation", "--"}, args...)...)
+		append([]string{"-test.run=^TestMainSeedFollowsValidation$", "--"}, args...)...)
 	cmd.Env = append(os.Environ(), "SECTORGEN_TEST_MAIN=1")
 
 	var stdout, stderr strings.Builder

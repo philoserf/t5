@@ -279,7 +279,7 @@ Tooling (go, go-task, golangci-lint, poppler's `pdftotext`) is pinned in `Brewfi
   one entry point: it composes them with `systemgen` into detailed Second Survey records — the coarse
   map flags constrain generation (`systemgen.GenerateForMap`: gas-giant symbol→≥1 giants / none→0,
   asteroid symbol→Size-0 belt mainworld) so preview and detail agree — then
-  marks subsector (Cs) and sector (Cx) capitals, lays **trade routes** (`route.Build` — a pure,
+  marks sector (Cs) and subsector (Cp) capitals, lays **trade routes** (`route.Build` — a pure,
   dice-free graph linking Ix≥4 worlds within J-4, bridging distant ones through intermediate worlds),
   and sites Scout Way Stations (~1/50 pc of route, bumping Ix). A sector is always surveyed whole —
   its systems share one dice stream, and capitals/routes/way stations need the whole region — so

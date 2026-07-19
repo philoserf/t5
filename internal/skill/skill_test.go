@@ -212,3 +212,18 @@ func TestTopLevelsCountsParentAndKnowledgeOnce(t *testing.T) {
 		t.Errorf("knowledge-only TopLevels = %d, want %d", got, want)
 	}
 }
+
+// A no-op RaiseKnowledge must not register anything. The parent-at-0 entry is
+// how the Set records that a character holds a cascade skill, so creating one
+// for a raise that changes nothing is a false claim about the character.
+func TestRaiseKnowledgeNoOpRegistersNothing(t *testing.T) {
+	for _, n := range []int{0, -1, -3} {
+		var s Set
+
+		s.RaiseKnowledge("Pilot", "Small Craft", n)
+
+		if got := s.String(); got != "" {
+			t.Errorf("RaiseKnowledge(..., %d) on an empty Set = %q, want no entries", n, got)
+		}
+	}
+}

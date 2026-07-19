@@ -58,6 +58,13 @@ func TestTradeGoodsDetail(t *testing.T) {
 			"As",
 			"",
 		}, // Va's Exotic omitted for As-column goods
+		// After an Imbalance redirect the starting class and the origin column
+		// differ, and it is the origin that must not label its own goods: an
+		// {As, Ri} world whose As column redirects to Ri yielded "Quality Ri-good".
+		// Ba is the next class in chart order, so a redirect suppresses one label
+		// without suppressing the Detail entirely.
+		{[]string{"As", "Ri"}, "As", "Ri", ""},
+		{[]string{"As", "Ba", "Ri"}, "As", "Ri", "Gathered"},
 	}
 	for _, c := range cases {
 		if got := tradeGoodsDetail(c.tcs, c.sourceTC, c.col); got != c.want {

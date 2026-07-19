@@ -161,7 +161,14 @@ func firstGoodsBlock(blocks [6]goodsBlock, column string) goodsBlock {
 // Asteroid column. Returns "" when no class carries a label.
 func tradeGoodsDetail(worldTCs []string, sourceTC, column string) string {
 	for _, tc := range tradeGoodsDetailOrder {
-		if tc == sourceTC || !slices.Contains(worldTCs, tc) {
+		// Skip both the class that chose the starting column and the class the
+		// goods actually came from. Those differ only after an Imbalance redirect,
+		// and there the origin is the one that matters: a world classified {As, Ri}
+		// whose As column redirects to Ri was yielding "Quality <Ri good>", a label
+		// restating the goods' own origin. That is what the chart's two footnotes
+		// below suppress for Hi/In and Va/As; a redirect is the same situation
+		// arising by a different route, so it takes the same answer.
+		if tc == sourceTC || tc == column || !slices.Contains(worldTCs, tc) {
 			continue
 		}
 

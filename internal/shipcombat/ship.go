@@ -106,7 +106,18 @@ type MassiveExplosionMultiplier struct {
 // This takes a whole designed Missile rather than a (warhead, size) pair because
 // the pair can be mismatched and the round cannot: DesignMissile has already
 // checked that this warhead exists at this size, from this launcher.
+//
+// So a round that failed design has no tabulated explosion. Only the DeadFall arm
+// reads Size, so without this check an undesignable Size-7 anti-matter round —
+// which a caller can write as a Missile literal, as this package's own tests
+// do — still reported a full 10x armour-defeating detonation while an equally
+// undesignable Size-7 DeadFall correctly reported none. The two arms of one table
+// disagreed about whether an untabulated round is tabulated.
 func WeaponsMassiveExplosion(m shipgen.Missile) (MassiveExplosionMultiplier, bool) {
+	if len(m.Problems) > 0 {
+		return MassiveExplosionMultiplier{}, false
+	}
+
 	switch m.Spec.Type {
 	case shipgen.AntiMatter:
 		return MassiveExplosionMultiplier{AV: 10, Flash: 1}, true

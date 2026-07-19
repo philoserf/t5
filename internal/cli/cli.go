@@ -80,10 +80,24 @@ func Roller() (*dice.Roller, func()) {
 	// nobody can regenerate is the bug this avoids.
 	r := dice.New()
 	fresh, _ := r.Seed() // always set: dice.New routes through NewWithSeed
+	reported := false
 
 	// Capture the seed, not the roller. The report is a fact about this run
 	// decided here; deferring only WHEN it is said, not what.
-	return r, func() { Notef("seed %d", fresh) }
+	//
+	// The guard is the idempotence the doc promises, and it is load-bearing:
+	// chargen and shipgen each call reportSeed from two places, and today only
+	// avoid saying the seed twice because control flow happens to return between
+	// them. A command that grows a third path should not have to know that.
+	return r, func() {
+		if reported {
+			return
+		}
+
+		reported = true
+
+		Notef("seed %d", fresh)
+	}
 }
 
 // SeededRoller defines the shared -n and -seed flags (naming the item in the -n
