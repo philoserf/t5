@@ -135,10 +135,22 @@ func genderDifference(flux int) Difference {
 	}
 }
 
+// autoFillsGenderTwo reports whether chart 08A pins Gender 2 at table entry 3.
+// The footnote conditions it on the three named multi-gender structures — "If
+// Dual, FMN, or EAB, enter Gender 2 (Male, Activator) on entry line 3" (Book 3
+// p.230) — and on nothing else. Solitaire has no Gender 2, and for Group the
+// exemption is load-bearing: the book's own Group example, the Rem, "have a
+// gender structure 36145 ... Note that Gender Two has evolutionarily dropped
+// out" (p.219). A pinned entry 3 gives Two a floor of 2/36 and makes the Rem
+// unreachable, so a Group rolls entry 3 like every other entry.
+func autoFillsGenderTwo(s GenderStructure) bool {
+	return s == Dual || s == FMN || s == EAB
+}
+
 // rollGender rolls a species' gender structure and builds its Determination
-// Table: entry 2 is Gender 1, entry 3 is Gender 2 (for multi-gender structures),
-// and entries 4-12 are rolled on the structure's column. Each non-base gender
-// then rolls its characteristic differences.
+// Table: entry 2 is Gender 1, entry 3 is Gender 2 for Dual/FMN/EAB, and every
+// remaining entry is rolled on the structure's column. Each non-base gender then
+// rolls its characteristic differences.
 func rollGender(r *dice.Roller) Gender {
 	structure := structureByFlux[clamp(r.Flux(), -5, 5)+5]
 	genders := gendersFor[structure]
@@ -147,13 +159,14 @@ func rollGender(r *dice.Roller) Gender {
 	var table [13]string
 
 	table[2] = genders[0]
-	if len(genders) > 1 {
+
+	first := 3
+	if autoFillsGenderTwo(structure) {
 		table[3] = genders[1]
-	} else {
-		table[3] = genders[0]
+		first = 4
 	}
 
-	for entry := 4; entry <= 12; entry++ {
+	for entry := first; entry <= 12; entry++ {
 		table[entry] = col[clamp(r.Flux(), -5, 5)+5]
 	}
 

@@ -38,6 +38,35 @@ func TestGenderAyFixture(t *testing.T) {
 	}
 }
 
+// TestGroupEntryThreeIsRolled: chart 08A auto-fills entry 3 only for the
+// three-name structures — "If Dual, FMN, or EAB, enter Gender 2 (Male,
+// Activator) on entry line 3" (Book 3 p.230). A Group structure rolls entry 3
+// like every other entry, which is what makes the book's own Group example
+// reachable: the Rem "have a gender structure 36145 ... Note that Gender Two has
+// evolutionarily dropped out" (p.219). Pinning "Two" at entry 3 would give it a
+// floor of 2/36 and no Group species could ever lose it.
+func TestGroupEntryThreeIsRolled(t *testing.T) {
+	// Flux +4 for the structure -> Group; then Flux 0 for entries 3-12 (ten
+	// rolls) -> "One"; then a difference roll for each of the five non-base
+	// genders.
+	seq := fluxSeq(4, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)
+	g := rollGender(dice.NewScripted(seq...))
+
+	if g.Structure != Group {
+		t.Fatalf("structure = %v, want Group", g.Structure)
+	}
+
+	if g.Table[3] != "One" {
+		t.Errorf("entry 3 = %q, want One (rolled, not auto-filled with Gender 2)", g.Table[3])
+	}
+
+	for entry := 2; entry <= 12; entry++ {
+		if g.Table[entry] == "Two" {
+			t.Errorf("entry %d = Two; an all-Flux-0 Group must be able to drop Gender Two", entry)
+		}
+	}
+}
+
 // TestGenderStructureSelection checks the Structure column of chart 08A.
 func TestGenderStructureSelection(t *testing.T) {
 	cases := []struct {
