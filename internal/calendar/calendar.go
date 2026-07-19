@@ -34,7 +34,7 @@ func New(year, day int) (Date, error) {
 // are exported and a caller may build one without New.
 func (d Date) Weekday() string {
 	switch {
-	case d.Day < 1 || d.Day > DaysPerYear:
+	case !d.valid():
 		return "?"
 	case d.Day == 1:
 		return "Holiday"
@@ -44,14 +44,27 @@ func (d Date) Weekday() string {
 }
 
 // String renders the date in day-year form, zero-padded to three digits, e.g.
-// "001-1105".
+// "001-1105". As with Weekday, a Day outside 1..365 renders its field as "???"
+// rather than a well-formed-looking record ("000-1105", "400-1105"), since
+// Date's fields are exported and a caller may build one without New.
 func (d Date) String() string {
+	if !d.valid() {
+		return fmt.Sprintf("???-%d", d.Year)
+	}
+
 	return fmt.Sprintf("%03d-%d", d.Day, d.Year)
 }
 
 // Add returns the date days later (or earlier, when days is negative), rolling
-// over 365-day years.
+// over 365-day years. A Date whose Day is outside 1..365 is returned unchanged:
+// it names no day, so there is no day to count from, and normalizing it as a
+// zero-based offset would launder a caller's bad literal into a valid-looking
+// but different date — erasing the very state Weekday and String flag.
 func (d Date) Add(days int) Date {
+	if !d.valid() {
+		return d
+	}
+
 	total := (d.Day - 1) + days // zero-based day index from the start of the year
 
 	return Date{
@@ -59,6 +72,10 @@ func (d Date) Add(days int) Date {
 		Day:  floorMod(total, DaysPerYear) + 1,
 	}
 }
+
+// valid reports whether Day names a real day of the Imperial year. Date's fields
+// are exported, so a caller may build one without New.
+func (d Date) valid() bool { return d.Day >= 1 && d.Day <= DaysPerYear }
 
 // Age returns the age in whole Imperial years of someone born in birthYear as of
 // currentYear (Book 1: age is the difference in years).
