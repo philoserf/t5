@@ -213,7 +213,7 @@ func DesignDefense(spec DefenseSpec) Defense {
 	if !dev.scale.reaches(rng.scale) {
 		problems = append(problems, fmt.Sprintf("%s is a %s device and cannot be built for %s",
 			dev.name, scaleName(dev.scale), rng.name))
-	} else if !rng.defenseOK {
+	} else if !defenseAllowed(spec.Range) {
 		problems = append(
 			problems,
 			fmt.Sprintf("a defense cannot be built for %s: its range may be decreased but not "+
@@ -334,23 +334,32 @@ func (d Defense) LongName() string {
 // are distinct, so the band alone does not say how far a defense reaches.
 func (d Defense) RangeCode() string { return rangeCode(d.Scale, d.Band) }
 
-// installed reports whether install actually ran for this defense — that is,
-// whether its TL, tonnage, and cost mean anything. DesignDefense returns early on
-// a refused device or an unknown mount or range, and every real defense comes out
-// of install with a positive tech level (the lowest base is 8 and the deepest
-// discount is -5), so a zero TL is exactly the un-built case.
-func (d Defense) installed() bool { return d.TL > 0 }
+// installed reports whether this defense is actually carried — whether its TL,
+// tonnage, and cost mean anything.
+//
+// It asks the same question, the same way, as the mount and tonnage accounting
+// (aboard): a component with a problem was not built. Inferring it from a
+// positive TL instead is not equivalent, because DesignDefense records a
+// range or scale refusal and then still calls install — so a defense refused
+// for Long Range came out with a real TL and would render a full line, tonnage
+// and cost included, for something the ship does not carry.
+func (d Defense) installed() bool { return aboard(d.Problems) }
 
 // standardRangeName is the standard (unmodified) rung of a ladder — Attack Range
 // on the space one, Vdistant on the world one (Book 2 p.83 Tables D and E, printed
 // again for defenses on p.174). It is where a defense stands, and the furthest one
 // may be built for: "Defense Range can be decreased but not increased" (p.177).
+//
+// It reads the rung off the table rather than naming the two rows, so it agrees
+// with defenseAllowed by construction: both ask tlMod which rung is standard.
 func standardRangeName(s Scale) string {
-	if s == WorldScale {
-		return rangeData[VDistant].name
+	for i, r := range rangeData {
+		if r.scale == s && r.tlMod == 0 {
+			return rangeData[i].name
+		}
 	}
 
-	return rangeData[AttackRange].name
+	return "?"
 }
 
 func validDefense(id DefenseID) bool { return id >= 0 && int(id) < len(defenseData) }

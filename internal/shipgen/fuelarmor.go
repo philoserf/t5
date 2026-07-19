@@ -26,11 +26,11 @@ func driveFuel(hullTons int, d *Drive) int {
 		return fuelMul(d.Potential*hullTons/10, d.Stage)
 	case Power:
 		return fuelMul(d.Potential*hullTons/100, d.Stage)
-	case Maneuver:
+	default:
+		// Maneuver burns no fuel of its own: p.79 folds its consumption into the
+		// power plant's operations fuel, which the Power case already charges.
 		return 0
 	}
-
-	return 0
 }
 
 // fuel computes a ship's fuel tankage and cost (Book 2 p.79) as the sum of what

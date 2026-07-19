@@ -22,8 +22,10 @@ const firmPointsPerBlock = 3
 // either way would invent a second complaint on top of the real problem that
 // stopped it being built — two complaints for one mistake, one of them false.
 //
-// Both accountings of the same component list go through this, so they cannot drift
-// into disagreeing about which components exist.
+// All three accountings of the same component list go through this — mount points,
+// tonnage, and cost — so they cannot drift into disagreeing about which components
+// exist. Defense.installed asks it too, so a refused component does not render a
+// full line of tonnage and cost for something the ship does not carry.
 func aboard(problems []string) bool { return len(problems) == 0 }
 
 // mountPoints reports whether a hull of the given tonnage can carry the weapons

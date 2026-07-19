@@ -162,7 +162,7 @@ func (w Weapon) Name() string {
 		return "?"
 	}
 
-	return fmt.Sprintf("%s-%d", weaponData[w.Spec.Model].name, w.TL)
+	return fmt.Sprintf("%s-%d", weaponName(w.Spec.Model), w.TL)
 }
 
 // RangeCode renders the weapon's range band as the book writes it, e.g. "R=08"

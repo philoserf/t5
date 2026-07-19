@@ -408,8 +408,9 @@ const (
 // as 66.67 and 1.00. Following the book's arithmetic reproduces its tables to the
 // credit; being more precise than the book would not.
 //
-// defenseOK marks the ranges a defense may be built for. The rule is one line of
-// the Defense Creation Process (Book 2 p.177): "Defense Range can be decreased but
+// defenseAllowed (below) decides which ranges a defense may be built for, and
+// reads the rule straight off tlMod rather than repeating it as a column. The
+// rule is one line of the Defense Creation Process (Book 2 p.177): "Defense Range can be decreased but
 // not increased." The standard rung is the ceiling — "The Standard Defense Range
 // is R=7" (p.177), and every defense in the p.174 table stands at R=7, as does
 // every row of the p.176 catalog (R=05, R=06, R=07 and nothing higher).
@@ -421,28 +422,31 @@ const (
 // only because p.174 prints Table D "For Defenses using S= Space Range" and marks
 // the Hybrid S-L-M "S=7* R=7*" in the defenses table itself; p.177 calls the space
 // effects "rarely used for Defenses", which is the same thing said in prose.
+//
+// tlMod already is the rungs-from-standard offset, so "at or below the standard
+// rung" is exactly tlMod <= 0 on either ladder — which is why this is a predicate
+// over the table and not a twelfth hand-kept column that could drift from it.
 var rangeData = [...]struct {
-	name      string
-	scale     Scale
-	band      int // the S= or R= number the record prints
-	tlMod     int
-	tons      int // hundredths: 33 = x0.33, 200 = x2
-	cost      int // hundredths
-	defenseOK bool
+	name  string
+	scale Scale
+	band  int // the S= or R= number the record prints
+	tlMod int
+	tons  int // hundredths: 33 = x0.33, 200 = x2
+	cost  int // hundredths
 }{
-	Boarding:     {"Boarding", SpaceScale, 0, -3, 25, 25, true},
-	FighterRange: {"Fighter Range", SpaceScale, 2, -2, 33, 33, true},
-	ShortRange:   {"Short Range", SpaceScale, 5, -1, 50, 50, true},
-	AttackRange:  {"Attack Range", SpaceScale, 7, 0, 100, 100, true},
-	LongRange:    {"Long Range", SpaceScale, 9, 1, 200, 300, false},
-	DeepSpace:    {"Deep Space", SpaceScale, 12, 2, 300, 500, false},
+	Boarding:     {"Boarding", SpaceScale, 0, -3, 25, 25},
+	FighterRange: {"Fighter Range", SpaceScale, 2, -2, 33, 33},
+	ShortRange:   {"Short Range", SpaceScale, 5, -1, 50, 50},
+	AttackRange:  {"Attack Range", SpaceScale, 7, 0, 100, 100},
+	LongRange:    {"Long Range", SpaceScale, 9, 1, 200, 300},
+	DeepSpace:    {"Deep Space", SpaceScale, 12, 2, 300, 500},
 
-	Vlong:    {"Vlong", WorldScale, 5, -2, 33, 33, true},
-	Distant:  {"Distant", WorldScale, 6, -1, 50, 50, true},
-	VDistant: {"Vdistant", WorldScale, 7, 0, 100, 100, true},
-	Orbit:    {"Orbit", WorldScale, 8, 1, 200, 300, false},
-	Far:      {"Far", WorldScale, 9, 2, 300, 500, false},
-	Geo:      {"Geo", WorldScale, 10, 3, 400, 600, false},
+	Vlong:    {"Vlong", WorldScale, 5, -2, 33, 33},
+	Distant:  {"Distant", WorldScale, 6, -1, 50, 50},
+	VDistant: {"Vdistant", WorldScale, 7, 0, 100, 100},
+	Orbit:    {"Orbit", WorldScale, 8, 1, 200, 300},
+	Far:      {"Far", WorldScale, 9, 2, 300, 500},
+	Geo:      {"Geo", WorldScale, 10, 3, 400, 600},
 }
 
 // weaponStageData is Book 2 p.83 Table B (printed again for defenses on p.174) —
@@ -494,3 +498,9 @@ var weaponStageMod = [...]int{
 	Advanced:     3,
 	Ultimate:     4,
 }
+
+// defenseAllowed reports whether a defense may be built for this range: the
+// Defense Creation Process caps it at the standard rung of whichever ladder it
+// is on (Book 2 p.177, "Defense Range can be decreased but not increased"), and
+// tlMod is that ladder's rungs-from-standard offset.
+func defenseAllowed(r Range) bool { return rangeData[r].tlMod <= 0 }

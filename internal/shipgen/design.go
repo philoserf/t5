@@ -171,12 +171,21 @@ func Design(spec ShipSpec) Ship { //nolint:gocognit,cyclop,funlen // ship-design
 		}
 	}
 
+	// Cost is the third accounting of the same component list, alongside
+	// mountPoints and armamentTonnage, and asks aboard the same question they do.
+	// A refused component is not free of charge by accident — install may already
+	// have priced it before the refusal was recorded — so without this the ship
+	// pays for armament it does not carry.
 	for _, w := range ship.Weapons {
-		ship.Cost += w.Cost
+		if aboard(w.Problems) {
+			ship.Cost += w.Cost
+		}
 	}
 
 	for _, d := range ship.Defenses {
-		ship.Cost += d.Cost
+		if aboard(d.Problems) {
+			ship.Cost += d.Cost
+		}
 	}
 
 	ship.Problems = problems
