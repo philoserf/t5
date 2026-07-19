@@ -42,15 +42,19 @@ func (c Passage) Fare(demand int) int {
 }
 
 // AttendingSkill names the skill whose modifier applies to this class's
-// availability roll (Book 2 p.220 C).
+// availability roll (Book 2 p.220 C). An out-of-range class has no attending
+// skill and returns "", the same posture Fare takes with its zero fare: a class
+// that does not exist gets no answer rather than a plausible wrong one.
 func (c Passage) AttendingSkill() string {
 	switch c {
 	case High:
 		return "Steward"
 	case Mid:
 		return "Admin"
-	default:
+	case Low:
 		return "Streetwise"
+	default:
+		return ""
 	}
 }
 
