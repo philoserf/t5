@@ -142,16 +142,6 @@ func TestTopLevelsSharesSlotsWithKnowledges(t *testing.T) {
 	}
 }
 
-func TestIsCascade(t *testing.T) {
-	if !IsCascade("Pilot") || !IsCascade("Gunner") {
-		t.Error("Pilot/Gunner should be cascade skills")
-	}
-
-	if IsCascade("Navigation") {
-		t.Error("Navigation is not a cascade skill")
-	}
-}
-
 func TestString(t *testing.T) {
 	var s Set
 	s.Raise("Navigation", 2)

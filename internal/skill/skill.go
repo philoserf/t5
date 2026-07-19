@@ -18,16 +18,6 @@ const (
 	KnowledgeMax = 6
 )
 
-// cascades are the skills that contain Knowledges.
-var cascades = map[string]bool{
-	"Animals": true, "Driver": true, "Engineer": true, "Fighter": true,
-	"Flyer": true, "Gunner": true, "Heavy Weapons": true, "Language": true,
-	"Musician": true, "Pilot": true, "Seafarer": true,
-}
-
-// IsCascade reports whether a skill contains Knowledges.
-func IsCascade(name string) bool { return cascades[name] }
-
 // A Set is a character's skills and knowledges. The zero value is ready to use.
 type Set struct { //nolint:recvcheck // deliberate value-reader / pointer-mutator split
 	skills     map[string]int            // plain skill or cascade parent -> level
