@@ -157,6 +157,24 @@ type DriveSpec struct {
 	Stage  Stage
 }
 
+// MinTL and MaxTL bound the Tech Level a ship can be designed at (Book 2 p.51,
+// "Tech Level Limits"): "Within the Imperium, the maximum shipyard Tech Level is
+// 15. Within this ship design system, the maximum available Tech Level is 21."
+// 21 is therefore the ceiling of the design system itself, not of the setting —
+// a TL-15 Imperial shipyard is the in-universe limit, and the extra rungs exist
+// for shipyards outside it. The floor is 0, the lowest eHex Tech Level; a
+// negative TL is not a Tech Level at all, and rendering one produces a ship card
+// whose TL field is not an eHex value ("TL--5").
+//
+// Design does not enforce these — it is total, and reports an infeasible design
+// in Ship.Problems rather than refusing it. They are here for the callers that
+// take a Tech Level from outside (a CLI flag, a config file) and must reject a
+// value that is not a Tech Level before it reaches a record.
+const (
+	MinTL = 0
+	MaxTL = 21
+)
+
 // A ShipSpec is the design input: the choices a naval architect makes. Tons of 0
 // uses the hull letter's nominal tonnage; a non-zero Tons exercises the
 // over/undertonnage rules. Maneuver/Jump/Power are nil when the ship lacks that
