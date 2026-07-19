@@ -9,15 +9,26 @@ import "fmt"
 // book's worked cells (Drive-T in Hull-E = floor(2*18/5) = 7; any Drive = Hull
 // gives 2; the floor-to-zero "no" cutoffs all match).
 
-// drivePotential is the Z1 Drive Potential for a drive size in a hull size
-// (Book 2 p.78). It means thrust in Gs (Maneuver), jump number (Jump), or the
-// EP tier (Power). A result of 0 means the combination cannot function.
-func drivePotential(driveOrd, hullOrd int) int {
+// drivePotential is the Z1 Drive Potential for a drive size in a hull size, at a
+// stage efficiency in percent (Book 2 pp.63, 76, 78). It means thrust in Gs
+// (Maneuver), jump number (Jump), or the EP tier (Power). A result of 0 means
+// the combination cannot function.
+//
+// Efficiency is not a separate step applied to the Z1 number: it "modifies the
+// EP Energy Point output of a Drive" (p.76 Table X footer — Standard Drive-C has
+// 300 EP, Experimental 150, Advanced 360), and Potential is P = (EP/Hull)*2,
+// "Maximum 9. Round Down" (p.63). So the scaling happens inside the division and
+// there is exactly one floor, at the end — p.127 puts it as "Efficiencies round
+// down (thus Early Jump-1 at 90% becomes Jump-0)", which flooring the Z1 value
+// first could not produce. Drive EP is the size ordinal x 100 (Drive-A = 100 EP,
+// Drive-K = 1000) and hull tons is the hull ordinal x 100, so both hundreds
+// cancel and only the percentage is left to divide out.
+func drivePotential(driveOrd, hullOrd, effPct int) int {
 	if driveOrd < 1 || hullOrd < 1 {
 		return 0
 	}
 
-	return min(2*driveOrd/hullOrd, 9)
+	return min(2*driveOrd*effPct/(hullOrd*100), 9)
 }
 
 // DriveForPotential is the Z2 inverse: the smallest drive size ordinal that
@@ -178,13 +189,14 @@ func driveLabel(ord int) string {
 }
 
 // designDrive builds one drive for a hull (Book 2 pp. 76-78): its Potential from
-// Z1 (capped by TL availability, shifted by the stage's TL delta), and its
-// stage-adjusted tonnage and cost. It returns the drive and a problem string
-// when TL availability caps the Potential below the drive's Z1 rating. The
-// stage's fuel/efficiency values are carried on the Drive for the fuel phase.
+// Z1 — scaled by the stage's efficiency, then capped by TL availability at the
+// stage's shifted TL — and its stage-adjusted tonnage and cost. It returns the
+// drive and a problem string when TL availability caps the Potential below the
+// drive's rating. The stage's fuel multiplier is applied later, in the fuel
+// phase, from Drive.Stage.
 func designDrive(kind DriveKind, spec DriveSpec, hullOrd, tl int) (*Drive, string) {
 	st := stageData[stageIndex(spec.Stage)]
-	raw := drivePotential(spec.Letter, hullOrd)
+	raw := drivePotential(spec.Letter, hullOrd, st.eff)
 
 	pot, problem := raw, ""
 	if capMax := availabilityMax(kind, tl+st.tlDelta); capMax < raw {
