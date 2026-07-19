@@ -21,6 +21,48 @@ func TestHexString(t *testing.T) {
 	}
 }
 
+func TestHexValidAndOffMapRendering(t *testing.T) {
+	for _, h := range []Hex{{1, 1}, {32, 40}, {8, 10}} {
+		if !h.Valid() {
+			t.Errorf("%v should be a valid hex", h)
+		}
+	}
+	// Off-map hexes: past either edge, at or below zero, and negative.
+	offMap := map[Hex]string{
+		{33, 1}:  "????", // one column past the sector
+		{9, 41}:  "????", // one row past the sector
+		{0, 0}:   "????", // zero is not a coordinate; CCRR starts at 0101
+		{100, 5}: "????", // five digits would not survive ParseHex
+		{-1, -1}: "????",
+	}
+	for h, want := range offMap {
+		if h.Valid() {
+			t.Errorf("%d,%d should not be a valid hex", h.Col, h.Row)
+		}
+
+		if got := h.String(); got != want {
+			t.Errorf("Hex{%d,%d}.String() = %q, want %q", h.Col, h.Row, got, want)
+		}
+	}
+}
+
+// TestSubsectorPanicsOffMap locks the strict half of the split: Subsector's result
+// is a filing decision (survey groups its records by it), so an off-map hex must
+// fail loudly rather than hand back a plausible letter for the wrong subsector.
+func TestSubsectorPanicsOffMap(t *testing.T) {
+	for _, h := range []Hex{{33, 1}, {9, 41}, {0, 0}, {-1, 5}, {100, 5}} {
+		func() {
+			defer func() {
+				if recover() == nil {
+					t.Errorf("Hex{%d,%d}.Subsector() did not panic", h.Col, h.Row)
+				}
+			}()
+
+			t.Errorf("Hex{%d,%d}.Subsector() = %c, want a panic", h.Col, h.Row, h.Subsector())
+		}()
+	}
+}
+
 func TestSubsector(t *testing.T) {
 	// The sixteen subsectors are lettered A-P left-to-right, top-to-bottom.
 	cases := map[Hex]byte{
