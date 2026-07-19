@@ -14,6 +14,7 @@ import (
 	"github.com/philoserf/t5/internal/dice"
 	"github.com/philoserf/t5/internal/ehex"
 	"github.com/philoserf/t5/internal/skill"
+	"github.com/philoserf/t5/internal/task"
 	"github.com/philoserf/t5/internal/worldgen"
 )
 
@@ -140,14 +141,29 @@ func (c Character) String() string {
 // characteristic, succeeding on a roll of the score or less. mod adjusts the
 // target the usual way (a positive mod makes success easier).
 //
+// A Check is a task, so this resolves through internal/task rather than against
+// the dice primitives directly. Book 1 p. 47 says so twice: "The Tasks chapter
+// has more information on using Characteristics", and "Easy Checks and Hard
+// Checks. For very easy tasks, roll 1D; for very hard tasks, roll 3D." Routing
+// here is what makes a 3D Hard Check — a "very hard task" — eligible for the
+// p. 127 Spectacular override, which the task layer owns.
+//
 // numDice is a count of dice, not a difficulty level; 0 defaults to the standard
 // 2D. A caller working from the Book 1 p. 120 ladder converts with
 // task.Difficulty.Dice() — task.Easy.Dice() for 1D, task.Difficult.Dice() for 3D
 // — rather than passing the Difficulty itself, whose int value is a ladder index
-// one off from its dice count.
+// one off from its dice count. The parameter stays a raw count rather than
+// narrowing to a task.Difficulty because p. 47 needs counts the ladder's three
+// low rungs do not name: "Non-Humans: If the Characteristic checked was
+// generated with other than 2D, check Characteristic with the number of Dice
+// used to generate it" — a sophont whose Str is 5D checks Str on 5D.
 //
 // The rulebook's escalating penalty for reusing a characteristic before two
 // others are used is session state, left to the caller.
 func (c Character) Check(r *dice.Roller, ch Characteristic, numDice, mod int) dice.CheckResult {
-	return r.Resolve(dice.Check{Dice: numDice, Target: c.Score(ch), Mod: mod})
+	if numDice <= 0 {
+		numDice = dice.DefaultCheckDice
+	}
+
+	return task.ResolveDice(r, numDice, c.Score(ch), mod)
 }

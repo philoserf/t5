@@ -71,6 +71,33 @@ func TestCheck(t *testing.T) {
 	if !easy.Success || easy.Target != 10 {
 		t.Fatalf("Easy check = %+v, want success against target 10", easy)
 	}
+	// An omitted dice count is the standard 2D (Book 1 p. 47, "Check 2D =<
+	// Characteristic"), not the 1D floor task.ResolveDice would otherwise apply.
+	if two := c.Check(dice.NewScripted(3, 4), Endurance, 0, 0); len(two.Faces) != 2 {
+		t.Fatalf("Check with numDice 0 rolled %dD, want 2D", len(two.Faces))
+	}
+}
+
+// TestHardCheckIsSpectacularEligible guards the #290/#291 bundle. The p. 127
+// Spectacular override lives in internal/task, so it reaches a Check
+// Characteristic only because Character.Check routes through that package. A
+// Hard Check is 3D and Book 1 p. 47 calls a 3D Check a "very hard task", so
+// three ones must override a failing total here exactly as they would for any
+// other task. If this fails, Check has been unrouted back onto the dice
+// primitives.
+func TestHardCheckIsSpectacularEligible(t *testing.T) {
+	c := Generate(dice.NewScripted(1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1)) // all 2s
+
+	// A Hard (3D) Check against Strength 2: 1+1+1 = 3 beats the target of 2, so
+	// the arithmetic fails — but three ones are a Spectacular Success.
+	res := c.Check(dice.NewScripted(1, 1, 1), Strength, task.Difficult.Dice(), 0)
+	if res.Total <= res.Target {
+		t.Fatalf("total %d vs target %d should fail arithmetically", res.Total, res.Target)
+	}
+
+	if !res.Success {
+		t.Errorf("three ones must override a failing Hard Check (Book 1 pp. 47, 127)")
+	}
 }
 
 func TestGenerateRangeAndDeterminism(t *testing.T) {

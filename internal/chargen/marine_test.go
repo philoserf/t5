@@ -11,8 +11,9 @@ import (
 // generalizes to a second armed-forces career whose promotion characteristics
 // differ from the Soldier's (Enlisted Promotion vs Str, Officer Promotion vs
 // Int). A medal each term, an enlisted promotion, then a Commission to 2nd
-// Lieutenant. Rolls are 3,4 (= 7) unless noted. Starting scores "878877" (the
-// final UPP is 978877 after the Str +1 muster benefit).
+// Lieutenant. Rolls are 3,4 (= 7) unless noted. Starting scores: Str 8, Dex 7,
+// End 8, Int 8, Edu 10, Soc 7 ("8788A7"); the final UPP is "9788A7" after the
+// Str +1 muster benefit.
 func TestGoldenMarine(t *testing.T) {
 	seq := []int{
 		// UPP: Str 8, Dex 7, End 8, Int 8, Edu 10(5,5), Soc 7. Edu 10 gives the +2
