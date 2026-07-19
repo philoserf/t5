@@ -1345,13 +1345,36 @@ func awardSkillsN(r *dice.Roller, p Policy, c *Character, career Career, n int) 
 // applyCell applies one skill-grid cell: raise a skill (cascade skills grant a
 // knowledge via the K-K-S progression), bump a characteristic (capped at the
 // human maximum), or resolve a player choice among options.
+// cascadeParent returns the cascade parent this cell awards a Knowledge under,
+// or "" when the cell is not a cascade cell. Two shapes qualify: an AwardSkill
+// carrying a Knowledge, and an AwardChoice whose Options are knowledges under a
+// named parent (what the cascade() grid helper builds).
+//
+// It lives here, beside applyCell, because applyCell's routing and the career
+// grids' cascade-cell test must agree about what a cascade cell IS. Encoding
+// that twice — once in the engine, once in a test — means a third shape added
+// here would silently stop being covered there.
+func (cell Cell) cascadeParent() string {
+	switch cell.Kind {
+	case AwardSkill:
+		if cell.Knowledge != "" {
+			return cell.Skill
+		}
+	case AwardChoice:
+		return cell.Skill // "" for a plain choice among flat skills
+	case NoAward, AwardBump, AwardMajor, AwardMinor:
+	}
+
+	return ""
+}
+
 func applyCell(p Policy, c *Character, cell Cell) {
 	switch cell.Kind {
 	case NoAward:
 		// an empty cell: nothing to apply
 	case AwardSkill:
-		if cell.Knowledge != "" {
-			c.Skills.GrantCascade(cell.Skill, cell.Knowledge)
+		if parent := cell.cascadeParent(); parent != "" {
+			c.Skills.GrantCascade(parent, cell.Knowledge)
 		} else {
 			c.Skills.Raise(cell.Skill, 1)
 		}
@@ -1363,10 +1386,10 @@ func applyCell(p Policy, c *Character, cell Cell) {
 		}
 
 		chosen := p.ChooseSkill(*c, cell.Options)
-		if cell.Skill != "" {
+		if parent := cell.cascadeParent(); parent != "" {
 			// A cascade choice: the options are knowledges under the parent skill
 			// (e.g. Language/Galanglic), granted via the K-K-S progression.
-			c.Skills.GrantCascade(cell.Skill, chosen)
+			c.Skills.GrantCascade(parent, chosen)
 		} else {
 			c.Skills.Raise(chosen, 1)
 		}

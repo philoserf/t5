@@ -142,16 +142,16 @@ const (
 // most one bluff.
 func Bluff(r *dice.Roller) int { return r.Flux() }
 
-// ThreatOfViolence is the Mod for backing a Personal with menace: the Actor adds
-// their Fighter skill, or any subordinate Knowledge ("Threat of Violence =
-// +Fighter Skill", Book 1 p.185). The page attaches a consequence this package
-// does not model — "failure converts the personal into a fight" — so a caller
-// applying this Mod is responsible for opening combat on a failed Resolve.
+// Threat of Violence is a Mod of +Fighter Skill ("Threat of Violence = +Fighter
+// Skill", Book 1 p.185) — pass the character's Fighter level (or a subordinate
+// Knowledge) straight to Resolve as a mod; there is no helper, because there is
+// nothing to compute. The page attaches a consequence this package does not
+// model — "failure converts the personal into a fight" — so a caller applying it
+// is responsible for opening combat on a failed Resolve.
 //
-// This is not the Violence entry in lawMods. That is the Law of Violence, whose
+// It is not the Violence entry in lawMods. That is the Law of Violence, whose
 // per-Purpose Mod comes through LawMod; this is the p.185 situational Mod. A
 // Personal backed by menace may well draw both.
-func ThreatOfViolence(fighterSkill int) int { return fighterSkill }
 
 // Resolve resolves a Personal Interaction (Book 1 p.184): Target = strategyValue
 // × tacticMult + lawMod + the situational mods; the Purpose's dice are rolled at

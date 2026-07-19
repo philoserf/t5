@@ -91,10 +91,6 @@ func DriveForPotential(potential, hullOrd int) int {
 // round "against advantage (up for tonnage; down for potential)" (Book 2 pp.104,
 // 127, 134), and Go's integer division rounds down.
 func ceilDiv(n, d int) int {
-	if d <= 0 {
-		return 0
-	}
-
 	return (n + d - 1) / d
 }
 
@@ -311,9 +307,22 @@ func designDrive(kind DriveKind, spec DriveSpec, hullOrd, tl int) (*Drive, strin
 	// specified below A — and every worked example above is still a Drive-B,
 	// shrunk by its stage but not demoted. Under that reading all thirty-three
 	// printed rows across the three tables reproduce and no source is a typo, so
-	// the letter floor is enforced where letters are chosen (spec.Letter >= 1;
-	// drivePotential returns 0 below it) and tonnage simply rounds up.
-	tons := ceilDiv(driveTonsBase(kind, spec.Letter)*st.tonsNum, st.tonsDen)
+	// tonnage simply rounds up here.
+	//
+	// The letter floor itself is enforced in specProblems, not here — a sub-A
+	// ordinal makes driveTonsBase run negative, and a drive with negative tons
+	// and cost would add budget rather than spend it. That check has to sit
+	// where the spec is validated; this function is total and must build
+	// something for whatever it is handed.
+	// A sub-A ordinal is reported by specProblems, but this function is total and
+	// still has to build something. Price it as the smallest real drive rather
+	// than letting driveTonsBase run negative: negative tonnage would ADD budget
+	// and free hull space, turning an over-budget ship into one that appears to
+	// fit — the same phantom the Potential-0 case is deliberately billed to
+	// avoid. Clamp and report, as stageIndex and configIndex do for their fields.
+	letter := max(spec.Letter, 1)
+
+	tons := ceilDiv(driveTonsBase(kind, letter)*st.tonsNum, st.tonsDen)
 	cost := ceilDiv(tons*driveCrPerTon(kind)*st.costNum, st.costDen)
 
 	return &Drive{

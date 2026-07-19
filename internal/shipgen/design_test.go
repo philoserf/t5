@@ -264,3 +264,33 @@ func TestRefusedComponentIsNotCharged(t *testing.T) {
 		t.Error("a refused defense reports itself installed, so it renders a full line")
 	}
 }
+
+// TestSubADriveDoesNotRefundTonnage locks the letter floor. Book 2 p.77's "no
+// drive may be smaller than the Drive-A of the class" is read as a floor on the
+// size LETTER — that is what reconciles it with the worked columns on pp.104,
+// 127 and 134, where stage-reduced rows print below their class's Drive-A
+// tonnage while staying a Drive-B.
+//
+// Reading it that way removed the tonnage floor that had been enforcing it by
+// accident, and nothing replaced it: driveTonsBase runs negative below A, so a
+// Letter of 0 produced -1 tons and -MCr2 — a drive that ADDS budget and frees
+// hull space. specProblems now reports the bad ordinal and designDrive prices it
+// as the smallest real drive.
+func TestSubADriveDoesNotRefundTonnage(t *testing.T) {
+	for _, letter := range []int{0, -1, -5, 2 * maxLetter} {
+		spec := ShipSpec{TL: 12, HullLetter: 1, Maneuver: &DriveSpec{Letter: letter}}
+
+		got := Design(spec)
+		if got.Tonnage.Used < 0 {
+			t.Errorf("drive letter %d: used tonnage %d is negative", letter, got.Tonnage.Used)
+		}
+
+		if got.Cost < 0 {
+			t.Errorf("drive letter %d: cost Cr%d is negative", letter, got.Cost)
+		}
+
+		if letter < 1 && !hasProblem(got, "outside A..Z2") {
+			t.Errorf("drive letter %d: no problem reported, got %v", letter, got.Problems)
+		}
+	}
+}

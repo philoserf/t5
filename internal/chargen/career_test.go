@@ -596,19 +596,31 @@ func (rerollingPolicy) RerollBranchOnCommission(Character) bool   { return true 
 // counterpart and becomes Line, while a branch printed in both columns is
 // unchanged. A career with a single Branch table keeps exactly what it had.
 func TestCommissionBranchColumnSwitch(t *testing.T) {
+	// The Mod is asserted alongside the name because the mod is what silently
+	// changes: a name found in the Officer column takes THAT row's mod, while a
+	// name absent from it falls back to the same roll index. Rolls 3 and 6 are
+	// the two where those differ, so they are the rows a transcription slip in
+	// either column would quietly degrade.
 	for _, tc := range []struct {
-		roll int
-		want string
+		roll    int
+		want    string
+		wantMod int
 	}{
-		{1, "Line"},     // enlisted Crew — the case the book spells out
-		{2, "Line"},     // enlisted Crew
-		{3, "Engineer"}, // present in both columns: unchanged
-		{5, "Gunnery"},
-		{7, "Technical"},
-		{8, "Medical"},
+		{1, "Line", 1},     // enlisted Crew — the case the book spells out
+		{2, "Line", 1},     // enlisted Crew
+		{3, "Engineer", 0}, // enlisted Engineer -> Officer index 4, mod 0 (fallback would be Line, mod 1)
+		{5, "Gunnery", 1},
+		{6, "Gunnery", 1}, // enlisted Gunnery -> Officer index 5, mod 1 (fallback would be Flight, mod 2)
+		{7, "Technical", 0},
+		{8, "Medical", 0},
 	} {
-		if got := spacerBranchOps.commissionBranch(tc.roll).Name; got != tc.want {
-			t.Errorf("Spacer branch roll %d commissioned = %q, want %q", tc.roll, got, tc.want)
+		got := spacerBranchOps.commissionBranch(tc.roll)
+		if got.Name != tc.want {
+			t.Errorf("Spacer branch roll %d commissioned = %q, want %q", tc.roll, got.Name, tc.want)
+		}
+
+		if got.Mod != tc.wantMod {
+			t.Errorf("Spacer branch roll %d commissioned mod = %d, want %d", tc.roll, got.Mod, tc.wantMod)
 		}
 	}
 

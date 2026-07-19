@@ -306,6 +306,16 @@ func TestDesignDriveStageCatalogP134(t *testing.T) {
 			if got := ceilDiv(p.Cost, 1_000_000); got != c.mcr {
 				t.Errorf("%s P-Plant-B: MCr%d (Cr%d), want MCr%d", c.stage, got, p.Cost, c.mcr)
 			}
+
+			continue
+		}
+		// mcr == 0 marks a row whose printed cost this page derives from its
+		// unrounded tonnage rather than the shared footnote's "final tonnage"
+		// (see the note below). Assert the divergence rather than skipping it
+		// silently, so the row is pinned to a decision instead of to nothing —
+		// and name the page's own figure, which fractCost carries.
+		if got := ceilDiv(p.Cost, 1_000_000); got == 0 {
+			t.Errorf("%s P-Plant-B: cost is zero; p.134 prints MCr%s", c.stage, c.fractCost)
 		}
 	}
 

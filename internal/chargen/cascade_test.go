@@ -43,7 +43,7 @@ func TestCareerGridCascadeParents(t *testing.T) {
 	for _, career := range allCareers {
 		for col := range career.Skills {
 			for row, cell := range career.Skills[col] {
-				parent := cascadeParentOf(cell)
+				parent := cell.cascadeParent()
 				if parent == "" {
 					continue
 				}
@@ -59,24 +59,6 @@ func TestCareerGridCascadeParents(t *testing.T) {
 	}
 }
 
-// cascadeParentOf returns the cascade parent a cell awards a Knowledge under, or
-// "" if the cell is not a cascade cell. The two shapes mirror applyCell: an
-// AwardSkill carrying a Knowledge, and an AwardChoice whose Options are
-// knowledges under a named parent (the cascade() helper).
-func cascadeParentOf(cell Cell) string {
-	switch cell.Kind {
-	case AwardSkill:
-		if cell.Knowledge != "" {
-			return cell.Skill
-		}
-	case AwardChoice:
-		return cell.Skill // "" for a plain choice among flat skills
-	case NoAward, AwardBump, AwardMajor, AwardMinor:
-	}
-
-	return ""
-}
-
 // TestCareerGridsHaveCascadeCells guards the guard: if the grids ever stop
 // carrying cascade cells, TestCareerGridCascadeParents would pass vacuously.
 func TestCareerGridsHaveCascadeCells(t *testing.T) {
@@ -85,7 +67,7 @@ func TestCareerGridsHaveCascadeCells(t *testing.T) {
 	for _, career := range allCareers {
 		for col := range career.Skills {
 			for _, cell := range career.Skills[col] {
-				if cascadeParentOf(cell) != "" {
+				if cell.cascadeParent() != "" {
 					found++
 				}
 			}
