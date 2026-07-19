@@ -300,8 +300,16 @@ func (s *System) placeOrbits(r *dice.Roller) { //nolint:gocognit,cyclop,funlen /
 		if gi := giantAt(placed, h.label, clamp(want, h.floor, h.maxOrbit)); gi >= 0 {
 			// The captor is a gas giant, whose size code exceeds any world's, so
 			// the moon takes no size cap (Book 3 p.21).
+			//
+			// rollMoon types it from the Satellites tables, not the Other Worlds
+			// ones. Book 3 p.29 prints four type tables — Inner/HZ and Outer for
+			// worlds in orbits, Inner/HZ and Outer for satellites — and p.21
+			// directs that "similar tables direct Satellite creation as
+			// necessary". A captured world is created as a satellite in every
+			// other respect (Close/Far, an orbit letter, the parent-size rule),
+			// so it is typed as one. The two Outer tables differ in exactly one
+			// cell, 1D=4: Iceworld for a world, Stormworld for a satellite.
 			placed[gi].Satellites = append(placed[gi].Satellites, rollMoon(r, moonSpec{
-				Type:       otherWorldType(placed[gi].Orbit, h.hz, h.hasHZ, r.Die()),
 				Orbit:      placed[gi].Orbit,
 				HZOrbit:    h.hz,
 				HasHZ:      h.hasHZ,

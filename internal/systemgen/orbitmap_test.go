@@ -175,6 +175,41 @@ func TestPlaceOrbitsWorldCapturedByGiant(t *testing.T) {
 	}
 }
 
+// TestPlaceOrbitsCapturedWorldUsesSatelliteTable pins the one cell where Book 3
+// p.29's four type tables disagree: an outer-zone 1D=4 is an Iceworld on Outer
+// Worlds but a Stormworld on Outer Satellites. A world whose target orbit a gas
+// giant already holds is created as that giant's satellite — it takes a Close/Far
+// determination, an orbit letter, and the parent-size rule — so it is typed from
+// the Satellites table, like every other moon.
+//
+// TestPlaceOrbitsWorldCapturedByGiant scripts a type roll of 5 (RadWorld in both
+// tables), which is why the divergence went unnoticed; this test scripts the 4.
+func TestPlaceOrbitsCapturedWorldUsesSatelliteTable(t *testing.T) {
+	s := &System{
+		Primary:        Star{Type: "F", Decimal: 8, Size: "V"},
+		GasGiants:      1,
+		Worlds:         3, // others = 3 - 1 - 1 - 0 = 1
+		MainworldOrbit: 4,
+		Giants:         []GasGiant{{Size: 23, Class: SmallGasGiant}},
+	}
+	s.Mainworld.Profile.Population = 8
+	// As above: GG 2D=8 -> orbit 8 (outer, HZ 4), World 2D=11 -> World2 col = 8 ->
+	// capture. The type die is then a 4.
+	script := append([]int{4, 4, 5, 6, 4}, slices.Repeat([]int{3}, 30)...)
+	s.placeOrbits(dice.NewScripted(script...))
+
+	giant := s.Orbits[1]
+	if len(giant.Satellites) != 1 {
+		t.Fatalf("giant should have 1 captured moon, has %d: %+v",
+			len(giant.Satellites), giant.Satellites)
+	}
+
+	if got := giant.Satellites[0].Type; got != worldgen.StormWorld {
+		t.Errorf("captured moon type = %v, want %v (Outer Satellites 1D=4; Outer Worlds says %v)",
+			got, worldgen.StormWorld, worldgen.Iceworld)
+	}
+}
+
 // TestBeltMainworldIsAlwaysPlaced: an asteroid-belt mainworld is placed from the
 // P2 Belt column as an absolute orbit (Book 3 p.21, "If the Mainworld is an
 // Asteroid Belt, it is placed using the Belt Column of the Basic Placement Chart

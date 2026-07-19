@@ -47,9 +47,7 @@ func (s *System) rollSatellites(r *dice.Roller) {
 
 		maxSize := s.satelliteMaxSize(o)
 		for range moons {
-			wt := satelliteType(o.Orbit, hz, hasHZ, r.Die())
 			o.Satellites = append(o.Satellites, rollMoon(r, moonSpec{
-				Type:       wt,
 				Orbit:      o.Orbit,
 				HZOrbit:    hz,
 				HasHZ:      hasHZ,
@@ -61,13 +59,17 @@ func (s *System) rollSatellites(r *dice.Roller) {
 	}
 }
 
-// moonSpec is everything rollMoon needs that it does not roll: the moon's
-// already-determined world type, its parent's orbit and habitable zone, the
-// mainworld context its trade codes read, and the parent-size cap. MaxSize is
-// worldgen's own sentinel rather than a size/flag pair, so "uncapped" has one
-// representation and a capped moon cannot be spelled as a cap of zero.
+// moonSpec is everything rollMoon needs that it does not roll: its parent's
+// orbit and habitable zone, the mainworld context its trade codes read, and the
+// parent-size cap. MaxSize is worldgen's own sentinel rather than a size/flag
+// pair, so "uncapped" has one representation and a capped moon cannot be spelled
+// as a cap of zero.
+//
+// The world type is deliberately not a field. It was one, and the two call sites
+// filled it from different book tables (Other Worlds vs Satellites, which
+// disagree at outer-zone 1D=4), so the type roll moved inside rollMoon — where
+// there is exactly one of it.
 type moonSpec struct {
-	Type       worldgen.OtherWorldType
 	Orbit      int
 	HZOrbit    int
 	HasHZ      bool
@@ -76,13 +78,16 @@ type moonSpec struct {
 	MaxSize    int
 }
 
-// rollMoon builds one satellite: its UWP (size-capped to its parent, Book 3
-// p.21), then Close/Far (2D, 7- is Close) and the Flux-rolled orbit letter
-// (p.24 table 2C), then its trade codes in satellite context. It is the single
-// moon-assembly path — both the satellite pass and the orbit map's captured
-// world (a world whose orbit a gas giant already holds) go through it, so the
-// dice order (UWP, 2D far, Flux letter) cannot drift between them.
+// rollMoon builds one satellite: its type (the Book 3 p.29 Satellites tables,
+// read at its parent's orbital zone), its UWP (size-capped to its parent, p.21),
+// then Close/Far (2D, 7- is Close) and the Flux-rolled orbit letter (p.24 table
+// 2C), then its trade codes in satellite context. It is the single moon-assembly
+// path — both the satellite pass and the orbit map's captured world (a world
+// whose orbit a gas giant already holds) go through it, so neither the dice order
+// (type, UWP, 2D far, Flux letter) nor the tables they read can drift apart.
 func rollMoon(r *dice.Roller, spec moonSpec) Satellite {
+	wt := satelliteType(spec.Orbit, spec.HZOrbit, spec.HasHZ, r.Die())
+
 	// No parent caps its moons at Size 0 — satelliteMaxSize resolves the
 	// asteroid-belt code to NoSizeCap — so treat any non-positive cap as absent
 	// rather than flattening the moon. This also keeps moonSpec's zero value
@@ -92,7 +97,7 @@ func rollMoon(r *dice.Roller, spec moonSpec) Satellite {
 		maxSize = worldgen.NoSizeCap
 	}
 
-	prof := worldgen.GenerateSatelliteWorld(r, spec.Type, spec.MWPop, maxSize)
+	prof := worldgen.GenerateSatelliteWorld(r, wt, spec.MWPop, maxSize)
 	double := maxSize != worldgen.NoSizeCap && prof.Size == maxSize
 
 	far := r.Dice(2) >= 8
@@ -106,7 +111,7 @@ func rollMoon(r *dice.Roller, spec moonSpec) Satellite {
 	return Satellite{
 		Far:          far,
 		OrbitLetter:  letter,
-		Type:         spec.Type,
+		Type:         wt,
 		Profile:      prof,
 		DoublePlanet: double,
 		TradeCodes: worldgen.TradeClassificationsWithContext(prof, worldgen.WorldContext{

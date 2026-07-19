@@ -8,6 +8,12 @@ import (
 	"github.com/philoserf/t5/internal/worldgen"
 )
 
+// script builds a rollMoon die script: the leading type die, then n sixes for
+// everything the moon rolls after it.
+func script(typeDie, n int) []int {
+	return append([]int{typeDie}, slices.Repeat([]int{6}, n)...)
+}
+
 func TestSatelliteCount(t *testing.T) {
 	hz := 4
 	// 1D roll of 6 with each zone's DM: GG 1D-1=5, inner 1D-5=1, HZ 1D-4=2,
@@ -181,9 +187,11 @@ func TestRollMoonSizeCap(t *testing.T) {
 	}
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
-			// A full moon draws twenty dice; every one is a 6.
-			m := rollMoon(dice.NewScripted(slices.Repeat([]int{6}, 20)...), moonSpec{
-				Type: worldgen.BigWorld, Orbit: 3, HZOrbit: 3, HasHZ: true,
+			// The leading 3 is the type die: orbit 3 = HZ 3 is hospitable, and
+			// the Inner/HZ Satellites table's 3 is a BigWorld. A full moon then
+			// draws twenty more dice; every one is a 6.
+			m := rollMoon(dice.NewScripted(script(3, 20)...), moonSpec{
+				Orbit: 3, HZOrbit: 3, HasHZ: true,
 				MWPop: 8, MaxSize: c.maxSize,
 			})
 			if m.Profile.Size != c.wantSize {
@@ -206,8 +214,8 @@ func TestRollMoonSizeCap(t *testing.T) {
 func TestRollMoonCappedProfileIsConsistent(t *testing.T) {
 	// Size 1: Atmosphere follows Flux+Siz from the capped size, Hydrographics is
 	// forced dry.
-	m := rollMoon(dice.NewScripted(slices.Repeat([]int{6}, 20)...), moonSpec{
-		Type: worldgen.BigWorld, Orbit: 3, HZOrbit: 3, HasHZ: true,
+	m := rollMoon(dice.NewScripted(script(3, 20)...), moonSpec{
+		Orbit: 3, HZOrbit: 3, HasHZ: true,
 		MWPop: 8, MaxSize: 1,
 	})
 	if m.Profile.Atmosphere != 1 {
