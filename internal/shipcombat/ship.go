@@ -70,6 +70,74 @@ func guidanceAsset(g shipgen.Guidance, gunnerCSK, brainCSK int) int {
 	}
 }
 
+// A MassiveExplosionMultiplier scales a missile option's effects when it hits via
+// the Space Weapon Task at close range (Book 2 p.196 Massive Explosion, Weapons
+// Task): a multiple of the target's Armor Value defeated, and of the Rad, Flash,
+// and EMP effects. EMP applies only to nuclear options.
+type MassiveExplosionMultiplier struct {
+	AV, Rad, Flash, EMP int
+}
+
+// WeaponsMassiveExplosion returns the effect multipliers a designed round applies
+// when it detonates through the Space Weapon Task (Book 2 p.196), and whether the
+// round is one of the tabulated options. Most warheads are not: an Explosive or a
+// Slug does its Penetration and no more.
+//
+// The book's table is these seven rows:
+//
+//	                        AV=  Rad  Flash  EMP
+//	A AM Missile            10x         1x
+//	N Missile Nuke Option   10x   1x    1x     1x
+//	E Missile EMP Option     1x               1x
+//	K KK Missile             1x
+//	D DeadFall Size-4        1x         1x
+//	D DeadFall Size-5        5x         2x
+//	D DeadFall Size-6       10x         3x
+//
+// (The printed sheet letters the first row X; A is the Anti-Matter warhead's own
+// letter on p.170, and every other row's letter is its warhead's, so X is a
+// typo for A.) DeadFall is the one option the table splits by size, and it splits
+// it exactly where p.170 does — the warhead exists at Size 4, 5, and 6, dividing
+// the explosion by 20, 10, and 5 — so the heavier round defeats more armor and
+// flashes brighter. That size is MissileSpec.Size; it was never a property of the
+// warhead, which is why keying this table on a missile *type* alone could not
+// express it.
+//
+// This takes a whole designed Missile rather than a (warhead, size) pair because
+// the pair can be mismatched and the round cannot: DesignMissile has already
+// checked that this warhead exists at this size, from this launcher.
+func WeaponsMassiveExplosion(m shipgen.Missile) (MassiveExplosionMultiplier, bool) {
+	switch m.Spec.Type {
+	case shipgen.AntiMatter:
+		return MassiveExplosionMultiplier{AV: 10, Flash: 1}, true
+	case shipgen.Nuke:
+		return MassiveExplosionMultiplier{AV: 10, Rad: 1, Flash: 1, EMP: 1}, true
+	case shipgen.EMP:
+		return MassiveExplosionMultiplier{AV: 1, EMP: 1}, true
+	case shipgen.Kinetic:
+		return MassiveExplosionMultiplier{AV: 1}, true
+	case shipgen.Deadfall:
+		return deadfallMassiveExplosion(m.Spec.Size)
+	default: // Slug, Explosive, Decoy, SensorPkg — no Massive Explosion
+		return MassiveExplosionMultiplier{}, false
+	}
+}
+
+// deadfallMassiveExplosion is the DeadFall size ladder of the p.196 table. A size
+// the warhead does not come in is not tabulated.
+func deadfallMassiveExplosion(size int) (MassiveExplosionMultiplier, bool) {
+	switch size {
+	case 4:
+		return MassiveExplosionMultiplier{AV: 1, Flash: 1}, true
+	case 5:
+		return MassiveExplosionMultiplier{AV: 5, Flash: 2}, true
+	case 6:
+		return MassiveExplosionMultiplier{AV: 10, Flash: 3}, true
+	default:
+		return MassiveExplosionMultiplier{}, false
+	}
+}
+
 // Defend rolls a designed defense against an incoming attack (Book 2 p.196): 1D
 // under the defense's tech level, less the attacker's, plus the defense's mount
 // Mod. Success deflects the attack — it does not hit.

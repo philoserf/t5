@@ -99,7 +99,19 @@ func (s Set) TopLevels(n, minLevel int, exclude ...string) int {
 
 // Raise changes a plain skill by n levels, clamped to 0..Max (n is normally
 // positive; a negative n cannot drive the level below 0).
+//
+// A non-positive change to a skill the character does not hold is a no-op, not a
+// registration at level 0: the clamped result is 0 either way, and writing the
+// entry would leave a phantom "Comms-0" in List and String. That level-0 entry
+// means something here — RaiseKnowledge registers a cascade parent at 0 to record
+// that the character holds the cascade skill — so an accidental one is not a
+// harmless artifact but a false claim. A skill the character does hold keeps its
+// entry when decremented, including all the way to 0.
 func (s *Set) Raise(skill string, n int) {
+	if _, held := s.skills[skill]; !held && n <= 0 {
+		return
+	}
+
 	if s.skills == nil {
 		s.skills = make(map[string]int)
 	}

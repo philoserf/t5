@@ -37,6 +37,39 @@ func TestRaiseAndCap(t *testing.T) {
 	}
 }
 
+// TestRaiseNonPositiveDoesNotRegister pins the difference between the two
+// level-0 entries. A non-positive Raise of a skill the character does not hold
+// is a no-op — it must not leave a phantom "Comms-0" in List/String — while
+// RaiseKnowledge's parent registration at level 0 is the deliberate cascade
+// marker (Knowledge-Knowledge-Skill) and must survive.
+func TestRaiseNonPositiveDoesNotRegister(t *testing.T) {
+	var s Set
+	s.Raise("Comms", -3)
+	s.Raise("Steward", 0)
+
+	if got := s.String(); got != "" {
+		t.Errorf("String() after non-positive raises of absent skills = %q, want empty", got)
+	}
+
+	if got := len(s.List()); got != 0 {
+		t.Errorf("List() = %v, want no entries", s.List())
+	}
+	// A skill the character does hold keeps its entry when decremented to 0.
+	s.Raise("Comms", 1)
+	s.Raise("Comms", -5)
+
+	if got := s.String(); got != "Comms-0" {
+		t.Errorf("String() after decrementing a held skill = %q, want %q", got, "Comms-0")
+	}
+	// The cascade parent is still registered at 0 by RaiseKnowledge.
+	var c Set
+	c.RaiseKnowledge("Pilot", "Small Craft", 1)
+
+	if got := c.String(); got != "Pilot-0 Pilot/Small Craft-1" {
+		t.Errorf("cascade parent registration = %q, want %q", got, "Pilot-0 Pilot/Small Craft-1")
+	}
+}
+
 func TestRaiseKnowledgeAndCap(t *testing.T) {
 	var s Set
 	s.RaiseKnowledge("Engineer", "J-Drive", 1)
