@@ -23,6 +23,33 @@ func TestGenerateDeterministic(t *testing.T) {
 	}
 }
 
+// Generate promises a feasible spec, so a generated ship carries no Problems —
+// it is the one caller whose "request" is its own dice, with nobody to surprise
+// by keeping it inside the rules. A Cluster hull is capped at 1G (Book 2 p.71),
+// and the maneuver target used to be rolled independently of the config, so
+// about one ship in fourteen came back flagged.
+func TestGenerateIsAlwaysFeasible(t *testing.T) {
+	seen := map[Config]int{}
+
+	for seed := range uint64(500) {
+		s := Generate(dice.NewWithSeed(seed))
+		seen[s.Hull.Config]++
+
+		if len(s.Problems) != 0 {
+			t.Errorf("seed %d generated %s with problems: %v", seed, s.QSP(), s.Problems)
+		}
+
+		if s.Maneuver.Potential > s.Hull.MaxG {
+			t.Errorf("seed %d: %dG maneuver in a %s hull capped at %dG",
+				seed, s.Maneuver.Potential, s.Hull.Config, s.Hull.MaxG)
+		}
+	}
+	// The clamp must not have collapsed the config roll to the roomy ones.
+	if seen[Cluster] == 0 || seen[Braced] == 0 {
+		t.Errorf("expected Cluster and Braced hulls in 500 rolls, saw %v", seen)
+	}
+}
+
 func TestConfigByLetter(t *testing.T) {
 	if c, ok := ConfigByLetter("L"); !ok || c != Lifting {
 		t.Errorf("ConfigByLetter(L) = %v,%v, want Lifting", c, ok)

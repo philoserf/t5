@@ -32,6 +32,34 @@ func humanSpecies() sophont.Species {
 	}
 }
 
+// TestGenerateSophontCasteC6NoValue: for a Caste species, C6 is the caste — the
+// slot has no characteristic value. GenerateSophont must not roll one (the die
+// count is 0), so the sixth score stays at the 0 sentinel and the dice stream
+// carries straight on to the gender and caste assignment rolls.
+func TestGenerateSophontCasteC6NoValue(t *testing.T) {
+	s := humanSpecies()
+	s.Chars[5] = sophont.CharSpec{Name: sophont.Cas, Dice: 0}
+
+	var casteTable [13]string
+	for i := 2; i <= 12; i++ {
+		casteTable[i] = "Muscle"
+	}
+
+	s.Caste = &sophont.Caste{Structure: sophont.Body, Table: casteTable}
+	// Five 2D characteristic rolls (C6 rolls none), then the gender-assignment 2D
+	// and the caste-assignment 2D. Scripted exactly: an extra C6 roll exhausts it.
+	seq := []int{3, 4, 3, 4, 3, 4, 3, 4, 3, 4, 3, 4, 3, 4}
+
+	c := GenerateSophont(dice.NewScripted(seq...), s)
+	if got := c.Score(Social); got != 0 {
+		t.Errorf("C6 score = %d, want 0 — a Caste C6 holds no rolled value", got)
+	}
+
+	if c.Caste != "Muscle" {
+		t.Errorf("Caste = %q, want Muscle", c.Caste)
+	}
+}
+
 // TestGenerateSophontHumanRegression: an all-2D species rolled with the same
 // dice as the human Generate yields the same UPP. The six characteristic rolls
 // come first, so "777777" (each 2D = 3+4) matches, and the trailing 2D is the

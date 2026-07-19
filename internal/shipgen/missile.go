@@ -310,7 +310,18 @@ func DesignMissile(launcher Weapon, spec MissileSpec) Missile {
 // DownLoaded mind, and the book says so in parentheses.
 func (m Missile) LongName() string {
 	var b strings.Builder
-	fmt.Fprintf(&b, "%s Missile-%d Size-%d %s.", m.Stage, m.TL, m.Spec.Size, m.Effect)
+	// The Type is the launcher's own weapon identifier, suffixed by the launcher's
+	// tech level (p.155: "Type is the Weapon Identifier (which is Missile), suffixed
+	// by the Tech Level of the Launcher"). The p.170 example reads "Missile" because
+	// that is literally the name of the M launcher — the book prints "Std KK
+	// Missile-11 Size-7 Kinetic Pen=7xSp" and "Std AM Missile-20 Size-4 Sensor" for
+	// the other two, each named for its launcher.
+	//
+	// The one place the book departs from its own rule is the Rail Gun, whose rounds
+	// it nicknames "Slab" ("Imp Slab-15 Size-6 Exp ME /5"). That is prose flavor for
+	// one exotic round, not a second rule, so we follow the stated one.
+	fmt.Fprintf(&b, "%s %s-%d Size-%d %s.",
+		m.Stage, weaponName(m.Spec.Launcher), m.TL, m.Spec.Size, m.Effect)
 	// Which brains this round can carry, and which it cannot — derived, not stored:
 	// everything the split needs is already in the Missile and the launcher's row.
 	if can, cannot := m.guidanceOptions(); len(can) > 0 || len(cannot) > 0 {

@@ -296,8 +296,21 @@ func TestWeaponLetters(t *testing.T) {
 				w.Name(), w.Problems)
 		}
 
-		if !strings.Contains(w.LongName(), string(rune(letter))) && w.Name() == "" {
-			t.Errorf("%s has no name", w.Name())
+		// ...and it renders. The check used to read
+		//
+		//	if !strings.Contains(w.LongName(), string(rune(letter))) && w.Name() == ""
+		//
+		// which could never fire — Name always formats "name-TL" for a valid model,
+		// so the second half was never true and the first was never reached. The
+		// containment half was not worth rescuing either: LongName does not print
+		// the model letter at all (11 of the 23 fail it outright, and the other 12
+		// only pass because their letter happens to occur inside a word — the "L" of
+		// "Laser"). What LongName does carry is the Name, which is what the line was
+		// reaching for, so assert that.
+		if n := w.Name(); n == "" || n == "?" {
+			t.Errorf("weapon %d (letter %c) has no name, got %q", id, letter, n)
+		} else if !strings.Contains(w.LongName(), n) {
+			t.Errorf("LongName of %s does not name it: %s", n, w.LongName())
 		}
 	}
 

@@ -3,6 +3,7 @@ package shipcombat
 import (
 	"testing"
 
+	"github.com/philoserf/t5/internal/dice"
 	"github.com/philoserf/t5/internal/shipgen"
 )
 
@@ -77,5 +78,32 @@ func TestShipAgilityRespectsTheHull(t *testing.T) {
 	if got := ShipAgility(cluster, 0); got != 1 {
 		t.Errorf("Cluster agility = %d, want 1 (the hull's cap, not the drive's %d)",
 			got, cluster.Maneuver.Potential)
+	}
+}
+
+// TestDefendIgnoresRefusedDefense: a defense the designer refused costs the ship
+// nothing and occupies no tonnage, so it must not intercept either. Without this
+// a refused screen is a free one — protection precisely because it was never paid
+// for.
+func TestDefendIgnoresRefusedDefense(t *testing.T) {
+	refused := shipgen.DesignDefense(shipgen.DefenseSpec{
+		Model: shipgen.BlackGlobe, Mount: shipgen.BoltIn, Range: shipgen.Orbit,
+	})
+	if refused.Installed() {
+		t.Fatalf("fixture: wanted a refused defense, got %+v", refused.Problems)
+	}
+
+	// All 1s is the best possible roll-low result; even that must not intercept.
+	if got := Defend(dice.NewScripted(1, 1, 1, 1, 1, 1, 1, 1), refused, 10); got.Success {
+		t.Errorf("a refused defense intercepted: %+v", got)
+	}
+
+	built := shipgen.DesignDefense(shipgen.DefaultDefense(shipgen.BlackGlobe))
+	if !built.Installed() {
+		t.Fatalf("fixture: wanted a built defense, got %+v", built.Problems)
+	}
+
+	if got := Defend(dice.NewScripted(1, 1, 1, 1, 1, 1, 1, 1), built, 10); !got.Success {
+		t.Errorf("a built defense failed to intercept on all 1s: %+v", got)
 	}
 }

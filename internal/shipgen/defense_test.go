@@ -1,6 +1,9 @@
 package shipgen
 
-import "testing"
+import (
+	"strings"
+	"testing"
+)
 
 // TestIdentifyingDefenses is the golden for the defense engine: rows of the
 // book's own IDENTIFYING DEFENSES catalog (Book 2 p.176), derived from the p.174
@@ -187,10 +190,10 @@ func TestWeaponsAsDefenses(t *testing.T) {
 	}
 }
 
-// TestDefenseRangeLimit: a defense reaches at most Vdistant. Book 2 p.174 greys
-// out Orbit, Far, and Geo on the defenses' copy of the World range table, and the
-// Defense Ranges table (p.179) stops at R=7 — a defense can be built for less
-// reach, never for more.
+// TestDefenseRangeLimit: a defense stands at the standard rung of its ladder and
+// may be built for less reach, never for more — "Defense Range can be decreased
+// but not increased" (Book 2 p.177), where "The Standard Defense Range is R=7".
+// On the world ladder that rules out Orbit, Far, and Geo.
 func TestDefenseRangeLimit(t *testing.T) {
 	for _, r := range []Range{Orbit, Far, Geo} {
 		d := DesignDefense(DefenseSpec{Model: BlackGlobe, Mount: BoltIn, Stage: Standard, Range: r})
@@ -207,6 +210,68 @@ func TestDefenseRangeLimit(t *testing.T) {
 		) > 0 {
 			t.Errorf("%s is a legal defense range: %v", rangeData[r].name, d.Problems)
 		}
+	}
+}
+
+// TestDefenseSpaceRangeLimit: the same "decreased but not increased" rule caps the
+// space ladder at its own standard rung, S=7 Attack Range (Book 2 p.177; the space
+// table is p.83 Table D, printed again for defenses on p.174). The screens never
+// reach this check — they are all world-range devices — but the dual-scale Hybrid
+// S-L-M, which p.174 marks "S=7* R=7*" and lists among the Weapons As Defenses,
+// does. Before this rule was enforced it designed clean at S=12, a reach the code's
+// own comment said no defense has.
+func TestDefenseSpaceRangeLimit(t *testing.T) {
+	for _, r := range []Range{Boarding, FighterRange, ShortRange, AttackRange} {
+		if d := DesignWeaponAsDefense(
+			WeaponSpec{HybridSLM, SingleTurret, Standard, r},
+		); len(d.Problems) > 0 {
+			t.Errorf("%s is at or below the standard rung and is legal: %v",
+				rangeData[r].name, d.Problems)
+		}
+	}
+
+	for _, r := range []Range{LongRange, DeepSpace} {
+		if d := DesignWeaponAsDefense(
+			WeaponSpec{HybridSLM, SingleTurret, Standard, r},
+		); len(d.Problems) == 0 {
+			t.Errorf("a defense built for %s reaches past S=7 and should be reported, got a clean %s",
+				rangeData[r].name, d.LongName())
+		}
+	}
+	// Attacking, the same weapon at the same range is perfectly legal — the cap is
+	// the defense's, not the Hybrid's.
+	if w := DesignWeapon(
+		WeaponSpec{HybridSLM, SingleTurret, Standard, DeepSpace},
+	); len(w.Problems) > 0 {
+		t.Errorf("a Hybrid SLM attacking at Deep Space is legal: %v", w.Problems)
+	}
+}
+
+// TestDefenseRangeCodeScale: a defense built on the space ladder prints S=, not R=.
+// The two ladders are distinct (Book 2 p.83 Tables D and E; p.174 prints both for
+// defenses), and p.175 says the band "duplicates the Defense name Range information"
+// — so an S=07 Attack Range installation labelled R=07 would claim a 50 km reach for
+// a weapon covering the whole Attack Range band. Screens never reach this, being
+// world-range devices; the dual-scale Hybrid S-L-M does.
+func TestDefenseRangeCodeScale(t *testing.T) {
+	space := DesignWeaponAsDefense(WeaponSpec{HybridSLM, SingleTurret, Standard, AttackRange})
+	if len(space.Problems) > 0 {
+		t.Fatalf("a Hybrid SLM defending at Attack Range is legal: %v", space.Problems)
+	}
+
+	if space.Scale != SpaceScale || space.RangeCode() != "S=07" {
+		t.Errorf("space-range defense band = %q, want S=07", space.RangeCode())
+	}
+
+	if !strings.HasSuffix(space.LongName(), "S=07. (Electronic).") {
+		t.Errorf("space-range defense LongName = %q, want it to end S=07. (Electronic).",
+			space.LongName())
+	}
+	// The same weapon on the world ladder still prints R=, as the whole p.176
+	// catalog does.
+	world := DesignWeaponAsDefense(WeaponSpec{HybridSLM, SingleTurret, Standard, VDistant})
+	if world.Scale != WorldScale || world.RangeCode() != "R=07" {
+		t.Errorf("world-range defense band = %q, want R=07", world.RangeCode())
 	}
 }
 
@@ -229,6 +294,34 @@ func TestDefenseProblems(t *testing.T) {
 
 	if d := DesignWeaponAsDefense(WeaponSpec{Model: WeaponID(99)}); len(d.Problems) == 0 {
 		t.Errorf("an unknown weapon-as-defense should be reported")
+	}
+}
+
+// TestRefusedDefenseKeepsItsIdentity: a weapon that cannot serve as a defense is
+// still that weapon, and the ship card has to say which one it refused. The device
+// name survives the refusal; only a device the package cannot name at all is "?".
+// It is named WITHOUT a tech level and without the rest of the line, because install
+// never ran — the zeros would be fabrications, not facts.
+func TestRefusedDefenseKeepsItsIdentity(t *testing.T) {
+	d := DesignWeaponAsDefense(WeaponSpec{MesonGun, Main, Standard, VDistant})
+	if len(d.Problems) == 0 {
+		t.Fatalf("a Meson Gun is not point defence; it should be refused")
+	}
+
+	if d.Name() != "Meson Gun" {
+		t.Errorf("refused defense Name = %q, want %q", d.Name(), "Meson Gun")
+	}
+
+	if d.LongName() != "Meson Gun" {
+		t.Errorf("refused defense LongName = %q, want %q", d.LongName(), "Meson Gun")
+	}
+	// A device the package cannot name at all still reads "?".
+	if u := DesignWeaponAsDefense(WeaponSpec{Model: WeaponID(99)}); u.Name() != "?" {
+		t.Errorf("unknown weapon-as-defense Name = %q, want ?", u.Name())
+	}
+
+	if u := DesignDefense(DefenseSpec{Model: DefenseID(99)}); u.Name() != "?" {
+		t.Errorf("unknown defense Name = %q, want ?", u.Name())
 	}
 }
 

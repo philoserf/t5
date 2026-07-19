@@ -27,6 +27,9 @@ import (
 // the eHex range, so render it through cmd/sophont's profile rather than UPP.
 func GenerateSophont(r *dice.Roller, species sophont.Species) Character {
 	c := Character{Age: startingAge, Homeworld: species.Homeworld}
+	// A slot with 0 dice carries no characteristic value — the Caste C6 of a
+	// caste species, whose caste comes from the table roll below. RollValue rolls
+	// nothing for it, leaving the score at its 0 sentinel and the stream intact.
 	for i := range c.scores {
 		c.scores[i] = sophont.RollValue(r, species.Chars[i].Dice)
 	}

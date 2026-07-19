@@ -60,6 +60,43 @@ func TestIdentifyingMissiles(t *testing.T) {
 	}
 }
 
+// TestMissileTypeIsItsLauncher: the Type in a missile's LongName is the launcher's
+// own weapon identifier, not the literal word "Missile" (Book 2 p.155: "Type is the
+// Weapon Identifier (which is Missile), suffixed by the Tech Level of the Launcher"
+// — the p.170 example reads "Missile" because that IS the M launcher's name).
+//
+// The book prints the other launchers the same way, which is the golden here:
+//
+//	Std KK Missile-11 Size-7 Kinetic Pen=7xSp. SA
+//
+// (our guidance clause is the derived "Guidance: SA (DL not available)" form the
+// rest of the catalog uses — DownLoaded needs TL 13.)
+func TestMissileTypeIsItsLauncher(t *testing.T) {
+	// A KK Missile launcher is base TL 10; Long Range shifts it to 11, the book's.
+	kk := launcherAtTL(KKMissile, Standard, LongRange)
+	if kk.TL != 11 {
+		t.Fatalf("KK launcher TL = %d, want 11", kk.TL)
+	}
+
+	m := DesignMissile(kk, MissileSpec{Size: 7, Type: Kinetic, Guidance: SelfAware})
+	if len(m.Problems) > 0 {
+		t.Errorf("a Size-7 Self-Aware kinetic round at TL 11 is legal: %v", m.Problems)
+	}
+
+	want := "Standard KK Missile-11 Size-7 Pen= 7xSp. Guidance: SA (DL not available)"
+	if got := m.LongName(); got != want {
+		t.Errorf("LongName mismatch\n got: %s\nwant: %s", got, want)
+	}
+	// And a launcher the book prints no catalog for still names itself, rather than
+	// claiming to throw a Missile.
+	sl := launcherAtTL(SlugThrower, Standard, VDistant)
+	if got := DesignMissile(
+		sl, MissileSpec{Size: 2, Type: Slug, Guidance: UnGuided},
+	).LongName(); got != "Standard Slug Thrower-9 Size-2 Pen= 1." {
+		t.Errorf("Slug Thrower round LongName = %q", got)
+	}
+}
+
 // TestMissileGuidanceReach: the cleverer brains need both a big enough round to
 // house them and a high enough tech level to build one (Book 2 p.170). Raise the
 // launcher's tech level and the same round becomes Self-Aware.

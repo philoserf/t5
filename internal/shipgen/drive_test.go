@@ -15,7 +15,7 @@ func TestDrivePotential(t *testing.T) {
 		{24, 12, 4}, // Jump-Z (24) in Hull-M = 4 (Kinunir)
 	}
 	for _, c := range cases {
-		if got := drivePotential(c.drive, c.hull); got != c.want {
+		if got := drivePotential(c.drive, c.hull, 100); got != c.want {
 			t.Errorf("drivePotential(%d, %d) = %d, want %d", c.drive, c.hull, got, c.want)
 		}
 	}
@@ -33,6 +33,37 @@ func TestDriveForPotential(t *testing.T) {
 
 	if DriveForPotential(9, 24) != 0 { // beyond Z2 range
 		t.Errorf("unreachable potential should return 0")
+	}
+}
+
+// Every ordinal the Z2 inverse hands back has to be a drive a yard can actually
+// build: a lettered size (1..24) or a "letter2" gang (an even 26..48, Book 2
+// p.63 Drive Nexi). An odd extended ordinal is neither — driveLabel renders it
+// "?" and driveTonsBase's >24 branch prices it as a doubling it is not.
+func TestDriveForPotentialIsBuildable(t *testing.T) {
+	// Jump-5 in a Hull-K: ceil(5*10/2) = 25, which is no drive at all. The
+	// smallest real one is 26 = N2, and it does deliver Potential-5.
+	if got := DriveForPotential(5, 10); got != 26 || driveLabel(got) != "N2" {
+		t.Errorf("DriveForPotential(5, 10) = %d (%s), want 26 (N2)", got, driveLabel(got))
+	}
+
+	for potential := 1; potential <= 9; potential++ {
+		for hullOrd := 1; hullOrd <= maxLetter; hullOrd++ {
+			ord := DriveForPotential(potential, hullOrd)
+			if ord == 0 {
+				continue
+			}
+
+			if driveLabel(ord) == "?" {
+				t.Errorf("DriveForPotential(%d, %d) = %d, which is not a buildable size",
+					potential, hullOrd, ord)
+			}
+
+			if got := drivePotential(ord, hullOrd, 100); got < potential {
+				t.Errorf("DriveForPotential(%d, %d) = %d, which only yields Potential-%d",
+					potential, hullOrd, ord, got)
+			}
+		}
 	}
 }
 
@@ -101,6 +132,74 @@ func TestDesignDriveMurphy(t *testing.T) {
 	pw, p3 := designDrive(Power, DriveSpec{Letter: 1}, 1, 12)
 	if p3 != "" || pw.Potential != 2 || pw.Tons != 4 || pw.Cost != 4_000_000 {
 		t.Errorf("Power-A = %+v (%q), want pot2/4t/MCr4", pw, p3)
+	}
+}
+
+// The p.127 worked column: every stage of a J-Drive-B in a 200-ton Hull-B,
+// whose Standard Drive Potential is 2. The book prints the unrounded potential
+// in parentheses and the whole number beside it, plus the fuel tonnage that
+// follows from it: "Potential increases or decreases with Efficiency".
+func TestDesignDriveStageEfficiency(t *testing.T) {
+	cases := []struct {
+		stage    Stage
+		exact    string // the book's parenthetical
+		pot      int
+		fuelTons int
+	}{
+		{Experimental, "50%=1.0", 1, 40},
+		{Prototype, "80%=1.6", 1, 24},
+		{Early, "90%=1.8", 1, 22},
+		{Standard, "100%=2.0", 2, 40},
+		{Basic, "90%=1.8", 1, 22},
+		{Alternate, "100%=2.0", 2, 40},
+		{Improved, "110%=2.2", 2, 36},
+		{Generic, "90%=1.8", 1, 22},
+		{Modified, "110%=2.2", 2, 36},
+		{Advanced, "120%=2.4", 2, 32},
+		{Ultimate, "130%=2.6", 2, 28},
+	}
+	for _, c := range cases {
+		// TL-18 keeps availability out of the way; the book's own TL column
+		// varies with the stage precisely to hold the potential at its Z1 value.
+		j, _ := designDrive(Jump, DriveSpec{Letter: 2, Stage: c.stage}, 2, 18)
+		if j.Potential != c.pot {
+			t.Errorf("%s J-Drive-B in Hull-B: Potential %d, want %d (%s)",
+				c.stage, j.Potential, c.pot, c.exact)
+		}
+
+		if got := fuel(200, j, nil, false, false).Tons; got != c.fuelTons {
+			t.Errorf("%s J-Drive-B in Hull-B: fuel %dt, want %dt", c.stage, got, c.fuelTons)
+		}
+	}
+}
+
+// The p.76 Table X footer states the rule in EP terms: "Standard Drive-C has 300
+// EP; [Experimental] Drive-C outputs 150 EP; Advanced Drive-C outputs 360 EP."
+// In a Hull-C that is P = (EP/Hull)*2 = 2, 1, and 2 (=2.4) respectively.
+func TestDrivePotentialEfficiencyIsEPBased(t *testing.T) {
+	cases := []struct{ drive, hull, eff, want int }{
+		{3, 3, 100, 2}, // 300 EP
+		{3, 3, 50, 1},  // 150 EP
+		{3, 3, 120, 2}, // 360 EP -> 2.4
+		// Book 2 p.62: an Experimental Jump Drive-K in a Hull-K, whose Standard
+		// Potential is 2, "shows 50% efficiency = Calculated Drive Potential=1".
+		{10, 10, 100, 2},
+		{10, 10, 50, 1},
+		// p.127: "Efficiencies round down (thus Early Jump-1 at 90% becomes
+		// Jump-0)." Rounding is applied once, to the EP-derived value — floor
+		// first and then scaling would report 1 here.
+		{1, 2, 90, 0},
+		// And the scaling reaches past a floor the old two-step could not:
+		// 2*5/4 = 2.5, so an Ultimate drive delivers 3, not 2.
+		{5, 4, 130, 3},
+		{5, 4, 100, 2},
+		{5, 1, 130, 9}, // still capped at 9 (p.63 "Maximum 9")
+	}
+	for _, c := range cases {
+		if got := drivePotential(c.drive, c.hull, c.eff); got != c.want {
+			t.Errorf("drivePotential(%d, %d, %d%%) = %d, want %d",
+				c.drive, c.hull, c.eff, got, c.want)
+		}
 	}
 }
 

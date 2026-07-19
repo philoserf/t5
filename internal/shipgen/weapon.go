@@ -162,18 +162,24 @@ func (w Weapon) Name() string {
 		return "?"
 	}
 
-	return fmt.Sprintf("%s-%d", weaponData[w.Spec.Model].name, w.TL)
+	return fmt.Sprintf("%s-%d", weaponName(w.Spec.Model), w.TL)
 }
 
 // RangeCode renders the weapon's range band as the book writes it, e.g. "R=08"
 // for a world-range weapon or "S=07" for a space-range one.
-func (w Weapon) RangeCode() string {
-	scale := 'S'
-	if w.Scale == WorldScale {
-		scale = 'R'
+func (w Weapon) RangeCode() string { return rangeCode(w.Scale, w.Band) }
+
+// rangeCode renders a range band with the letter of the ladder it is on (Book 2
+// pp.155, 175: "R= (or S=) is the Range Band"). Weapons and defenses share it,
+// because the two ladders are distinct wherever a band is printed — a defense
+// built for a space range prints S=, exactly as a weapon does.
+func rangeCode(s Scale, band int) string {
+	letter := 'S'
+	if s == WorldScale {
+		letter = 'R'
 	}
 
-	return fmt.Sprintf("%c=%02d", scale, w.Band)
+	return fmt.Sprintf("%c=%02d", letter, band)
 }
 
 // LongName renders the weapon's full identity, the way the book's own weapon
@@ -186,6 +192,12 @@ func (w Weapon) RangeCode() string {
 func (w Weapon) LongName() string {
 	if !validWeapon(w.Spec.Model) || !validMount(w.Spec.Mount) || !validRange(w.Spec.Range) {
 		return "?"
+	}
+
+	if !w.Installed() {
+		// The ship does not carry it, so its tonnage, cost and band are not facts
+		// about the ship. Name it and stop, as a refused defense does.
+		return w.Name()
 	}
 	// Stage may be omitted when it is Standard (p.155), but the book's own tables
 	// print it, so we always do.
@@ -296,6 +308,16 @@ func validWeapon(id WeaponID) bool { return id >= 0 && int(id) < len(weaponData)
 func validMount(m Mount) bool      { return m >= 0 && int(m) < len(mountData) }
 func validRange(r Range) bool      { return r >= 0 && int(r) < len(rangeData) }
 
+// weaponName is the weapon model's name, for every renderer that prints one —
+// including the missiles, whose Type is the name of the launcher that throws them.
+func weaponName(id WeaponID) string {
+	if !validWeapon(id) {
+		return "?"
+	}
+
+	return weaponData[id].name
+}
+
 // mountName is the mount's name, for every renderer that prints one.
 func mountName(m Mount) string {
 	if !validMount(m) {
@@ -358,3 +380,9 @@ func weaponMCr(cr int) string {
 
 	return "MCr" + s
 }
+
+// Installed reports whether this weapon is actually carried — whether its TL,
+// tonnage, cost and band mean anything. It is the same question, asked the same
+// way, as the mount, tonnage and cost accounting (aboard), and as
+// Defense.Installed: a component with a problem was not built.
+func (w Weapon) Installed() bool { return aboard(w.Problems) }

@@ -117,29 +117,70 @@ var genderColumns = map[GenderStructure][]string{
 	Group: {"Six", "Six", "Four", "Four", "Two", "One", "Three", "Five", "Five", "Six", "Six"},
 }
 
-// genderDifference reads the Gender-Based Differences table (chart 08B) at a
-// Flux. Note C1 is flat at +1/+2 but gains dice at +3/+4/+5.
-func genderDifference(flux int) Difference {
+// genderC1 reads the C1 column of the Gender-Based Differences table (chart 08B)
+// at a Flux, returning extra Strength dice and a flat modifier (in that order)
+// — never both.
+// C1 is flat at +1/+2 but gains dice at +3/+4/+5 (the printed cells are "+1D",
+// "+2D", "+3D", i.e. Flux-2 dice).
+func genderC1(flux int) (int, int) {
 	flux = clamp(flux, -5, 5)
 	switch {
 	case flux <= -2:
-		return Difference{Mods: [5]int{flux, flux, flux, flux, flux}}
+		return 0, flux
 	case flux <= 0:
-		return Difference{} // -1, 0: no change
-	case flux == 1:
-		return Difference{Mods: [5]int{1, 0, 0, 0, 0}}
-	case flux == 2:
-		return Difference{Mods: [5]int{2, 2, 2, 2, 2}}
-	default: // +3/+4/+5: C1 gains (flux-2) dice, C2-C5 flat +flux
-		return Difference{C1Dice: flux - 2, Mods: [5]int{0, flux, flux, flux, flux}}
+		return 0, 0 // -1, 0: no change
+	case flux <= 2:
+		return 0, flux // +1, +2: flat
+	default:
+		return flux - 2, 0 // +3/+4/+5: +1D/+2D/+3D
 	}
 }
 
+// rollGenderDifference rolls one gender's characteristic differences on chart
+// 08B: "Roll once within each Gender for each Characteristic. C5 is Ins (not
+// Edu or Tra)." (Book 3 p.230) — an independent Flux roll per characteristic,
+// each read from its own column, except that the C5 column applies only to a
+// species whose C5 is the Instinct analog. The five columns are printed
+// separately precisely because C1 differs.
+//
+// Chart 06B carries the identical asymmetry for the die counts — "C5 (Ins): Use
+// this table; for Edu or Tra, use 2D" — and rolls nothing for an Edu/Tra C5, so
+// this follows suit and draws no C5 Flux for one. The book does not say outright
+// whether the roll is skipped or merely discarded; only the dice stream, not the
+// outcome, distinguishes the two readings.
+func rollGenderDifference(r *dice.Roller, c5IsIns bool) Difference {
+	var d Difference
+
+	d.C1Dice, d.Mods[0] = genderC1(r.Flux())
+	for i := 1; i < 4; i++ { // C2..C4
+		d.Mods[i] = differenceMod(r.Flux())
+	}
+
+	if c5IsIns {
+		d.Mods[4] = differenceMod(r.Flux())
+	}
+
+	return d
+}
+
+// autoFillsGenderTwo reports whether chart 08A pins Gender 2 at table entry 3.
+// The footnote conditions it on the three named multi-gender structures — "If
+// Dual, FMN, or EAB, enter Gender 2 (Male, Activator) on entry line 3" (Book 3
+// p.230) — and on nothing else. Solitaire has no Gender 2, and for Group the
+// exemption is load-bearing: the book's own Group example, the Rem, "have a
+// gender structure 36145 ... Note that Gender Two has evolutionarily dropped
+// out" (p.219). A pinned entry 3 gives Two a floor of 2/36 and makes the Rem
+// unreachable, so a Group rolls entry 3 like every other entry.
+func autoFillsGenderTwo(s GenderStructure) bool {
+	return s == Dual || s == FMN || s == EAB
+}
+
 // rollGender rolls a species' gender structure and builds its Determination
-// Table: entry 2 is Gender 1, entry 3 is Gender 2 (for multi-gender structures),
-// and entries 4-12 are rolled on the structure's column. Each non-base gender
-// then rolls its characteristic differences.
-func rollGender(r *dice.Roller) Gender {
+// Table: entry 2 is Gender 1, entry 3 is Gender 2 for Dual/FMN/EAB, and every
+// remaining entry is rolled on the structure's column. Each non-base gender then
+// rolls its characteristic differences; c5IsIns says whether the species' C5 is
+// the Instinct analog, which chart 08B requires for a C5 difference.
+func rollGender(r *dice.Roller, c5IsIns bool) Gender {
 	structure := structureByFlux[clamp(r.Flux(), -5, 5)+5]
 	genders := gendersFor[structure]
 	col := genderColumns[structure]
@@ -147,19 +188,20 @@ func rollGender(r *dice.Roller) Gender {
 	var table [13]string
 
 	table[2] = genders[0]
-	if len(genders) > 1 {
+	first := 3
+
+	if autoFillsGenderTwo(structure) {
 		table[3] = genders[1]
-	} else {
-		table[3] = genders[0]
+		first = 4
 	}
 
-	for entry := 4; entry <= 12; entry++ {
+	for entry := first; entry <= 12; entry++ {
 		table[entry] = col[clamp(r.Flux(), -5, 5)+5]
 	}
 
 	diffs := make(map[string]Difference, len(genders)-1)
 	for _, g := range genders[1:] {
-		diffs[g] = genderDifference(r.Flux())
+		diffs[g] = rollGenderDifference(r, c5IsIns)
 	}
 
 	return Gender{Structure: structure, Genders: genders, Table: table, Differences: diffs}

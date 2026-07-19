@@ -236,3 +236,31 @@ func TestHullOutOfRangeConfig(t *testing.T) {
 		}
 	}
 }
+
+// TestRefusedComponentIsNotCharged locks the three accountings together: a
+// component the designer refused claims no mount point, spends no tonnage, and
+// costs nothing. install may already have priced it before the refusal was
+// recorded, so the guard is load-bearing rather than a formality — a Nuclear
+// Damper refused for Long Range was adding MCr1.6 to the ship.
+func TestRefusedComponentIsNotCharged(t *testing.T) {
+	bare := ShipSpec{TL: 12, HullLetter: 1}
+	base := Design(bare)
+
+	withRefused := bare
+	withRefused.Defenses = []DefenseSpec{
+		{Model: NuclearDamper, Mount: SingleTurret, Range: LongRange},
+	}
+
+	got := Design(withRefused)
+	if len(got.Defenses) != 1 || aboard(got.Defenses[0].Problems) {
+		t.Fatalf("fixture: want one refused defense, got %+v", got.Defenses)
+	}
+
+	if got.Cost != base.Cost {
+		t.Errorf("refused defense added Cr%d to the ship's cost", got.Cost-base.Cost)
+	}
+
+	if got.Defenses[0].Installed() {
+		t.Error("a refused defense reports itself installed, so it renders a full line")
+	}
+}

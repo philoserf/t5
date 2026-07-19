@@ -205,6 +205,45 @@ func TestWeaponTonnage(t *testing.T) {
 // TestFailedWeaponTakesNoMountPoint: a weapon that could not be built occupies no
 // mount. Counting it invented a second, false problem — a mount shortfall — on top
 // of the real one that stopped it being built.
+// TestFailedWeaponSpendsNoTonnage: the other half of the same rule. mountPoints
+// already skipped a component that failed to design; armamentTonnage charged every
+// one unconditionally, so a failed installation occupied no mount yet ate the
+// budget — and on a tight hull that turned into an "over budget by Nt" complaint,
+// the same false second complaint the mount rule exists to avoid.
+//
+// A Meson Gun in a Bay is refused (it needs a Main), but install still runs and
+// prices the 50-ton Bay, which is half a scout.
+func TestFailedWeaponSpendsNoTonnage(t *testing.T) {
+	bay := DesignWeapon(WeaponSpec{MesonGun, Bay, Standard, AttackRange})
+	if len(bay.Problems) == 0 || bay.Tons == 0 {
+		t.Fatalf("expected a refused-but-priced Meson Gun in a Bay, got %+v", bay)
+	}
+
+	if got := armamentTonnage([]Weapon{bay}, nil); got != 0 {
+		t.Errorf("a weapon that failed to design spends %dt of budget, want 0", got)
+	}
+	// ...and the same for a defense.
+	meson := DesignWeaponAsDefense(WeaponSpec{MesonGun, Main, Standard, VDistant})
+	if got := armamentTonnage(nil, []Defense{meson}); got != 0 {
+		t.Errorf("a defense that failed to design spends %dt of budget, want 0", got)
+	}
+	// End to end: the ship reports the real problem and nothing else.
+	spec := murphySpec()
+	spec.Weapons = []WeaponSpec{{Model: MesonGun, Mount: Bay, Range: AttackRange}}
+
+	s := Design(spec)
+	for _, p := range s.Problems {
+		if strings.Contains(p, "over budget") {
+			t.Errorf("the failed weapon should not also manufacture a budget overrun: %q", p)
+		}
+	}
+
+	if bare := Design(murphySpec()); s.Tonnage.Payload != bare.Tonnage.Payload {
+		t.Errorf("payload dropped to %dt for a weapon the ship does not carry, want %dt",
+			s.Tonnage.Payload, bare.Tonnage.Payload)
+	}
+}
+
 func TestFailedWeaponTakesNoMountPoint(t *testing.T) {
 	// One legal turret, plus a weapon asked to sit in a Bolt-In (which it cannot).
 	spec := murphySpec()

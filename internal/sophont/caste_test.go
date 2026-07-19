@@ -10,9 +10,9 @@ import (
 // Rolls): a Body caste rolled at constant Flux 0. Every entry is the Common caste
 // Muscle, except the auto-inserted Unique caste Brain at entry 12.
 func TestCasteAyFixture(t *testing.T) {
-	// 1D structure = 1 (Body); nine Flux-0 entry rolls; one Flux-0 difference roll
-	// for the single non-Common caste (Brain).
-	seq := append([]int{1}, fluxSeq(0, 0, 0, 0, 0, 0, 0, 0, 0, 0)...)
+	// 1D structure = 1 (Body); nine Flux-0 entry rolls; then five Flux-0
+	// difference rolls (C1..C5) for the single non-Common caste (Brain).
+	seq := append([]int{1}, fluxSeq(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)...)
 	c := rollCaste(dice.NewScripted(seq...), Gender{})
 
 	if c.Structure != Body {
@@ -51,9 +51,9 @@ func TestCasteGenderSubstitution(t *testing.T) {
 	seq = append(seq, fluxSeq(-4)...)         // entry 4 -> =Gender
 	seq = append(seq, fluxSeq(0, 0)...)       // entries 5, 6
 	seq = append(seq, fluxSeq(0, 0, 0, 0)...) // entries 8, 9, 10, 11
-	// Distinct non-Common castes are Bearer then (nothing else); Brain at 12. Two
-	// difference rolls (Bearer, Brain).
-	seq = append(seq, fluxSeq(0, 0)...)
+	// Distinct non-Common castes are Bearer then (nothing else); Brain at 12. Each
+	// rolls five differences (C1..C5), so ten Flux rolls.
+	seq = append(seq, fluxSeq(0, 0, 0, 0, 0, 0, 0, 0, 0, 0)...)
 
 	c := rollCaste(dice.NewScripted(seq...), gender)
 	if c.Table[4] != "Bearer" {
@@ -74,21 +74,38 @@ func TestSkilledCasteDeferred(t *testing.T) {
 	}
 }
 
-// TestCasteDifferences locks chart 07C.
-func TestCasteDifferences(t *testing.T) {
-	cases := []struct {
-		flux int
-		want Difference
-	}{
-		{-4, Difference{Mods: [5]int{-4, -4, -4, -4, -4}}},
-		{-1, Difference{}},
-		{1, Difference{}},
-		{2, Difference{C1Dice: 2, Mods: [5]int{0, 2, 2, 2, 2}}},
-		{5, Difference{C1Dice: 5, Mods: [5]int{0, 5, 5, 5, 5}}},
+// TestCasteC1Column locks the C1 column of chart 07C. Unlike gender's C1 it has
+// no flat-positive cell: +1 is "--" and +2 onward are dice ("+2D".."+5D").
+func TestCasteC1Column(t *testing.T) {
+	cases := []struct{ flux, wantDice, wantMod int }{
+		{-5, 0, -5},
+		{-4, 0, -4},
+		{-2, 0, -2},
+		{-1, 0, 0},
+		{0, 0, 0},
+		{1, 0, 0},
+		{2, 2, 0},
+		{3, 3, 0},
+		{5, 5, 0},
 	}
 	for _, c := range cases {
-		if got := casteDifference(c.flux); got != c.want {
-			t.Errorf("casteDifference(%+d) = %+v, want %+v", c.flux, got, c.want)
+		gotDice, gotMod := casteC1(c.flux)
+		if gotDice != c.wantDice || gotMod != c.wantMod {
+			t.Errorf("casteC1(%+d) = %dD/%+d, want %dD/%+d",
+				c.flux, gotDice, gotMod, c.wantDice, c.wantMod)
 		}
+	}
+}
+
+// TestCasteDifferencePerCharacteristic: chart 07C says "Roll in each Caste Type
+// (except Common) for each Characteristic" (Book 3 p.229) — five independent
+// Flux rolls, not one row applied across the board.
+func TestCasteDifferencePerCharacteristic(t *testing.T) {
+	r := dice.NewScripted(fluxSeq(4, -3, 1, 0, 2)...) // C1..C5, deliberately unequal
+	got := rollCasteDifference(r)
+	want := Difference{C1Dice: 4, Mods: [5]int{0, -3, 0, 0, 2}}
+
+	if got != want {
+		t.Errorf("rollCasteDifference = %+v, want %+v", got, want)
 	}
 }
