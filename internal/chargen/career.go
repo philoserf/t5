@@ -251,6 +251,7 @@ type Career struct {
 	ReturnIntrigue   bool       // the term resolves Return & Intrigue instead of Risk & Reward (Noble)
 	ScoutDuty        bool       // the term picks Courier (no R&R, 4 skills) or Explorer (R&R, EligPerTerm skills) (Scout)
 	SchemeCareer     bool       // the term masterminds a Rogue Scheme instead of Risk & Reward (Rogue)
+	AutoFailOn12     bool       // a natural 12 always fails, whatever the target (Rogue; see autoFails)
 	UndercoverCareer bool       // the term runs an Undercover Assignment alongside Risk & Reward (Agent)
 	RewardKind       RewardKind // what a successful Reward roll earns
 	Skills           SkillGrid
@@ -268,6 +269,20 @@ type Career struct {
 
 	PromoteEduMin int         // minimum Education to hold rank 1+ and to promote (Scholar 8); 0 = no gate
 	Tenure        *TenureRule // gates promotion beyond a rank until Tenure is earned (Scholar); nil for the rest
+}
+
+// held reports whether a career roll succeeded, applying the career's
+// automatic-failure rule.
+//
+// The Rogue's box (Book 1 p. 84) prints three targets — "To Begin CC", "Risk &
+// Reward CC*", "Continue CC*" — and then two footnotes under the block:
+// "*Mod +Terms." and "But, 12 is always automatic failure." The first is already
+// read as covering every starred line; the second sits at the same level and is
+// unstarred, so it covers the block entire — Begin, Risk, Reward, and Continue.
+// It has to: "Mod +Terms" pushes those targets past 12 with experience, and
+// without the footnote a veteran Rogue would become literally unfailable.
+func (c Career) held(res dice.CheckResult) bool {
+	return res.Success && (!c.AutoFailOn12 || res.Roll != 12)
 }
 
 // hasRanks reports whether a career runs the rank/promotion machinery.
@@ -440,7 +455,7 @@ func beginCareer(r *dice.Roller, p Policy, c *Character, run *careerRun, career 
 		target = career.Qualify.target(*c)
 	}
 
-	if r.Resolve(dice.Check{Dice: 2, Target: target}).Success {
+	if career.held(r.Resolve(dice.Check{Dice: 2, Target: target})) {
 		return true
 	}
 
@@ -961,11 +976,11 @@ func runRogueTerm(
 	// "Mod +Terms": experience eases both rolls; Caution/Bravery flips sign for
 	// the Reward (Book 1 p. 84, "opposite sign Mods").
 	risk := r.Resolve(dice.Check{Dice: 2, Target: ccVal + riskMod + run.terms})
-	riskOK := risk.Roll != 12 && risk.Success
+	riskOK := career.held(risk)
 	rewardMods := -riskMod + run.terms
 
 	reward := r.Resolve(dice.Check{Dice: 2, Target: ccVal + rewardMods})
-	if reward.Success {
+	if career.held(reward) {
 		payScheme(c, scheme, ccVal+rewardMods, reward.Roll, riskOK)
 	}
 
@@ -1559,7 +1574,7 @@ func continues(
 		return true // Mandatory Continue
 	}
 
-	return p.Continue(c, rec) && res.Success
+	return p.Continue(c, rec) && career.held(res)
 }
 
 // removeChar returns chars without the first occurrence of ch.

@@ -115,6 +115,58 @@ func (lowCC) ChooseCC(c Character, available []Characteristic) Characteristic {
 	return best
 }
 
+// TestRogueTwelveAlwaysFails locks the second footnote under the Rogue's box
+// (Book 1 p.84): "But, 12 is always automatic failure." It sits at the same
+// level as "*Mod +Terms." beneath all three printed targets — To Begin, Risk &
+// Reward, Continue — so it governs every one of them. Each case gives the Rogue
+// a CC of 12 so the arithmetic would otherwise pass on a natural 12.
+func TestRogueTwelveAlwaysFails(t *testing.T) {
+	twelve := Character{scores: [count]int{12, 12, 12, 12, 12, 12}, Age: startingAge}
+
+	t.Run("begin", func(t *testing.T) {
+		c := twelve
+		run := newCareerRun(RogueCareer)
+
+		if beginCareer(dice.NewScripted(6, 6), DefaultPolicy{}, &c, &run, RogueCareer) {
+			t.Error("Begin rolled 12 against CC 12 and entered the career")
+		}
+	})
+
+	t.Run("risk and reward", func(t *testing.T) {
+		c := twelve
+		run := newCareerRun(RogueCareer)
+		run.fixed, run.fixedChosen = Strength, true
+
+		seq := []int{
+			3, 3, // Scheme Flux 0 -> Spacer, Cr100,000
+			6, 6, // Risk 12 vs CC 12: auto-failure -> prison track, Infamy
+			6, 6, // Reward 12 vs CC 12: auto-failure -> no payoff
+			1, 1, // the prison-sentence Flux (0), so no prison term follows
+			1, 1, 1, // 3 Failed-Scheme skill rolls
+		}
+		runRogueTerm(dice.NewScripted(seq...), goldenPolicy{}, &c, &run, RogueCareer, Strength)
+
+		if c.Credits != 0 {
+			t.Errorf("Credits = %d, want 0 (a Reward of 12 pays nothing)", c.Credits)
+		}
+
+		if c.Fame != 1 {
+			t.Errorf("Fame = %d, want 1 (a Risk of 12 earns Infamy)", c.Fame)
+		}
+	})
+
+	t.Run("continue", func(t *testing.T) {
+		c := twelve
+		run := newCareerRun(RogueCareer)
+		run.fixed, run.fixedChosen = Strength, true
+		rec := CareerRecord{Career: Rogue, Terms: 1} // "Mod +Terms" lifts the target to 13
+
+		if continues(dice.NewScripted(6, 6), goldenPolicy{}, c, RogueCareer, rec, &run) {
+			t.Error("Continue rolled 12 against a target of 13 and stayed in the career")
+		}
+	})
+}
+
 // TestRogueSchemeInfamy drives a failed Risk directly: the Reward still lands
 // (halved payoff), the Rogue earns Infamy (Fame +1) and a prison sentence, and
 // the following prison term grants only In-Prison skills (Personal/Academic).
