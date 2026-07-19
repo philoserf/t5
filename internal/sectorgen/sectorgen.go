@@ -68,13 +68,17 @@ func ParseHex(s string) (Hex, bool) {
 	}
 
 	col, _ := strconv.Atoi(s[:2])
-
 	row, _ := strconv.Atoi(s[2:])
-	if col < 1 || col > Columns || row < 1 || row > Rows {
+
+	// Ask Valid rather than restating its bounds — this is what makes its doc's
+	// claim ("ParseHex and GenerateSector only ever build valid hexes") true by
+	// construction rather than by two copies of the map's dimensions agreeing.
+	h := Hex{Col: col, Row: row}
+	if !h.Valid() {
 		return Hex{}, false
 	}
 
-	return Hex{Col: col, Row: row}, true
+	return h, true
 }
 
 // Distance returns the number of parsecs (jump distance) between two hexes on

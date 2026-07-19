@@ -28,6 +28,11 @@ var missileMassiveExplosion = [...]MassiveExplosion{
 // MissileMassiveExplosion returns a detonation's effects at a Size + 1D roll
 // (Book 2 p.197). A roll of 6 or less is a Direct Hit (Vaporized, 100D); 12 or
 // more is a clean Miss with no effect.
+//
+// This is one of two Massive Explosion tables. The other — the Weapons Task one
+// (Book 2 p.196) — is keyed by the missile option that detonates, i.e. a designed
+// round's warhead and size rather than anything primitive, so it lives with the
+// other designed-component bridges in ship.go, as WeaponsMassiveExplosion.
 func MissileMassiveExplosion(szPlus1D int) MassiveExplosion {
 	switch {
 	case szPlus1D <= 6:
@@ -38,8 +43,3 @@ func MissileMassiveExplosion(szPlus1D int) MassiveExplosion {
 		return missileMassiveExplosion[szPlus1D-7]
 	}
 }
-
-// The Weapons-Task Massive Explosion table (Book 2 p.196) is keyed by the missile
-// option that detonates, which is a designed round's warhead and size rather than
-// anything primitive — so it lives with the other designed-component bridges in
-// ship.go, as WeaponsMassiveExplosion.

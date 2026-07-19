@@ -79,18 +79,11 @@ func Roller() (*dice.Roller, func()) {
 	// dice.New keeps the seed it drew, so it can be said out loud — a record
 	// nobody can regenerate is the bug this avoids.
 	r := dice.New()
-	reported := false
+	fresh, _ := r.Seed() // always set: dice.New routes through NewWithSeed
 
-	return r, func() {
-		fresh, ok := r.Seed()
-		if !ok || reported {
-			return
-		}
-
-		reported = true
-
-		Notef("seed %d", fresh)
-	}
+	// Capture the seed, not the roller. The report is a fact about this run
+	// decided here; deferring only WHEN it is said, not what.
+	return r, func() { Notef("seed %d", fresh) }
 }
 
 // SeededRoller defines the shared -n and -seed flags (naming the item in the -n

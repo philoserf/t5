@@ -42,7 +42,7 @@ var purposeNames = [...]string{
 // as its 2D default, and Purpose(99) yielded 100D. String below is the display
 // half, and stays total.
 func (p Purpose) Dice() int {
-	if p < Carouse || p > Command {
+	if !p.valid() {
 		panic(fmt.Sprintf("personals: purpose %d out of range %d..%d",
 			int(p), int(Carouse), int(Command)))
 	}
@@ -53,12 +53,17 @@ func (p Purpose) Dice() int {
 // String returns the purpose's name, or "?" for a value outside the enum — a
 // Stringer must be able to report a bad value rather than name it Carouse.
 func (p Purpose) String() string {
-	if p < Carouse || p > Command {
+	if !p.valid() {
 		return "?"
 	}
 
 	return purposeNames[p]
 }
+
+// valid reports whether p names one of the four Purposes. Written once and
+// asked three times — Dice, String and LawMod each need it, and the enum's
+// bounds should not be restated at every use.
+func (p Purpose) valid() bool { return p >= Carouse && p <= Command }
 
 // Strategy is the approach an Actor takes (Book 1 p.183). A strategy's base
 // point value depends on the Purpose it is used for.
@@ -128,7 +133,7 @@ const InferiorityAppeal = 2
 // LawMod returns the Mod the Law contributes for the given Purpose (0 if it does
 // not apply, or if the Purpose is out of range).
 func LawMod(l Law, p Purpose) int {
-	if p < Carouse || p > Command {
+	if !p.valid() {
 		return 0
 	}
 
