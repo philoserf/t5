@@ -182,30 +182,70 @@ func TestMainRejectsBadFlags(t *testing.T) {
 			if out := strings.TrimSpace(stdout); out != "" {
 				t.Errorf("wrote %q to stdout, want nothing", out)
 			}
+			// #293: the seed is named only once the flags check out, so a run
+			// that designed nothing must not claim one.
+			if strings.Contains(stderr, "seed ") {
+				t.Errorf("named a seed for a run that designed nothing: %q", stderr)
+			}
 		})
 	}
 }
 
-// mainChild is the subprocess half of TestMainRejectsBadFlags: it rebuilds a
-// clean command line from the args after "--" and runs main as shipgen would.
+// TestMainReportsSeedOnValidRun is the other half of #293: a good command line
+// still names its drawn seed, on stderr, leaving the ship record alone on
+// stdout.
+func TestMainReportsSeedOnValidRun(t *testing.T) {
+	if os.Getenv("SHIPGEN_TEST_MAIN") == "1" {
+		mainChild()
+
+		return // not reached
+	}
+
+	stdout, stderr, code := runMainChild(t)
+
+	if code != 0 {
+		t.Fatalf("exit code = %d, want 0 (stderr %q)", code, stderr)
+	}
+
+	if !strings.Contains(stderr, "seed ") {
+		t.Errorf("an unseeded run must name its seed on stderr, got %q", stderr)
+	}
+
+	if !strings.Contains(stdout, "Hull:") {
+		t.Errorf("the ship record belongs on stdout, got %q", stdout)
+	}
+
+	if strings.Contains(stdout, "seed") {
+		t.Errorf("seed leaked onto the record stream: %q", stdout)
+	}
+}
+
+// mainChild is the subprocess half of the end-to-end tests: it rebuilds a clean
+// command line from the args after "--" and runs main as shipgen would. It
+// passes no -seed, so every case exercises the drawn-seed path; the ship is
+// deterministic anyway, since Design rolls no dice.
 func mainChild() {
 	args := flag.Args() // read before the reset discards them
 	flag.CommandLine = flag.NewFlagSet("shipgen", flag.ExitOnError)
 
-	os.Args = append([]string{"shipgen", "-hull", "A", "-seed", "1"}, args...)
+	os.Args = append([]string{"shipgen", "-hull", "A"}, args...)
 
 	main()
 	os.Exit(0)
 }
 
 // runMainChild runs shipgen's main in a subprocess with the given extra flags
-// and returns its stdout, stderr, and exit code separately.
+// and returns its stdout, stderr, and exit code separately. The child re-runs
+// the calling test (its root name, since a subtest shares the same child), which
+// is what routes it back into mainChild.
 func runMainChild(t *testing.T, args ...string) (string, string, int) {
 	t.Helper()
 
+	root, _, _ := strings.Cut(t.Name(), "/")
+
 	cmd := exec.Command(
 		os.Args[0],
-		append([]string{"-test.run=TestMainRejectsBadFlags", "--"}, args...)...)
+		append([]string{"-test.run=^" + root + "$", "--"}, args...)...)
 	cmd.Env = append(os.Environ(), "SHIPGEN_TEST_MAIN=1")
 
 	var stdout, stderr strings.Builder

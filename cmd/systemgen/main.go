@@ -15,7 +15,9 @@ import (
 )
 
 func main() {
-	n, r := cli.SeededRoller("systems")
+	n, r, reportSeed := cli.SeededRoller("systems")
+	reportSeed() // no flags of its own to check, so the input is already good
+
 	for i := range n {
 		if i > 0 {
 			fmt.Println()

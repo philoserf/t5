@@ -46,9 +46,11 @@ func main() {
 		"",
 		`defense(s) to install, comma-separated, each "name[:mount[:range]]" (e.g. "blackglobe,nucleardamper")`,
 	)
-	n, r := cli.SeededRoller("ships")
+	n, r, reportSeed := cli.SeededRoller("ships")
 
 	if *hull == "" {
+		reportSeed() // a random ship reads none of the design flags
+
 		for i := range n {
 			if i > 0 {
 				fmt.Println()
@@ -68,6 +70,9 @@ func main() {
 	if err != nil {
 		cli.Fatalf("%v", err)
 	}
+
+	reportSeed() // the spec is good, so this run will produce a ship
+
 	// The spec is fixed, so the ship is too: design it once and print it n times.
 	ship := shipgen.Design(spec)
 

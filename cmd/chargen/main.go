@@ -28,9 +28,11 @@ func main() {
 		"",
 		`career(s) to run, comma-separated for a sequence (e.g. "scout" or "scout,merchant"); empty prints UPP only`,
 	)
-	n, r := cli.SeededRoller("characters")
+	n, r, reportSeed := cli.SeededRoller("characters")
 
 	if *careerName == "" {
+		reportSeed()
+
 		for range n {
 			fmt.Println(chargen.Generate(r))
 		}
@@ -42,6 +44,8 @@ func main() {
 	if err != nil {
 		cli.Fatalf("%v", err)
 	}
+
+	reportSeed() // the careers resolved, so this run will produce characters
 
 	for range n {
 		// A homeworld is an input to character generation (selected, assigned, or

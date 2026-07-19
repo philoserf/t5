@@ -300,6 +300,12 @@ Tooling (go, go-task, golangci-lint, poppler's `pdftotext`) is pinned in `Brewfi
   reports it via `Notef` ("`sectorgen: seed 16919235832026294750`"), so a run worth keeping can always
   be replayed — re-run with that `-seed` for byte-identical records, or to select another view of the
   same survey (`-hex`, `-sector`). The report is on stderr, so piped records are unaffected.
+  It is **deferred, not printed at construction**: `Roller`/`SeededRoller` hand back a `reportSeed`
+  func alongside the roller, and each command calls it only once its own flags validate, so a run
+  that dies on bad input never names a seed for records it did not generate. `Roller` merely
+  parses — every per-command check (an unknown density, a bad hull letter) happens after it returns,
+  which is why the ordering has to be the caller's. A command with a view flag validates it up front
+  for the same reason (`sectorgen.selectView` resolves `-hex`/`-subsector` before the survey runs).
 
 When adding a generator, transcribe the rule tables/formulas from `docs/reference/` and lock
 them with a golden test built from a worked example in the books.
