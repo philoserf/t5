@@ -65,7 +65,7 @@ func (p Purpose) String() string {
 // bounds should not be restated at every use.
 func (p Purpose) valid() bool { return p >= Carouse && p <= Command }
 
-// Strategy is the approach an Actor takes (Book 1 p.183). A strategy's base
+// Strategy is the approach an Actor takes (Book 1 p.185, STRATEGIES). A strategy's base
 // point value depends on the Purpose it is used for.
 type Strategy int
 
@@ -140,7 +140,7 @@ func LawMod(l Law, p Purpose) int {
 	return lawMods[l][p]
 }
 
-// The flat Situational Mods of the Mods for Personals sidebar (Book 1 p.185).
+// The flat Situational Mods of the Mods for Personals sidebar (Book 1 p.183).
 // Bluff and Threat of Violence are not flat and have their own functions below;
 // Deliberate is not a Mod at all — it is the permission to apply a third one.
 const (
@@ -163,20 +163,20 @@ const (
 )
 
 // Bluff rolls the Flux Mod a bluff contributes ("Bluff (once) Flux", Book 1
-// p.185). Being Flux rather than a flat value, a bluff is a gamble: it ranges
+// p.183). Being Flux rather than a flat value, a bluff is a gamble: it ranges
 // -5..+5, so it can cost the Actor as easily as it pays. A Personal admits at
 // most one bluff.
 func Bluff(r *dice.Roller) int { return r.Flux() }
 
 // Threat of Violence is a Mod of +Fighter Skill ("Threat of Violence = +Fighter
-// Skill", Book 1 p.185) — pass the character's Fighter level (or a subordinate
+// Skill", Book 1 p.183) — pass the character's Fighter level (or a subordinate
 // Knowledge) straight to Resolve as a mod; there is no helper, because there is
 // nothing to compute. The page attaches a consequence this package does not
 // model — "failure converts the personal into a fight" — so a caller applying it
 // is responsible for opening combat on a failed Resolve.
 //
 // It is not the Violence entry in lawMods. That is the Law of Violence, whose
-// per-Purpose Mod comes through LawMod; this is the p.185 situational Mod. A
+// per-Purpose Mod comes through LawMod; this is the p.183 situational Mod. A
 // Personal backed by menace may well draw both.
 
 // Resolve resolves a Personal Interaction (Book 1 p.184): Target = strategyValue
