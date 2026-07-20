@@ -60,9 +60,9 @@ func main() {
 	// swallows is the worst of both.
 	switch {
 	case *hex != "":
-		cli.RejectUnusable("-hex", "hex", "density", "seed")
+		cli.RejectUnusable("-hex", "hex", "density")
 	case *sector:
-		cli.RejectUnusable("-sector", "sector", "density", "seed")
+		cli.RejectUnusable("-sector", "sector", "density")
 	}
 
 	reportSeed()

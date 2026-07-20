@@ -147,6 +147,15 @@ func (r Result) AssertRejected(t *testing.T) {
 	if seedReport.MatchString(r.Stderr) {
 		t.Errorf("named a seed for a run that generated nothing: %q", r.Stderr)
 	}
+
+	// An unrecovered panic ALSO exits 2, writes to stderr, writes nothing to
+	// stdout, and names no seed — so it satisfies every clause above and a crash
+	// on a bad-input path would read as a clean rejection. That is the fail-open
+	// shape this repo has now found three times; here it would hide the very
+	// crashes these tables exist to catch.
+	if strings.Contains(r.Stderr, "panic:") {
+		t.Errorf("child panicked rather than rejecting the input: %q", r.Stderr)
+	}
 }
 
 // AssertReportedSeed checks the good-run contract: exit 0, records on stdout, and

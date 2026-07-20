@@ -1,6 +1,7 @@
 package main
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/philoserf/t5/internal/clitest"
@@ -101,21 +102,33 @@ func TestMainRejectsFlagsTheViewIgnores(t *testing.T) {
 // nothing else is set, so the rejection above is about the discarded flag and not
 // about the view itself.
 //
-// It asserts only the exit code, deliberately. A -hex view whose hex holds no
-// system is a true-but-empty result: cli.Notef says so on stderr and exits 0 with
-// nothing on the record stream. Asserting records here made the test depend on
-// whether a randomly drawn seed happened to populate that one hex, which failed
-// about a third of the time.
+// -sector and -subsector always survey worlds, so they assert the full good-run
+// contract: records on stdout, the drawn seed on stderr and only there.
+//
+// -hex asserts the exit code alone, and only -hex. A hex holding no system is a
+// true-but-empty result — cli.Notef says so on stderr and exits 0 with nothing on
+// the record stream — so requiring records there made the test depend on whether a
+// randomly drawn seed happened to populate that one hex, and it failed about a
+// third of the time. Weakening the other two to match would have thrown away the
+// stdout/stderr split this harness exists to enforce.
 func TestMainAcceptsTheWinningView(t *testing.T) {
 	for name, args := range map[string][]string{
-		"hex":       {"-hex", "0436"},
 		"sector":    {"-sector"},
 		"subsector": {"-subsector", "A"},
 	} {
 		t.Run(name, func(t *testing.T) {
-			if res := command.Run(t, args...); res.Code != 0 {
-				t.Errorf("exit code = %d, want 0 (stderr %q)", res.Code, res.Stderr)
-			}
+			command.Run(t, args...).AssertReportedSeed(t)
 		})
 	}
+
+	t.Run("hex", func(t *testing.T) {
+		res := command.Run(t, "-hex", "0436")
+		if res.Code != 0 {
+			t.Errorf("exit code = %d, want 0 (stderr %q)", res.Code, res.Stderr)
+		}
+
+		if strings.Contains(res.Stderr, "panic:") {
+			t.Errorf("panicked: %q", res.Stderr)
+		}
+	})
 }

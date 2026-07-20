@@ -59,7 +59,7 @@ func main() {
 		// Named the other way round — the flags a random ship DOES read — so a new
 		// design flag is covered the day it is added rather than the day someone
 		// remembers to list it.
-		cli.RejectUnusable("a random ship; give -hull to design one", "hull", "n", "seed")
+		cli.RejectUnusable("a random ship; give -hull to design one", "hull")
 
 		reportSeed() // nothing but -n and -seed was given, so the input is good
 

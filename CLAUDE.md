@@ -317,15 +317,21 @@ Tooling (go, go-task, golangci-lint, poppler's `pdftotext`) is pinned in `Brewfi
   parses — every per-command check (an unknown density, a bad hull letter) happens after it returns,
   which is why the ordering has to be the caller's. A command with a view flag validates it up front
   for the same reason (`sectorgen.selectView` resolves `-hex`/`-subsector` before the survey runs).
-  A flag the chosen path **cannot honor** is bad input, not a no-op: `shipgen` without `-hull` rolls a
-  random ship, which reads none of the ten design flags, so any of them typed there is a `Fatalf`
-  rather than a silently discarded value (`designFlagsSet`). "Was it set" is asked of `flag.Visit`,
-  never of the value — `-tl 0` is a real Tech Level and `-armor 1` the hull's integral layer, so a
-  default-comparison would wave the caller's own input through as unset.
+  A flag the chosen path **cannot honor** is bad input, not a no-op — `cli.RejectUnusable`, which
+  every such path calls before reporting its seed. It is named the way round that stays correct:
+  the caller lists the flags its path *reads*, so a flag added later is covered the day it is added
+  rather than the day someone remembers to list it. `shipgen` without `-hull` rolls a random ship
+  that reads none of the design flags, and `sectorgen`'s views are exclusive, so the losing view's
+  flag is rejected too — `-hex 0436 -subsector Q` used to print a hex at exit 0 while that same
+  `-subsector Q` is refused on the default path. "Was it set" is asked of `flag.Visit`, never of the
+  value — `-tl 0` is a real Tech Level and `-armor 1` the hull's integral layer, so a
+  default-comparison would wave the caller's own input through as unset. A bool explicitly set false
+  is the exception: `-sector=false` asks for the path *not* to be taken, so it is not a conflict.
 - `internal/clitest/` — the end-to-end harness all six CLIs share. `main` calls `os.Exit`, so each
   case re-executes the test binary as a child that runs `main` instead of the tests; `Command.TestMain`
-  intercepts before `m.Run` (args travel in an env var, so the child ignores the test binary's own
-  flags entirely) and `Command.Run` returns the two streams and the exit code apart. `AssertRejected`
+  intercepts before `m.Run` — which is what frees argv: nothing has parsed `os.Args` yet, so the
+  child's command line rides it and the environment variable is only a marker. `Command.Run` returns
+  the two streams and the exit code apart. `AssertRejected`
   / `AssertReportedSeed` assert the whole `internal/cli` contract in one call. The seed line is matched
   as a **whole line** (`^cmd: seed \d+$`), not as the substring `"seed "` — `flag`'s usage text
   describes the `-seed` flag and would otherwise read as a seed report on every run `flag` rejects.

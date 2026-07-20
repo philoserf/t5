@@ -118,6 +118,12 @@ func SeededRoller(item string) (int, *dice.Roller, func()) {
 	return *count, r, reportSeed
 }
 
+// sharedFlags are the flags internal/cli registers itself. Every path can honor
+// them, so RejectUnusable always allows them and callers never list them — a
+// command that later switches from Roller to SeededRoller would otherwise start
+// rejecting its own -n.
+var sharedFlags = []string{"n", "seed"}
+
 // RejectUnusable exits 2 if the command line set any flag the chosen code path
 // cannot honor. usable names the flags that path does read; everything else the
 // caller typed is reported and rejected. what describes the path in the message,
@@ -144,9 +150,20 @@ func RejectUnusable(what string, usable ...string) {
 	var unusable []string
 
 	flag.Visit(func(f *flag.Flag) {
-		if !slices.Contains(usable, f.Name) {
-			unusable = append(unusable, "-"+f.Name)
+		if slices.Contains(usable, f.Name) || slices.Contains(sharedFlags, f.Name) {
+			return
 		}
+
+		// A bool explicitly set false asks for its path NOT to be taken, which is
+		// agreement rather than conflict: "-hex 0436 -sector=false" is an unambiguous
+		// command line, and a script building "-sector=$want" should not die on it.
+		// Only a bool set TRUE competes for the path.
+		if bv, ok := f.Value.(interface{ IsBoolFlag() bool }); ok && bv.IsBoolFlag() &&
+			f.Value.String() == "false" {
+			return
+		}
+
+		unusable = append(unusable, "-"+f.Name)
 	})
 
 	if len(unusable) > 0 {

@@ -195,7 +195,11 @@ func TestDesignDriveStageEfficiency(t *testing.T) {
 // The TL column is the base TL-9 shifted by the stage's TL delta; the MCr column
 // is the book's own display rounding of the exact cost, which is why Basic and
 // Generic print 8 for an exact MCr7.5.
-// The Modified stage's COST is deliberately not asserted in either catalog.
+// The Modified stage's COST is asserted in BOTH catalogs, which is the point of
+// #300 having been settled: the stageData note cites p.127 and p.134 as two
+// independent columns computing /2, so both must actually hold the cell. If only
+// one did, reverting stageData to x1 would fail a single assertion while the note
+// went on claiming two corroborated it.
 //
 // Book 2 prints that cell six times: x1 on pp.63 and 76, /2 on pp.104, 127, 134
 // and 190. The worked columns on pp.127 and 134 compute with /2 — but Book 2
@@ -207,8 +211,10 @@ func TestDesignDriveStageEfficiency(t *testing.T) {
 //	 52 tons, MCr52."   (note 14; note 13 is Modified Jump Drive-Z, 125t, MCr125)
 //
 // So there are worked examples on both sides and no reading satisfies all of
-// them. The code keeps x1 — the status quo, and the reading whose worked example
-// is stated in prose rather than derived from a table column. The tonnage half of
+// them. The code follows /2 on weight of evidence — four printings and two
+// self-reconciling columns against two printings and two notes — as stageData's
+// note argues at length. The p.48 side is recorded there rather than dismissed,
+// because omitting it is how this cell was mis-resolved twice. The tonnage half of
 // both pages still reproduces exactly, which is what corroborates the round-up
 // ruling independently of this.
 //
@@ -261,12 +267,14 @@ func TestDesignDriveStageCatalogP127(t *testing.T) {
 
 		// The book's MCr column is the exact cost rounded for display, up like
 		// every other figure in the table: Basic's exact MCr7.5 prints as 8.
-		// mcr == 0 marks the Modified row, whose cost cell the book contradicts
-		// itself on — see the note above this test.
-		if c.mcr != 0 {
-			if got := ceilDiv(j.Cost, 1_000_000); got != c.mcr {
-				t.Errorf("%s J-Drive-B: MCr%d (Cr%d), want MCr%d", c.stage, got, j.Cost, c.mcr)
-			}
+		//
+		// Asserted unconditionally. There used to be an "mcr == 0 skips this row"
+		// escape hatch for the disputed Modified cell; #300 settled that, and the
+		// hatch was worse than the dispute — it was a documented way to opt a row
+		// out of the check, so re-opening #300 by zeroing the row would leave this
+		// test green while asserting nothing about the cell it exists to lock.
+		if got := ceilDiv(j.Cost, 1_000_000); got != c.mcr {
+			t.Errorf("%s J-Drive-B: MCr%d (Cr%d), want MCr%d", c.stage, got, j.Cost, c.mcr)
 		}
 	}
 }
@@ -302,7 +310,7 @@ func TestDesignDriveStageCatalogP134(t *testing.T) {
 		{Alternate, 9, 2, 7, 7, ""},
 		{Improved, 10, 2, 7, 7, ""},
 		{Generic, 10, 1, 7, 4, "3.5"},
-		{Modified, 11, 2, 4, 0, "1.7"}, // cost disputed, as p.127
+		{Modified, 11, 2, 4, 0, "1.7"}, // 3.5 unrounded x 1/2; see the exact-cost loop below
 		{Advanced, 12, 2, 3, 0, "4.6"},
 		{Ultimate, 13, 2, 2, 0, "5.1"},
 	}
@@ -350,7 +358,11 @@ func TestDesignDriveStageCatalogP134(t *testing.T) {
 		stage Stage
 		cost  int
 	}{
-		// Modified is omitted: its cost multiplier is the disputed cell (#300).
+		// Modified is included, and must be: the stageData note cites this column
+		// as the SECOND independent worked example for /2 (#300), so leaving it
+		// unasserted would let a revert to x1 fail only p.127's catalog while the
+		// note still claimed two columns backed it.
+		{Modified, 2_000_000}, // p.134 prints MCr1.7 (3.5 unrounded x 1/2); 4 final tons x 1/2 = 2
 		{Advanced, 6_000_000}, // p.134 prints MCr4.6 (2.3 x 2)
 		{Ultimate, 6_000_000}, // p.134 prints MCr5.1 (1.7 x 3)
 	} {
