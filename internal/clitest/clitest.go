@@ -173,7 +173,13 @@ func (r Result) AssertReportedSeed(t *testing.T) {
 		t.Error("nothing on stdout; a successful run must print its records there")
 	}
 
-	if strings.Contains(r.Stdout, "seed") {
+	// Through cli's matcher like every other reader, not a bare "seed" substring.
+	// This is the negative direction — a seed that leaked onto the record stream —
+	// so a literal here would go silently dead the moment the wording changed, and
+	// the leak it exists to catch would sail through. That is the fail-open shape
+	// this repo has now hit four times; the last one was in the change that
+	// centralised this very format.
+	if cli.HasSeedReport(r.Stdout) {
 		t.Errorf("the seed leaked onto the record stream: %q", r.Stdout)
 	}
 }

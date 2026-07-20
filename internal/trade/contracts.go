@@ -28,6 +28,15 @@ package trade
 // None of the three is enforced here. This package prices mail; it holds no
 // ship, no crew, and no pair of worlds to test them against, so a caller
 // building a mail workflow must gate on them itself before charging this rate.
+// Mail has no availability roll — that is the book's answer, not a gap here. The
+// p.220 checklist lists "D.3 Find Mail availability" beside D.1 Freight and D.2
+// Cargo, so it reads like a third rollable quantity; but where D.1 prints a formula
+// ("Freight = (Flux + Pop) x (total TCs +1)"), D.3 prints only "Possibly 1 ton.
+// Requires Mail Vault", and the MAIL SHIPMENTS sidebar hands the question to the
+// referee ("The steward can inquire at the starport about availability") with no
+// target, difficulty or mod. pp.209 and 220 are the only two rules pages for mail
+// in Book 2. So there is no AvailableMail beside AvailablePassengers and
+// AvailableFreight, and inventing one would be our formula wearing a citation.
 const MailRatePerTon = 15_000 // Cr per ton
 
 // StandardDeliveryDays is the customary window local merchants have to deliver

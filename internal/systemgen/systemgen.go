@@ -74,27 +74,16 @@ func Generate(r *dice.Roller) System {
 //
 // Both constraints supersede a roll rather than skipping it: the gas-giant count
 // is rolled and its giants detailed before the constraint is applied, and the
-// belt mainworld rolls its Size and discards it. Detailing the count that was
-// rolled rather than the constrained one is what keeps the dice stream aligned
-// with Generate's — a ggAbsent system rolls its giants' 2D sizes and then
-// discards them, so no later draw shifts. That is the same "re-derive rather
-// than re-roll" rule worldgen.GenerateSatelliteWorld follows for its size cap.
+// belt mainworld rolls its Size and discards it. giantsFor owns that rule and
+// documents exactly what it does and does not align.
 //
-// Read that as a claim about the dice, not about the output. The count is a real
-// input downstream — to the PBG and the mainworld's Economic Extension, and to
-// how many bodies the orbit map and the satellite pass have to place — so under
-// a constraint that disagrees with the roll those still differ. What no longer
-// differs is the stream feeding them: the mainworld's UWP and the whole stellar
-// family are re-derived from the same faces either way. Whenever the constraint
-// agrees with the count that was rolled, the two entry points return systems
-// that are identical outright.
-//
-// One case cannot align, and does not: ggPresent when the count rolled 0, which
-// is 2D <= 4, about one system in six. A gas giant must then be detailed that
-// the unconstrained stream never rolled at all, and no ordering can conjure a
-// roll out of a stream that does not contain one. Its 2D is drawn after the
-// aligned segment, so everything Generate drew before it still matches and
-// everything after — the mainworld onward — is shifted by that one roll.
+// The caller-facing consequence: a constraint that disagrees with the roll still
+// changes the OUTPUT. The count feeds the PBG, the mainworld's Economic Extension,
+// and how many bodies the orbit map and satellite pass place. What no longer
+// differs is the dice stream feeding them, so the mainworld's UWP and the whole
+// stellar family are re-derived from the same faces either way — and when the
+// constraint agrees with the rolled count, the two entry points return identical
+// systems outright.
 func GenerateForMap(r *dice.Roller, gasGiant, asteroidMainworld bool) System {
 	gg := ggAbsent
 	if gasGiant {

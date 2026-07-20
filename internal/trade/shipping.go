@@ -71,33 +71,3 @@ func AvailablePassengers(flux, populationDigit, skillMod int) int {
 func AvailableFreight(flux, populationDigit, liaison int, worldTCs []string) int {
 	return max(flux+populationDigit+liaison, 0) * (len(ValueClasses(worldTCs)) + 1)
 }
-
-// Mail availability has no roll, and that is the book's answer, not a gap here.
-//
-// The p.220 checklist lists step D.3 "Find Mail availability" alongside D.1
-// Freight and D.2 Cargo, so it reads like a third rollable quantity. It is not.
-// Where D.1 prints a formula ("Freight = (Flux + Pop) x (total TCs +1)"), D.3
-// prints only:
-//
-//	"3 Mail = Possibly 1 ton. Requires Mail Vault."
-//
-// and the page's MAIL SHIPMENTS sidebar hands the question to the table rather
-// than to the dice: "There may be mail or private express (parcel) shipments
-// destined for other worlds. The steward can inquire at the starport about
-// availability." No die, no Flux, no modifier, and no Steward *task* — an
-// inquiry the referee answers. Book 2 mentions mail in no other rules context
-// (pp.209 and 220 are the only two), so there is no table printed elsewhere to
-// transcribe. A Flux-and-Pop formula by analogy with D.1 would be this
-// package's invention, so none is offered.
-//
-// What the book *does* fix is the quantity once mail is on offer: "Each mail
-// shipment is one ton" (p.220), matching p.209's "Each mail lot always consists
-// of at least one ton" — hence "Possibly 1 ton". Availability is the referee's
-// yes-or-no; the ton and its MailRatePerTon follow from it.
-//
-// Whether the ship may carry that ton at all is a separate question this
-// package cannot answer, and deliberately does not: the armed-plus-gunner crew
-// condition (p.209), the 1-ton Mail Vault (p.220), and the directional
-// Importance-2 condition on the destination (p.220) each need a ship or a world
-// pair that trade holds neither of. They are documented as the caller's
-// obligation at MailRatePerTon.
