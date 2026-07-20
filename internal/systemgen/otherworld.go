@@ -8,11 +8,11 @@ import (
 
 // An OtherWorld is a placed secondary world (Book 3 p.29): its body type and the
 // UWP and trade codes that descend from it. The three fields are unexported and
-// set together — production generates the Profile from the Type, and NewOtherWorld
-// stamps all three at once — so an OtherWorld can never carry a Type set without a
-// Profile, a Profile left stale after a Type change, or a Type/Profile pair drifted
-// apart by a later assignment (the belt-vs-tiny-world confusion #324 turned on,
-// #330). Read them through Type/Profile/TradeCodes.
+// immutable after construction, so an OtherWorld can never carry a Type set without
+// a Profile, a Profile left stale after a Type change, or a pair drifted apart by a
+// later assignment — the belt-vs-tiny-world confusion #324 turned on (#330).
+// Production rolls the Profile from the Type; a caller building from known parts
+// goes through NewOtherWorld. Read the fields through Type/Profile/TradeCodes.
 type OtherWorld struct {
 	typ        worldgen.OtherWorldType
 	profile    uwp.Profile
@@ -21,9 +21,10 @@ type OtherWorld struct {
 
 // NewOtherWorld assembles an OtherWorld from an already-generated type, UWP, and
 // trade codes — the build-from-parts path for a test fixture or a parsed record
-// (#327), the counterpart to worldgen.NewWorld. Production builds them by rolling
-// the Profile from the Type; either way the three are set in one step and cannot
-// be left inconsistent afterward.
+// (#327), the counterpart to worldgen.NewWorld. It is the only way to construct one
+// outside systemgen, and the result is immutable, so the three cannot drift apart
+// afterward. (It trusts its caller to pass a Profile that matches the Type, as
+// production's rolled path does — it does not re-derive one.)
 func NewOtherWorld(typ worldgen.OtherWorldType, profile uwp.Profile, tradeCodes []tradecode.Code) OtherWorld {
 	return OtherWorld{typ: typ, profile: profile, tradeCodes: tradeCodes}
 }

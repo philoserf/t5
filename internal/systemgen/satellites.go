@@ -16,10 +16,10 @@ import (
 // parent (Book 3 p.21): an oversized roll is cut to the parent's size and, at
 // equal size, the pair is a double planet. A Ring has no orbit letter or body.
 //
-// As with OtherWorld, the type, profile, and trade codes are unexported and set
-// together inside systemgen (which generates the profile from the type), so a moon
-// cannot carry a Type disagreeing with its Profile (#330). Read them through
-// Type/Profile/TradeCodes.
+// As with OtherWorld, the type, profile, and trade codes are unexported and
+// immutable after construction (systemgen generates the profile from the type), so
+// a moon's Type, Profile, and trade codes cannot drift apart once built (#330).
+// Read them through Type/Profile/TradeCodes.
 type Satellite struct {
 	Ring         bool
 	Far          bool
