@@ -173,18 +173,17 @@ func (r Result) AssertReportedSeed(t *testing.T) {
 		t.Error("nothing on stdout; a successful run must print its records there")
 	}
 
-	// Through cli's matcher like every other reader, not a bare "seed" substring.
-	// This is the negative direction — a seed that leaked onto the record stream —
-	// so a literal here would go silently dead the moment the wording changed, and
-	// the leak it exists to catch would sail through. That is the fail-open shape
-	// this repo has now hit four times; the last one was in the change that
-	// centralised this very format.
+	// Two checks, because they fail in opposite directions and neither subsumes
+	// the other. cli.HasSeedReport is the canonical Notef line, routed through the
+	// owner of the wording so a reword cannot leave a stale matcher behind. The
+	// broad substring catches a seed reaching stdout by any OTHER path — a record
+	// header like `fmt.Println("# seed", n)`, or a sheet field — which the anchored
+	// form cannot see.
 	//
-	// It is also strictly narrower than the substring it replaced: this catches a
-	// leak shaped exactly "<command>: seed N", where "seed" anywhere on the record
-	// stream used to trip it. That is the right trade — the old net also caught any
-	// record that happened to contain the word — but it is a trade, not a free win.
-	if cli.HasSeedReport(r.Stdout) {
+	// Replacing the substring with the anchored matcher alone was a mistake made in
+	// this very wave: it closed a drift hole and opened a coverage hole, in the one
+	// assertion whose whole job is catching a leak onto the record stream.
+	if cli.HasSeedReport(r.Stdout) || strings.Contains(strings.ToLower(r.Stdout), "seed") {
 		t.Errorf("the seed leaked onto the record stream: %q", r.Stdout)
 	}
 }

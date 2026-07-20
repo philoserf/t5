@@ -46,11 +46,12 @@ const seedNote = "seed %d"
 var seedLine = regexp.MustCompile(`(?m)^[^\s:]+: ` +
 	strings.ReplaceAll(regexp.QuoteMeta(seedNote), `%d`, `(\d+)`) + `$`)
 
-// HasSeedReport reports whether stderr names a drawn seed. Use it for both
-// directions of the obligation: a good run must name one, and a run rejected
-// before it generated anything must not.
-func HasSeedReport(stderr string) bool {
-	return seedLine.MatchString(stderr)
+// HasSeedReport reports whether a stream carries a drawn-seed line. Use it for
+// every direction of the obligation: a good run must name one on stderr, a run
+// rejected before it generated anything must not, and it must never appear on
+// stdout, where clitest passes the record stream to catch a leak.
+func HasSeedReport(stream string) bool {
+	return seedLine.MatchString(stream)
 }
 
 // ReportedSeed returns the seed named on stderr, as printed — so it can be handed

@@ -80,10 +80,14 @@ func Generate(r *dice.Roller) System {
 // The caller-facing consequence: a constraint that disagrees with the roll still
 // changes the OUTPUT. The count feeds the PBG, the mainworld's Economic Extension,
 // and how many bodies the orbit map and satellite pass place. What no longer
-// differs is the dice stream feeding them, so the mainworld's UWP and the whole
-// stellar family are re-derived from the same faces either way — and when the
-// constraint agrees with the rolled count, the two entry points return identical
-// systems outright.
+// differs is the dice stream feeding them: for ggAbsent, and for ggPresent over a
+// rolled count of 1 or more, the mainworld's UWP and the whole stellar family are
+// re-derived from the same faces either way, and when the constraint agrees with
+// the rolled count the two entry points return identical systems outright.
+//
+// The exception is ggPresent over a rolled 0 — about 28% of gas-giant hexes, see
+// giantsFor — where an extra 2D is drawn and belts onward do shift. Nothing above
+// applies to that case.
 func GenerateForMap(r *dice.Roller, gasGiant, asteroidMainworld bool) System {
 	gg := ggAbsent
 	if gasGiant {

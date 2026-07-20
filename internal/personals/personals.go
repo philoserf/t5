@@ -6,13 +6,25 @@
 // variadic mods and sums them all.
 //
 // Citation rule for this package. The Personals chapter states each rule twice —
-// as prose on pp.181-183 and p.185, and as numbers on the p.184 P1 table — so
+// as prose on pp.181-183 and p.185, and as numbers on p.184 — so
 // every citation here names one of the two deliberately: a type or a named
 // concept cites the page whose *heading* introduces the prose that defines it,
 // and a table of values cites the page whose heading names the *table* that
 // quantifies it. So Purpose and Law cite p.182 and Strategy cites p.185, while
 // strategyValues and lawMods cite p.184. Do not "correct" one into the other;
 // they answer different questions.
+//
+// Two refinements the rule needs, both learned by getting it wrong:
+//
+// A concept the chapter heads TWICE cites the first — Purpose is introduced by
+// p.182's "THE FOUR TYPES OF PERSONAL" and restated by p.185's "THE PURPOSE", and
+// p.182 wins. Without this the rule picks both pages and settles nothing.
+//
+// A page can carry more than one table, so naming the page is not naming the
+// source. p.184 holds BOTH the P1 Personal Interactions grid (Purpose x Strategy
+// x Tactic) and the separate THE FIVE LAWS table; the Law mods and the "+2*"
+// Inferiority footnote are the latter's, and citing them to "the p.184 P1 table"
+// was wrong in exactly the way this rule exists to prevent.
 //
 // The corollary is what makes this worth writing down: a value appearing on a
 // page is not evidence that the page is its source. p.183's Quick Personals
@@ -83,7 +95,7 @@ func (p Purpose) valid() bool { return p >= Carouse && p <= Command }
 
 // Strategy is the approach an Actor takes (Book 1 p.185, STRATEGIES). A strategy's base
 // point value depends on the Purpose it is used for, and those values are the p.184
-// P1 table's, not p.185's prose.
+// the P1 grid's on p.184, not p.185's prose.
 type Strategy int
 
 // Interaction strategies.
@@ -99,7 +111,8 @@ const (
 )
 
 // strategyValues[purpose][strategy] is the strategy's base point value 1-5
-// (Book 1 p.184, the P1 table); a strategy absent from a purpose's map is not
+// (Book 1 p.184, the P1 Personal Interactions grid); a strategy absent from a
+// purpose's map is not
 // available for that purpose.
 var strategyValues = map[Purpose]map[Strategy]int{
 	Carouse:  {Casual: 1, Enjoyment: 2, Discussion: 3, ActiveListening: 4, AppealTo: 5},
@@ -109,7 +122,7 @@ var strategyValues = map[Purpose]map[Strategy]int{
 }
 
 // StrategyValue returns a strategy's base point value for a purpose and whether
-// the strategy is available for that purpose (Book 1 p.184, the P1 table).
+// the strategy is available for that purpose (Book 1 p.184, the P1 grid).
 func StrategyValue(p Purpose, s Strategy) (int, bool) {
 	v, ok := strategyValues[p][s]
 
@@ -134,7 +147,8 @@ const (
 
 // lawMods[law] is the Law's unconditional Mod per Purpose (Carouse, Query,
 // Persuade, Command); 0 means the Law contributes nothing there (Book 1 p.184, the
-// P1 table; p.183's Quick Personals sidebar reprints the same numbers).
+// THE FIVE LAWS table — NOT the P1 grid, which shares p.184 and has no Law
+// column; p.183's Quick Personals sidebar reprints the same numbers).
 // Inferiority grants only Query +1 unconditionally — its Persuade +2 is
 // conditional (see InferiorityAppeal) and so is not in this table.
 var lawMods = map[Law][4]int{
@@ -147,7 +161,7 @@ var lawMods = map[Law][4]int{
 
 // InferiorityAppeal is the extra Persuade Mod the Inferiority Law grants only
 // when the Actor supports it with Begging, Flattery, or Politeness (Book 1 p.184,
-// the P1 table's Inferiority/Persuade "+2*" entry and its footnote; p.183's Quick
+// THE FIVE LAWS table's Inferiority/Persuade "+2*" entry and its footnote; p.183's Quick
 // Personals sidebar prints the same "+2*" and footnote on its own Persuade row).
 // It is a value, so it is cited to the table alongside lawMods, whose row it
 // belongs to. Apply it as a situational Mod when that condition holds; LawMod

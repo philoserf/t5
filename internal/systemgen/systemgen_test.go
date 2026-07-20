@@ -244,10 +244,27 @@ func TestGenerateForMap(t *testing.T) {
 	}
 }
 
-// scriptCounter replays faces while counting the draws, panicking past the end
-// exactly as dice.NewScripted does — a case that outruns its script fails loudly
-// rather than being served recycled faces.
-func scriptCounter(faces []int, drawn *int) *dice.Roller {
+// scriptCounter replays faces while counting the draws. It exists only because
+// there is no way to count draws through dice.NewScripted, and it reproduces BOTH
+// of that constructor's safety properties, not just the obvious one:
+//
+//   - it panics past the end of the script, so a case that outruns its faces fails
+//     loudly rather than being served recycled ones;
+//   - it validates every face is a real 1..6, so a fixture typo ("44" for "4") is
+//     a loud failure rather than a silent impossible die.
+//
+// The second is easy to leave out, and leaving it out is what would make a green
+// suite stop being evidence about the dice stream — the property CLAUDE.md names
+// as the reason NewScripted is exact rather than cyclic.
+func scriptCounter(t *testing.T, faces []int, drawn *int) *dice.Roller {
+	t.Helper()
+
+	for i, f := range faces {
+		if f < 1 || f > 6 {
+			t.Fatalf("scriptCounter: face %d at index %d is not a die face 1..6", f, i)
+		}
+	}
+
 	return dice.NewSource(func() int {
 		if *drawn >= len(faces) {
 			panic("script exhausted")
@@ -295,7 +312,7 @@ func TestGiantsDiceBudget(t *testing.T) {
 	for _, c := range cases {
 		drawn := 0
 
-		count, detailed := giantsFor(scriptCounter(c.faces, &drawn), c.gg)
+		count, detailed := giantsFor(scriptCounter(t, c.faces, &drawn), c.gg)
 		if count != c.wantCount {
 			t.Errorf("%s: count = %d, want %d", c.name, count, c.wantCount)
 		}
@@ -389,11 +406,20 @@ func TestGenerateForMapDiceAlignment(t *testing.T) {
 	}
 
 	// Each branch above is only evidence if seeds actually reached it.
-	if agreeAbsent == 0 || agreePresent == 0 || disagreeAbsent == 0 || exception == 0 {
+	// agreeAbsent and exception count the SAME seeds — both increment
+	// unconditionally in the rolled-0 branch, one per assertion made there — so
+	// listing both in the guard below reads like four populations when there are
+	// three. Asserted explicitly rather than left to look like coverage it is not.
+	if agreeAbsent != exception {
+		t.Fatalf("rolled-0 counters disagree: agreeAbsent=%d exception=%d — "+
+			"they count the same seeds and must move together",
+			agreeAbsent, exception)
+	}
+
+	if agreeAbsent == 0 || agreePresent == 0 || disagreeAbsent == 0 {
 		t.Fatalf(
-			"alignment cases not all exercised: agreeAbsent=%d agreePresent=%d "+
-				"disagreeAbsent=%d exception=%d",
-			agreeAbsent, agreePresent, disagreeAbsent, exception)
+			"alignment cases not all exercised: rolled0=%d agreePresent=%d disagreeAbsent=%d",
+			agreeAbsent, agreePresent, disagreeAbsent)
 	}
 }
 
