@@ -103,11 +103,15 @@ type Rank struct {
 }
 
 // A PromotionRule is a rank-advancement roll: 2D at or under a characteristic,
-// optionally raised by the character's Medals and Wound Badges, or Publications.
+// optionally raised by the character's Medal mods, or Publications. Wound Badges
+// do NOT raise it — see promoted, which resolves that book conflict.
 type PromotionRule struct {
-	Char            Characteristic
-	MedalsAndWounds bool
-	PubsMod         bool
+	Char Characteristic
+	// MedalMods raises the promotion target by the character's summed Medal mods
+	// (Book 1 p.70). Wound Badges do NOT count despite three pages saying they do —
+	// see promoted, which resolves that conflict against the worked example.
+	MedalMods bool
+	PubsMod   bool
 }
 
 // A TenureRule gates a Scholar's promotion beyond a rank until they earn Tenure
@@ -202,13 +206,11 @@ type Branch struct {
 // defaulting to keeping the current Branch: keeping rolls no die, so a default
 // character's dice stream is exactly what it was before this rule existed.
 //
-// The p. 66 option to *select* rather than reroll a Branch is not offered. The
-// book gates selection on a roll — "He must roll Soc or less to select Branch"
-// (p. 66's worked example; the p. 72 checklists print "Select Branch Soc") — and
-// that gate is not implemented anywhere, at career start included, where the
-// engine simply rolls. Offering free selection without the gate would hand a
-// character their best Branch for nothing; the gate and the option belong in one
-// change.
+// The p. 66 option to *select* rather than roll a Branch is offered, and priced:
+// "He must roll Soc or less to select Branch" (the p. 72 worked example; the
+// checklists print "Select Branch  Soc"). See selectBranch. Selection without
+// that gate would hand a character their best Branch for nothing, which is why
+// the gate and the option landed together.
 type BranchOps struct {
 	Branches [9]Branch // indexed 1-8 by the branch roll (index 0 unused)
 	// EnlistedBranches is the separate Enlisted column, for a career that prints
@@ -218,14 +220,25 @@ type BranchOps struct {
 	OpsMods          [10]int // indexed 1-9 by the operations roll (index 0 unused)
 }
 
+// armedForces reports whether this is an armed-forces career — one that prints a
+// Branch table (Book 1 pp.81-86). It is the discriminator for the rules that page
+// set carries alone: the Branch/Operations mods, the Commission ladder, and the XS
+// badge a held Risk earns.
+//
+// It is BranchOps, not RewardKind or hasRanks. RewardKind names what a *Reward*
+// earns and coincides only because Soldier/Spacer/Marine are today's only
+// RewardMedal careers; hasRanks is broader still, matching the Merchant, Scholar
+// and Functionary, none of which print the XS line.
+//
+// Value receiver, like every other Career method, despite Career being 4384 bytes:
+// this inlines at all three call sites, so the copy is elided. Verified with
+// `go build -gcflags=-m`.
+func (c Career) armedForces() bool { return c.BranchOps != nil }
+
 // branchFor returns the Branch for a branch roll, read from the column matching
 // the character's status at the moment they select a Branch (Book 1 p. 81).
 func (bo *BranchOps) branchFor(officer bool, roll int) Branch {
-	if !officer && bo.EnlistedBranches != nil {
-		return bo.EnlistedBranches[roll]
-	}
-
-	return bo.Branches[roll]
+	return bo.column(officer)[roll]
 }
 
 // commissionBranch is the Branch a newly commissioned character keeps (Book 1
@@ -246,10 +259,8 @@ func (bo *BranchOps) commissionBranch(roll int) Branch {
 	}
 
 	current := bo.EnlistedBranches[roll]
-	for i := 1; i < len(bo.Branches); i++ {
-		if bo.Branches[i].Name == current.Name {
-			return bo.Branches[i]
-		}
+	if b, ok := bo.officerBranchNamed(current.Name); ok {
+		return b
 	}
 
 	return bo.Branches[roll]
@@ -383,7 +394,13 @@ type CareerRecord struct {
 	Rank          int  // rank number within the current track (0 for a rankless career)
 	Officer       bool // whether Rank is on the officer track
 	Commendations int  // Commendations earned in this career (drive its muster rolls/DM)
-	Outcome       TermOutcome
+	// Branch is the armed-forces Branch of service the character last held in this
+	// career ("" for a career with no Branch table). It is recorded per career
+	// rather than on the Character because a character may serve several, and it
+	// is the LAST branch held rather than the first: Book 1 p. 66 lets a non-officer
+	// reselect or reroll at the end of each Term, and the Commission re-reads it.
+	Branch  string
+	Outcome TermOutcome
 }
 
 // careerRun is the transient bookkeeping for one career, live only during
@@ -401,6 +418,7 @@ type careerRun struct {
 	commends    int              // Commendations earned this career (per-career muster rolls/DM)
 	branchMod   int              // the chosen armed-forces Branch's R&R mod
 	branchOpsDM int              // the chosen Branch's DM on Operations rolls
+	branchName  string           // the chosen Branch's name, for the career record
 	branchRoll  int              // the roll that chose the current Branch (re-read at Commission)
 	terms       int              // terms served before the current one (the Rogue's "Mod +Terms")
 	inPrison    bool             // the Rogue serves the coming term in prison (Book 1 p. 84)
@@ -562,8 +580,10 @@ func runCareer(r *dice.Roller, p Policy, c *Character, run *careerRun, career Ca
 		// Branch is chosen at career start — where every character is still
 		// enlisted (rank R1 above), so run.officer is false and a two-column table
 		// is read from its Enlisted side. A non-officer may reselect it at the end
-		// of any later term (rerollBranch).
-		rollBranch(r, c, run, career)
+		// of any later term (rerollBranch). The character may SELECT rather than
+		// roll, at the price of a Soc check (Book 1 p.66); chooseBranch offers that
+		// and rolls when it is declined or failed.
+		chooseBranch(r, p, c, run, career)
 	}
 
 	for {
@@ -591,11 +611,20 @@ func runCareer(r *dice.Roller, p Policy, c *Character, run *careerRun, career Ca
 			break
 		}
 
+		// Keep the record's Branch in step with the run before any policy hook reads
+		// it. rec is passed by value to RerollBranch and Continue, and assigning it
+		// only at muster-out (below) left both seeing "" for the whole career — so a
+		// policy meaning "keep Flight" rerolled every term, drawing an extra die and
+		// landing the character somewhere he never chose.
+		rec.Branch = run.branchName
+
 		// The term is over and the character survived it: a non-officer may change
 		// Branch (Book 1 p. 66, "at the end of each Term"). It runs before the
 		// Continue roll — the change belongs to the term that just ended, and the
 		// Continue roll reads no Branch, so the order is not observable.
 		rerollBranch(r, p, c, run, career, rec)
+
+		rec.Branch = run.branchName // rerollBranch may have just changed it
 
 		if !continues(r, p, *c, career, rec, run) {
 			rec.Outcome = MusteredOut
@@ -607,7 +636,45 @@ func runCareer(r *dice.Roller, p Policy, c *Character, run *careerRun, career Ca
 	rec.Rank = run.rank
 	rec.Officer = run.officer
 	rec.Commendations = run.commends
+	rec.Branch = run.branchName
 	c.Careers = append(c.Careers, rec)
+}
+
+// resolveRiskInjury applies a failed Risk roll's consequence and reports the
+// term's verdict. The CC drops by any negative (bravery) mod and the Branch/
+// Operations mod, then Flux. This resolution comes before the Reward roll because
+// it is the Risk roll's own outcome (Book 1 p.65, and the Eneri Dinsha example on
+// p.72 applies the injury Flux before rolling Reward).
+func resolveRiskInjury(
+	r *dice.Roller,
+	c *Character,
+	cc Characteristic,
+	ccVal, mod, bo int,
+) TermOutcome {
+	negMods := bo
+	if mod < 0 {
+		negMods += -mod
+	}
+
+	injury, newVal := classifyInjury(ccVal, negMods, r.Flux())
+	switch injury {
+	case Unharmed:
+		// the Flux compensated for the mods: no injury
+	case Wounded:
+		c.scores[cc] = newVal
+		c.WoundBadges++
+	case Disabling:
+		c.scores[cc] = newVal
+
+		return Disabled
+	case Fatal:
+		c.scores[cc] = max(newVal, 0)
+		c.Dead = true
+
+		return Died
+	}
+
+	return Ongoing
 }
 
 // runTerm resolves one term (Book 1 p. 64). It selects the Controlling
@@ -661,78 +728,155 @@ func runTerm(r *dice.Roller, p Policy, c *Character, run *careerRun, career Care
 	// until after the Reward roll, which happens either way.
 	outcome := Ongoing
 
-	if !riskOK {
-		// Risk failed: the CC drops by any negative (bravery) mod and the Branch/
-		// Operations mod, then Flux. This resolution comes before the Reward roll
-		// because it is the Risk roll's own outcome (Book 1 p.65, and the Eneri
-		// Dinsha example on p.66 applies the injury Flux before rolling Reward).
-		negMods := bo
-		if mod < 0 {
-			negMods += -mod
+	if riskOK {
+		// "Risk Success: Receive XS Exemplary Service Badge. Character is unharmed."
+		// (Book 1 pp.81/82/86, printed on all three armed-forces pages.) Medals were
+		// awarded only on Reward successes, so a character who held his Risk went
+		// undercounted at every later promotion roll. No dice are drawn: the badge
+		// follows from the Risk roll already made.
+		if career.armedForces() {
+			awardMedal(c, exemplaryService)
 		}
-
-		injury, newVal := classifyInjury(ccVal, negMods, r.Flux())
-		switch injury {
-		case Unharmed:
-			// the Flux compensated for the mods: no injury
-		case Wounded:
-			c.scores[cc] = newVal
-			c.WoundBadges++
-		case Disabling:
-			c.scores[cc] = newVal
-			outcome = Disabled
-		case Fatal:
-			c.scores[cc] = max(newVal, 0)
-			c.Dead = true
-			outcome = Died
-		}
+	} else {
+		outcome = resolveRiskInjury(r, c, cc, ccVal, mod, bo)
 	}
 
-	// Reward is rolled EVERY term, whether the Risk was held or lost (Book 1
-	// p.65: "The Character rolls for Risk ... and determines the outcome. He
-	// then rolls again for Reward ... and determines the consequences"). The
-	// Eneri Dinsha worked example (p.66) fails Risk in both of his terms — taking
-	// a Wound Badge in the first — and still rolls Reward and takes a Medal each
-	// time. The target keeps the ORIGINAL Controlling Characteristic: Eneri's
-	// second-term Reward is "10 +2 +1 -2" against his pre-injury Dexterity-10.
-	// The roll happens either way, so the dice stream does not depend on the Risk
-	// outcome, but a character the Risk roll killed collects nothing: the book
-	// has him "determine the consequences", and a corpse has none. Without this
-	// a Merchant killed in his term still banks Ship Shares, and a Scout still
-	// records a Discovery, both of which feed muster-out and the character sheet.
+	// Reward is rolled EVERY term, held Risk or lost — see grantReward's contract.
 	if reward := r.Resolve(dice.Check{Dice: 2, Target: ccVal - mod + bo}); reward.Success && outcome != Died {
 		grantReward(c, run, career, reward, ccVal)
 	}
 
-	// A dead or disabled character stops here; a surviving (even wounded) one
-	// finishes the term below.
-	if outcome != Ongoing {
+	// A character the Risk roll killed stops here; everyone else, including a
+	// character it disabled, finishes the term below.
+	//
+	// A Disabled character serves out the term he was disabled in: Book 1 p.65 has
+	// him "Muster Out at the end of the Term", which is the term COMPLETING rather
+	// than aborting, so the skill eligibilities he earned by serving it are his. He
+	// takes no rank roll — a promotion for a man being invalided out has no support
+	// in the text, and the book states no rule either way, so the narrower reading
+	// is taken and recorded here rather than inferred at each reading.
+	if outcome == Died {
 		return outcome
 	}
 
-	// A surviving (even wounded) character gains skills. An Agent runs an
-	// Undercover Assignment; everyone else takes their term skills, with one
-	// extra on a term they commission or promote (Book 1 p. 82: "1 skill because
-	// he was promoted").
+	// An Agent runs an Undercover Assignment; everyone else takes their term
+	// skills, with one extra on a term they commission or promote (Book 1 p. 82:
+	// "1 skill because he was promoted").
 	if career.UndercoverCareer {
 		awardUndercover(r, p, c, career, riskOK)
 
-		return Ongoing
+		return outcome
 	}
 
+	// The rank roll is skipped for a Disabled character: he serves the term out and
+	// earns its skills, but is not promoted on his way to the infirmary. Skipping it
+	// also keeps his stream free of a draw whose result could never apply.
 	elig := career.EligPerTerm
-	if resolveRank(r, p, c, run, career) {
-		elig++
+	if outcome == Ongoing && resolveRank(r, p, c, run, career) {
+		elig++ // Book 1 p.82, "1 skill because he was promoted"
 	}
 
 	awardSkillsN(r, p, c, career, elig)
 
-	return Ongoing
+	return outcome
+}
+
+// A Medal is one award from the Imperial Medals table (Book 1 p.70). Mod is the
+// bonus it adds to a Soldier/Spacer/Marine promotion target.
+type Medal struct {
+	Code string
+	Name string
+	Mod  int
+}
+
+// medalsTable is the p.70 Medals table, indexed by the line the book names: the
+// *unmodified* successful Reward roll, +1 if the character is an Officer. 2D
+// gives 2..12, so the officer bump makes 13 the top line; index 0 and 1 are unused.
+//
+// The Eneri Dinsha worked example (p.72) locks both ends of the lookup: a raw
+// Reward roll of 3 with the Officer +1 reaches "Medals table line 4" for an XS,
+// and a raw 9 with the same +1 reaches "line 10" for an MCUF.
+var medalsTable = [14]Medal{
+	2:  {"XS", "Exemplary Service", 1},
+	3:  {"XS", "Exemplary Service", 1},
+	4:  {"XS", "Exemplary Service", 1},
+	5:  {"XS", "Exemplary Service", 1},
+	6:  {"XS", "Exemplary Service", 1},
+	7:  {"XS", "Exemplary Service", 1},
+	8:  {"XS", "Exemplary Service", 1},
+	9:  {"MCUF", "Meritorious Conduct Under Fire", 2},
+	10: {"MCUF", "Meritorious Conduct Under Fire", 2},
+	11: {"MCG", "Medal for Conspicuous Gallantry", 3},
+	12: {"SEH", "Starburst for Extreme Heroism", 4},
+	13: {"*SEH*", "SEH With Diamonds", 5},
+}
+
+// exemplaryService is the XS badge a held Risk earns ("Risk Success: Receive XS
+// Exemplary Service Badge", Book 1 pp.82/86 and the Spacer's p.81). It is the
+// table's own bottom entry, not a separate award.
+var exemplaryService = medalsTable[2]
+
+// awardMedal records one medal. The award itself is kept, not a tally of it: a
+// character sheet reading "MCUF, SEH" cannot be recovered from a count and a mod
+// sum, and #192's MCG/SEH muster-out rolls need to know which medal was earned.
+// The count and the mod sum are both derived (MedalCount, MedalMods), so they
+// cannot drift from each other or from the awards.
+func awardMedal(c *Character, m Medal) {
+	c.Medals = append(c.Medals, m)
+}
+
+// MedalCount is how many medals the character has been awarded.
+func (c Character) MedalCount() int { return len(c.Medals) }
+
+// MedalMods is the summed p.70 table mod of the character's medals — the bonus
+// they contribute to a Soldier/Spacer/Marine promotion target. Two medals are not
+// worth +2 unless both are XS: one MCUF alone is +2.
+func (c Character) MedalMods() int {
+	total := 0
+	for _, m := range c.Medals {
+		total += m.Mod
+	}
+
+	return total
+}
+
+// medalFor reads the award off the p.70 table for a successful Reward roll.
+// The roll is the raw 2D, before any Risk & Reward mods: "Rew= Successful
+// unmodified Reward Roll. If Officer, increase +1".
+func medalFor(rawRoll int, officer bool) Medal {
+	line := rawRoll
+	if officer {
+		line++
+	}
+
+	// 2D is 2..12 and the Officer bump tops at 13, so every reachable line is a real
+	// row. Rather than clamp an unreachable value into one, fail on it: lines 0 and 1
+	// are inside the array and would hand back a nameless zero-value Medal, which
+	// MedalCount would count and no sheet could render.
+	if line < 2 || line >= len(medalsTable) {
+		panic(fmt.Sprintf("chargen: medal line %d out of range 2-%d", line, len(medalsTable)-1))
+	}
+
+	return medalsTable[line]
 }
 
 // grantReward awards the career's reward token for a successful Reward roll
 // (Book 1 p.65). ccVal is the term's original Controlling Characteristic value,
 // which the Scholar's Award-Winning threshold is measured against.
+//
+// The Reward is rolled every term, whether the Risk was held or lost (p.65: "The
+// Character rolls for Risk ... and determines the outcome. He then rolls again for
+// Reward ... and determines the consequences"). The Eneri Dinsha worked example
+// (p.72) fails Risk in both of his terms — taking a Wound Badge in the first — and
+// still rolls Reward and takes a Medal each time. The target keeps the ORIGINAL
+// Controlling Characteristic: his second-term Reward is "10 +2 +1 -2" against his
+// pre-injury Dexterity-10.
+//
+// The roll happens either way, so the dice stream does not depend on the Risk
+// outcome — but a character the Risk roll killed collects nothing: the book has him
+// "determine the consequences", and a corpse has none. Without that guard a Merchant
+// killed in his term still banks Ship Shares and a Scout still records a Discovery,
+// both of which feed muster-out and the character sheet.
 func grantReward(
 	c *Character,
 	run *careerRun,
@@ -744,7 +888,7 @@ func grantReward(
 	case RewardNone:
 		// the reward is deferred (e.g. the Rogue's Scheme); nothing to grant
 	case RewardMedal:
-		c.Medals++
+		awardMedal(c, medalFor(reward.Roll, run.officer))
 	case RewardPublication:
 		c.Publications++
 		if reward.Roll <= ccVal-4 {
@@ -763,6 +907,83 @@ func grantReward(
 	}
 }
 
+// column returns the Branch table the character reads: the Enlisted column where
+// the career prints one and the character is not an officer, else Branches.
+func (bo *BranchOps) column(officer bool) *[9]Branch {
+	if !officer && bo.EnlistedBranches != nil {
+		return bo.EnlistedBranches
+	}
+
+	return &bo.Branches
+}
+
+// officerBranchNamed locates a Branch by name in the Officer column. A name on
+// more than one row (Infantry holds rows 1 and 2 of the Soldier table) resolves
+// to the first, which is the lowest roll that reaches it.
+func (bo *BranchOps) officerBranchNamed(name string) (Branch, bool) {
+	for roll := 1; roll <= 8; roll++ {
+		if bo.Branches[roll].Name == name {
+			return bo.Branches[roll], true
+		}
+	}
+
+	return Branch{}, false
+}
+
+// selectBranch attempts the "select" half of Book 1 p.66, "the character Begins
+// in a service, select or roll for Branch". Selecting is not free: the Eneri
+// Dinsha example prices it — "He must roll Soc or less to select Branch (roll 10
+// or less; he rolls 7) and chooses Flight" — and the p.72 checklists print the
+// same gate for all three armed-forces careers as "Select Branch  Soc".
+//
+// It reports whether a Branch was selected. A policy that does not wish to
+// select rolls no dice at all, which is why DefaultPolicy's behaviour — and every
+// existing golden — is unchanged. A FAILED Soc check falls back to rolling: p.66
+// offers select and roll as alternatives, so failing to select leaves the roll,
+// and the character is not left without a Branch.
+func selectBranch(r *dice.Roller, p Policy, c *Character, run *careerRun, bo *BranchOps) bool {
+	col := bo.column(run.officer)
+
+	// A copy, not col[1:]: that slice aliases the package-level career table, so a
+	// policy that sorted it to pick the best Mod would permanently reorder the rules
+	// data for every character generated afterwards.
+	available := append([]Branch(nil), col[1:]...)
+
+	idx, want := p.SelectBranch(*c, available)
+	if !want {
+		return false
+	}
+
+	// The index is into the slice the hook was just handed, so anything outside it
+	// is a policy bug, not a rule outcome — panic rather than quietly rolling and
+	// leaving the character in a Branch nobody chose. This is the same treatment
+	// awardSkillsN gives an out-of-range skill column.
+	if idx < 0 || idx >= len(available) {
+		panic(fmt.Sprintf("chargen: SelectBranch index %d out of range 0-%d", idx, len(available)-1))
+	}
+
+	// Checked before the roll, so a buggy policy fails without first perturbing the
+	// dice stream.
+	if !r.Resolve(dice.Check{Dice: 2, Target: c.Score(Social)}).Success {
+		return false
+	}
+
+	// branchRoll is kept in step with the Branch, since a later Commission re-reads
+	// the Officer column through it.
+	run.branchRoll = idx + 1
+	holdBranch(run, col[run.branchRoll])
+
+	return true
+}
+
+// chooseBranch resolves a Branch at a selection point: the character may attempt
+// to select one, and otherwise — or on a failed Soc check — rolls for it.
+func chooseBranch(r *dice.Roller, p Policy, c *Character, run *careerRun, career Career) {
+	if !selectBranch(r, p, c, run, career.BranchOps) {
+		rollBranch(r, c, run, career)
+	}
+}
+
 // rollBranch rolls a Branch (1D, +2 if Edu 10+; Book 1 pp. 81-86) and makes it
 // the run's current Branch, read from the column matching the character's
 // status. It serves both the career-start selection and a non-officer's
@@ -774,7 +995,7 @@ func rollBranch(r *dice.Roller, c *Character, run *careerRun, career Career) {
 
 // holdBranch makes b the run's current Branch.
 func holdBranch(run *careerRun, b Branch) {
-	run.branchMod, run.branchOpsDM = b.Mod, b.OpsDM
+	run.branchMod, run.branchOpsDM, run.branchName = b.Mod, b.OpsDM, b.Name
 }
 
 // rerollBranch offers a surviving non-officer the end-of-term Branch change of
@@ -788,7 +1009,12 @@ func rerollBranch(r *dice.Roller, p Policy, c *Character, run *careerRun, career
 	}
 
 	if p.RerollBranch(*c, rec) {
-		rollBranch(r, c, run, career)
+		// p.66 says "change (reselect or reroll)" — both halves are offered here.
+		// #298 exposed only the reroll, deliberately: without the Soc gate a policy
+		// could hand a character his best Branch free, every term. The gate is what
+		// makes reselection a decision rather than a giveaway, so the two land
+		// together.
+		chooseBranch(r, p, c, run, career)
 	}
 }
 
@@ -1224,7 +1450,8 @@ func awardCitizenLife(p Policy, c *Character, run *careerRun) {
 // failing that, they roll Enlisted Promotion, and an officer rolls Officer
 // Promotion. A single-ladder career (no officer track, e.g. the Scholar) only
 // rolls its one promotion. Promotion (not Commission) targets are raised by
-// Medals, Wound Badges, or Publications. Reaching a rank grants its auto-skill.
+// Medal mods or Publications — not Wound Badges (see promoted). Reaching a rank
+// grants its auto-skill.
 // It reports whether the character commissioned or promoted this term (which
 // earns one extra skill, Book 1 p. 82).
 func resolveRank(r *dice.Roller, p Policy, c *Character, run *careerRun, career Career) bool {
@@ -1289,11 +1516,29 @@ func attemptTenure(r *dice.Roller, c *Character, rule TenureRule) {
 }
 
 // promoted resolves one promotion roll: 2D at or under the rule's characteristic,
-// raised by Medals and Wound Badges, or Publications, when the rule allows.
+// raised by the character's Medal mods, or Publications, when the rule allows.
+//
+// Wound Badges do NOT count, though three places in the book say they do. The
+// Soldier/Spacer/Marine pages footnote their promotion lines "*+Medals and WB
+// Mods" (pp.81/82/86) and the Master Chargen Checklists repeat it (p.72). Against
+// them stand the Medals table's own footnote — "Medals (but not Wound Badges) are
+// Mods for Soldier / Spacer / Marine Promotion" (p.70) — and, decisively, the only
+// dice-traced example: Eneri Dinsha ends his first term holding a Wound Badge and
+// an XS, and promotes against "Soc plus Medal Mods (10 +1) = 11" (p.72). The badge
+// is not in that sum. A worked example beats a footnote, so the badge is excluded.
+//
+// WoundBadges is kept, but note it is now WRITE-ONLY in the engine: it is
+// incremented on a Wounded result and printed by cmd/chargen, and nothing reads it
+// mechanically. Book 1 p.91 gives it consequences this package has not implemented,
+// so it is a record awaiting a consumer, not a live input.
+//
+// The same example fixes the mod's SIZE: his second-term promotion is "(10 +1+2)
+// = 13", the first term's XS plus that term's MCUF. Medals contribute their table
+// mod, not one point each — a flat count would have made it 12.
 func promoted(r *dice.Roller, c Character, rule PromotionRule) bool {
 	target := c.Score(rule.Char)
-	if rule.MedalsAndWounds {
-		target += c.Medals + c.WoundBadges
+	if rule.MedalMods {
+		target += c.MedalMods()
 	}
 
 	if rule.PubsMod {

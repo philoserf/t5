@@ -74,10 +74,10 @@ var SpacerCareer = Career{
 	BranchOps:        &spacerBranchOps,
 	Commission:       PromotionRule{Char: Dexterity}, // C2
 	EnlistedPromote: PromotionRule{
-		Char:            Dexterity,
-		MedalsAndWounds: true,
+		Char:      Dexterity,
+		MedalMods: true,
 	}, // C2* (Rating Promotion)
-	OfficerPromote: PromotionRule{Char: Social, MedalsAndWounds: true}, // Soc*
+	OfficerPromote: PromotionRule{Char: Social, MedalMods: true}, // Soc*
 	EnlistedRanks: []Rank{
 		{Title: "Spacehand", Skill: "Fighter"},
 		{Title: "Able Spacer"},

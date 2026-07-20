@@ -66,7 +66,7 @@ type Character struct {
 	Benefits         []string       // named mustering-out benefits (Ship Share, TAS, …)
 	Entitlements     []Entitlement  // recurring annual income earned in careers (Book 1 p. 69)
 	WoundBadges      int            // career injuries survived
-	Medals           int            // awards earned on successful Reward rolls (armed forces)
+	Medals           []Medal        // awards earned on Risk and Reward successes (armed forces)
 	Fame             int            // reputation, the Entertainer's measure of success (Book 1 p. 77)
 	Talent           int            // the Entertainer's performance ability
 	Masterpieces     int            // works of art the Craftsman has created (Book 1 p. 75)

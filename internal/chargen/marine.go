@@ -40,9 +40,9 @@ var MarineCareer = Career{
 	BenefitDM:        DMOfficerRank,
 	RewardKind:       RewardMedal,
 	BranchOps:        &marineBranchOps,
-	Commission:       PromotionRule{Char: Endurance},                           // C3
-	EnlistedPromote:  PromotionRule{Char: Strength, MedalsAndWounds: true},     // C1*
-	OfficerPromote:   PromotionRule{Char: Intelligence, MedalsAndWounds: true}, // C4*
+	Commission:       PromotionRule{Char: Endurance},                     // C3
+	EnlistedPromote:  PromotionRule{Char: Strength, MedalMods: true},     // C1*
+	OfficerPromote:   PromotionRule{Char: Intelligence, MedalMods: true}, // C4*
 	EnlistedRanks: []Rank{
 		{Title: "Private", Skill: "Fighter"},
 		{Title: "Lance Corporal"},

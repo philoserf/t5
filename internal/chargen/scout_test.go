@@ -30,6 +30,7 @@ func (goldenPolicy) NextCareer(Character) (Career, bool)               { return 
 func (goldenPolicy) ChooseExplorerDuty(Character) bool                 { return true }
 func (goldenPolicy) RerollBranch(Character, CareerRecord) bool         { return false }
 func (goldenPolicy) RerollBranchOnCommission(Character) bool           { return false }
+func (goldenPolicy) SelectBranch(Character, []Branch) (int, bool)      { return 0, false }
 
 // TestGoldenScout traces a complete two-term Scout end-to-end from a scripted
 // roller and policy, locking the Scout transcription and the whole career

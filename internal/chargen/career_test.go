@@ -46,6 +46,7 @@ func (stopAfter) NextCareer(Character) (Career, bool)               { return Car
 func (stopAfter) ChooseExplorerDuty(Character) bool                 { return true }
 func (stopAfter) RerollBranch(Character, CareerRecord) bool         { return false }
 func (stopAfter) RerollBranchOnCommission(Character) bool           { return false }
+func (stopAfter) SelectBranch(Character, []Branch) (int, bool)      { return 0, false }
 
 func TestContinueTarget(t *testing.T) {
 	c := Character{scores: [count]int{7, 7, 7, 10, 8, 6}}
@@ -285,9 +286,9 @@ func TestRunTermRewardRollsWhenRiskFails(t *testing.T) {
 		t.Errorf("injury: badges %d End %d, want 1/10", c.WoundBadges, c.scores[Endurance])
 	}
 
-	if c.Medals != 1 {
+	if c.MedalCount() != 1 {
 		t.Errorf("Medals = %d, want 1: Reward is rolled even when Risk fails (Book 1 p.65)",
-			c.Medals)
+			c.MedalCount())
 	}
 }
 
@@ -442,7 +443,13 @@ func TestRunTermAwardsSkillsOnSurvival(t *testing.T) {
 	}
 }
 
-func TestRunTermNoSkillsWhenDisabled(t *testing.T) {
+// TestRunTermDisabledStillTakesTermSkills covers the term a character is
+// disabled in. Book 1 p.65 has a Disabled character "Muster Out at the end of
+// the Term" — the term completes rather than aborting, so the skill
+// eligibilities he earned by serving it are his. He takes no rank roll: the book
+// states no rule either way, and promoting a man being invalided out has no
+// textual support, so the narrower reading applies.
+func TestRunTermDisabledStillTakesTermSkills(t *testing.T) {
 	c := Character{scores: [count]int{7, 7, 7, 8, 8, 8}}
 	career := Career{
 		Name:             "S",
@@ -451,10 +458,11 @@ func TestRunTermNoSkillsWhenDisabled(t *testing.T) {
 		Skills:           commsGrid(),
 	}
 	run := careerRun{ccPool: []Characteristic{Strength}}
-	// Risk fails (8 > 7), Flux -4 disables: no skills awarded. The Reward roll
-	// still happens first (Book 1 p.65), so its 2D is scripted after the Flux.
+	// Risk fails (8 > 7), Flux -4 disables. The Reward roll still happens first
+	// (Book 1 p.65), so its 2D is scripted after the Flux; the term's one skill
+	// eligibility then draws the final die.
 	if got := runTerm(
-		dice.NewScripted(4, 4, 1, 5, 3, 4),
+		dice.NewScripted(4, 4, 1, 5, 3, 4, 1),
 		stopAfter{},
 		&c,
 		&run,
@@ -463,8 +471,35 @@ func TestRunTermNoSkillsWhenDisabled(t *testing.T) {
 		t.Fatalf("outcome = %v, want Disabled", got)
 	}
 
-	if c.Skills.Level("Comms") != 0 {
-		t.Errorf("disabled term granted skills: Comms %d", c.Skills.Level("Comms"))
+	if c.Skills.Level("Comms") != 1 {
+		t.Errorf("disabled term granted %d Comms, want 1 (the term was served)",
+			c.Skills.Level("Comms"))
+	}
+}
+
+// TestRunTermDisabledTakesNoRankRoll is the other half: a disabled armed-forces
+// character takes his skills but no promotion. If a rank roll were made, the
+// scripted stream would be short by its 2D and NewScripted would panic.
+func TestRunTermDisabledTakesNoRankRoll(t *testing.T) {
+	c := Character{scores: [count]int{7, 7, 7, 8, 8, 8}}
+	career := Career{
+		Name:             "S",
+		ControllingChars: []Characteristic{Strength},
+		EligPerTerm:      1,
+		Skills:           commsGrid(),
+		EnlistedRanks:    []Rank{{Title: "Private"}, {Title: "Corporal"}},
+		EnlistedPromote:  PromotionRule{Char: Strength},
+	}
+	run := careerRun{ccPool: []Characteristic{Strength}, rank: 1}
+	// Exactly the dice of a disabled term with one skill: Risk 2D, injury Flux,
+	// Reward 2D, one skill die. No promotion 2D is scripted, so a rank roll panics.
+	got := runTerm(dice.NewScripted(4, 4, 1, 5, 3, 4, 1), stopAfter{}, &c, &run, career)
+	if got != Disabled {
+		t.Fatalf("outcome = %v, want Disabled", got)
+	}
+
+	if run.rank != 1 {
+		t.Errorf("rank = %d, want 1 (a disabled character is not promoted)", run.rank)
 	}
 }
 
@@ -511,7 +546,8 @@ func TestGenerateCareeredQualify(t *testing.T) {
 
 	// A qualify roll of 2 (<= Int) succeeds, so the character runs the career:
 	// one term of Risk, Reward and Continue, then the muster-out benefit die.
-	seq := append(append([]int{}, upp...),
+	seq := append(
+		append([]int{}, upp...),
 		1, 1, // qualify: 2
 		3, 4, // term 1 Risk: 7
 		3, 4, // term 1 Reward: 7
@@ -673,5 +709,48 @@ func TestRerollBranchIsDiceNeutralByDefault(t *testing.T) {
 
 	if officer.branchMod != 9 {
 		t.Errorf("an officer changed Branch: mod = %d, want the untouched 9", officer.branchMod)
+	}
+}
+
+// branchSpy records the CareerRecord.Branch it is shown at each end-of-term
+// reselect offer.
+type branchSpy struct {
+	stopAfter
+
+	seen *[]string
+}
+
+func (b branchSpy) RerollBranch(_ Character, rec CareerRecord) bool {
+	*b.seen = append(*b.seen, rec.Branch)
+
+	return false // keep the Branch, so no die is drawn and the stream is unchanged
+}
+
+// TestCareerRecordBranchVisibleToPolicy covers CareerRecord.Branch mid-career.
+// It is assigned at muster-out, but RerollBranch and Continue both receive the
+// record DURING the career and were shown "" for its whole length — so a policy
+// written the natural way ("reroll unless I am already in Flight") rerolled every
+// term, drew an extra die each time, and landed the character in a Branch he had
+// never chosen.
+//
+// A constant die source rather than a script: the assertion is about what the
+// policy is shown, not about an exact traced stream, and a 40-face script would
+// pin dice this test does not care about. End 2 keeps him enlisted — an officer
+// may not change Branch, so a commissioned character never reaches the hook.
+func TestCareerRecordBranchVisibleToPolicy(t *testing.T) {
+	c := Character{scores: [count]int{12, 12, 2, 12, 10, 12}, Age: 18}
+
+	var seen []string
+
+	RunCareer(dice.NewSource(func() int { return 3 }), branchSpy{stopAfter{2}, &seen}, &c, SoldierCareer)
+
+	if len(seen) != 2 {
+		t.Fatalf("RerollBranch offered %d times, want 2 (once per term)", len(seen))
+	}
+
+	for i, got := range seen {
+		if got != "Protected" {
+			t.Errorf("term %d: policy was shown Branch %q, want Protected", i+1, got)
+		}
 	}
 }

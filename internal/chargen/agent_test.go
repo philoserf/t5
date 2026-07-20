@@ -46,8 +46,8 @@ func TestGoldenAgent(t *testing.T) {
 		t.Errorf("UPP = %q, want %q (Str 8 +1 muster benefit)", got, "988777")
 	}
 
-	if c.Medals != 0 {
-		t.Errorf("Medals = %d, want 0 (the Agent earns Commendations, not Medals)", c.Medals)
+	if c.MedalCount() != 0 {
+		t.Errorf("Medals = %d, want 0 (the Agent earns Commendations, not Medals)", c.MedalCount())
 	}
 
 	if c.Commendations != 2 {
