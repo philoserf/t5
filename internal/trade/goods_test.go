@@ -114,7 +114,7 @@ func TestImbalanceNeverLeaksTradeCode(t *testing.T) {
 		t.Fatalf("good escaped as an Imbalances entry: %+v", g)
 	}
 
-	if goodsColumnEligible[g.Name] {
+	if goodsColumnEligible[tradecode.Code(g.Name)] {
 		t.Errorf("good's Name %q is a trade class, not a good", g.Name)
 	}
 }
@@ -167,7 +167,7 @@ func TestImbalanceHopCapTerminates(t *testing.T) {
 			drawn, len(prefix)+budget)
 	}
 
-	if g.Type == imbalancesBlock || goodsColumnEligible[g.Name] {
+	if g.Type == imbalancesBlock || goodsColumnEligible[tradecode.Code(g.Name)] {
 		t.Errorf("good escaped as an Imbalances entry: %+v", g)
 	}
 }
@@ -205,7 +205,7 @@ func TestSelectGoodsColumnDefault(t *testing.T) {
 }
 
 func TestColumnFor(t *testing.T) {
-	cases := map[string]string{
+	cases := map[tradecode.Code]string{
 		"Ga": "Ag-1",
 		"Fa": "Ag-2",
 		"Cp": "CpCsCx",
@@ -243,7 +243,7 @@ func TestGoodsDataWellFormed(t *testing.T) {
 			// to a key that does not exist. Cross-check every redirect target,
 			// including both halves of a bare Ag.
 			for j, tc := range b.Goods {
-				targets := []string{columnFor(tc)}
+				targets := []string{columnFor(tradecode.Code(tc))}
 				if tc == "Ag" {
 					targets = append(targets, "Ag-2")
 				}

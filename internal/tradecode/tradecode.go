@@ -92,7 +92,8 @@ const (
 
 // Order is the canonical set of all 46 Chart D codes, in Chart D section order
 // (Book 3 p.26). It is the single source of truth for which codes exist and in
-// what order they render; Rank and Valid are built from it.
+// what order they render; Rank is built from it. Treat it as read-only — mutating
+// it desynchronizes the rank index.
 var Order = []Code{
 	As, De, Fl, Ga, He, Ic, Oc, Va, Wa, Sa, Lk, // Planetary
 	Di, Ba, Lo, Ni, Ph, Hi, // Population
@@ -112,14 +113,6 @@ var rank = func() map[Code]int {
 
 	return m
 }()
-
-// Valid reports whether c is one of the Chart D codes. A code from a string
-// literal or from outside the vocabulary is not.
-func Valid(c Code) bool {
-	_, ok := rank[c]
-
-	return ok
-}
 
 // Rank returns c's position in Chart D order (Book 3 p.26), for sorting a code
 // list. An unknown code ranks after every known one, so a stray code sorts last

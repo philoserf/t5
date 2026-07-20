@@ -1,5 +1,7 @@
 package trade
 
+import "github.com/philoserf/t5/internal/tradecode"
+
 // The Random Trade Goods chart (Book 2 pp.218-219), transcribed from the
 // rendered page images. Each trade-classification column has six blocks selected
 // by a first 1D; a second 1D selects one of six goods within the block. A block
@@ -637,25 +639,28 @@ var tradeGoodsColumns = map[string][6]goodsBlock{
 // p.219 Trade Good Detail chart prints them. The book only says "select one" when
 // several apply, so tradeGoodsDetail takes the first in this order — a fixed rule,
 // so a world's cargo always describes the same way.
-var tradeGoodsDetailOrder = []string{
-	"As", "Ba", "De", "Di", "Fl", "Ga", "He", "Hi", "Ic", "Ni", "Po", "Ri", "Va", "Wa",
+var tradeGoodsDetailOrder = []tradecode.Code{
+	tradecode.As, tradecode.Ba, tradecode.De, tradecode.Di, tradecode.Fl, tradecode.Ga,
+	tradecode.He, tradecode.Hi, tradecode.Ic, tradecode.Ni, tradecode.Po, tradecode.Ri,
+	tradecode.Va, tradecode.Wa,
 }
 
 // tradeGoodsDetailLabel is the Trade Good Detail prefix each trade class confers
 // (Book 2 p.219). Hi's "Processed" is omitted for goods out of the Industrial
 // column and Va's "Exotic" for goods out of the Asteroid column, where the label
 // would restate the goods' own origin (handled in tradeGoodsDetail).
-var tradeGoodsDetailLabel = map[string]string{
-	"As": "Strange", "Ba": "Gathered", "De": "Mineral", "Di": "Artifact",
-	"Fl": "Unusual", "Ga": "Premium", "He": "Strange", "Hi": "Processed",
-	"Ic": "Cryo", "Ni": "Unprocessed", "Po": "Obscure", "Ri": "Quality",
-	"Va": "Exotic", "Wa": "Infused",
+var tradeGoodsDetailLabel = map[tradecode.Code]string{
+	tradecode.As: "Strange", tradecode.Ba: "Gathered", tradecode.De: "Mineral", tradecode.Di: "Artifact",
+	tradecode.Fl: "Unusual", tradecode.Ga: "Premium", tradecode.He: "Strange", tradecode.Hi: "Processed",
+	tradecode.Ic: "Cryo", tradecode.Ni: "Unprocessed", tradecode.Po: "Obscure", tradecode.Ri: "Quality",
+	tradecode.Va: "Exotic", tradecode.Wa: "Infused",
 }
 
 // goodsColumnEligible is the set of trade classes that select a Random Trade
 // Goods column (Book 2 p.218 "Which Trade Classification To Use").
-var goodsColumnEligible = map[string]bool{
-	"Ag": true, "As": true, "De": true, "Fa": true, "Fl": true, "Ga": true,
-	"Ic": true, "In": true, "Na": true, "Po": true, "Ri": true, "Va": true,
-	"Cp": true, "Cs": true, "Cx": true,
+var goodsColumnEligible = map[tradecode.Code]bool{
+	tradecode.Ag: true, tradecode.As: true, tradecode.De: true, tradecode.Fa: true,
+	tradecode.Fl: true, tradecode.Ga: true, tradecode.Ic: true, tradecode.In: true,
+	tradecode.Na: true, tradecode.Po: true, tradecode.Ri: true, tradecode.Va: true,
+	tradecode.Cp: true, tradecode.Cs: true, tradecode.Cx: true,
 }

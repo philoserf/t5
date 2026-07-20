@@ -85,6 +85,15 @@ func TestHighGSpelledOneWay(t *testing.T) {
 func TestHomeworldSkillCoversEveryCode(t *testing.T) {
 	playerChoice := map[tradecode.Code]bool{tradecode.In: true, tradecode.Ri: true}
 
+	// In/Ri are handled by ApplyHomeworldSkills's switch, which shadows the map's
+	// default lookup — so a homeworldSkill entry for either would be dead code the
+	// partition check below could not see. Assert they are absent from the map.
+	for c := range playerChoice {
+		if _, ok := homeworldSkill[c]; ok {
+			t.Errorf("player-choice code %q is also in homeworldSkill (a dead, shadowed entry)", c)
+		}
+	}
+
 	for _, c := range tradecode.Order {
 		_, hasSkill := homeworldSkill[c]
 		grants := hasSkill || playerChoice[c]

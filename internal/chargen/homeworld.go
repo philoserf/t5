@@ -71,20 +71,20 @@ var homeworldSkill = map[tradecode.Code][]string{
 // can assert that every tradecode.Code is accounted for by exactly one of the two
 // sets — a newly added code can never silently fall through the switch's default.
 var homeworldNoSkill = map[tradecode.Code]bool{
-	tradecode.Ba: true, // Barren — no homeworld skill by rule
-	tradecode.Di: true, // Dieback — no homeworld skill by rule
-	tradecode.Ph: true, // Pre-High Population — no homeworld skill by rule
-	tradecode.Px: true, // Prison/Exile Camp — no homeworld skill by rule
-	tradecode.Pe: true, // Penal Colony — no homeworld skill by rule
-	tradecode.Re: true, // Reserve — no homeworld skill by rule
-	tradecode.Sa: true, // Satellite — no homeworld skill by rule
-	tradecode.Lk: true, // Locked — no homeworld skill by rule
-	tradecode.Mr: true, // Military Rule — no homeworld skill by rule
-	tradecode.Cy: true, // Colony — no homeworld skill by rule
-	tradecode.Fo: true, // Forbidden — no homeworld skill by rule
-	tradecode.Pz: true, // Puzzle — no homeworld skill by rule
-	tradecode.Ab: true, // Data repository — no homeworld skill by rule
-	tradecode.An: true, // Ancient site — no homeworld skill by rule
+	tradecode.Ba: true, // Barren
+	tradecode.Di: true, // Dieback
+	tradecode.Ph: true, // Pre-High Population
+	tradecode.Px: true, // Prison/Exile Camp
+	tradecode.Pe: true, // Penal Colony
+	tradecode.Re: true, // Reserve
+	tradecode.Sa: true, // Satellite
+	tradecode.Lk: true, // Locked
+	tradecode.Mr: true, // Military Rule
+	tradecode.Cy: true, // Colony
+	tradecode.Fo: true, // Forbidden
+	tradecode.Pz: true, // Puzzle
+	tradecode.Ab: true, // Data repository
+	tradecode.An: true, // Ancient site
 }
 
 // ApplyHomeworldSkills grants a character their homeworld skills: one per Trade

@@ -23,25 +23,16 @@ func TestOrderIsComplete(t *testing.T) {
 	}
 }
 
-// TestRankAndValid: every Order member is Valid and ranks at its index; an unknown
-// code is not Valid and ranks last (total, never panicking).
-func TestRankAndValid(t *testing.T) {
+// TestRank: every Order member ranks at its index; an unknown code ranks last
+// (total, never panicking) so OrderTradeCodes's sort stays defined.
+func TestRank(t *testing.T) {
 	for i, c := range Order {
-		if !Valid(c) {
-			t.Errorf("%q is in Order but not Valid", c)
-		}
-
 		if Rank(c) != i {
 			t.Errorf("Rank(%q) = %d, want %d", c, Rank(c), i)
 		}
 	}
 
-	unknown := Code("Zz")
-	if Valid(unknown) {
-		t.Error("Valid(Zz) = true, want false")
-	}
-
-	if Rank(unknown) != len(Order) {
+	if unknown := Code("Zz"); Rank(unknown) != len(Order) {
 		t.Errorf("Rank(unknown) = %d, want %d (sorts last)", Rank(unknown), len(Order))
 	}
 }

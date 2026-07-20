@@ -48,7 +48,7 @@ func RandomTradeGoods(r *dice.Roller, worldTCs []tradecode.Code) Good {
 func selectGoodsColumn(r *dice.Roller, worldTCs []tradecode.Code) (string, tradecode.Code) {
 	eligible := make([]tradecode.Code, 0, len(worldTCs))
 	for _, tc := range worldTCs {
-		if goodsColumnEligible[string(tc)] {
+		if goodsColumnEligible[tc] {
 			eligible = append(eligible, tc)
 		}
 	}
@@ -59,7 +59,7 @@ func selectGoodsColumn(r *dice.Roller, worldTCs []tradecode.Code) (string, trade
 	// Index(1) consumes no dice, so a lone eligible class needs no special case.
 	tc := eligible[r.Index(len(eligible))]
 
-	return resolveColumn(r, string(tc)), tc
+	return resolveColumn(r, tc), tc
 }
 
 // imbalancesBlock is the type name of the block whose entries are trade classes
@@ -73,17 +73,18 @@ const maxImbalanceHops = 4
 
 // columnFor maps a trade class to its Random Trade Goods column key. Ga and Fa
 // share the Ag columns and the capital codes share one column. A bare Ag needs a
-// die to choose between Ag-1 and Ag-2 — use resolveColumn for that.
-func columnFor(tc string) string {
+// die to choose between Ag-1 and Ag-2 — use resolveColumn for that. The column key
+// is a separate string namespace (Ag-1, CpCsCx, …), so the default is string(tc).
+func columnFor(tc tradecode.Code) string {
 	switch tc {
-	case "Ag", "Ga":
+	case tradecode.Ag, tradecode.Ga:
 		return "Ag-1"
-	case "Fa":
+	case tradecode.Fa:
 		return "Ag-2"
-	case "Cp", "Cs", "Cx":
+	case tradecode.Cp, tradecode.Cs, tradecode.Cx:
 		return "CpCsCx"
 	default:
-		return tc
+		return string(tc)
 	}
 }
 
@@ -91,8 +92,8 @@ func columnFor(tc string) string {
 // for a bare Ag (Book 2 p.218: "If World TC=Ag is selected, pick randomly between
 // Ag-1 and Ag-2"). This applies wherever an Ag column is chosen — the world's own
 // class and an Imbalance redirect alike.
-func resolveColumn(r *dice.Roller, tc string) string {
-	if tc == "Ag" && r.Die() > 3 {
+func resolveColumn(r *dice.Roller, tc tradecode.Code) string {
+	if tc == tradecode.Ag && r.Die() > 3 {
 		return "Ag-2"
 	}
 
@@ -135,7 +136,7 @@ func rollGoodsColumn(r *dice.Roller, column string) (Good, string) {
 		// The chain continues on the named class's column; the last redirect is
 		// the oversupply that actually produced the goods.
 		imbalance = entry
-		column = resolveColumn(r, entry)
+		column = resolveColumn(r, tradecode.Code(entry))
 	}
 }
 
@@ -168,18 +169,17 @@ func tradeGoodsDetail(worldTCs []tradecode.Code, sourceTC tradecode.Code, column
 		// whose As column redirects to Ri was yielding "Quality <Ri good>", a label
 		// restating the goods' own origin. That is what the chart's two footnotes
 		// below suppress for Hi/In and Va/As; a redirect is the same situation
-		// arising by a different route, so it takes the same answer. tradeGoodsDetailOrder
-		// is program data (goods_data.go), still keyed as plain strings; bridge to
-		// tradecode.Code for the world/source comparisons.
-		if tc == string(sourceTC) || tc == column || !slices.Contains(worldTCs, tradecode.Code(tc)) {
+		// arising by a different route, so it takes the same answer. column is a
+		// column key (a separate namespace), so it is the one comparison that bridges.
+		if tc == sourceTC || string(tc) == column || !slices.Contains(worldTCs, tc) {
 			continue
 		}
 
-		if tc == "Hi" && column == "In" {
+		if tc == tradecode.Hi && column == "In" {
 			continue
 		}
 
-		if tc == "Va" && column == "As" {
+		if tc == tradecode.Va && column == "As" {
 			continue
 		}
 
