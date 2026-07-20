@@ -4,6 +4,22 @@
 // applicable Law + up to two situational Mods (three if the Personal is
 // Deliberate). That allowance is the caller's to keep: Resolve takes unbounded
 // variadic mods and sums them all.
+//
+// Citation rule for this package. The Personals chapter states each rule twice —
+// as prose on pp.181-183 and p.185, and as numbers on the p.184 P1 table — so
+// every citation here names one of the two deliberately: a type or a named
+// concept cites the page whose *heading* introduces the prose that defines it,
+// and a table of values cites the page whose heading names the *table* that
+// quantifies it. So Purpose and Law cite p.182 and Strategy cites p.185, while
+// strategyValues and lawMods cite p.184. Do not "correct" one into the other;
+// they answer different questions.
+//
+// The corollary is what makes this worth writing down: a value appearing on a
+// page is not evidence that the page is its source. p.183's Quick Personals
+// sidebar reprints several of p.184's numbers, so asking "are these numbers on
+// the cited page?" returns yes for the wrong page. Verify instead by finding the
+// heading that names the table and reading that page's printed footer — a PDF's
+// page index and the book's printed page number are not reliably the same.
 package personals
 
 import (
@@ -100,8 +116,11 @@ func StrategyValue(p Purpose, s Strategy) (int, bool) {
 	return v, ok
 }
 
-// Law is one of the Five Laws of Personal Interaction (Book 1 p.183). The best
-// applicable Law supplies a Mod to the Target.
+// Law is one of the Five Laws of Personal Interaction (Book 1 p.182, the page
+// headed "THE FIVE LAWS OF PERSONAL INTERACTION", which enumerates all five and
+// runs onto p.183 for the Comfort and Violence prose). The best applicable Law
+// supplies a Mod to the Target; those Mods are lawMods, cited to p.184 per the
+// package's citation rule.
 type Law int
 
 // The laws of social attraction.
@@ -127,9 +146,12 @@ var lawMods = map[Law][4]int{
 }
 
 // InferiorityAppeal is the extra Persuade Mod the Inferiority Law grants only
-// when the Actor supports it with Begging, Flattery, or Politeness (Book 1 p.183,
-// the "+2*" entry). Apply it as a situational Mod when that condition holds;
-// LawMod cannot, as it does not see the Tactic.
+// when the Actor supports it with Begging, Flattery, or Politeness (Book 1 p.184,
+// the P1 table's Inferiority/Persuade "+2*" entry and its footnote; p.183's Quick
+// Personals sidebar prints the same "+2*" and footnote on its own Persuade row).
+// It is a value, so it is cited to the table alongside lawMods, whose row it
+// belongs to. Apply it as a situational Mod when that condition holds; LawMod
+// cannot, as it does not see the Tactic.
 const InferiorityAppeal = 2
 
 // LawMod returns the Mod the Law contributes for the given Purpose (0 if it does
