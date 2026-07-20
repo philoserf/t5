@@ -1,6 +1,8 @@
 package systemgen
 
 import (
+	"slices"
+
 	"github.com/philoserf/t5/internal/tradecode"
 	"github.com/philoserf/t5/internal/uwp"
 	"github.com/philoserf/t5/internal/worldgen"
@@ -35,8 +37,10 @@ func (o OtherWorld) Type() worldgen.OtherWorldType { return o.typ }
 // Profile reports the world's UWP.
 func (o OtherWorld) Profile() uwp.Profile { return o.profile }
 
-// TradeCodes reports the world's trade classifications.
-func (o OtherWorld) TradeCodes() []tradecode.Code { return o.tradeCodes }
+// TradeCodes reports the world's trade classifications. It returns a copy, so the
+// encapsulated slice stays immutable through the reader (Profile is a value and
+// needs none).
+func (o OtherWorld) TradeCodes() []tradecode.Code { return slices.Clone(o.tradeCodes) }
 
 // orbitZone classifies an orbit relative to a star's habitable zone (Book 3
 // p.21): inner (HZ-2 or less), hospitable (HZ-1 to HZ+1), or outer (HZ+2 or

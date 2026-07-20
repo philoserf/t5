@@ -36,8 +36,9 @@ func (s Satellite) Type() worldgen.OtherWorldType { return s.typ }
 // Profile reports the moon's UWP. It is the zero Profile for a Ring.
 func (s Satellite) Profile() uwp.Profile { return s.profile }
 
-// TradeCodes reports the moon's trade classifications.
-func (s Satellite) TradeCodes() []tradecode.Code { return s.tradeCodes }
+// TradeCodes reports the moon's trade classifications. It returns a copy, so the
+// encapsulated slice stays immutable through the reader.
+func (s Satellite) TradeCodes() []tradecode.Code { return slices.Clone(s.tradeCodes) }
 
 // rollSatellites gives each placed world and gas giant its moons (Book 3 p.29
 // "Number Of Satellites"): a gas giant rolls 1D-1, and a world rolls by its

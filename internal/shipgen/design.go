@@ -14,8 +14,7 @@ func specProblems(spec ShipSpec) []string {
 	if !validConfig(spec.Config) {
 		problems = append(problems, fmt.Sprintf(
 			"configuration %d is not one of Cluster..Lifting; built as %s",
-			spec.Config, configIndex(spec.Config),
-		))
+			spec.Config, configIndex(spec.Config)))
 	}
 	// Hull sizes are the eHex letters as an ordinal, A=1 .. Z=24 (Book 2 p.93).
 	// An ordinal outside that range does not panic — it yields a nonsense
@@ -23,8 +22,7 @@ func specProblems(spec ShipSpec) []string {
 	// being no defensible guess at what size was meant.
 	if spec.HullLetter < 1 || spec.HullLetter > maxLetter {
 		problems = append(problems, fmt.Sprintf(
-			"hull size %d is outside A..Z (1..%d)", spec.HullLetter, maxLetter,
-		))
+			"hull size %d is outside A..Z (1..%d)", spec.HullLetter, maxLetter))
 	}
 
 	// Ordered, not a map: Problems is a rendered list, so its order is part of
@@ -41,8 +39,7 @@ func specProblems(spec ShipSpec) []string {
 		if stageIndex(d.spec.Stage) != d.spec.Stage {
 			problems = append(problems, fmt.Sprintf(
 				"%s drive stage %d is not one of Standard..Ultimate; built as %s",
-				d.kind, d.spec.Stage, Standard,
-			))
+				d.kind, d.spec.Stage, Standard))
 		}
 		// Book 2 p.77: "No drive may be smaller than the Drive-A of the class."
 		// Read as a floor on the size LETTER, not on tonnage — which is what
@@ -60,8 +57,7 @@ func specProblems(spec ShipSpec) []string {
 			problems = append(problems, fmt.Sprintf(
 				"%s drive size %d names no drive: sizes are A..Z (1..%d) and the "+
 					"even Nexus pairs A2..Z2 (26..%d)",
-				d.kind, d.spec.Letter, maxLetter, 2*maxLetter,
-			))
+				d.kind, d.spec.Letter, maxLetter, 2*maxLetter))
 		}
 	}
 
