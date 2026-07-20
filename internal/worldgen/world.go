@@ -24,11 +24,17 @@ type World struct { //nolint:recvcheck // deliberate value-reader / pointer-muta
 	// (placement, satellites, port) rather than re-reading the Size digit, and so a
 	// secondary world — where Size 0 does NOT mean belt (a Worldlet is not a belt,
 	// #324) — is never mistaken for one by sharing this accessor.
-	Belt            bool
-	Importance      int
-	Economic        Economic
-	Cultural        Cultural
-	Nobility        string
+	Belt bool
+	// The four derived Extensions are unexported behind readers (Importance,
+	// Economic, Cultural, Nobility) so a caller cannot set them out of step with
+	// the Profile/TradeCodes/bases they descend from. They change only through the
+	// Set* mutators, which recompute them. This follows skill.Set's encapsulation
+	// (chargen.go), the pattern this repo already uses where the world/system model
+	// did not (#330).
+	importance      int
+	economic        Economic
+	cultural        Cultural
+	nobility        string
 	NavalBase       bool
 	ScoutBase       bool
 	NavalDepot      bool
@@ -64,6 +70,22 @@ func GenerateBeltWorld(r *dice.Roller, gasGiants, belts int, isCapital bool) Wor
 	return generateWorld(r, gasGiants, belts, isCapital, true)
 }
 
+// NewWorld assembles a World from already-computed parts, the path for building a
+// world from known values rather than rolling it — a test fixture, or a record
+// parsed back in (#327). base carries the exported inputs and flags (Profile,
+// TradeCodes, Belt, bases, Zone, NativeStatus, PopulationDigit); the four derived
+// Extensions, unexported so a caller cannot leave them stale against those inputs
+// (#330), are supplied here and stamped in atomically. GenerateWorld is the rolled
+// path; after construction the Extensions change only through the Set* mutators.
+func NewWorld(base World, importance int, economic Economic, cultural Cultural, nobility string) World {
+	base.importance = importance
+	base.economic = economic
+	base.cultural = cultural
+	base.nobility = nobility
+
+	return base
+}
+
 func generateWorld(r *dice.Roller, gasGiants, belts int, isCapital, belt bool) World {
 	p := generate(r, belt)
 	tcs := TradeClassificationsWithContext(p, WorldContext{IsMainworld: true})
@@ -76,10 +98,10 @@ func generateWorld(r *dice.Roller, gasGiants, belts int, isCapital, belt bool) W
 		// A mainworld is a belt iff its Size is 0 (Book 3 p.16) — whether the belt
 		// param forced it or the 2D-2 roll produced it. See World.Belt.
 		Belt:            p.Size == uwp.BeltSize,
-		Importance:      ix,
-		Economic:        RollEconomic(r, p, ix, gasGiants, belts),
-		Cultural:        RollCultural(r, p, ix),
-		Nobility:        Nobility(tcs, ix, isCapital),
+		importance:      ix,
+		economic:        RollEconomic(r, p, ix, gasGiants, belts),
+		cultural:        RollCultural(r, p, ix),
+		nobility:        Nobility(tcs, ix, isCapital),
 		NavalBase:       naval,
 		ScoutBase:       scout,
 		Zone:            TravelZone(p),
@@ -87,6 +109,18 @@ func generateWorld(r *dice.Roller, gasGiants, belts int, isCapital, belt bool) W
 		PopulationDigit: PopulationDigit(r, p.Population),
 	}
 }
+
+// Importance reports the world's Importance Extension {Ix} (Book 3 Chart E).
+func (w World) Importance() int { return w.importance }
+
+// Economic reports the world's Economic Extension (Ex).
+func (w World) Economic() Economic { return w.economic }
+
+// Cultural reports the world's Cultural Extension [Cx].
+func (w World) Cultural() Cultural { return w.cultural }
+
+// Nobility reports the world's nobility codes (Book 3 Chart D).
+func (w World) Nobility() string { return w.nobility }
 
 // SetCapital marks the world a capital carrying the given capital trade code —
 // Cp (Subsector Capital), Cs (Sector Capital), or Cx (Imperial Capital) — and
@@ -98,7 +132,7 @@ func (w *World) SetCapital(code tradecode.Code) {
 		w.TradeCodes = append(w.TradeCodes, code)
 	}
 
-	w.Nobility = Nobility(w.TradeCodes, w.Importance, true)
+	w.nobility = Nobility(w.TradeCodes, w.importance, true)
 }
 
 // SetNavalDepot places a Naval Depot on the world (Book 3 p.28), a system-
@@ -122,8 +156,8 @@ func (w *World) SetWayStation() {
 	}
 
 	w.WayStation = true
-	w.Importance = Importance(w.Profile, w.TradeCodes, w.NavalBase, w.ScoutBase, true)
-	w.Nobility = Nobility(w.TradeCodes, w.Importance, hasCapitalCode(w.TradeCodes))
+	w.importance = Importance(w.Profile, w.TradeCodes, w.NavalBase, w.ScoutBase, true)
+	w.nobility = Nobility(w.TradeCodes, w.importance, hasCapitalCode(w.TradeCodes))
 }
 
 // capitalNames maps each capital trade code to the office it marks (Book 3 Chart D
@@ -182,7 +216,7 @@ func (w World) SecondSurvey() string {
 		w.Profile.String(),
 		dashIfEmpty(tradecode.Join(OrderTradeCodes(w.TradeCodes), " ")),
 		w.Extensions(),
-		w.Nobility,
+		w.nobility,
 		dashIfEmpty(w.bases()),
 		dashIfEmpty(w.zone()),
 	}
@@ -193,7 +227,7 @@ func (w World) SecondSurvey() string {
 // Extensions renders the world's three extensions as they appear in the Second
 // Survey record: "{Ix}(Ex)[Cx]", e.g. "{+4}(D7E+4)[9C6D]".
 func (w World) Extensions() string {
-	return importance(w.Importance) + w.Economic.String() + w.Cultural.String()
+	return importance(w.importance) + w.economic.String() + w.cultural.String()
 }
 
 // importance renders the Importance Extension {Ix}. It is signed when non-zero

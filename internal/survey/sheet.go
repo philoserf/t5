@@ -55,11 +55,11 @@ func (rec Record) Sheet() string {
 		mw.Profile,
 		tradecode.Join(worldgen.OrderTradeCodes(mw.TradeCodes), " "),
 	)
-	field("Extensions", "%s   RU %d", mw.Extensions(), mw.Economic.RU())
-	field("Traffic", "~%s/week", plural(route.ExpectedTraffic(mw.Importance), "ship", "ships"))
+	field("Extensions", "%s   RU %d", mw.Extensions(), mw.Economic().RU())
+	field("Traffic", "~%s/week", plural(route.ExpectedTraffic(mw.Importance()), "ship", "ships"))
 
-	if mw.Nobility != "" {
-		field("Nobility", "%s", mw.Nobility)
+	if mw.Nobility() != "" {
+		field("Nobility", "%s", mw.Nobility())
 	}
 
 	field("Bases", "%s", orNone(mw.BaseNames()))
@@ -188,7 +188,7 @@ func bodyLabel(o systemgen.PlacedOrbit, mainworld uwp.Profile) string {
 		case o.Giant != nil:
 			s += fmt.Sprintf("  — moon of Gas Giant %s", o.Giant)
 		case o.Parent != nil:
-			s += fmt.Sprintf("  — moon of %s %s", o.Parent.Type, o.Parent.Profile)
+			s += fmt.Sprintf("  — moon of %s %s", o.Parent.Type(), o.Parent.Profile())
 			// The same words moonLabel gives an equal-size moon: on this sheet a
 			// double planet is a double planet, whichever body is the mainworld.
 			if o.DoublePlanet {
@@ -202,10 +202,10 @@ func bodyLabel(o systemgen.PlacedOrbit, mainworld uwp.Profile) string {
 	case o.Kind == systemgen.KindBelt:
 		return o.Kind.String() // systemgen names the kinds; do not restate them here
 	case o.World != nil:
-		s := fmt.Sprintf("%-14s %s", o.World.Type, o.World.Profile)
+		s := fmt.Sprintf("%-14s %s", o.World.Type(), o.World.Profile())
 		// A non-mainworld's codes are stored in Chart D order by the assembler
 		// (worldgen.TradeClassificationsWithContext), so they render as-is.
-		if tcs := tradecode.Join(o.World.TradeCodes, " "); tcs != "" {
+		if tcs := tradecode.Join(o.World.TradeCodes(), " "); tcs != "" {
 			s += "  " + tcs
 		}
 
@@ -234,9 +234,9 @@ func moonLabel(m systemgen.Satellite, sibling bool) string {
 		kind = "sibling moon"
 	}
 
-	s := fmt.Sprintf("%s %-5s %-12s %s", kind, m.OrbitLetter, m.Type, m.Profile)
+	s := fmt.Sprintf("%s %-5s %-12s %s", kind, m.OrbitLetter, m.Type(), m.Profile())
 	// Stored in Chart D order by the assembler, so no render-time sort here.
-	if tcs := tradecode.Join(m.TradeCodes, " "); tcs != "" {
+	if tcs := tradecode.Join(m.TradeCodes(), " "); tcs != "" {
 		s += " " + tcs
 	}
 

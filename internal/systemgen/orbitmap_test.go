@@ -117,11 +117,11 @@ func TestPlaceOrbitsSatelliteMainworldNoGasGiant(t *testing.T) {
 		t.Errorf("system has no gas giant, but mainworld rides one: %v", mw.Giant)
 	}
 
-	if mw.Parent == nil || mw.Parent.Type != worldgen.BigWorld {
+	if mw.Parent == nil || mw.Parent.Type() != worldgen.BigWorld {
 		t.Fatalf("mainworld parent = %+v, want a BigWorld", mw.Parent)
 	}
 
-	if sz := mw.Parent.Profile.Size; sz < 9 || sz > 19 {
+	if sz := mw.Parent.Profile().Size; sz < 9 || sz > 19 {
 		t.Errorf("BigWorld parent size = %d, want 2D+7 (9..19)", sz)
 	}
 }
@@ -150,9 +150,9 @@ func TestPlaceOrbitsBigWorldParentIsNotSmallerThanItsMoon(t *testing.T) {
 		t.Fatal("satellite mainworld with no giants got no BigWorld parent")
 	}
 
-	if parent.Profile.Size < s.Mainworld.Profile.Size {
+	if parent.Profile().Size < s.Mainworld.Profile.Size {
 		t.Errorf("BigWorld parent Size %d is smaller than its Size-%d satellite mainworld (%s)",
-			parent.Profile.Size, s.Mainworld.Profile.Size, parent.Profile)
+			parent.Profile().Size, s.Mainworld.Profile.Size, parent.Profile())
 	}
 }
 
@@ -188,7 +188,7 @@ func TestPlaceOrbitsEqualSizeHostIsADoublePlanet(t *testing.T) {
 	plain := newSystem(3)
 	plain.placeOrbits(script())
 
-	if got := double.Orbits[0].Parent.Profile.Size; got != 15 {
+	if got := double.Orbits[0].Parent.Profile().Size; got != 15 {
 		t.Fatalf("host Size = %d, want 15 (floored to its equal-size mainworld)", got)
 	}
 
@@ -199,7 +199,7 @@ func TestPlaceOrbitsEqualSizeHostIsADoublePlanet(t *testing.T) {
 
 	if plain.Orbits[0].DoublePlanet {
 		t.Errorf("Size-3 mainworld on a Size-%d host marked a double planet",
-			plain.Orbits[0].Parent.Profile.Size)
+			plain.Orbits[0].Parent.Profile().Size)
 	}
 
 	if label := orbitLabel(double.Orbits[0]); !strings.Contains(label, " dp)") {
@@ -257,7 +257,7 @@ func TestPlaceOrbitsWorldCapturedByGiant(t *testing.T) {
 	}
 
 	m := giant.Satellites[0]
-	if m.Type != worldgen.RadWorld || m.OrbitLetter != "Gee" || m.DoublePlanet {
+	if m.Type() != worldgen.RadWorld || m.OrbitLetter != "Gee" || m.DoublePlanet {
 		t.Errorf("captured moon = %+v, want RadWorld, Gee, not a double planet", m)
 	}
 }
@@ -291,7 +291,7 @@ func TestPlaceOrbitsCapturedWorldUsesSatelliteTable(t *testing.T) {
 			len(giant.Satellites), giant.Satellites)
 	}
 
-	if got := giant.Satellites[0].Type; got != worldgen.StormWorld {
+	if got := giant.Satellites[0].Type(); got != worldgen.StormWorld {
 		t.Errorf("captured moon type = %v, want %v (Outer Satellites 1D=4; Outer Worlds says %v)",
 			got, worldgen.StormWorld, worldgen.Iceworld)
 	}
@@ -467,11 +467,11 @@ func TestPlaceOrbits(t *testing.T) {
 	// The other world is detailed with its type, UWP, and context trade codes —
 	// here the non-mainworld Pe (Penal Colony) code (closes catalog #1).
 	w := s.Orbits[4].World
-	if w == nil || w.Type != worldgen.Iceworld || w.Profile.String() != "F222666-6" {
+	if w == nil || w.Type() != worldgen.Iceworld || w.Profile().String() != "F222666-6" {
 		t.Errorf("orbit 9 world = %+v, want Iceworld F222666-6", w)
 	}
 
-	if !slices.Contains(w.TradeCodes, "Pe") {
-		t.Errorf("orbit 9 world codes = %v, want Pe", w.TradeCodes)
+	if !slices.Contains(w.TradeCodes(), "Pe") {
+		t.Errorf("orbit 9 world codes = %v, want Pe", w.TradeCodes())
 	}
 }

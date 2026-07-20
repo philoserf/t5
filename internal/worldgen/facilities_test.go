@@ -62,7 +62,7 @@ func TestPortFacilities(t *testing.T) {
 		}
 
 		if f.Quality != c.quality || f.Shipyard != c.shipyard || f.Repairs != c.repairs ||
-			f.Fuel != c.fuel || f.Downport != c.downport || f.Beacon != c.beacon ||
+			f.Fuel != c.fuel || (f.port == portDown) != c.downport || f.Beacon != c.beacon ||
 			f.Highport != c.highport || f.RefuelHours != c.refuel {
 			t.Errorf("PortFacilities(%c, pop %d) = %+v", c.class, c.pop, f)
 		}
@@ -171,7 +171,7 @@ func TestBeltport(t *testing.T) {
 	profile := uwp.Profile{Starport: 'C', Size: 0, Population: 9, TechLevel: 5}
 
 	f, _ := PortFacilities(profile, true)
-	if !f.Beltport || f.Downport {
+	if f.port != portBelt {
 		t.Errorf("an asteroid mainworld should have a beltport, not a downport: %+v", f)
 	}
 
@@ -179,13 +179,13 @@ func TestBeltport(t *testing.T) {
 		t.Errorf("beltport not advertised: %v", f.Services())
 	}
 	// A class-X asteroid belt has no port at all, so no beltport either.
-	if f, _ := PortFacilities(uwp.Profile{Starport: 'X', Size: 0}, true); f.Beltport {
+	if f, _ := PortFacilities(uwp.Profile{Starport: 'X', Size: 0}, true); f.port == portBelt {
 		t.Errorf("a class-X belt has no port, so no beltport")
 	}
 	// #324: the same Size-0 profile that is NOT a belt (a tiny solid world) keeps
 	// its downport. Belt-ness is the caller's fact, not the Size digit — passing
 	// belt=false must not earn a beltport.
-	if f, _ := PortFacilities(profile, false); f.Beltport || !f.Downport {
+	if f, _ := PortFacilities(profile, false); f.port != portDown {
 		t.Errorf("a non-belt Size-0 world must keep its downport, not get a beltport: %+v", f)
 	}
 }

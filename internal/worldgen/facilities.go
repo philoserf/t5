@@ -69,12 +69,23 @@ func (r RepairLevel) String() string {
 	}
 }
 
-// Facilities describes a port's services (Book 2 p.24). Downport reports whether
-// there is any surface port; Beltport marks the asteroid-belt case that replaces a
-// downport (Book 2 p.24: "An Asteroid Mainworld has a Beltport instead"); Beacon
-// marks an unmanned beacon-only downport (classes E/H). Highport is
-// population-dependent; ExoticFuels are tech-level-gated; LocalFuel is the
-// environmental fallback — all set by PortFacilities.
+// portKind is a port's surface presence: none, a downport, or — for an asteroid
+// belt — a beltport that replaces the downport (Book 2 p.24, "An Asteroid Mainworld
+// has a Beltport instead"). It is one field, not a Downport/Beltport bool pair,
+// because a port that is both is not a real port; the pair could represent that and
+// this cannot (#330). Set only by PortFacilities.
+type portKind uint8
+
+const (
+	portNone portKind = iota
+	portDown
+	portBelt
+)
+
+// Facilities describes a port's services (Book 2 p.24). Beacon marks an unmanned
+// beacon-only downport (classes E/H). Highport is population-dependent; ExoticFuels
+// are tech-level-gated; LocalFuel is the environmental fallback; port is the
+// surface-port kind (downport or, for a belt, beltport) — all set by PortFacilities.
 type Facilities struct {
 	Class       byte
 	Quality     string
@@ -83,8 +94,7 @@ type Facilities struct {
 	Fuel        FuelKind
 	ExoticFuels []string // Radioactives / Collector / Anti-Matter, TL-gated (A/B only)
 	LocalFuel   bool     // no port fuel, but unrefined is skimmable from the world
-	Downport    bool
-	Beltport    bool
+	port        portKind
 	Beacon      bool
 	Highport    bool
 	RefuelHours string // "2D", "4D", or "" when no fuel
@@ -124,11 +134,11 @@ func (f Facilities) Services() []string {
 	}
 
 	switch {
-	case f.Beltport:
+	case f.port == portBelt:
 		out = append(out, "beltport")
 	case f.Beacon:
 		out = append(out, "beacon-only downport")
-	case f.Downport:
+	case f.port == portDown:
 		out = append(out, "downport")
 	}
 
@@ -148,7 +158,7 @@ var portTable = map[byte]Facilities{
 		Shipyard:    "Starships",
 		Repairs:     Overhaul,
 		Fuel:        RefinedFuel,
-		Downport:    true,
+		port:        portDown,
 		RefuelHours: "2D",
 	},
 	'B': {
@@ -157,7 +167,7 @@ var portTable = map[byte]Facilities{
 		Shipyard:    "Spacecraft",
 		Repairs:     Overhaul,
 		Fuel:        RefinedFuel,
-		Downport:    true,
+		port:        portDown,
 		RefuelHours: "2D",
 	},
 	'C': {
@@ -165,7 +175,7 @@ var portTable = map[byte]Facilities{
 		Quality:     "Routine",
 		Repairs:     MajorRepairs,
 		Fuel:        UnrefinedFuel,
-		Downport:    true,
+		port:        portDown,
 		RefuelHours: "4D",
 	},
 	'D': {
@@ -173,16 +183,16 @@ var portTable = map[byte]Facilities{
 		Quality:     "Poor",
 		Repairs:     MinorRepairs,
 		Fuel:        UnrefinedFuel,
-		Downport:    true,
+		port:        portDown,
 		RefuelHours: "4D",
 	},
 	'E': {
-		Class:    'E',
-		Quality:  "Frontier",
-		Repairs:  NoRepairs,
-		Fuel:     NoFuel,
-		Downport: true,
-		Beacon:   true,
+		Class:   'E',
+		Quality: "Frontier",
+		Repairs: NoRepairs,
+		Fuel:    NoFuel,
+		port:    portDown,
+		Beacon:  true,
 	},
 	'X': {Class: 'X', Quality: "None", Repairs: NoRepairs, Fuel: NoFuel},
 	'F': {
@@ -190,7 +200,7 @@ var portTable = map[byte]Facilities{
 		Quality:     "Good",
 		Repairs:     MinorRepairs,
 		Fuel:        UnrefinedFuel,
-		Downport:    true,
+		port:        portDown,
 		RefuelHours: "4D",
 	},
 	'G': {
@@ -198,16 +208,16 @@ var portTable = map[byte]Facilities{
 		Quality:     "Poor",
 		Repairs:     SuperficialRepairs,
 		Fuel:        UnrefinedFuel,
-		Downport:    true,
+		port:        portDown,
 		RefuelHours: "4D",
 	},
 	'H': {
-		Class:    'H',
-		Quality:  "Basic",
-		Repairs:  NoRepairs,
-		Fuel:     NoFuel,
-		Downport: true,
-		Beacon:   true,
+		Class:   'H',
+		Quality: "Basic",
+		Repairs: NoRepairs,
+		Fuel:    NoFuel,
+		port:    portDown,
+		Beacon:  true,
 	},
 	'Y': {Class: 'Y', Quality: "None", Repairs: NoRepairs, Fuel: NoFuel},
 }
@@ -250,8 +260,8 @@ func PortFacilities(p uwp.Profile, belt bool) (Facilities, bool) {
 	}
 	// An asteroid-belt mainworld has a Beltport in place of a downport (Book 2
 	// p.24). A tiny Size-0 world that is not a belt keeps its downport.
-	if belt && f.Downport {
-		f.Downport, f.Beltport = false, true
+	if belt && f.port == portDown {
+		f.port = portBelt
 	}
 
 	return f, true

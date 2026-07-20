@@ -249,7 +249,7 @@ func (s *System) placeOrbits(r *dice.Roller) { //nolint:gocognit,cyclop,funlen /
 					s.Mainworld.Profile.Population,
 					s.Mainworld.Profile.Size,
 				)
-				mw.Parent = &OtherWorld{Type: worldgen.BigWorld, Profile: prof}
+				mw.Parent = &OtherWorld{typ: worldgen.BigWorld, profile: prof}
 				// The floor is inclusive, so the host can land exactly on its
 				// moon's Size. That is not a near miss to be nudged apart — it
 				// is the book's double planet, and it consumes no dice to
@@ -394,7 +394,7 @@ func (s *System) placeOrbits(r *dice.Roller) { //nolint:gocognit,cyclop,funlen /
 				Host:  h.label,
 				Orbit: o,
 				Kind:  KindWorld,
-				World: &OtherWorld{Type: wt, Profile: prof, TradeCodes: tcs},
+				World: &OtherWorld{typ: wt, profile: prof, tradeCodes: tcs},
 			},
 		)
 	}

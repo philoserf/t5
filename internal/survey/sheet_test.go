@@ -173,10 +173,11 @@ func TestSheetMarksCapital(t *testing.T) {
 // the sheet says so in the same words moonLabel uses for an equal-size moon.
 func TestBodyLabelMarksAnEqualSizeHostPair(t *testing.T) {
 	mainworld := uwp.Profile{Starport: 'C', Size: 9, Atmosphere: 5, Hydrographics: 4}
-	host := systemgen.OtherWorld{
-		Type:    worldgen.BigWorld,
-		Profile: uwp.Profile{Starport: 'X', Size: 9, Atmosphere: 5, Hydrographics: 4},
-	}
+	host := systemgen.NewOtherWorld(
+		worldgen.BigWorld,
+		uwp.Profile{Starport: 'X', Size: 9, Atmosphere: 5, Hydrographics: 4},
+		nil,
+	)
 
 	double := bodyLabel(systemgen.PlacedOrbit{
 		Kind: systemgen.KindMainworld, Parent: &host, DoublePlanet: true,

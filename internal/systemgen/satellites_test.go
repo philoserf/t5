@@ -124,7 +124,7 @@ func TestRollSatellites(t *testing.T) {
 			continue
 		}
 
-		if m.OrbitLetter == "" || m.Profile.String() == "" {
+		if m.OrbitLetter == "" || m.Profile().String() == "" {
 			t.Errorf("moon %d missing letter or UWP: %+v", i, m)
 		}
 
@@ -213,8 +213,8 @@ func TestRollMoonSizeCap(t *testing.T) {
 				Orbit: 3, HZOrbit: 3, HasHZ: true,
 				MWPop: 8, MaxSize: c.maxSize,
 			})
-			if m.Profile.Size != c.wantSize {
-				t.Errorf("Size = %d, want %d", m.Profile.Size, c.wantSize)
+			if m.Profile().Size != c.wantSize {
+				t.Errorf("Size = %d, want %d", m.Profile().Size, c.wantSize)
 			}
 
 			if m.DoublePlanet != c.wantDouble {
@@ -237,13 +237,13 @@ func TestRollMoonCappedProfileIsConsistent(t *testing.T) {
 		Orbit: 3, HZOrbit: 3, HasHZ: true,
 		MWPop: 8, MaxSize: 1,
 	})
-	if m.Profile.Atmosphere != 1 {
-		t.Errorf("Size-1 moon Atm = %d, want 1 (Flux 0 + Siz 1)", m.Profile.Atmosphere)
+	if m.Profile().Atmosphere != 1 {
+		t.Errorf("Size-1 moon Atm = %d, want 1 (Flux 0 + Siz 1)", m.Profile().Atmosphere)
 	}
 
-	if m.Profile.Hydrographics != 0 {
+	if m.Profile().Hydrographics != 0 {
 		t.Errorf("Size-1 moon Hyd = %d, want 0 (p.24 If Siz <2, Hyd =0)",
-			m.Profile.Hydrographics)
+			m.Profile().Hydrographics)
 	}
 }
 
@@ -269,7 +269,7 @@ func TestCappedMoonsStayConsistent(t *testing.T) {
 				}
 
 				checked++
-				p := sat.Profile
+				p := sat.Profile()
 				// World Creation chart, Book 3 p.24.
 				if p.Size == 0 && p.Atmosphere != 0 {
 					t.Errorf("seed %d: moon %s has Size 0 but Atmosphere %d (p.24: If Siz=0, Atm=0)",
@@ -409,8 +409,8 @@ func TestSatelliteMainworldOrbitRollsForItsParent(t *testing.T) {
 	}
 
 	for i, m := range moons {
-		if m.Profile.Size != 15 {
-			t.Errorf("moon %d Size = %d, want 15 (a gas giant caps nothing)", i, m.Profile.Size)
+		if m.Profile().Size != 15 {
+			t.Errorf("moon %d Size = %d, want 15 (a gas giant caps nothing)", i, m.Profile().Size)
 		}
 
 		if m.DoublePlanet {
@@ -429,8 +429,8 @@ func TestSatelliteMainworldBigWorldParentCapsItsMoons(t *testing.T) {
 		Orbits: []PlacedOrbit{{
 			Host: "Primary", Orbit: 4, Kind: KindMainworld,
 			Parent: &OtherWorld{
-				Type:    worldgen.BigWorld,
-				Profile: uwp.Profile{Size: 11},
+				typ:     worldgen.BigWorld,
+				profile: uwp.Profile{Size: 11},
 			},
 		}},
 		MainworldSatellite: MainworldSatellite{IsSatellite: true},
@@ -447,7 +447,7 @@ func TestSatelliteMainworldBigWorldParentCapsItsMoons(t *testing.T) {
 		t.Fatalf("rolled %d moons, want 1", len(moons))
 	}
 
-	if got := moons[0].Profile.Size; got != 11 {
+	if got := moons[0].Profile().Size; got != 11 {
 		t.Errorf("moon Size = %d, want 11 (capped to the BigWorld parent, not the Size-3 mainworld)", got)
 	}
 
@@ -550,7 +550,7 @@ func TestSatellitesCarryTradeCodes(t *testing.T) {
 
 			found = true
 
-			if len(sat.TradeCodes) == 0 {
+			if len(sat.TradeCodes()) == 0 {
 				t.Errorf("satellite %s carries no trade codes", sat.OrbitLetter)
 			}
 		}

@@ -6,13 +6,36 @@ import (
 	"github.com/philoserf/t5/internal/worldgen"
 )
 
-// An OtherWorld is a detailed secondary world occupying an orbit: its type, its
-// generated UWP, and its trade codes (Book 3 p.29).
+// An OtherWorld is a placed secondary world (Book 3 p.29): its body type and the
+// UWP and trade codes that descend from it. The three fields are unexported and
+// set together — production generates the Profile from the Type, and NewOtherWorld
+// stamps all three at once — so an OtherWorld can never carry a Type set without a
+// Profile, a Profile left stale after a Type change, or a Type/Profile pair drifted
+// apart by a later assignment (the belt-vs-tiny-world confusion #324 turned on,
+// #330). Read them through Type/Profile/TradeCodes.
 type OtherWorld struct {
-	Type       worldgen.OtherWorldType
-	Profile    uwp.Profile
-	TradeCodes []tradecode.Code
+	typ        worldgen.OtherWorldType
+	profile    uwp.Profile
+	tradeCodes []tradecode.Code
 }
+
+// NewOtherWorld assembles an OtherWorld from an already-generated type, UWP, and
+// trade codes — the build-from-parts path for a test fixture or a parsed record
+// (#327), the counterpart to worldgen.NewWorld. Production builds them by rolling
+// the Profile from the Type; either way the three are set in one step and cannot
+// be left inconsistent afterward.
+func NewOtherWorld(typ worldgen.OtherWorldType, profile uwp.Profile, tradeCodes []tradecode.Code) OtherWorld {
+	return OtherWorld{typ: typ, profile: profile, tradeCodes: tradeCodes}
+}
+
+// Type reports the world's body type (Planetoids, Worldlet, …).
+func (o OtherWorld) Type() worldgen.OtherWorldType { return o.typ }
+
+// Profile reports the world's UWP.
+func (o OtherWorld) Profile() uwp.Profile { return o.profile }
+
+// TradeCodes reports the world's trade classifications.
+func (o OtherWorld) TradeCodes() []tradecode.Code { return o.tradeCodes }
 
 // orbitZone classifies an orbit relative to a star's habitable zone (Book 3
 // p.21): inner (HZ-2 or less), hospitable (HZ-1 to HZ+1), or outer (HZ+2 or
