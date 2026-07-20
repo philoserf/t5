@@ -319,14 +319,14 @@ Tooling (go, go-task, golangci-lint, poppler's `pdftotext`) is pinned in `Brewfi
   for the same reason (`sectorgen.selectView` resolves `-hex`/`-subsector` before the survey runs).
   A flag the chosen path **cannot honor** is bad input, not a no-op — `cli.RejectUnusable`, which
   every such path calls before reporting its seed. It is named the way round that stays correct:
-  the caller lists the flags its path *reads*, so a flag added later is covered the day it is added
+  the caller lists the flags its path _reads_, so a flag added later is covered the day it is added
   rather than the day someone remembers to list it. `shipgen` without `-hull` rolls a random ship
   that reads none of the design flags, and `sectorgen`'s views are exclusive, so the losing view's
   flag is rejected too — `-hex 0436 -subsector Q` used to print a hex at exit 0 while that same
   `-subsector Q` is refused on the default path. "Was it set" is asked of `flag.Visit`, never of the
   value — `-tl 0` is a real Tech Level and `-armor 1` the hull's integral layer, so a
   default-comparison would wave the caller's own input through as unset. A bool explicitly set false
-  is the exception: `-sector=false` asks for the path *not* to be taken, so it is not a conflict.
+  is the exception: `-sector=false` asks for the path _not_ to be taken, so it is not a conflict.
 - `internal/clitest/` — the end-to-end harness all six CLIs share. `main` calls `os.Exit`, so each
   case re-executes the test binary as a child that runs `main` instead of the tests; `Command.TestMain`
   intercepts before `m.Run` — which is what frees argv: nothing has parsed `os.Args` yet, so the
@@ -336,7 +336,14 @@ Tooling (go, go-task, golangci-lint, poppler's `pdftotext`) is pinned in `Brewfi
   as a **whole line** (`^cmd: seed \d+$`), not as the substring `"seed "` — `flag`'s usage text
   describes the `-seed` flag and would otherwise read as a seed report on every run `flag` rejects.
   `reportSeed` is an obligation nothing in the compiler enforces, so every command has a test that
-  fails if the call is dropped.
+  fails if the call is dropped. **`cli` owns the seed-line format**: `cli.seedNote` is the `Notef`
+  format `Roller` prints, and the matcher behind `cli.HasSeedReport`/`cli.ReportedSeed` is _built
+  from_ that constant, so a reader that disagrees with the writer is not expressible. That matters
+  because `AssertRejected` uses it for a **negative** assertion ("this run named no seed"), which
+  fails open: a matcher drifted off the real wording would stop matching and wave a leaked seed
+  through. `internal/cli`'s own tests are an external `package cli_test` — `clitest` imports `cli`,
+  so testing from inside would cycle — and they drive `clitest.Command` like any `cmd`, with a
+  stand-in `rollgen` whose `Main` dispatches on an env var to the fatal/roll/quiet child.
 
 When adding a generator, transcribe the rule tables/formulas from `docs/reference/` and lock
 them with a golden test built from a worked example in the books.
