@@ -1,6 +1,9 @@
 package dice
 
-import "testing"
+import (
+	"slices"
+	"testing"
+)
 
 // scripted is a package-local alias for NewScripted, kept for the many
 // exact-outcome tests below.
@@ -178,4 +181,72 @@ func TestSeedIsRecoverable(t *testing.T) {
 	if _, ok := NewSource(func() int { return 1 }).Seed(); ok {
 		t.Error("NewSource().Seed() claimed a seed")
 	}
+}
+
+// TestDeriveIsDeterministicAndOrderIndependentOfParentDraws is the core
+// substream contract: a child stream is a function of (parent seed,
+// discriminators) alone, not of how many rolls the parent has taken. Deriving
+// after 0, 1, or 50 parent draws yields byte-identical children.
+func TestDeriveIsDeterministicAndOrderIndependentOfParentDraws(t *testing.T) {
+	const seed = 42
+
+	want := seq(NewWithSeed(seed).Derive(3, 7), 30)
+
+	for _, warm := range []int{0, 1, 50} {
+		parent := NewWithSeed(seed)
+		for range warm {
+			parent.Die()
+		}
+
+		if got := seq(parent.Derive(3, 7), 30); !slices.Equal(got, want) {
+			t.Errorf("child after %d parent draws diverged from child after 0", warm)
+		}
+	}
+}
+
+// TestDeriveDiscriminatorsSeparateStreams: distinct discriminators (including
+// permutations) give independent streams, so per-entity keys don't collide.
+func TestDeriveDiscriminatorsSeparateStreams(t *testing.T) {
+	base := NewWithSeed(42)
+	keys := [][]uint64{{1, 1}, {1, 2}, {2, 1}, {2, 2}, {1}, {}}
+
+	seqs := make([][]int, len(keys))
+	for i, k := range keys {
+		seqs[i] = seq(base.Derive(k...), 40)
+	}
+
+	for i := range seqs {
+		for j := i + 1; j < len(seqs); j++ {
+			if slices.Equal(seqs[i], seqs[j]) {
+				t.Errorf("Derive(%v) and Derive(%v) produced identical streams", keys[i], keys[j])
+			}
+		}
+	}
+}
+
+// TestDerivePanicsOnUnseeded: a scripted/sourced Roller has no seed to key from.
+func TestDerivePanicsOnUnseeded(t *testing.T) {
+	for name, r := range map[string]*Roller{
+		"scripted": NewScripted(1),
+		"sourced":  NewSource(func() int { return 1 }),
+	} {
+		func() {
+			defer func() {
+				if recover() == nil {
+					t.Errorf("%s Roller.Derive did not panic", name)
+				}
+			}()
+
+			r.Derive(1)
+		}()
+	}
+}
+
+func seq(r *Roller, n int) []int {
+	out := make([]int, n)
+	for i := range out {
+		out[i] = r.Die()
+	}
+
+	return out
 }

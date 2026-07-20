@@ -103,6 +103,47 @@ func (r *Roller) Seed() (uint64, bool) {
 	return r.seed, r.seeded
 }
 
+// Derive returns an independent child Roller whose stream is a deterministic
+// function of this Roller's seed and the given discriminators, and of nothing
+// else — in particular, not of how many rolls this Roller has already made.
+//
+// It exists to give each entity its own substream. Keying a hex on its
+// coordinates (r.Derive(uint64(col), uint64(row))), or a character on its index,
+// makes that entity regenerable in isolation and immune to a draw-count change
+// anywhere else built from the same parent seed: a rule fix that adds or removes
+// a roll for one entity no longer shifts every entity generated after it. Two
+// children built from the same discriminators are identical; children with
+// different discriminators are independent.
+//
+// Derive requires a seeded parent (from New or NewWithSeed). A Roller built from
+// NewSource or NewScripted has no seed to key from, so Derive panics on one — a
+// scripted test that wants a substream should script that substream directly.
+func (r *Roller) Derive(discriminators ...uint64) *Roller {
+	if !r.seeded {
+		panic("dice: Derive needs a seeded Roller (New/NewWithSeed), not a scripted or sourced one")
+	}
+
+	// splitmix64 finalizer, folded once per discriminator, so every bit of every
+	// discriminator avalanches through the whole child seed and permutations like
+	// (1,2) and (2,1) diverge.
+	h := mix64(r.seed)
+	for _, d := range discriminators {
+		h = mix64(h ^ d)
+	}
+
+	return NewWithSeed(h)
+}
+
+// mix64 is the splitmix64 finalizer: a bijection on uint64 with strong
+// avalanche, so a one-bit input change flips about half the output bits.
+func mix64(z uint64) uint64 {
+	z += 0x9e3779b97f4a7c15
+	z = (z ^ (z >> 30)) * 0xbf58476d1ce4e5b9
+	z = (z ^ (z >> 27)) * 0x94d049bb133111eb
+
+	return z ^ (z >> 31)
+}
+
 // Die rolls a single D6, returning 1..6.
 func (r *Roller) Die() int {
 	return r.d6()

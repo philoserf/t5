@@ -55,19 +55,25 @@ type Survey struct {
 // Subsector and At). A region cannot be surveyed piecemeal: a world's own printed
 // record depends on the rest of the sector — whether it is a capital is decided
 // against every other world, and its bases and Importance shift when a trade route
-// running through it earns a way station. (The systems also share one dice stream,
-// so a hex's world depends on every hex rolled before it, but that is an artifact
-// of the roller; the region-wide passes are the reason that would survive any
-// redesign.)
+// running through it earns a way station. The region-wide passes below are the
+// reason. Hex generation itself is not: each hex is rolled from its own substream
+// (sectorgen.DeriveHex), so a hex's name and system depend only on the seed and
+// its coordinates, not on any hex rolled before it.
+//
+// Deriving those substreams requires a seeded Roller (New/NewWithSeed); a
+// scripted or sourced Roller has no seed to key from and panics.
 func Sector(r *dice.Roller, d sectorgen.Density) Survey {
 	hexes := sectorgen.GenerateSector(r, d)
 
 	records := make([]Record, len(hexes))
 	for i, h := range hexes {
+		// The same substream sectorgen rolled the coarse contents from, so name
+		// and full system stay a pure function of (seed, col, row) too.
+		child := sectorgen.DeriveHex(r, h.Hex)
 		records[i] = Record{
 			Hex:    h.Hex,
-			Name:   worldName(r),
-			System: systemgen.GenerateForMap(r, h.GasGiant, h.AsteroidMainworld),
+			Name:   worldName(child),
+			System: systemgen.GenerateForMap(child, h.GasGiant, h.AsteroidMainworld),
 		}
 	}
 	// Capitals and Naval Depots are placed from base Importance, then routes, then

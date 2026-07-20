@@ -169,11 +169,18 @@ var densityInfo = [...]struct {
 }
 
 func (d Density) String() string {
-	if d < ExtraGalactic || d > Core {
+	if !d.valid() {
 		return "?"
 	}
 
 	return densityInfo[d].name
+}
+
+// valid reports whether d names a row of the density table. An out-of-range
+// Density has no name and generates no systems; it is the single guard the other
+// density readers share, rather than repeating the bound.
+func (d Density) valid() bool {
+	return d >= ExtraGalactic && d <= Core
 }
 
 // DensityNames returns the eight density names in order (Extra Galactic … Core).
@@ -205,10 +212,9 @@ func normalizeName(s string) string {
 
 // SystemPresent rolls whether a hex holds a star system at the given density
 // (Book 3 p.13). An out-of-range density yields no system rather than a lookup
-// past the end of densityInfo — this is the only guard on the density, so
-// GenerateSector relies on it.
+// past the end of densityInfo.
 func SystemPresent(r *dice.Roller, d Density) bool {
-	if d < ExtraGalactic || d > Core {
+	if !d.valid() {
 		return false
 	}
 
@@ -235,20 +241,56 @@ func rollContents(r *dice.Roller, h Hex) StellarHex {
 	}
 }
 
+// DeriveHex returns the substream one hex is generated from: the child of the
+// sector's Roller keyed on the hex's coordinates. It is the single point where
+// sectorgen and survey agree on a hex's stream, so a hex's system depends only
+// on (sector seed, col, row) — not on any hex rolled before it. That is what
+// makes a hex regenerable in isolation and a rule fix affecting one hex's draws
+// unable to shift any other. Pass the sector Roller, not an already-derived one.
+func DeriveHex(r *dice.Roller, h Hex) *dice.Roller {
+	//nolint:gosec // G115: Col/Row are small positive coordinates; Derive treats the bits as an opaque discriminator.
+	return r.Derive(uint64(h.Col), uint64(h.Row))
+}
+
+// RollHex rolls one hex of a sector from its own substream: whether a system is
+// present at the given density and, if so, its coarse contents. It takes the
+// sector's Roller and derives the hex's child itself (see DeriveHex), so the
+// hex's coarse map depends only on (seed, col, row) and there is no way to pass
+// the wrong Roller.
+func RollHex(r *dice.Roller, d Density, h Hex) (StellarHex, bool) {
+	child := DeriveHex(r, h)
+	if !SystemPresent(child, d) {
+		return StellarHex{}, false
+	}
+
+	return rollContents(child, h), true
+}
+
 // GenerateSector rolls all 1280 hexes of a sector at the given density and
-// returns the populated ones in column-major CCRR order (Book 3 pp.12-13).
+// returns the populated ones in column-major CCRR order (Book 3 pp.12-13). Each
+// hex is rolled from its own substream (see DeriveHex), so it requires a seeded
+// Roller (New/NewWithSeed) and returns nil for a density outside the table.
 //
-// A sector is the only unit that can be rolled. Rolling a sub-region on its own
-// would consume a different run of the dice, so its hexes would hold different
-// systems than the same coordinates do in a sector — see survey.Survey.Subsector,
-// which selects a subsector from a surveyed sector instead.
+// A hex's coarse contents depend only on the seed and its coordinates, so a
+// sub-region rolls the same systems at the same coordinates as the whole sector
+// does — but its printed record still depends on the region-wide passes (see
+// survey.Survey.Subsector), so a subsector is selected from a surveyed sector
+// rather than surveyed on its own.
 func GenerateSector(r *dice.Roller, d Density) []StellarHex {
+	// Guard before deriving 1280 substreams, and so a bad density needs no seeded
+	// Roller. RollHex/SystemPresent guard too, but relying on that would still
+	// derive a child per hex first.
+	if !d.valid() {
+		return nil
+	}
+
 	var systems []StellarHex
 
 	for col := 1; col <= Columns; col++ {
 		for row := 1; row <= Rows; row++ {
-			if SystemPresent(r, d) {
-				systems = append(systems, rollContents(r, Hex{col, row}))
+			h := Hex{col, row}
+			if sh, ok := RollHex(r, d, h); ok {
+				systems = append(systems, sh)
 			}
 		}
 	}

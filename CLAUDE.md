@@ -48,6 +48,15 @@ Tooling (go, go-task, golangci-lint, poppler's `pdftotext`) is pinned in `Brewfi
   a test outruns its script. That is what makes a green suite evidence that the dice stream is
   unchanged — a script must enumerate **every** die the code under test draws, so a change in
   dice consumption fails loudly instead of being served recycled faces.
+  `Roller.Derive(discriminators...)` mints an independent child stream from the parent's seed
+  and the discriminators alone — **not** from how many rolls the parent has made (splitmix64
+  fold; panics on an unseeded parent). It is the substream primitive from `REDESIGN.md` §1
+  (#326): `sectorgen.DeriveHex` keys a hex on `(seed, col, row)`, so a hex is regenerable in
+  isolation and a rule fix touching one hex's draws cannot shift any other. The reach is
+  currently the **sector→hex boundary only** — the entity generators (`worldgen`, `systemgen`,
+  `chargen`) still run a single sub-entity on one stream, so their intra-entity roll-and-discard
+  alignment sites (`worldgen.go`, `systemgen.go` `giantsFor`, `career.go` reward) remain
+  load-bearing until each adopts `Derive` internally.
 - `internal/ehex/` — Traveller extended-hex digits (0-9, A-Z omitting I and O). `Digit`
   encodes, `ParseDigit` decodes. Every UWP characteristic is an eHex value.
 - `internal/uwp/` — the `Profile` type and its `String` in StSAHPGL-T form (e.g. `A788899-C`).

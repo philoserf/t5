@@ -164,6 +164,9 @@ func TestSystemPresent(t *testing.T) {
 		t.Errorf("out-of-range density should report no system")
 	}
 
+	// A scripted roller with a single face: the density guard must short-circuit
+	// before any hex is derived or rolled. If a bad density ever reached the roll
+	// loop, this over-draws its one face and panics rather than passing silently.
 	if GenerateSector(dice.NewScripted(1), Density(-1)) != nil {
 		t.Errorf("out-of-range density should generate no systems")
 	}
@@ -228,5 +231,35 @@ func TestGenerateSectorDeterministicAndDense(t *testing.T) {
 	core := len(GenerateSector(dice.NewWithSeed(42), Core))
 	if sparse >= len(a) || len(a) >= core {
 		t.Errorf("density ordering wrong: sparse %d, standard %d, core %d", sparse, len(a), core)
+	}
+}
+
+// TestHexIsolation is the substream contract (#326): a hex's contents depend
+// only on (seed, col, row), never on any hex rolled before it. Proof: each
+// present hex, regenerated standalone from a fresh seed — with no hex rolled
+// before it — reproduces its whole-sector value. That equality is impossible if
+// a hex's stream continued from the previous hex's, which is exactly the coupling
+// the old shared-roller design had and this one removes.
+func TestHexIsolation(t *testing.T) {
+	const seed = 42
+
+	parent := dice.NewWithSeed(seed)
+
+	full := GenerateSector(parent, Standard)
+	if len(full) == 0 {
+		t.Fatal("no systems generated")
+	}
+
+	// Re-roll each present hex standalone, reusing one parent across the whole
+	// loop. Both reuses lean on the same property: RollHex keys on the parent's
+	// immutable seed, so its result cannot depend on the loop's position or on any
+	// hex rolled before it. A regression that rolled a hex from the shared stream
+	// instead of its own child (the pre-#326 coupling) makes a present hex's
+	// standalone value diverge from its whole-sector value here.
+	for _, sh := range full {
+		got, ok := RollHex(parent, Standard, sh.Hex)
+		if !ok || got != sh {
+			t.Fatalf("hex %s standalone = %+v (present %v), want %+v", sh.Hex, got, ok, sh)
+		}
 	}
 }
