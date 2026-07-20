@@ -167,7 +167,11 @@ func orderedLink(a, b sectorgen.Hex) Link {
 
 // ExpectedTraffic returns the representative weekly ship arrivals for a world of
 // the given Importance (Book 3 p.27 Expected Ship Traffic table), clamped to the
-// table's [-3, +5] range. Busy/Rural empire shifts (±1 row) are the caller's.
+// table's [-3, +5] range. All three adjustments printed under the table are the
+// caller's: "Plus Flux" — actual arrivals are the returned value plus a Flux
+// roll — and the two empire shifts ("For a Busy Empire, next row higher. For a
+// Rural Empire, next row lower.", ±1 row). This package is deterministic and
+// rolls no dice, so it returns the bare row value.
 func ExpectedTraffic(ix int) int {
 	switch {
 	case ix >= 5:

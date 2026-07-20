@@ -3,13 +3,16 @@
 // "Sophont Creation Card" — that character generation later consumes to make
 // individuals of the species.
 //
-// This is the core spine: the evolutionary Environment (step 05), the six-slot
-// Characteristics profile and Genetic Profile (step 06). The homeworld reuses
-// the world generator (the book, p.217, blesses substituting it), rerolled until
-// it is a plausible cradle — Atmosphere 2-9 and Population 7+. Later phases add
-// Size, Life Stages, Caste, and Gender; the physical/appearance layers (senses,
-// body structure, special abilities) are background detail deferred until a
-// consumer needs them.
+// This is the core spine — the checklist steps a character generator needs:
+// Homeworlds (step 04), the evolutionary Environment (05), the six-slot
+// Characteristics profile and Genetic Profile (06), Caste (07, only when the
+// species has Caste as a characteristic), Gender (08), Life Stages and Aging
+// (09), and Size (14) with the height charts of Size and Bulk (15). The
+// homeworld reuses the world generator (the book, p.217, blesses substituting
+// it), rerolled until it is a plausible cradle — Atmosphere 2-9 and Population
+// 7+. The physical/appearance tier — Senses (10), Sophont Body Structure (11),
+// Special Abilities (12), Manipulators (13), and Uniques (16) — is background
+// detail deferred until a consumer needs it.
 package sophont
 
 import (
@@ -36,7 +39,8 @@ type Species struct {
 }
 
 // Generate rolls a complete species: a plausible homeworld, the environment it
-// evolved in, its characteristic profile, and its average Size.
+// evolved in, its characteristic profile, its average Size, its life cycle, and
+// its gender structure — plus, when C6 is the Caste characteristic, its castes.
 func Generate(r *dice.Roller) Species {
 	home := plausibleHomeworld(r)
 	env := rollEnvironment(r, home.Profile)
