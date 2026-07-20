@@ -14,6 +14,7 @@ import (
 
 	"github.com/philoserf/t5/internal/route"
 	"github.com/philoserf/t5/internal/systemgen"
+	"github.com/philoserf/t5/internal/tradecode"
 	"github.com/philoserf/t5/internal/uwp"
 	"github.com/philoserf/t5/internal/worldgen"
 )
@@ -52,7 +53,7 @@ func (rec Record) Sheet() string {
 		"Mainworld",
 		"%s  %s",
 		mw.Profile,
-		strings.Join(worldgen.OrderTradeCodes(mw.TradeCodes), " "),
+		tradecode.Join(worldgen.OrderTradeCodes(mw.TradeCodes), " "),
 	)
 	field("Extensions", "%s   RU %d", mw.Extensions(), mw.Economic.RU())
 	field("Traffic", "~%s/week", plural(route.ExpectedTraffic(mw.Importance), "ship", "ships"))
@@ -204,7 +205,7 @@ func bodyLabel(o systemgen.PlacedOrbit, mainworld uwp.Profile) string {
 		s := fmt.Sprintf("%-14s %s", o.World.Type, o.World.Profile)
 		// A non-mainworld's codes are stored in Chart D order by the assembler
 		// (worldgen.TradeClassificationsWithContext), so they render as-is.
-		if tcs := strings.Join(o.World.TradeCodes, " "); tcs != "" {
+		if tcs := tradecode.Join(o.World.TradeCodes, " "); tcs != "" {
 			s += "  " + tcs
 		}
 
@@ -235,7 +236,7 @@ func moonLabel(m systemgen.Satellite, sibling bool) string {
 
 	s := fmt.Sprintf("%s %-5s %-12s %s", kind, m.OrbitLetter, m.Type, m.Profile)
 	// Stored in Chart D order by the assembler, so no render-time sort here.
-	if tcs := strings.Join(m.TradeCodes, " "); tcs != "" {
+	if tcs := tradecode.Join(m.TradeCodes, " "); tcs != "" {
 		s += " " + tcs
 	}
 

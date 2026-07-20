@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/philoserf/t5/internal/dice"
+	"github.com/philoserf/t5/internal/tradecode"
 	"github.com/philoserf/t5/internal/uwp"
 )
 
@@ -22,18 +23,18 @@ var regina = uwp.Profile{
 func TestImportanceRegina(t *testing.T) {
 	// Book 3: Starport A +1, TL +1, Rich +1, Naval & Scout bases +1 = +4.
 	// Pre-Agricultural is NOT in Chart E's +1 list (only Ag/Hi/In/Ri).
-	if got := Importance(regina, []string{"Ph", "Pa", "Ri"}, true, true, false); got != 4 {
+	if got := Importance(regina, []tradecode.Code{"Ph", "Pa", "Ri"}, true, true, false); got != 4 {
 		t.Fatalf("Importance(Regina) = %d, want 4", got)
 	}
 }
 
 func TestImportanceModifiers(t *testing.T) {
 	// Naval and Scout together add +1 (both required); with Ri +1, A +1, TL +1 = +4.
-	if got := Importance(regina, []string{"Ph", "Pa", "Ri"}, true, true, false); got != 4 {
+	if got := Importance(regina, []tradecode.Code{"Ph", "Pa", "Ri"}, true, true, false); got != 4 {
 		t.Errorf("with both bases = %d, want 4", got)
 	}
 
-	if got := Importance(regina, []string{"Ph", "Pa", "Ri"}, true, false, false); got != 3 {
+	if got := Importance(regina, []tradecode.Code{"Ph", "Pa", "Ri"}, true, false, false); got != 3 {
 		t.Errorf("with only naval base = %d, want 3 (needs both for the +1)", got)
 	}
 	// A poor backwater: Starport X (-1), TL 3 (<=8, -1), no trade codes, Pop 2 (-1).
@@ -43,7 +44,7 @@ func TestImportanceModifiers(t *testing.T) {
 	}
 	// A high-TL hub: Starport A (+1), TL G=16 (>=G +1, >=A +1), In+Ri (+2), Pop 9.
 	hub := uwp.Profile{Starport: 'A', TechLevel: 16, Population: 9}
-	if got := Importance(hub, []string{"In", "Ri"}, false, false, true); got != 6 {
+	if got := Importance(hub, []tradecode.Code{"In", "Ri"}, false, false, true); got != 6 {
 		// A+1, G+1, A+1, In+1, Ri+1, WayStation+1 = 6
 		t.Errorf("hub = %d, want 6", got)
 	}

@@ -1,6 +1,9 @@
 package worldgen
 
-import "github.com/philoserf/t5/internal/uwp"
+import (
+	"github.com/philoserf/t5/internal/tradecode"
+	"github.com/philoserf/t5/internal/uwp"
+)
 
 // ClimateCodes returns the climate / orbit-dependent trade classifications a world
 // earns from where it sits relative to its star's habitable zone (Book 3 Chart D,
@@ -28,28 +31,28 @@ import "github.com/philoserf/t5/internal/uwp"
 // Chart D defines it as "Orbit 0-1", full stop. So a world in orbit 0 or 1 of a
 // star with no habitable zone still earns Tz, even though hasHZ is false and the
 // offset codes above cannot be computed (there is no zone to offset from).
-func ClimateCodes(p uwp.Profile, orbit, hzOrbit int, hasHZ bool) []string {
-	var out []string
+func ClimateCodes(p uwp.Profile, orbit, hzOrbit int, hasHZ bool) []tradecode.Code {
+	var out []tradecode.Code
 
 	if hasHZ {
 		switch offset := orbit - hzOrbit; {
 		case offset == -1:
-			out = append(out, "Ho") // orbit alone
+			out = append(out, tradecode.Ho) // orbit alone
 			if tropicUWP(p) {
-				out = append(out, "Tr")
+				out = append(out, tradecode.Tr)
 			}
 		case offset == 1:
-			out = append(out, "Co") // orbit alone
+			out = append(out, tradecode.Co) // orbit alone
 			if tropicUWP(p) {
-				out = append(out, "Tu")
+				out = append(out, tradecode.Tu)
 			}
 		case offset >= 2 && frozenUWP(p):
-			out = append(out, "Fr")
+			out = append(out, tradecode.Fr)
 		}
 	}
 
 	if orbit == 0 || orbit == 1 {
-		out = append(out, "Tz")
+		out = append(out, tradecode.Tz)
 	}
 
 	return out

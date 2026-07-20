@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/philoserf/t5/internal/dice"
+	"github.com/philoserf/t5/internal/tradecode"
 	"github.com/philoserf/t5/internal/uwp"
 	"github.com/philoserf/t5/internal/worldgen"
 )
@@ -34,7 +35,7 @@ func reginaSystem() System {
 				Law:           9,
 				TechLevel:     12,
 			},
-			TradeCodes: []string{"Ph", "Pa", "Ri"},
+			TradeCodes: []tradecode.Code{"Ph", "Pa", "Ri"},
 			Importance: 4,
 			Economic: worldgen.Economic{
 				Resources:      13,
@@ -392,14 +393,16 @@ func TestGenerateForMapDiceAlignment(t *testing.T) {
 			t.Fatalf(
 				"seed %d: ggAbsent dropped %d rolled giants and the mainworld UWP moved, "+
 					"%s vs %s — the discarded giants' 2D sizes were not drawn",
-				seed, rolled, got.Mainworld.Profile, want.Mainworld.Profile)
+				seed, rolled, got.Mainworld.Profile, want.Mainworld.Profile,
+			)
 		}
 
 		if !reflect.DeepEqual(got.Stars(), want.Stars()) {
 			t.Fatalf(
 				"seed %d: ggAbsent dropped %d rolled giants and the stellar family moved, "+
 					"%s vs %s — the discarded giants' 2D sizes were not drawn",
-				seed, rolled, got.Stellar(), want.Stellar())
+				seed, rolled, got.Stellar(), want.Stellar(),
+			)
 		}
 
 		disagreeAbsent++
@@ -419,7 +422,8 @@ func TestGenerateForMapDiceAlignment(t *testing.T) {
 	if agreeAbsent == 0 || agreePresent == 0 || disagreeAbsent == 0 {
 		t.Fatalf(
 			"alignment cases not all exercised: rolled0=%d agreePresent=%d disagreeAbsent=%d",
-			agreeAbsent, agreePresent, disagreeAbsent)
+			agreeAbsent, agreePresent, disagreeAbsent,
+		)
 	}
 }
 

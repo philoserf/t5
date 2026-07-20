@@ -10,7 +10,7 @@ linters:
   disable:
     - exhaustruct # positional records / partial inits are intentional
     - mnd # the codebase IS transcribed rulebook tables (magic numbers by nature)
-    - goconst # domain vocabulary (skills/careers/trade codes) is string map keys, not consts
+    - goconst # domain vocabulary (skills/careers) is string map keys, not consts
     - varnamelen # terse dice vars (r, c, d6) are idiomatic here
     - gomodguard # deprecated in v2.12; std-lib-only module has no blocked modules to guard
     - gochecknoglobals # career/table data are intentional package-level vars

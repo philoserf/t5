@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/philoserf/t5/internal/dice"
+	"github.com/philoserf/t5/internal/tradecode"
 	"github.com/philoserf/t5/internal/uwp"
 )
 
@@ -34,7 +35,7 @@ func TestGenerateBeltWorld(t *testing.T) {
 func TestSecondSurveyRegina(t *testing.T) {
 	w := World{
 		Profile:      regina,
-		TradeCodes:   []string{"Ph", "Pa", "Ri"},
+		TradeCodes:   []tradecode.Code{"Ph", "Pa", "Ri"},
 		Importance:   4,
 		Economic:     Economic{Resources: 13, Labor: 7, Infrastructure: 14, Efficiency: 4},
 		Cultural:     Cultural{Heterogeneity: 9, Acceptance: 12, Strangeness: 6, Symbols: 13},
@@ -79,7 +80,7 @@ func TestSecondSurveyZeroImportance(t *testing.T) {
 }
 
 func TestSetWayStation(t *testing.T) {
-	w := World{Profile: regina, TradeCodes: []string{"Ph"}}
+	w := World{Profile: regina, TradeCodes: []tradecode.Code{"Ph"}}
 	base := Importance(w.Profile, w.TradeCodes, w.NavalBase, w.ScoutBase, false)
 	w.Importance = base
 

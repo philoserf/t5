@@ -5,6 +5,7 @@ import (
 	"slices"
 	"testing"
 
+	"github.com/philoserf/t5/internal/tradecode"
 	"github.com/philoserf/t5/internal/uwp"
 )
 
@@ -23,7 +24,7 @@ func TestTradeClassificationsRegina(t *testing.T) {
 	}
 	got := TradeClassifications(reginaProfile)
 
-	want := []string{"Ph", "Pa", "Ri"}
+	want := []tradecode.Code{"Ph", "Pa", "Ri"}
 	if !reflect.DeepEqual(got, want) {
 		t.Fatalf("TradeClassifications(Regina) = %v, want %v", got, want)
 	}
@@ -46,7 +47,7 @@ func TestTradeClassifications(t *testing.T) {
 	cases := []struct {
 		name string
 		p    uwp.Profile
-		want []string
+		want []tradecode.Code
 	}{
 		{
 			"asteroid belt",
@@ -56,25 +57,25 @@ func TestTradeClassifications(t *testing.T) {
 			// profile without being a belt, so TradeClassificationsWithContext strips
 			// As there (#324); the pure classifier still emits it. Pop 0 matches no
 			// population class.
-			[]string{"As", "Va"},
+			[]tradecode.Code{"As", "Va"},
 		},
 		{
 			"vacuum low-pop rock",
 			uwp.Profile{Size: 4, Atmosphere: 0, Hydrographics: 0, Population: 2},
 			// Atm 0 -> Va and De needs Atm 2-9 (no); Pop 2 -> Lo.
-			[]string{"Va", "Lo"},
+			[]tradecode.Code{"Va", "Lo"},
 		},
 		{
 			"water world",
 			uwp.Profile{Size: 6, Atmosphere: 6, Hydrographics: 10, Population: 5},
 			// Siz6/Atm6/HydA -> Wa; Pop5 -> Ni; Atm6/Pop5 -> Pr (Pre-Rich).
-			[]string{"Wa", "Ni", "Pr"},
+			[]tradecode.Code{"Wa", "Ni", "Pr"},
 		},
 		{
 			"garden agricultural",
 			uwp.Profile{Size: 7, Atmosphere: 6, Hydrographics: 6, Population: 6},
 			// Siz7/Atm6/Hyd6 -> Ga; Pop6 -> Ni; Atm6/Hyd6/Pop6 -> Ag; Atm6/Pop6 -> Ri.
-			[]string{"Ga", "Ni", "Ag", "Ri"},
+			[]tradecode.Code{"Ga", "Ni", "Ag", "Ri"},
 		},
 	}
 	for _, c := range cases {
@@ -177,28 +178,28 @@ func TestTradeClassificationsUWPCodes(t *testing.T) {
 func TestOrderTradeCodes(t *testing.T) {
 	// As accumulated for a satellite: He (Planetary), a zone code, a climate code,
 	// then Sa (Planetary) last.
-	got := OrderTradeCodes([]string{"He", "Da", "Tz", "Sa"})
+	got := OrderTradeCodes([]tradecode.Code{"He", "Da", "Tz", "Sa"})
 
-	want := []string{"He", "Sa", "Tz", "Da"} // Planetary, Climate, Special
+	want := []tradecode.Code{"He", "Sa", "Tz", "Da"} // Planetary, Climate, Special
 	if !slices.Equal(got, want) {
 		t.Errorf("OrderTradeCodes = %v, want %v", got, want)
 	}
 	// A capital (Political) sorts before the Special zone codes, wherever it was
 	// stamped in.
-	capacity := OrderTradeCodes([]string{"Fo", "Cs", "Ni"})
-	if !slices.Equal(capacity, []string{"Ni", "Cs", "Fo"}) { // Population, Political, Special
+	capacity := OrderTradeCodes([]tradecode.Code{"Fo", "Cs", "Ni"})
+	if !slices.Equal(capacity, []tradecode.Code{"Ni", "Cs", "Fo"}) { // Population, Political, Special
 		t.Errorf("capital ordering = %v, want [Ni Cs Fo]", capacity)
 	}
 	// Regina's codes are already in order and stay put.
-	reg := OrderTradeCodes([]string{"Ph", "Pa", "Ri"})
-	if !slices.Equal(reg, []string{"Ph", "Pa", "Ri"}) {
+	reg := OrderTradeCodes([]tradecode.Code{"Ph", "Pa", "Ri"})
+	if !slices.Equal(reg, []tradecode.Code{"Ph", "Pa", "Ri"}) {
 		t.Errorf("Regina order = %v, want [Ph Pa Ri]", reg)
 	}
 	// It does not mutate its input.
-	in := []string{"Da", "He"}
+	in := []tradecode.Code{"Da", "He"}
 
 	_ = OrderTradeCodes(in)
-	if !slices.Equal(in, []string{"Da", "He"}) {
+	if !slices.Equal(in, []tradecode.Code{"Da", "He"}) {
 		t.Errorf("OrderTradeCodes mutated its input: %v", in)
 	}
 }

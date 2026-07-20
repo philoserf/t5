@@ -3,6 +3,7 @@ package worldgen
 import (
 	"slices"
 
+	"github.com/philoserf/t5/internal/tradecode"
 	"github.com/philoserf/t5/internal/uwp"
 )
 
@@ -49,7 +50,10 @@ type WorldContext struct {
 // climate and satellite codes later, at placement (systemgen/mainworld.go), plus a
 // capital code later still (survey) — so its list is not final here and is sorted
 // when it renders instead (World.SecondSurvey).
-func TradeClassificationsWithContext(p uwp.Profile, ctx WorldContext) []string { //nolint:cyclop // Chart D, p.25
+func TradeClassificationsWithContext( //nolint:cyclop // Chart D, p.25
+	p uwp.Profile,
+	ctx WorldContext,
+) []tradecode.Code {
 	tcs := TradeClassifications(p)
 	// The Secondary codes apply only to non-mainworlds (Book 3 Chart D p.26).
 	if !ctx.IsMainworld { //nolint:nestif // mirrors the book's nested contextual checks
@@ -60,25 +64,28 @@ func TradeClassificationsWithContext(p uwp.Profile, ctx WorldContext) []string {
 		// field of asteroids, so strip its spurious As (#324) — the same shape as the
 		// Px strip below.
 		if !ctx.Belt {
-			tcs = slices.DeleteFunc(tcs, func(code string) bool { return code == "As" })
+			tcs = slices.DeleteFunc(
+				tcs,
+				func(code tradecode.Code) bool { return code == tradecode.As },
+			)
 		}
 		// Px (Prison/Exile Camp) is a mainworld-only code, "MW"; a non-mainworld
 		// with that same profile is a Pe (Penal Colony) instead, so strip any Px the
 		// base classifier emitted before considering Pe below.
-		tcs = slices.DeleteFunc(tcs, func(code string) bool { return code == "Px" })
+		tcs = slices.DeleteFunc(tcs, func(code tradecode.Code) bool { return code == tradecode.Px })
 		// Fa Farming: in the habitable zone, Atm 4-9, Hyd 4-8, Pop 2-6.
 		if inHZ && allows("456789", p.Atmosphere) && allows("45678", p.Hydrographics) &&
 			allows("23456", p.Population) {
-			tcs = append(tcs, "Fa")
+			tcs = append(tcs, tradecode.Fa)
 		}
 		// Mi Mining: Pop 2-6 and the system mainworld is Industrial.
 		if ctx.MainworldIndustrial && allows("23456", p.Population) {
-			tcs = append(tcs, "Mi")
+			tcs = append(tcs, tradecode.Mi)
 		}
 		// Pe Penal Colony: Atm 23AB, Hyd 1-5, Pop 3-6, Gov 6, Law 6-9.
 		if allows("23AB", p.Atmosphere) && allows("12345", p.Hydrographics) &&
 			allows("3456", p.Population) && allows("6", p.Government) && allows("6789", p.Law) {
-			tcs = append(tcs, "Pe")
+			tcs = append(tcs, tradecode.Pe)
 		}
 		// Climate codes from the orbit (Book 3 p.26 / Chart B). Always called, even
 		// without a habitable zone: Tz (orbit 0-1) does not depend on one.
@@ -87,9 +94,9 @@ func TradeClassificationsWithContext(p uwp.Profile, ctx WorldContext) []string {
 		// "is this a moon, and how far" codes with no UWP constraints.
 		if ctx.Satellite {
 			if ctx.SatelliteFar {
-				tcs = append(tcs, "Sa")
+				tcs = append(tcs, tradecode.Sa)
 			} else {
-				tcs = append(tcs, "Lk")
+				tcs = append(tcs, tradecode.Lk)
 			}
 		}
 	}

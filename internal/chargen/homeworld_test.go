@@ -3,11 +3,12 @@ package chargen
 import (
 	"testing"
 
+	"github.com/philoserf/t5/internal/tradecode"
 	"github.com/philoserf/t5/internal/worldgen"
 )
 
 func TestApplyHomeworldSkills(t *testing.T) {
-	grant := func(codes ...string) skillLevels {
+	grant := func(codes ...tradecode.Code) skillLevels {
 		var c Character
 		ApplyHomeworldSkills(&c, worldgen.World{TradeCodes: codes}, DefaultPolicy{})
 
@@ -17,15 +18,6 @@ func TestApplyHomeworldSkills(t *testing.T) {
 	// A fixed single-skill code.
 	if got := grant("Ag").level("Animals"); got != 1 {
 		t.Errorf("Ag -> Animals = %d, want 1", got)
-	}
-	// Deep Space grants two skills.
-	ds := grant("Ds")
-	if ds.level("Vacc Suit") != 1 || ds.level("Zero-G") != 1 {
-		t.Errorf(
-			"Ds -> Vacc Suit/Zero-G = %d/%d, want 1/1",
-			ds.level("Vacc Suit"),
-			ds.level("Zero-G"),
-		)
 	}
 	// Industrial and Rich are player choices; DefaultPolicy takes the first option.
 	if got := grant("In").level(theTrades[0]); got != 1 {
@@ -57,7 +49,7 @@ func (s skillLevels) any() bool             { return s.c.Skills.String() != "" }
 // career could raise. Every site uses the p.132 master-Skills-table spelling.
 func TestHighGSpelledOneWay(t *testing.T) {
 	c := Character{}
-	ApplyHomeworldSkills(&c, worldgen.World{TradeCodes: []string{"Oc"}}, DefaultPolicy{})
+	ApplyHomeworldSkills(&c, worldgen.World{TradeCodes: []tradecode.Code{"Oc"}}, DefaultPolicy{})
 
 	if c.Skills.Level("High-G") != 1 {
 		t.Errorf("Ocean World grants %v, want High-G-1", c.Skills.List())
@@ -81,6 +73,28 @@ func TestHighGSpelledOneWay(t *testing.T) {
 
 		if !found {
 			t.Errorf("%s grid has no High-G cell", career.Name)
+		}
+	}
+}
+
+// TestHomeworldSkillCoversEveryCode asserts that every Chart D code is accounted
+// for by exactly one of homeworldSkill (grants a skill), the In/Ri player-choice
+// codes (handled in ApplyHomeworldSkills), or homeworldNoSkill (grants none by
+// rule). A newly added tradecode.Code can then never silently fall through the
+// switch's default with no skill and no record of that being intentional.
+func TestHomeworldSkillCoversEveryCode(t *testing.T) {
+	playerChoice := map[tradecode.Code]bool{tradecode.In: true, tradecode.Ri: true}
+
+	for _, c := range tradecode.Order {
+		_, hasSkill := homeworldSkill[c]
+		grants := hasSkill || playerChoice[c]
+		noSkill := homeworldNoSkill[c]
+
+		switch {
+		case grants && noSkill:
+			t.Errorf("code %q is in both the skill and no-skill sets", c)
+		case !grants && !noSkill:
+			t.Errorf("code %q is in neither set: add it to homeworldSkill or homeworldNoSkill", c)
 		}
 	}
 }

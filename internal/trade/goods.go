@@ -4,6 +4,7 @@ import (
 	"slices"
 
 	"github.com/philoserf/t5/internal/dice"
+	"github.com/philoserf/t5/internal/tradecode"
 )
 
 // A Good is a specific cargo produced by the Random Trade Goods chart (Book
@@ -30,7 +31,7 @@ func (g Good) String() string {
 // pp.218-219): it picks a trade-classification column, rolls the type block and
 // the specific good, follows Imbalance redirects to another column, and applies
 // a Trade Good Detail prefix from the world's other trade classes.
-func RandomTradeGoods(r *dice.Roller, worldTCs []string) Good {
+func RandomTradeGoods(r *dice.Roller, worldTCs []tradecode.Code) Good {
 	col, sourceTC := selectGoodsColumn(r, worldTCs)
 	// The detail's footnotes key on where the goods came from, which after an
 	// Imbalance redirect is no longer the column the world started on.
@@ -44,21 +45,21 @@ func RandomTradeGoods(r *dice.Roller, worldTCs []string) Good {
 // world's column-eligible trade classes (defaulting to Non-Agricultural when
 // none qualify, and picking randomly among several), mapping Ag to Ag-1 or Ag-2
 // at random. It returns the column key and the trade class that chose it.
-func selectGoodsColumn(r *dice.Roller, worldTCs []string) (string, string) {
-	eligible := make([]string, 0, len(worldTCs))
+func selectGoodsColumn(r *dice.Roller, worldTCs []tradecode.Code) (string, tradecode.Code) {
+	eligible := make([]tradecode.Code, 0, len(worldTCs))
 	for _, tc := range worldTCs {
-		if goodsColumnEligible[tc] {
+		if goodsColumnEligible[string(tc)] {
 			eligible = append(eligible, tc)
 		}
 	}
 
 	if len(eligible) == 0 {
-		return "Na", "Na"
+		return "Na", tradecode.Na
 	}
 	// Index(1) consumes no dice, so a lone eligible class needs no special case.
 	tc := eligible[r.Index(len(eligible))]
 
-	return resolveColumn(r, tc), tc
+	return resolveColumn(r, string(tc)), tc
 }
 
 // imbalancesBlock is the type name of the block whose entries are trade classes
@@ -159,7 +160,7 @@ func firstGoodsBlock(blocks [6]goodsBlock, column string) goodsBlock {
 // a label when it would be redundant with the goods' own origin: Hi's "Processed"
 // for goods out of the Industrial column, and Va's "Exotic" for goods out of the
 // Asteroid column. Returns "" when no class carries a label.
-func tradeGoodsDetail(worldTCs []string, sourceTC, column string) string {
+func tradeGoodsDetail(worldTCs []tradecode.Code, sourceTC tradecode.Code, column string) string {
 	for _, tc := range tradeGoodsDetailOrder {
 		// Skip both the class that chose the starting column and the class the
 		// goods actually came from. Those differ only after an Imbalance redirect,
@@ -167,8 +168,10 @@ func tradeGoodsDetail(worldTCs []string, sourceTC, column string) string {
 		// whose As column redirects to Ri was yielding "Quality <Ri good>", a label
 		// restating the goods' own origin. That is what the chart's two footnotes
 		// below suppress for Hi/In and Va/As; a redirect is the same situation
-		// arising by a different route, so it takes the same answer.
-		if tc == sourceTC || tc == column || !slices.Contains(worldTCs, tc) {
+		// arising by a different route, so it takes the same answer. tradeGoodsDetailOrder
+		// is program data (goods_data.go), still keyed as plain strings; bridge to
+		// tradecode.Code for the world/source comparisons.
+		if tc == string(sourceTC) || tc == column || !slices.Contains(worldTCs, tradecode.Code(tc)) {
 			continue
 		}
 

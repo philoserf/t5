@@ -1,5 +1,7 @@
 package trade
 
+import "github.com/philoserf/t5/internal/tradecode"
+
 // Passengers, freight, and mail (Book 2 p.220). A merchant ship earns income
 // each jump from passages, freight tonnage, speculative cargo (the pricing
 // engine), and mail. Availability is rolled per world; the rates and broker
@@ -68,6 +70,6 @@ func AvailablePassengers(flux, populationDigit, skillMod int) int {
 // AvailableFreight is the tons of freight offered for shipment (Book 2 p.220 D):
 // (Flux + population digit + Liaison) times one more than the count of the
 // world's value trade classes, floored at zero.
-func AvailableFreight(flux, populationDigit, liaison int, worldTCs []string) int {
+func AvailableFreight(flux, populationDigit, liaison int, worldTCs []tradecode.Code) int {
 	return max(flux+populationDigit+liaison, 0) * (len(ValueClasses(worldTCs)) + 1)
 }

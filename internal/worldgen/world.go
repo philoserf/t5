@@ -6,6 +6,7 @@ import (
 	"strings"
 
 	"github.com/philoserf/t5/internal/dice"
+	"github.com/philoserf/t5/internal/tradecode"
 	"github.com/philoserf/t5/internal/uwp"
 )
 
@@ -15,7 +16,7 @@ import (
 // multiplier digit.
 type World struct { //nolint:recvcheck // deliberate value-reader / pointer-mutator split
 	Profile    uwp.Profile
-	TradeCodes []string
+	TradeCodes []tradecode.Code
 	// Belt reports whether the mainworld is an asteroid belt. For a mainworld — and
 	// only a mainworld — belt-ness is Size 0: Book 3 p.16 makes it a belt "when
 	// World Size is generated", whether the sector map forced it (GenerateBeltWorld)
@@ -92,7 +93,7 @@ func generateWorld(r *dice.Roller, gasGiants, belts int, isCapital, belt bool) W
 // recomputes its nobility as a capital (Book 3 Chart D p.26). Which world is the
 // capital is a whole-region decision the caller makes; this only encodes the
 // result on the world.
-func (w *World) SetCapital(code string) {
+func (w *World) SetCapital(code tradecode.Code) {
 	if !slices.Contains(w.TradeCodes, code) {
 		w.TradeCodes = append(w.TradeCodes, code)
 	}
@@ -129,19 +130,19 @@ func (w *World) SetWayStation() {
 // p.26). This is the one source of truth for the codes, so a renderer and the
 // nobility check cannot disagree about which is which — they did once, when the
 // codes were corrected in markSectorCapitals but the sheet's labels were not.
-var capitalNames = map[string]string{
-	"Cp": "Subsector Capital",
-	"Cs": "Sector Capital",
-	"Cx": "Imperial Capital",
+var capitalNames = map[tradecode.Code]string{
+	tradecode.Cp: "Subsector Capital",
+	tradecode.Cs: "Sector Capital",
+	tradecode.Cx: "Imperial Capital",
 }
 
 // CapitalName returns the office a capital trade code marks, or "" if the code is
 // not a capital.
-func CapitalName(code string) string { return capitalNames[code] }
+func CapitalName(code tradecode.Code) string { return capitalNames[code] }
 
 // CapitalCode returns the capital code the world carries, or "" if it is not a
 // capital.
-func (w World) CapitalCode() string {
+func (w World) CapitalCode() tradecode.Code {
 	for _, tc := range w.TradeCodes {
 		if _, ok := capitalNames[tc]; ok {
 			return tc
@@ -152,7 +153,7 @@ func (w World) CapitalCode() string {
 }
 
 // hasCapitalCode reports whether the trade codes already mark the world a capital.
-func hasCapitalCode(tcs []string) bool {
+func hasCapitalCode(tcs []tradecode.Code) bool {
 	for _, tc := range tcs {
 		if _, ok := capitalNames[tc]; ok {
 			return true
@@ -179,7 +180,7 @@ func hasCapitalCode(tcs []string) bool {
 func (w World) SecondSurvey() string {
 	fields := []string{
 		w.Profile.String(),
-		dashIfEmpty(strings.Join(OrderTradeCodes(w.TradeCodes), " ")),
+		dashIfEmpty(tradecode.Join(OrderTradeCodes(w.TradeCodes), " ")),
 		w.Extensions(),
 		w.Nobility,
 		dashIfEmpty(w.bases()),

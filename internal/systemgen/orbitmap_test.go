@@ -6,6 +6,7 @@ import (
 	"testing"
 
 	"github.com/philoserf/t5/internal/dice"
+	"github.com/philoserf/t5/internal/tradecode"
 	"github.com/philoserf/t5/internal/worldgen"
 )
 
@@ -320,10 +321,10 @@ func TestBeltMainworldIsAlwaysPlaced(t *testing.T) {
 // climateVocabulary is every code ClimateCodes can emit. No other classifier
 // produces one, so a mainworld's climate codes can be recovered from its trade
 // codes by this filter.
-var climateVocabulary = []string{"Ho", "Co", "Tr", "Tu", "Fr", "Tz"}
+var climateVocabulary = []tradecode.Code{"Ho", "Co", "Tr", "Tu", "Fr", "Tz"}
 
-func climateOf(codes []string) []string {
-	got := []string{}
+func climateOf(codes []tradecode.Code) []tradecode.Code {
+	got := []tradecode.Code{}
 
 	for _, c := range codes {
 		if slices.Contains(climateVocabulary, c) {

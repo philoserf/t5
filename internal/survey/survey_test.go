@@ -9,6 +9,7 @@ import (
 	"github.com/philoserf/t5/internal/route"
 	"github.com/philoserf/t5/internal/sectorgen"
 	"github.com/philoserf/t5/internal/systemgen"
+	"github.com/philoserf/t5/internal/tradecode"
 	"github.com/philoserf/t5/internal/uwp"
 	"github.com/philoserf/t5/internal/worldgen"
 )
@@ -61,7 +62,7 @@ func TestMarkSectorCapitals(t *testing.T) {
 	// Cx is the Imperial Capital. These were swapped, so every generated sector
 	// promoted each subsector capital to a sector capital, and its sector capital to
 	// the capital of the Imperium.
-	tcs := func(i int) []string { return records[i].System.Mainworld.TradeCodes }
+	tcs := func(i int) []tradecode.Code { return records[i].System.Mainworld.TradeCodes }
 	if !slices.Contains(tcs(0), "Cs") || slices.Contains(tcs(0), "Cp") {
 		t.Errorf("the sector's best world is its Sector Capital (Cs) only: %v", tcs(0))
 	}

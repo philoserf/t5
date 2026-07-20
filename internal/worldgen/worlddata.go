@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/philoserf/t5/internal/dice"
+	"github.com/philoserf/t5/internal/tradecode"
 	"github.com/philoserf/t5/internal/uwp"
 )
 
@@ -14,13 +15,13 @@ import (
 // nobleRank pairs a nobility code with the trade codes that grant it.
 var nobleRanks = []struct {
 	code  string
-	codes []string
+	codes []tradecode.Code
 }{
-	{"c", []string{"Pa", "Pr"}}, // Baronet
-	{"C", []string{"Ag", "Ri"}}, // Baron
-	{"D", []string{"Pi"}},       // Marquis
-	{"e", []string{"Ph"}},       // Viscount
-	{"E", []string{"In", "Hi"}}, // Count
+	{"c", []tradecode.Code{tradecode.Pa, tradecode.Pr}}, // Baronet
+	{"C", []tradecode.Code{tradecode.Ag, tradecode.Ri}}, // Baron
+	{"D", []tradecode.Code{tradecode.Pi}},               // Marquis
+	{"e", []tradecode.Code{tradecode.Ph}},               // Viscount
+	{"E", []tradecode.Code{tradecode.In, tradecode.Hi}}, // Count
 }
 
 // Nobility returns the string of noble codes a world holds (Book 3 p. 28). A
@@ -28,7 +29,7 @@ var nobleRanks = []struct {
 // capital designation (Duke F), or from an Importance of 4+ on a non-capital
 // (Duke f). Archduke (G) is assigned at the domain level and is not derived
 // here. isCapital marks a subsector or sector capital.
-func Nobility(tcs []string, ix int, isCapital bool) string {
+func Nobility(tcs []tradecode.Code, ix int, isCapital bool) string {
 	var b strings.Builder
 	b.WriteString("B") // Knight, always present
 
@@ -118,16 +119,16 @@ func TravelZone(p uwp.Profile) byte {
 // a pure function of the UWP (see TravelZone), so the codes are as determinable as
 // any other. The catalog once called them referee-only; the book gives the rule
 // outright.
-func ZoneCodes(p uwp.Profile) []string {
+func ZoneCodes(p uwp.Profile) []tradecode.Code {
 	switch TravelZone(p) {
 	case 'A':
 		if p.Population <= 6 {
-			return []string{"Da"}
+			return []tradecode.Code{tradecode.Da}
 		}
 
-		return []string{"Pz"}
+		return []tradecode.Code{tradecode.Pz}
 	case 'R':
-		return []string{"Fo"}
+		return []tradecode.Code{tradecode.Fo}
 	default:
 		return nil
 	}
