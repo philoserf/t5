@@ -43,7 +43,8 @@ func (s Stance) sizeMod() int {
 }
 
 // TargetSize is a target's apparent size for an attack: object Size minus Range,
-// reduced by the target's stance (Book 1 p.203). A value below zero means the
+// reduced by the target's stance (Book 1 p.203; the "cannot be seen and cannot be
+// attacked" wording is p.204's, where p.203 says "attack is not possible"). A value below zero means the
 // target cannot ordinarily be seen or attacked.
 func TargetSize(size, rng int, stance Stance) int {
 	return size - rng + stance.sizeMod()

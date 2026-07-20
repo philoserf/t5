@@ -1,8 +1,14 @@
 package trade
 
-// Delivery terms and mail (Book 2 pp.210, 220).
+// Delivery terms and mail (Book 2 pp.209, 210, 220).
 
-// MailRatePerTon is the premium per-jump rate for a ton of mail (Book 2 p.209).
+// MailRatePerTon is the premium rate for a ton of mail (Book 2 p.209, "Each ton
+// of mail is shipped at a premium rate of Cr15,000").
+//
+// Per jump is this package's reading, not the book's words: p.209 states the rate
+// without a period, and "Bid is per Jump" is said on p.220 of the CONTRACT table
+// only. Freight's "to the starship's next port of call" makes per-jump the natural
+// reading for a shipment too, but it is an inference.
 // Mail is always incidental — never a major or minor lot — and every lot is at
 // least one ton, so this is also the smallest mail payday. On the p.220
 // shipment side the payment is a voucher for the same Cr15,000, redeemable at

@@ -1,5 +1,5 @@
 // Package personals implements Traveller5's social-interaction system, the
-// Personals (Book 1 pp. 180-185). A Personal is resolved roll-low: the Purpose
+// Personals (Book 1 pp. 181-185). A Personal is resolved roll-low: the Purpose
 // sets the dice, and Target = Strategy value × Tactic multiplier + the best
 // applicable Law + up to two situational Mods (three if the Personal is
 // Deliberate). That allowance is the caller's to keep: Resolve takes unbounded
@@ -66,7 +66,8 @@ func (p Purpose) String() string {
 func (p Purpose) valid() bool { return p >= Carouse && p <= Command }
 
 // Strategy is the approach an Actor takes (Book 1 p.185, STRATEGIES). A strategy's base
-// point value depends on the Purpose it is used for.
+// point value depends on the Purpose it is used for, and those values are the p.184
+// P1 table's, not p.185's prose.
 type Strategy int
 
 // Interaction strategies.
@@ -82,7 +83,7 @@ const (
 )
 
 // strategyValues[purpose][strategy] is the strategy's base point value 1-5
-// (Book 1 p.183 P1 table); a strategy absent from a purpose's map is not
+// (Book 1 p.184, the P1 table); a strategy absent from a purpose's map is not
 // available for that purpose.
 var strategyValues = map[Purpose]map[Strategy]int{
 	Carouse:  {Casual: 1, Enjoyment: 2, Discussion: 3, ActiveListening: 4, AppealTo: 5},
@@ -92,7 +93,7 @@ var strategyValues = map[Purpose]map[Strategy]int{
 }
 
 // StrategyValue returns a strategy's base point value for a purpose and whether
-// the strategy is available for that purpose (Book 1 p.183).
+// the strategy is available for that purpose (Book 1 p.184, the P1 table).
 func StrategyValue(p Purpose, s Strategy) (int, bool) {
 	v, ok := strategyValues[p][s]
 
@@ -113,7 +114,8 @@ const (
 )
 
 // lawMods[law] is the Law's unconditional Mod per Purpose (Carouse, Query,
-// Persuade, Command); 0 means the Law contributes nothing there (Book 1 p.183).
+// Persuade, Command); 0 means the Law contributes nothing there (Book 1 p.184, the
+// P1 table; p.183's Quick Personals sidebar reprints the same numbers).
 // Inferiority grants only Query +1 unconditionally — its Persuade +2 is
 // conditional (see InferiorityAppeal) and so is not in this table.
 var lawMods = map[Law][4]int{
