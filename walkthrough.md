@@ -1,6 +1,6 @@
 # T5 Walkthrough
 
-*2026-07-20T13:16:20Z by Showboat 0.6.1*
+_2026-07-20T13:16:20Z by Showboat 0.6.1_
 <!-- showboat-id: a27465ad-36f6-4d95-828e-f3f52705c941 -->
 
 ## Overview
@@ -157,7 +157,7 @@ type Roller struct {
 // is kept and reported by Seed, so output from an auto-seeded Roller stays
 ```
 
-There are three constructors. `New` draws a fresh seed *and keeps it* — never
+There are three constructors. `New` draws a fresh seed _and keeps it_ — never
 draws and discards — so even an unseeded run can be replayed afterwards.
 `NewWithSeed` is the deterministic one. `NewSource` takes an arbitrary
 `func() int`, which is how tests inject a scripted die.
@@ -199,7 +199,7 @@ func (r *Roller) Seed() (uint64, bool) {
 
 **Exact, not cyclic.** A script that runs out panics instead of wrapping around.
 That is what makes a green test suite evidence that the dice stream is
-unchanged: a test must enumerate *every* die the code under test draws, so if a
+unchanged: a test must enumerate _every_ die the code under test draws, so if a
 generator starts consuming one more roll, the test fails loudly rather than
 being quietly served recycled faces.
 
@@ -229,7 +229,7 @@ grep -n -A4 'func (r \*Roller) Flux\|func (r \*Roller) GoodFlux\|func (r \*Rolle
 
 ### The roll-low check
 
-T5 resolves actions by rolling *under* a target. Two kinds of adjustment exist
+T5 resolves actions by rolling _under_ a target. Two kinds of adjustment exist
 and the book is careful to distinguish them — a **Mod** adjusts the target
 (higher is easier, it is an asset), a **DM** adjusts the roll (higher is
 harder).
@@ -278,7 +278,7 @@ sed -n '75,91p' internal/dice/check.go
 ```
 
 `Resolve` keeps the individual `Faces`, not just the sum, because Book 1 p.127
-defines a *Spectacular* result off the raw dice: three or more ones is a
+defines a _Spectacular_ result off the raw dice: three or more ones is a
 Spectacular Success, three or more sixes a Spectacular Failure, and both at
 once (only reachable on 6D+) is "Spectacularly Interesting".
 
@@ -317,7 +317,7 @@ a Spectacular roll but does not **act** on it. `CheckResult.Success` in `dice`
 is plain arithmetic, `Total <= Target`, and nothing more.
 
 The p.127 override lives one layer up, in `internal/task`, which owns Book 1
-pp.120-131. The reasoning is that the book states the rule about *tasks* —
+pp.120-131. The reasoning is that the book states the rule about _tasks_ —
 "Sometimes the task result is Spectacular" — not about dice. So `dice` keeps the
 dice observation and `task` keeps the consequence. A caller rolling a
 `dice.Check` that isn't a task gets arithmetic, with no opt-out flag to
@@ -856,7 +856,7 @@ func generate(r *dice.Roller, gg ggConstraint, asteroidMainworld bool) System {
 
 `GenerateForMap` is the interesting variant. A coarse sector map already says
 whether a hex has a gas giant and whether its mainworld is an asteroid belt, so
-detail generation has to *honor a constraint it did not roll*.
+detail generation has to _honor a constraint it did not roll_.
 
 The naive fix — skip the gas-giant roll when the map already decided — would
 shift every subsequent draw and give a different mainworld from the same seed.
@@ -908,13 +908,13 @@ sed -n '205,214p' internal/systemgen/systemgen.go
 ```
 
 That last paragraph is worth reading twice. `max(2D/2-2, 0)` is **integer**
-division, so 2D of 2, 3, 4 *and* 5 all give 0 — `5/2` is 2, not 2.5. Ten
+division, so 2D of 2, 3, 4 _and_ 5 all give 0 — `5/2` is 2, not 2.5. Ten
 outcomes in thirty-six, about 28%, not the one-in-six you'd guess from reading
 the predicate as `2D <= 4`. The comment records that the mistake was made twice
 while the function was being written.
 
 You will meet this register throughout the repo: comments that adjudicate the
-*rules* rather than explain the code, usually anchored to a named test.
+_rules_ rather than explain the code, usually anchored to a named test.
 
 Here is a whole system:
 
@@ -973,7 +973,7 @@ func (h Hex) Distance(o Hex) int {
 
 ```
 
-Note the strict/total split again, applied to a *filing* decision. `Hex.String`
+Note the strict/total split again, applied to a _filing_ decision. `Hex.String`
 returns `"????"` for an off-map hex because it is display. `Hex.Subsector`
 panics, because a plausible-but-wrong letter would silently misfile a world into
 a subsector it doesn't belong to.
@@ -1047,8 +1047,8 @@ func GenerateSector(r *dice.Roller, d Density) []StellarHex {
 }
 ```
 
-This is the premise the whole `survey` design rests on: a subsector rolled *on
-its own* would consume a different run of dice, so the same coordinates would
+This is the premise the whole `survey` design rests on: a subsector rolled _on
+its own_ would consume a different run of dice, so the same coordinates would
 hold different worlds. Every CLI view therefore **selects from** one whole
 survey rather than generating a region directly.
 
@@ -1217,51 +1217,51 @@ go run ./cmd/sectorgen -seed 42 -subsector A 2>/dev/null | head -6
 ```
 
 ```output
-0101 Mecu C367632-9 Ni Ag Ri Ho {+1}(854+3)[7779] BC - - 430 10 Im G4 III
-0103 Sygipia C554666-7 Ni Ag Tz {-1}(255+0)[753A] BC - - 722 12 Im G D G8 VI
-0109 Ferorae C535B95-C Hi {+2}(6AB+0)[9D1E] BE - - 210 10 Im F6 V K9 VI
-0110 Fusaele X310242-5 Lo Fo {-3}(710+1)[1136] B - R 511 5 Im G0 V
-0201 Piseso CB9887A-8 Ph Pa Pi {-1}(976-2)[A738] BcDe S - 402 12 Im G7 V K9 VI K D
-0203 Liazyrae A578667-9 Ni Ag {+1}(857+0)[374E] BC S - 401 5 Im A8 V
+0101 Maesavo E410100-7 Lo Co {-3}(500-2)[1139] B - - 233 17 Im K8 V BD K4 VI
+0104 Helo B120557-F De Ni Po Ho {+1}(E42+1)[566J] B - - 820 10 Im G5 V K5 VI
+0107 Magi A200440-E Va Ni Co Tz {+1}(F32+2)[653J] B - - 932 14 Im M2 V BD
+0108 Hipa B978003-B Tz {+1}(200+0)[0000] B N - 000 6 Im K D M9 VI M2 VI
+0109 Cutuhy B7997B8-7 Sa Pi Co {0}(86B-2)[A773] BD - - 212 8 Im F7 II G5 V M0 V
+0110 Bijeri D110359-8 Lo {-3}(D20-2)[214C] B - - 131 15 Im F3 IV K0 VI K D F8 VI
 ```
 
 And the deep per-system sheet for one hex — the detail a one-line survey record
 cannot carry:
 
 And the deep per-system sheet for one hex — the detail a one-line survey record
-cannot carry. Note that the renderer only *lays out*; every piece of meaning is
+cannot carry. Note that the renderer only _lays out_; every piece of meaning is
 delegated back to the package that owns it (`worldgen.OrderTradeCodes`,
 `route.ExpectedTraffic`, `mw.Extensions()`):
 
 ```bash
-go run ./cmd/sectorgen -seed 42 -hex 0103 2>/dev/null | head -24
+go run ./cmd/sectorgen -seed 42 -hex 0109 2>/dev/null | head -24
 ```
 
 ```output
-0103  Sygipia
+0109  Cutuhy
 ────────────────────────────────────────────────────────────────
-  Mainworld   C554666-7  Ni Ag Tz
-  Extensions  {-1}(255+0)[753A]   RU 50
-  Traffic     ~1 ship/week
-  Nobility    BC
+  Mainworld   B7997B8-7  Sa Pi Co
+  Extensions  {0}(86B-2)[A773]   RU -1056
+  Traffic     ~2 ships/week
+  Nobility    BD
   Bases       none
   Travel Zone Green
-  Natives     Colonists
-  Starport    C — Routine
-              repairs: Major · fuel: Unrefined (4D hours) · downport
+  Natives     Natives
+  Starport    B — Good
+              builds Spacecraft · repairs: Overhaul · fuel: Refined+Unrefined (2D hours) · downport
 
   Stars
-    Primary            G D
-    Primary Companion  G8 VI  (companion)
+    Primary            F7 II
+    Close              G5 V  (Orbit 3)
+    Far                M0 V  (Orbit 17)
 
-  Orbits — 12 worlds · PBG 722 · 2 gas giants · 2 belts
+  Orbits — 8 worlds · PBG 212 · 2 gas giants · 1 belt
     [Primary]
-   *  0  Mainworld      C554666-7
-      1  Belt
-      2  Belt
-      3  Worldlet       Y000465-A  As Va Ni Re
-      4  Big World      YBB9244-6  Fl Lo
-          · moon Gee   Big World    HBD6420-7 Lk Ni  (close orbit)  [double planet]
+      2  Inferno        YBB0000-0  He
+      9  Belt
+   * 10  Mainworld      B7997B8-7  — moon of Gas Giant T LGG
+          · sibling moon Ee    Storm World  H686664-1 Ga Lk Ni Ag Ri Co Tu  (close orbit)
+          · sibling moon Tee   Inferno      YCB0000-0 He Sa Co  (far orbit)
 ```
 
 ---
@@ -1372,7 +1372,7 @@ type Career struct {
 
 The other important structural idea is the split between durable history and
 transient scratch. `CareerRecord` is what the character keeps; `careerRun` is
-per-career working state that is deliberately kept *out* of `Character`, so a
+per-career working state that is deliberately kept _out_ of `Character`, so a
 character carries no half-finished career state between careers.
 
 The term loop is the engine's heartbeat — term, age four years, aging check,
@@ -1416,7 +1416,7 @@ sed -n '597,626p' internal/chargen/career.go
 ```
 
 That comment is documenting a live bug that was fixed: because `rec` is passed
-*by value* to the policy hooks, assigning `rec.Branch` only at muster-out left
+_by value_ to the policy hooks, assigning `rec.Branch` only at muster-out left
 both hooks seeing `""` for the whole career — so a policy meaning "keep Flight"
 rerolled every term, drew an extra die, and landed the character somewhere they
 never chose.
@@ -1489,7 +1489,7 @@ func (s *Set) GrantCascade(parent, knowledge string) {
 
 ## 8. `internal/sophont` — making chargen work for aliens
 
-The Sophont Creation System builds a *species*, not an individual. A `Species`
+The Sophont Creation System builds a _species_, not an individual. A `Species`
 is essentially the book's "Sophont Creation Card": homeworld, environment, six
 characteristic **specs**, size, life cycle, gender, and optionally caste.
 
@@ -1582,7 +1582,7 @@ func GenerateSophont(r *dice.Roller, species sophont.Species) Character {
 
 Two subtleties worth noticing. A **0-dice slot** — the Caste C6 of a caste
 species, whose value comes from the caste table rather than a roll — draws
-nothing, leaving the score at its 0 sentinel *and the dice stream intact*. And
+nothing, leaving the score at its 0 sentinel _and the dice stream intact_. And
 because the six characteristic rolls come first in the same order, a
 Human-equivalent species reproduces plain `Generate` exactly.
 
@@ -1718,8 +1718,8 @@ func aboard(problems []string) bool { return len(problems) == 0 }
 ### One rule, two builders
 
 Weapons and defenses scale by the same rule, so it lives in exactly one place.
-The **stage** shifts TL and multiplies the *device* cost; the **range** shifts TL
-again and scales the *mount's* tonnage and cost. The two builders differ in what
+The **stage** shifts TL and multiplies the _device_ cost; the **range** shifts TL
+again and scales the _mount's_ tonnage and cost. The two builders differ in what
 they do with the resulting Mod and what they refuse to build — not in this
 arithmetic:
 
@@ -1866,8 +1866,8 @@ func Penetrate(damage int, layerAV []int) (bool, int) {
 ```
 
 The **upper layer** is the bridge — the only place `shipcombat` imports
-`shipgen`, and the thesis of the whole starship tier: *a generated ship can
-fight.* `Attack` is three lines, because a designed weapon already carries its
+`shipgen`, and the thesis of the whole starship tier: _a generated ship can
+fight._ `Attack` is three lines, because a designed weapon already carries its
 own TL and Mod; the gunner supplies the rest:
 
 ```bash
@@ -1881,7 +1881,7 @@ func Attack(r *dice.Roller, w shipgen.Weapon, rangeBands, csk int, mods ...int) 
 ```
 
 `Defend` is where the two packages have to agree about something subtle. A
-defense the designer *refused* to build is not aboard — `shipgen` charged the
+defense the designer _refused_ to build is not aboard — `shipgen` charged the
 ship nothing for it and spent no tonnage. It must not then intercept anything,
 or a refused screen becomes a free one:
 
@@ -1961,7 +1961,7 @@ go run ./cmd/worldgen -n 2 2>&1 >/dev/null | sed 's/seed [0-9]*/seed <freshly dr
 worldgen: seed <freshly drawn>
 ```
 
-The subtle part is *when* the seed is reported. `Roller` returns a `reportSeed`
+The subtle part is _when_ the seed is reported. `Roller` returns a `reportSeed`
 function rather than printing at construction, because `Roller` only parses —
 every per-command check (an unknown density, a bad hull letter) happens after it
 returns. Printing at construction announced a seed and then died on bad input,
@@ -2033,11 +2033,11 @@ func RejectUnusable(what string, usable ...string) {
 Two details. "Was it set" is asked of `flag.Visit`, never of the value — `-tl 0`
 is a real Tech Level and `-armor 1` the hull's integral layer, so a
 default-comparison would wave real input through as unset. And a bool explicitly
-set *false* asks for its path **not** to be taken, which is agreement rather
+set _false_ asks for its path **not** to be taken, which is agreement rather
 than conflict, so a script building `-sector=$want` doesn't die on it.
 
 The naming runs the useful way round: the caller lists the flags its path
-*reads*, so a flag added later is covered the day it is added rather than the
+_reads_, so a flag added later is covered the day it is added rather than the
 day someone remembers to list it.
 
 ```bash
@@ -2086,9 +2086,9 @@ A command wires it up in two lines and then asserts the whole contract in one
 call:
 
     var shipgen = clitest.Command{Name: "shipgen", Main: main}
-    
+
     func TestMain(m *testing.M) { shipgen.TestMain(m) }
-    
+
     // ...
     shipgen.Run(t, "-tl", "-5").AssertRejected(t)
 
@@ -2099,7 +2099,7 @@ This is the most carefully-argued code in the repo, and the reason is that
 which is the shape that fails open. A matcher that drifted off the real wording
 would stop matching and wave a leaked seed through.
 
-The answer is that `cli` owns the wording, and the matcher is *built from* the
+The answer is that `cli` owns the wording, and the matcher is _built from_ the
 format string the writer uses, so the two cannot drift apart:
 
 ```bash
@@ -2233,7 +2233,7 @@ repo read quickly:
 2. **The dice stream is an observable.** Same seed, same records — so a
    constraint supersedes a roll rather than skipping it, and a generator that
    changes what it draws is a breaking change. `dice.NewScripted` panics rather
-   than wrapping precisely so that a green suite is *evidence* about the stream.
+   than wrapping precisely so that a green suite is _evidence_ about the stream.
 
 3. **Strict paths panic, display paths render `?`.** `ehex.Digit` vs
    `ehex.Format`, `Difficulty.Dice` vs `Difficulty.String`, `Hex.Subsector` vs
@@ -2242,7 +2242,7 @@ repo read quickly:
 
 4. **A rule lives in the layer that owns the book pages.** `dice` classifies a
    Spectacular roll; `task` applies it, because p.127 is a statement about
-   *tasks*. `route` computes expected traffic but hands every dice-driven
+   _tasks_. `route` computes expected traffic but hands every dice-driven
    adjustment back to its caller.
 
 5. **Beware assertions that pass when the mechanism is absent.** This is the
@@ -2255,4 +2255,3 @@ are not explaining the code — they are **adjudicating the rules**, recording
 which printing of a self-contradicting table was followed and why, usually tied
 to a named golden test. Read them as the reasoning that produced the code, not
 as a gloss on it.
-

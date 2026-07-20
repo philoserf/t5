@@ -169,11 +169,18 @@ var densityInfo = [...]struct {
 }
 
 func (d Density) String() string {
-	if d < ExtraGalactic || d > Core {
+	if !d.valid() {
 		return "?"
 	}
 
 	return densityInfo[d].name
+}
+
+// valid reports whether d names a row of the density table. An out-of-range
+// Density has no name and generates no systems; it is the single guard the other
+// density readers share, rather than repeating the bound.
+func (d Density) valid() bool {
+	return d >= ExtraGalactic && d <= Core
 }
 
 // DensityNames returns the eight density names in order (Extra Galactic … Core).
@@ -207,7 +214,7 @@ func normalizeName(s string) string {
 // (Book 3 p.13). An out-of-range density yields no system rather than a lookup
 // past the end of densityInfo.
 func SystemPresent(r *dice.Roller, d Density) bool {
-	if d < ExtraGalactic || d > Core {
+	if !d.valid() {
 		return false
 	}
 
@@ -270,7 +277,10 @@ func RollHex(r *dice.Roller, d Density, h Hex) (StellarHex, bool) {
 // survey.Survey.Subsector), so a subsector is selected from a surveyed sector
 // rather than surveyed on its own.
 func GenerateSector(r *dice.Roller, d Density) []StellarHex {
-	if d < ExtraGalactic || d > Core {
+	// Guard before deriving 1280 substreams, and so a bad density needs no seeded
+	// Roller. RollHex/SystemPresent guard too, but relying on that would still
+	// derive a child per hex first.
+	if !d.valid() {
 		return nil
 	}
 

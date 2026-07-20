@@ -59,6 +59,9 @@ type Survey struct {
 // reason. Hex generation itself is not: each hex is rolled from its own substream
 // (sectorgen.DeriveHex), so a hex's name and system depend only on the seed and
 // its coordinates, not on any hex rolled before it.
+//
+// Deriving those substreams requires a seeded Roller (New/NewWithSeed); a
+// scripted or sourced Roller has no seed to key from and panics.
 func Sector(r *dice.Roller, d sectorgen.Density) Survey {
 	hexes := sectorgen.GenerateSector(r, d)
 

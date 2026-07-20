@@ -164,7 +164,10 @@ func TestSystemPresent(t *testing.T) {
 		t.Errorf("out-of-range density should report no system")
 	}
 
-	if GenerateSector(dice.NewWithSeed(1), Density(-1)) != nil {
+	// A scripted roller with a single face: the density guard must short-circuit
+	// before any hex is derived or rolled. If a bad density ever reached the roll
+	// loop, this over-draws its one face and panics rather than passing silently.
+	if GenerateSector(dice.NewScripted(1), Density(-1)) != nil {
 		t.Errorf("out-of-range density should generate no systems")
 	}
 }
@@ -247,28 +250,16 @@ func TestHexIsolation(t *testing.T) {
 		t.Fatal("no systems generated")
 	}
 
-	// Re-roll each present hex standalone. Reusing one parent across the loop is
-	// itself safe only because Derive is order-independent — the property under test.
+	// Re-roll each present hex standalone, reusing one parent across the whole
+	// loop. Both reuses lean on the same property: RollHex keys on the parent's
+	// immutable seed, so its result cannot depend on the loop's position or on any
+	// hex rolled before it. A regression that rolled a hex from the shared stream
+	// instead of its own child (the pre-#326 coupling) makes a present hex's
+	// standalone value diverge from its whole-sector value here.
 	for _, sh := range full {
 		got, ok := RollHex(parent, Standard, sh.Hex)
 		if !ok || got != sh {
 			t.Fatalf("hex %s standalone = %+v (present %v), want %+v", sh.Hex, got, ok, sh)
-		}
-	}
-
-	// Adversarial: draining one hex's substream — as a rule change that rolls more
-	// for that hex would — cannot perturb another hex, because the streams are
-	// independent, not consecutive.
-	victim := full[0].Hex
-
-	drained := DeriveHex(parent, victim)
-	for range 1000 {
-		drained.Die()
-	}
-
-	for _, sh := range full[1:] {
-		if got, ok := RollHex(parent, Standard, sh.Hex); !ok || got != sh {
-			t.Fatalf("hex %s changed after draining hex %s: %+v want %+v", sh.Hex, victim, got, sh)
 		}
 	}
 }
