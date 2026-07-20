@@ -164,7 +164,7 @@ func TestSystemPresent(t *testing.T) {
 		t.Errorf("out-of-range density should report no system")
 	}
 
-	if GenerateSector(dice.NewScripted(1), Density(-1)) != nil {
+	if GenerateSector(dice.NewWithSeed(1), Density(-1)) != nil {
 		t.Errorf("out-of-range density should generate no systems")
 	}
 }
@@ -228,5 +228,47 @@ func TestGenerateSectorDeterministicAndDense(t *testing.T) {
 	core := len(GenerateSector(dice.NewWithSeed(42), Core))
 	if sparse >= len(a) || len(a) >= core {
 		t.Errorf("density ordering wrong: sparse %d, standard %d, core %d", sparse, len(a), core)
+	}
+}
+
+// TestHexIsolation is the substream contract (#326): a hex's contents depend
+// only on (seed, col, row), never on any hex rolled before it. Proof: each
+// present hex, regenerated standalone from a fresh seed — with no hex rolled
+// before it — reproduces its whole-sector value. That equality is impossible if
+// a hex's stream continued from the previous hex's, which is exactly the coupling
+// the old shared-roller design had and this one removes.
+func TestHexIsolation(t *testing.T) {
+	const seed = 42
+
+	parent := dice.NewWithSeed(seed)
+
+	full := GenerateSector(parent, Standard)
+	if len(full) == 0 {
+		t.Fatal("no systems generated")
+	}
+
+	// Re-roll each present hex standalone. Reusing one parent across the loop is
+	// itself safe only because Derive is order-independent — the property under test.
+	for _, sh := range full {
+		got, ok := RollHex(parent, Standard, sh.Hex)
+		if !ok || got != sh {
+			t.Fatalf("hex %s standalone = %+v (present %v), want %+v", sh.Hex, got, ok, sh)
+		}
+	}
+
+	// Adversarial: draining one hex's substream — as a rule change that rolls more
+	// for that hex would — cannot perturb another hex, because the streams are
+	// independent, not consecutive.
+	victim := full[0].Hex
+
+	drained := DeriveHex(parent, victim)
+	for range 1000 {
+		drained.Die()
+	}
+
+	for _, sh := range full[1:] {
+		if got, ok := RollHex(parent, Standard, sh.Hex); !ok || got != sh {
+			t.Fatalf("hex %s changed after draining hex %s: %+v want %+v", sh.Hex, victim, got, sh)
+		}
 	}
 }

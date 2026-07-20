@@ -11,10 +11,12 @@ then marks sector (Cs) and subsector (Cp) capitals, lays **trade routes** (`rout
 dice-free graph linking Ix≥4 worlds within J-4, bridging distant ones through intermediate worlds),
 and sites Scout Way Stations (~1/50 pc of route, bumping Ix).
 
-A sector is always surveyed whole — its systems share one dice stream, and capitals/routes/way
-stations need the whole region — so every `cmd/sectorgen` view _selects_ from one survey and they
-agree on what sits in a hex: the default lists one subsector, `-sector` lists all of it with the
-routes, `-hex CCRR` prints one system's sheet.
+A sector is always surveyed whole — capitals/routes/way stations need the whole region — so every
+`cmd/sectorgen` view _selects_ from one survey and they agree on what sits in a hex: the default
+lists one subsector, `-sector` lists all of it with the routes, `-hex CCRR` prints one system's
+sheet. (Hex generation itself no longer needs the whole region: each hex rolls from its own
+substream keyed on `(seed, col, row)` via `sectorgen.DeriveHex`, #326 — so a hex is regenerable in
+isolation; only the region-wide passes keep the printed record sector-atomic.)
 
 `Record.Sheet` (`survey/sheet.go`) is the deep renderer: the one-line Second Survey record shows
 only the mainworld — ~94% of what the generators compute (the stellar family, the orbit map, every
