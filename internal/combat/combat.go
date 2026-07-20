@@ -52,8 +52,11 @@ func TargetSize(size, rng int, stance Stance) int {
 // Ranged resolves a Ranged Attack (Book 1 p.204): it rolls R=Range dice (a Range
 // below 1 counts as 1D; a dice count greater than the weapon skill adds +1D for
 // the "This Is Hard!" rule) at or under the Shooting Number + target size + mods.
-// Success is a hit. A target size below zero (Size minus Range) means the target
-// cannot be attacked, and the attack automatically fails (Book 1 p.203).
+// Success is a hit. The targetSize argument is the target's apparent size —
+// TargetSize(size, rng, stance), i.e. Size minus Range adjusted by the stance mod
+// (Crouch -1, Prone -2, Evading -1). A value below zero means the target cannot
+// be seen and cannot be attacked, and the attack automatically fails (Book 1
+// p.203).
 //
 // TIH! is stated in dice, not range: "If a task requires more dice than the
 // character has applicable skill levels, then increase the difficulty one level"
@@ -69,7 +72,7 @@ func Ranged(
 	mods ...int,
 ) dice.CheckResult {
 	if targetSize < 0 {
-		return dice.CheckResult{} // Size - Range below zero: the target cannot be attacked
+		return dice.CheckResult{} // apparent size below zero: the target cannot be seen or attacked
 	}
 
 	nd := max(rng, 1)

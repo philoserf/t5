@@ -70,8 +70,17 @@ func Generate(r *dice.Roller) System {
 // GenerateForMap rolls a system whose gas-giant presence and asteroid-belt
 // mainworld are fixed by a coarse sector-map survey of the hex (Book 3 p.13): a
 // gas-giant symbol forces at least one gas giant (its absence none), and an
-// asteroid symbol forces an asteroid-belt mainworld. The presence and size rolls
-// are still made and superseded, so the dice stream stays aligned with Generate.
+// asteroid symbol forces an asteroid-belt mainworld.
+//
+// Both constraints supersede a roll rather than skipping it: the gas-giant count
+// is rolled and then clamped, and the belt mainworld rolls its Size and discards
+// it. That keeps the two entry points structurally identical, but it does not
+// keep the dice streams aligned. Detailing consumes 2D per gas giant of the
+// clamped count, so whenever the constraint changes that count — ggPresent
+// raising a rolled 0 to 1, or ggAbsent dropping a rolled 3 to 0 — the stream
+// diverges from Generate's at that point and everything drawn afterwards (the
+// mainworld, the stars, the orbits) differs. The streams match only when the
+// constraint agrees with the count that was rolled.
 func GenerateForMap(r *dice.Roller, gasGiant, asteroidMainworld bool) System {
 	gg := ggAbsent
 	if gasGiant {
