@@ -13,6 +13,7 @@ import (
 
 	"github.com/philoserf/t5/internal/dice"
 	"github.com/philoserf/t5/internal/ehex"
+	"github.com/philoserf/t5/internal/tradecode"
 	"github.com/philoserf/t5/internal/worldgen"
 )
 
@@ -267,7 +268,7 @@ func orbitLabel(o PlacedOrbit) string {
 	case o.World != nil:
 		label = fmt.Sprintf("%s %s", o.World.Type, o.World.Profile)
 		if len(o.World.TradeCodes) > 0 {
-			label += " " + strings.Join(o.World.TradeCodes, " ")
+			label += " " + tradecode.Join(o.World.TradeCodes, " ")
 		}
 	}
 

@@ -2,6 +2,7 @@ package systemgen
 
 import (
 	"github.com/philoserf/t5/internal/dice"
+	"github.com/philoserf/t5/internal/tradecode"
 	"github.com/philoserf/t5/internal/worldgen"
 )
 
@@ -53,9 +54,9 @@ func placeMainworld(
 	sat := rollMainworldSatellite(r)
 	if sat.IsSatellite {
 		if sat.Far {
-			mainworld.TradeCodes = append(mainworld.TradeCodes, "Sa")
+			mainworld.TradeCodes = append(mainworld.TradeCodes, tradecode.Sa)
 		} else {
-			mainworld.TradeCodes = append(mainworld.TradeCodes, "Lk")
+			mainworld.TradeCodes = append(mainworld.TradeCodes, tradecode.Lk)
 		}
 	}
 

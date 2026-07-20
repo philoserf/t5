@@ -6,6 +6,7 @@ import (
 
 	"github.com/philoserf/t5/internal/dice"
 	"github.com/philoserf/t5/internal/ehex"
+	"github.com/philoserf/t5/internal/tradecode"
 	"github.com/philoserf/t5/internal/uwp"
 )
 
@@ -15,13 +16,13 @@ import (
 
 // importanceTradeCodes each add +1 to Importance when present (Chart E, B3 p.27:
 // "Per Ag Hi In Ri +1" — Pre-Agricultural is not on the list).
-var importanceTradeCodes = []string{"Ag", "Hi", "In", "Ri"}
+var importanceTradeCodes = []tradecode.Code{tradecode.Ag, tradecode.Hi, tradecode.In, tradecode.Ri}
 
 // Importance returns the Importance Extension (Ix), a signed rank of a world
 // within its region. It is a pure additive sum over the UWP, trade codes, and
 // bases; "Important" is +4 or greater. tcs is the world's trade-classification
 // codes (see TradeClassifications).
-func Importance(p uwp.Profile, tcs []string, navalBase, scoutBase, wayStation bool) int {
+func Importance(p uwp.Profile, tcs []tradecode.Code, navalBase, scoutBase, wayStation bool) int {
 	ix := 0
 
 	switch p.Starport {

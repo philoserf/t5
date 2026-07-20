@@ -1,6 +1,10 @@
 package trade
 
-import "testing"
+import (
+	"testing"
+
+	"github.com/philoserf/t5/internal/tradecode"
+)
 
 func TestPassageFare(t *testing.T) {
 	// Premium Passage Pricing table endpoints (Book 2 p.220).
@@ -43,7 +47,7 @@ func TestAvailablePassengers(t *testing.T) {
 func TestAvailableFreight(t *testing.T) {
 	// (Flux + Pop + Liaison) x (value trade classes + 1). Regina-ish: pop 8, and
 	// a world whose codes carry 3 value classes (Hi, Ri, and Po; An is not one).
-	tcs := []string{"Hi", "Ri", "Po", "An"}
+	tcs := []tradecode.Code{"Hi", "Ri", "Po", "An"}
 	if got := AvailableFreight(0, 8, 0, tcs); got != 32 { // 8 x (3+1)
 		t.Errorf("AvailableFreight(0,8,0) = %d, want 32", got)
 	}
@@ -56,7 +60,7 @@ func TestAvailableFreight(t *testing.T) {
 		t.Errorf("AvailableFreight negative = %d, want 0", got)
 	}
 	// A world with no value classes still offers freight at the x1 multiplier.
-	if got := AvailableFreight(0, 5, 0, []string{"An"}); got != 5 {
+	if got := AvailableFreight(0, 5, 0, []tradecode.Code{"An"}); got != 5 {
 		t.Errorf("AvailableFreight(no value classes) = %d, want 5", got)
 	}
 }

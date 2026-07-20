@@ -5,12 +5,13 @@ import (
 	"testing"
 
 	"github.com/philoserf/t5/internal/dice"
+	"github.com/philoserf/t5/internal/tradecode"
 )
 
 // TestRandomTradeGoodsZivije golden-locks the Book 2 p.210 Zivije example: an Fl
 // world, first 1D=3 (Pharma), second 1D=5 (Antibiotics).
 func TestRandomTradeGoodsZivije(t *testing.T) {
-	g := RandomTradeGoods(dice.NewScripted(3, 5), []string{"Fl"})
+	g := RandomTradeGoods(dice.NewScripted(3, 5), []tradecode.Code{"Fl"})
 	if g.Name != "Antibiotics" || g.Type != "Pharma" || g.Imbalance != "" {
 		t.Errorf("goods = %+v, want Antibiotics/Pharma", g)
 	}
@@ -20,7 +21,7 @@ func TestRandomTradeGoodsZivije(t *testing.T) {
 // an Ag world (via Ga -> Ag-1), first 1D=6 (Imbalances) second 1D=5 (Na), then
 // recursing on Na: first 1D=4 (Rares) second 1D=5 (Pelts).
 func TestRandomTradeGoodsImbalance(t *testing.T) {
-	g := RandomTradeGoods(dice.NewScripted(6, 5, 4, 5), []string{"Ga"})
+	g := RandomTradeGoods(dice.NewScripted(6, 5, 4, 5), []tradecode.Code{"Ga"})
 	if g.Name != "Pelts" || g.Type != "Rares" || g.Imbalance != "Na" {
 		t.Errorf("goods = %+v, want Pelts/Rares via Imbalance Na", g)
 	}
@@ -38,22 +39,23 @@ func TestTradeGoodString(t *testing.T) {
 
 func TestTradeGoodsDetail(t *testing.T) {
 	cases := []struct {
-		tcs           []string
-		sourceTC, col string
-		want          string
+		tcs      []tradecode.Code
+		sourceTC tradecode.Code
+		col      string
+		want     string
 	}{
-		{[]string{"Fl", "He", "Hi"}, "Fl", "Fl", "Strange"}, // He precedes Hi in chart order
-		{[]string{"Ri"}, "Ri", "Ri", ""},                    // the only class chose the column
-		{[]string{"Hi"}, "Xx", "Fl", "Processed"},           // goods not from the In column
+		{[]tradecode.Code{"Fl", "He", "Hi"}, "Fl", "Fl", "Strange"}, // He precedes Hi in chart order
+		{[]tradecode.Code{"Ri"}, "Ri", "Ri", ""},                    // the only class chose the column
+		{[]tradecode.Code{"Hi"}, "Xx", "Fl", "Processed"},           // goods not from the In column
 		{
-			[]string{"Hi"},
+			[]tradecode.Code{"Hi"},
 			"Xx",
 			"In",
 			"",
 		}, // Hi's Processed omitted for In-column goods
-		{[]string{"Va"}, "Xx", "Ic", "Exotic"}, // goods not from the As column
+		{[]tradecode.Code{"Va"}, "Xx", "Ic", "Exotic"}, // goods not from the As column
 		{
-			[]string{"Va"},
+			[]tradecode.Code{"Va"},
 			"Xx",
 			"As",
 			"",
@@ -63,8 +65,8 @@ func TestTradeGoodsDetail(t *testing.T) {
 		// {As, Ri} world whose As column redirects to Ri yielded "Quality Ri-good".
 		// Ba is the next class in chart order, so a redirect suppresses one label
 		// without suppressing the Detail entirely.
-		{[]string{"As", "Ri"}, "As", "Ri", ""},
-		{[]string{"As", "Ba", "Ri"}, "As", "Ri", "Gathered"},
+		{[]tradecode.Code{"As", "Ri"}, "As", "Ri", ""},
+		{[]tradecode.Code{"As", "Ba", "Ri"}, "As", "Ri", "Gathered"},
 	}
 	for _, c := range cases {
 		if got := tradeGoodsDetail(c.tcs, c.sourceTC, c.col); got != c.want {
@@ -83,9 +85,9 @@ func TestTradeGoodsDetail(t *testing.T) {
 // TestTradeGoodsDetailOrderIndependent locks the fix for a prefix that used to
 // depend on how the caller happened to order a world's trade codes.
 func TestTradeGoodsDetailOrderIndependent(t *testing.T) {
-	a := tradeGoodsDetail([]string{"Ri", "Ic", "As"}, "In", "In")
+	a := tradeGoodsDetail([]tradecode.Code{"Ri", "Ic", "As"}, "In", "In")
 
-	b := tradeGoodsDetail([]string{"As", "Ic", "Ri"}, "In", "In")
+	b := tradeGoodsDetail([]tradecode.Code{"As", "Ic", "Ri"}, "In", "In")
 	if a != b {
 		t.Errorf("same world, different code order gave %q vs %q", a, b)
 	}
@@ -107,12 +109,12 @@ func TestImbalanceNeverLeaksTradeCode(t *testing.T) {
 		sixes[i] = 6
 	}
 
-	g := RandomTradeGoods(dice.NewScripted(sixes...), []string{"Ga"})
+	g := RandomTradeGoods(dice.NewScripted(sixes...), []tradecode.Code{"Ga"})
 	if g.Type == imbalancesBlock {
 		t.Fatalf("good escaped as an Imbalances entry: %+v", g)
 	}
 
-	if goodsColumnEligible[g.Name] {
+	if goodsColumnEligible[tradecode.Code(g.Name)] {
 		t.Errorf("good's Name %q is a trade class, not a good", g.Name)
 	}
 }
@@ -165,7 +167,7 @@ func TestImbalanceHopCapTerminates(t *testing.T) {
 			drawn, len(prefix)+budget)
 	}
 
-	if g.Type == imbalancesBlock || goodsColumnEligible[g.Name] {
+	if g.Type == imbalancesBlock || goodsColumnEligible[tradecode.Code(g.Name)] {
 		t.Errorf("good escaped as an Imbalances entry: %+v", g)
 	}
 }
@@ -179,7 +181,7 @@ func TestRandomTradeGoodsDetailAfterRedirect(t *testing.T) {
 	// entry 1 (As), then rolls Valuta/Platinum on the As column. Va's "Exotic"
 	// is redundant with an asteroid origin (p.219 footnote), so it is omitted —
 	// keying on the starting Ag-1 column would wrongly keep it.
-	into := RandomTradeGoods(dice.NewScripted(1, 6, 1, 3, 1), []string{"Ga", "Va"})
+	into := RandomTradeGoods(dice.NewScripted(1, 6, 1, 3, 1), []tradecode.Code{"Ga", "Va"})
 	if into.Name != "Platinum" || into.Imbalance != "As" || into.Detail != "" {
 		t.Errorf("redirected into As: %+v, want Platinum via As with no detail", into)
 	}
@@ -188,7 +190,7 @@ func TestRandomTradeGoodsDetailAfterRedirect(t *testing.T) {
 	// entry 2 (De), then rolls Rares/Nectars on the De column. The goods are no
 	// longer of asteroid origin, so Va's "Exotic" applies — keying on the
 	// starting As column would wrongly drop it.
-	away := RandomTradeGoods(dice.NewScripted(1, 6, 2, 5, 3), []string{"As", "Va"})
+	away := RandomTradeGoods(dice.NewScripted(1, 6, 2, 5, 3), []tradecode.Code{"As", "Va"})
 	if away.Name != "Nectars" || away.Imbalance != "De" || away.Detail != "Exotic" {
 		t.Errorf("redirected away from As: %+v, want Exotic Nectars via De", away)
 	}
@@ -196,14 +198,14 @@ func TestRandomTradeGoodsDetailAfterRedirect(t *testing.T) {
 
 func TestSelectGoodsColumnDefault(t *testing.T) {
 	// A world with no column-eligible trade class falls back to Non-Agricultural.
-	col, src := selectGoodsColumn(dice.NewScripted(1), []string{"Hi", "He"})
+	col, src := selectGoodsColumn(dice.NewScripted(1), []tradecode.Code{"Hi", "He"})
 	if col != "Na" || src != "Na" {
 		t.Errorf("selectGoodsColumn(no eligible) = %q/%q, want Na/Na", col, src)
 	}
 }
 
 func TestColumnFor(t *testing.T) {
-	cases := map[string]string{
+	cases := map[tradecode.Code]string{
 		"Ga": "Ag-1",
 		"Fa": "Ag-2",
 		"Cp": "CpCsCx",
@@ -241,7 +243,7 @@ func TestGoodsDataWellFormed(t *testing.T) {
 			// to a key that does not exist. Cross-check every redirect target,
 			// including both halves of a bare Ag.
 			for j, tc := range b.Goods {
-				targets := []string{columnFor(tc)}
+				targets := []string{columnFor(tradecode.Code(tc))}
 				if tc == "Ag" {
 					targets = append(targets, "Ag-2")
 				}

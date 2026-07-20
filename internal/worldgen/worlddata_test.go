@@ -5,13 +5,14 @@ import (
 	"testing"
 
 	"github.com/philoserf/t5/internal/dice"
+	"github.com/philoserf/t5/internal/tradecode"
 	"github.com/philoserf/t5/internal/uwp"
 )
 
 func TestSetCapital(t *testing.T) {
 	// A world with Regina's TCs/Ix, marked the subsector capital, gains Cs and
 	// the capital nobility (Duke, F).
-	w := World{TradeCodes: []string{"Ph", "Pa", "Ri"}, Importance: 4}
+	w := World{TradeCodes: []tradecode.Code{"Ph", "Pa", "Ri"}, Importance: 4}
 	w.SetCapital("Cs")
 
 	if got := w.TradeCodes; got[len(got)-1] != "Cs" {
@@ -40,7 +41,7 @@ func TestSetCapital(t *testing.T) {
 func TestNobilityRegina(t *testing.T) {
 	// Regina (subsector capital, Ix 4, TCs Ph/Pa/Ri): Knight, Baronet (Pa),
 	// Baron (Ri), Viscount (Ph), Duke (capital) = BcCeF.
-	if got := Nobility([]string{"Ph", "Pa", "Ri"}, 4, true); got != "BcCeF" {
+	if got := Nobility([]tradecode.Code{"Ph", "Pa", "Ri"}, 4, true); got != "BcCeF" {
 		t.Fatalf("Nobility(Regina) = %q, want BcCeF", got)
 	}
 }
@@ -59,7 +60,7 @@ func TestNobility(t *testing.T) {
 		t.Errorf("important capital = %q, want BF", got)
 	}
 	// Count (E) from In or Hi; Marquis (D) from Pi.
-	if got := Nobility([]string{"Hi", "Pi"}, 0, false); got != "BDE" {
+	if got := Nobility([]tradecode.Code{"Hi", "Pi"}, 0, false); got != "BDE" {
 		t.Errorf("Hi+Pi = %q, want BDE (Marquis, Count)", got)
 	}
 }
@@ -187,17 +188,17 @@ func TestBaseNames(t *testing.T) {
 func TestZoneCodes(t *testing.T) {
 	// Gov+Law 20 = Amber. Pop 6 or less -> Da.
 	amberLow := uwp.Profile{Starport: 'C', Government: 11, Law: 9, Population: 4}
-	if got := ZoneCodes(amberLow); !slices.Equal(got, []string{"Da"}) {
+	if got := ZoneCodes(amberLow); !slices.Equal(got, []tradecode.Code{"Da"}) {
 		t.Errorf("amber low-pop = %v, want [Da]", got)
 	}
 	// Amber, Pop 7+ -> Pz.
 	amberHigh := uwp.Profile{Starport: 'C', Government: 11, Law: 9, Population: 9}
-	if got := ZoneCodes(amberHigh); !slices.Equal(got, []string{"Pz"}) {
+	if got := ZoneCodes(amberHigh); !slices.Equal(got, []tradecode.Code{"Pz"}) {
 		t.Errorf("amber high-pop = %v, want [Pz]", got)
 	}
 	// Gov+Law 22 = Red -> Fo, regardless of population.
 	red := uwp.Profile{Starport: 'C', Government: 13, Law: 9, Population: 9}
-	if got := ZoneCodes(red); !slices.Equal(got, []string{"Fo"}) {
+	if got := ZoneCodes(red); !slices.Equal(got, []tradecode.Code{"Fo"}) {
 		t.Errorf("red = %v, want [Fo]", got)
 	}
 	// A class-X starport is Red -> Fo.
@@ -205,7 +206,7 @@ func TestZoneCodes(t *testing.T) {
 		uwp.Profile{Starport: 'X', Population: 3},
 	); !slices.Equal(
 		got,
-		[]string{"Fo"},
+		[]tradecode.Code{"Fo"},
 	) {
 		t.Errorf("class-X = %v, want [Fo]", got)
 	}

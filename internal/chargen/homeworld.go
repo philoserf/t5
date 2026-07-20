@@ -1,6 +1,9 @@
 package chargen
 
-import "github.com/philoserf/t5/internal/worldgen"
+import (
+	"github.com/philoserf/t5/internal/tradecode"
+	"github.com/philoserf/t5/internal/worldgen"
+)
 
 // Homeworld skills (Book 1, "Birthworlds and Homeworlds", p. 56). A character
 // receives one skill for each Trade Classification of their homeworld — e.g. a
@@ -23,44 +26,65 @@ var (
 // codes, In (One Trade) and Ri (One Art), are handled in ApplyHomeworldSkills.
 // The full table is transcribed (not only the UWP-determinable codes worldgen
 // currently emits) so a selected or charted homeworld resolves too.
-var homeworldSkill = map[string][]string{
-	"Ag": {"Animals"},             // Agricultural
-	"As": {"Zero-G"},              // Asteroid
-	"Co": {"Hostile Environ"},     // Cold
-	"Cp": {"Admin"},               // Subsector Capital
-	"Cs": {"Bureaucrat"},          // Sector Capital
-	"Cx": {"Language"},            // Capital
-	"Da": {"Fighter"},             // Dangerous
-	"De": {"Survival"},            // Desert
-	"Ds": {"Vacc Suit", "Zero-G"}, // Deep Space
-	"Fa": {"Animals"},             // Farming
-	"Fl": {"Hostile Environ"},     // Fluid
-	"Fr": {"Hostile Environ"},     // Frozen
-	"Ga": {"Trader"},              // Garden World
-	"He": {"Hostile Environ"},     // Hellworld
-	"Hi": {"Streetwise"},          // High Population
-	"Ho": {"Hostile Environ"},     // Hot
-	"Ic": {"Vacc Suit"},           // Ice-Capped
-	"Lo": {"Flyer"},               // Low Population
-	"Mi": {"Survey"},              // Mining
-	"Na": {"Survey"},              // Non-agricultural
-	"Ni": {"Driver"},              // Non-industrial
-	// "Oc" reads "Hi-G" on p.56, but the skill is spelled "High-G" on the p.132
+var homeworldSkill = map[tradecode.Code][]string{
+	tradecode.Ag: {"Animals"},         // Agricultural
+	tradecode.As: {"Zero-G"},          // Asteroid
+	tradecode.Co: {"Hostile Environ"}, // Cold
+	tradecode.Cp: {"Admin"},           // Subsector Capital
+	tradecode.Cs: {"Bureaucrat"},      // Sector Capital
+	tradecode.Cx: {"Language"},        // Capital
+	tradecode.Da: {"Fighter"},         // Dangerous
+	tradecode.De: {"Survival"},        // Desert
+	tradecode.Fa: {"Animals"},         // Farming
+	tradecode.Fl: {"Hostile Environ"}, // Fluid
+	tradecode.Fr: {"Hostile Environ"}, // Frozen
+	tradecode.Ga: {"Trader"},          // Garden World
+	tradecode.He: {"Hostile Environ"}, // Hellworld
+	tradecode.Hi: {"Streetwise"},      // High Population
+	tradecode.Ho: {"Hostile Environ"}, // Hot
+	tradecode.Ic: {"Vacc Suit"},       // Ice-Capped
+	tradecode.Lo: {"Flyer"},           // Low Population
+	tradecode.Mi: {"Survey"},          // Mining
+	tradecode.Na: {"Survey"},          // Non-agricultural
+	tradecode.Ni: {"Driver"},          // Non-industrial
+	// Oc reads "Hi-G" on p.56, but the skill is spelled "High-G" on the p.132
 	// master Skills table, in the index, and on every career grid that awards it
 	// (Rogue p.84, Noble p.85, Functionary p.87) — the p.154 definition's own
 	// headword lists "High-Gravity" first among its alternates. Skill names are
 	// keys here: two spellings never stack, so an Ocean-World native's level would
 	// sit in a bucket no career could ever raise. Normalized to the majority form.
-	"Oc": {"High-G"},    // Ocean World
-	"Pa": {"Trader"},    // Pre-Agricultural
-	"Pi": {"JOT"},       // Pre-Industrial
-	"Po": {"Steward"},   // Poor
-	"Pr": {"Craftsman"}, // Pre-Rich
-	"Tr": {"Survival"},  // Tropic
-	"Tu": {"Survival"},  // Tundra
-	"Tz": {"Driver"},    // Twilight Zone
-	"Va": {"Vacc Suit"}, // Vacuum
-	"Wa": {"Seafarer"},  // Water World
+	tradecode.Oc: {"High-G"},    // Ocean World
+	tradecode.Pa: {"Trader"},    // Pre-Agricultural
+	tradecode.Pi: {"JOT"},       // Pre-Industrial
+	tradecode.Po: {"Steward"},   // Poor
+	tradecode.Pr: {"Craftsman"}, // Pre-Rich
+	tradecode.Tr: {"Survival"},  // Tropic
+	tradecode.Tu: {"Survival"},  // Tundra
+	tradecode.Tz: {"Driver"},    // Twilight Zone
+	tradecode.Va: {"Vacc Suit"}, // Vacuum
+	tradecode.Wa: {"Seafarer"},  // Water World
+}
+
+// homeworldNoSkill is every Chart D code that intentionally grants no homeworld
+// skill (Book 1 p. 56 lists none for them, and In/Ri are handled in
+// ApplyHomeworldSkills rather than here). It exists so TestHomeworldSkillCoversEveryCode
+// can assert that every tradecode.Code is accounted for by exactly one of the two
+// sets — a newly added code can never silently fall through the switch's default.
+var homeworldNoSkill = map[tradecode.Code]bool{
+	tradecode.Ba: true, // Barren
+	tradecode.Di: true, // Dieback
+	tradecode.Ph: true, // Pre-High Population
+	tradecode.Px: true, // Prison/Exile Camp
+	tradecode.Pe: true, // Penal Colony
+	tradecode.Re: true, // Reserve
+	tradecode.Sa: true, // Satellite
+	tradecode.Lk: true, // Locked
+	tradecode.Mr: true, // Military Rule
+	tradecode.Cy: true, // Colony
+	tradecode.Fo: true, // Forbidden
+	tradecode.Pz: true, // Puzzle
+	tradecode.Ab: true, // Data repository
+	tradecode.An: true, // Ancient site
 }
 
 // ApplyHomeworldSkills grants a character their homeworld skills: one per Trade
@@ -71,9 +95,9 @@ var homeworldSkill = map[string][]string{
 func ApplyHomeworldSkills(c *Character, world worldgen.World, p Policy) {
 	for _, code := range world.TradeCodes {
 		switch code {
-		case "In":
+		case tradecode.In:
 			c.Skills.Raise(p.ChooseSkill(*c, theTrades), 1)
-		case "Ri":
+		case tradecode.Ri:
 			c.Skills.Raise(p.ChooseSkill(*c, oneArt), 1)
 		default:
 			for _, s := range homeworldSkill[code] {

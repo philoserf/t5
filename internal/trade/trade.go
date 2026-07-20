@@ -16,6 +16,7 @@ import (
 	"strings"
 
 	"github.com/philoserf/t5/internal/ehex"
+	"github.com/philoserf/t5/internal/tradecode"
 )
 
 // baseCost and basePrice anchor the Cost and Price computations (Book 2 p.221).
@@ -27,49 +28,75 @@ const (
 // valueClasses are the trade classifications that affect Cost and Price (Book 2
 // p.221), in the chart order used to render a Cargo ID. Every other trade code
 // may influence availability but never value.
-var valueClasses = []string{
-	"Ag",
-	"As",
-	"Ba",
-	"De",
-	"Fl",
-	"Hi",
-	"Ic",
-	"In",
-	"Lo",
-	"Na",
-	"Ni",
-	"Po",
-	"Ri",
-	"Va",
+var valueClasses = []tradecode.Code{
+	tradecode.Ag,
+	tradecode.As,
+	tradecode.Ba,
+	tradecode.De,
+	tradecode.Fl,
+	tradecode.Hi,
+	tradecode.Ic,
+	tradecode.In,
+	tradecode.Lo,
+	tradecode.Na,
+	tradecode.Ni,
+	tradecode.Po,
+	tradecode.Ri,
+	tradecode.Va,
 }
 
 // costMod is each value class's per-ton cost modifier at the source world (Book 2
 // p.221 A); Ic and Na are members of the value set but move the cost by zero.
-var costMod = map[string]int{
-	"Ag": -1000, "As": -1000, "Ba": 1000, "De": 1000, "Fl": 1000,
-	"Hi": -1000, "Ic": 0, "In": -1000, "Lo": 1000, "Na": 0,
-	"Ni": 1000, "Po": -1000, "Ri": 1000, "Va": 1000,
+var costMod = map[tradecode.Code]int{
+	tradecode.Ag: -1000, tradecode.As: -1000, tradecode.Ba: 1000, tradecode.De: 1000, tradecode.Fl: 1000,
+	tradecode.Hi: -1000, tradecode.Ic: 0, tradecode.In: -1000, tradecode.Lo: 1000, tradecode.Na: 0,
+	tradecode.Ni: 1000, tradecode.Po: -1000, tradecode.Ri: 1000, tradecode.Va: 1000,
 }
 
 // priceMatch maps a source trade class to the market trade classes that shift a
 // cargo's Price and the per-match amount (Book 2 p.221 B): Poor lowers the
 // price, every other class raises it.
-var priceMatch = map[string]struct {
-	markets []string
+var priceMatch = map[tradecode.Code]struct {
+	markets []tradecode.Code
 	per     int
 }{
-	"Ag": {[]string{"Ag", "As", "De", "Hi", "In", "Ri", "Va"}, 1000},
-	"As": {[]string{"As", "In", "Ri", "Va"}, 1000},
-	"Ba": {[]string{"In"}, 1000},
-	"De": {[]string{"De"}, 1000},
-	"Fl": {[]string{"Fl", "In"}, 1000},
-	"Hi": {[]string{"Hi"}, 1000},
-	"In": {[]string{"Ag", "As", "De", "Fl", "Hi", "In", "Ri", "Va"}, 1000},
-	"Na": {[]string{"As", "De", "Va"}, 1000},
-	"Po": {[]string{"Ag", "Hi", "In", "Ri"}, -1000},
-	"Ri": {[]string{"Ag", "De", "Hi", "In", "Ri"}, 1000},
-	"Va": {[]string{"As", "In", "Va"}, 1000},
+	tradecode.Ag: {
+		[]tradecode.Code{
+			tradecode.Ag,
+			tradecode.As,
+			tradecode.De,
+			tradecode.Hi,
+			tradecode.In,
+			tradecode.Ri,
+			tradecode.Va,
+		},
+		1000,
+	},
+	tradecode.As: {[]tradecode.Code{tradecode.As, tradecode.In, tradecode.Ri, tradecode.Va}, 1000},
+	tradecode.Ba: {[]tradecode.Code{tradecode.In}, 1000},
+	tradecode.De: {[]tradecode.Code{tradecode.De}, 1000},
+	tradecode.Fl: {[]tradecode.Code{tradecode.Fl, tradecode.In}, 1000},
+	tradecode.Hi: {[]tradecode.Code{tradecode.Hi}, 1000},
+	tradecode.In: {
+		[]tradecode.Code{
+			tradecode.Ag,
+			tradecode.As,
+			tradecode.De,
+			tradecode.Fl,
+			tradecode.Hi,
+			tradecode.In,
+			tradecode.Ri,
+			tradecode.Va,
+		},
+		1000,
+	},
+	tradecode.Na: {[]tradecode.Code{tradecode.As, tradecode.De, tradecode.Va}, 1000},
+	tradecode.Po: {[]tradecode.Code{tradecode.Ag, tradecode.Hi, tradecode.In, tradecode.Ri}, -1000},
+	tradecode.Ri: {
+		[]tradecode.Code{tradecode.Ag, tradecode.De, tradecode.Hi, tradecode.In, tradecode.Ri},
+		1000,
+	},
+	tradecode.Va: {[]tradecode.Code{tradecode.As, tradecode.In, tradecode.Va}, 1000},
 }
 
 // actualValue is the percentage of Price a sale realizes at each effective Flux
@@ -82,8 +109,8 @@ var actualValue = [14]int{40, 50, 70, 80, 90, 100, 110, 120, 130, 150, 170, 200,
 // ValueClasses filters a world's trade codes to the value-relevant set, in the
 // chart order used by a Cargo ID (Book 2 p.221). It also de-duplicates, since it
 // walks the chart order rather than the caller's codes.
-func ValueClasses(tcs []string) []string {
-	out := make([]string, 0, len(tcs))
+func ValueClasses(tcs []tradecode.Code) []tradecode.Code {
+	out := make([]tradecode.Code, 0, len(tcs))
 	for _, code := range valueClasses {
 		if slices.Contains(tcs, code) {
 			out = append(out, code)
@@ -96,13 +123,13 @@ func ValueClasses(tcs []string) []string {
 // Cost is the per-ton purchase cost of goods at a source world (Book 2 p.221 A):
 // a Cr3,000 base, each value trade class's cost modifier, and Cr100 per source
 // Tech Level, floored at zero.
-func Cost(sourceTL int, sourceTCs []string) int {
+func Cost(sourceTL int, sourceTCs []tradecode.Code) int {
 	return costOf(sourceTL, ValueClasses(sourceTCs))
 }
 
 // costOf sums the base cost, the Cr100/TL effect, and the cost modifiers over
 // already-filtered value classes, floored at zero (Book 2 p.221 A).
-func costOf(sourceTL int, valueClasses []string) int {
+func costOf(sourceTL int, valueClasses []tradecode.Code) int {
 	c := baseCost + sourceTL*100
 	for _, code := range valueClasses {
 		c += costMod[code]
@@ -115,7 +142,7 @@ func costOf(sourceTL int, valueClasses []string) int {
 // market world (Book 2 p.221 B): a Cr5,000 base plus Cr1,000 for each source
 // class matched by a market class (Poor subtracts), all scaled by a Tech Level
 // effect of 10% per level the source exceeds the market. Floored at zero.
-func Price(sourceTL, marketTL int, sourceTCs, marketTCs []string) int {
+func Price(sourceTL, marketTL int, sourceTCs, marketTCs []tradecode.Code) int {
 	p := basePrice
 	// A class with no priceMatch row yields the zero value, whose nil markets make
 	// the inner loop a no-op — no presence check needed.
@@ -174,12 +201,12 @@ func EstimateActualValue(firstDie, brokerSkill int) (int, int) {
 // examples (Efate's Hi In An renders "D-Hi In Cr2,300" — the non-value An is
 // dropped). The looser p.210 prose examples keep some non-value codes while still
 // dropping An; the book is inconsistent, and the mechanical chart wins here.
-func CargoID(sourceTL int, sourceTCs []string, allegiance string) string {
+func CargoID(sourceTL int, sourceTCs []tradecode.Code, allegiance string) string {
 	vc := ValueClasses(sourceTCs)
 
 	id := ehex.Format(sourceTL)
 	if len(vc) > 0 { // a world with no value class has no class field, not an empty one
-		id += "-" + strings.Join(vc, " ")
+		id += "-" + tradecode.Join(vc, " ")
 	}
 
 	id += " Cr" + commas(costOf(sourceTL, vc))
@@ -194,8 +221,8 @@ func CargoID(sourceTL int, sourceTCs []string, allegiance string) string {
 // market that carries the trade class whose oversupply produced it (Book 2 p.211:
 // "If these goods are sold on a market world with this Trade Classification,
 // increase their Price +Cr1,000"). Add it to Price; it is zero for ordinary goods.
-func ImbalanceBonus(g Good, marketTCs []string) int {
-	if g.Imbalance != "" && slices.Contains(marketTCs, g.Imbalance) {
+func ImbalanceBonus(g Good, marketTCs []tradecode.Code) int {
+	if g.Imbalance != "" && slices.Contains(marketTCs, tradecode.Code(g.Imbalance)) {
 		return 1_000
 	}
 

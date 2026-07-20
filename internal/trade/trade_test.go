@@ -3,6 +3,8 @@ package trade
 import (
 	"slices"
 	"testing"
+
+	"github.com/philoserf/t5/internal/tradecode"
 )
 
 // TestBeowulfJourney golden-locks the whole pricing engine to the Free Trader
@@ -10,16 +12,16 @@ import (
 func TestBeowulfJourney(t *testing.T) {
 	// Cargo bought at Efate A646930-D Hi In An (TL 13): Cr3,000 -1,000 (Hi)
 	// -1,000 (In) + 13x100 = Cr2,300; the Cargo ID drops the non-value An.
-	if got := Cost(13, []string{"Hi", "In", "An"}); got != 2300 {
+	if got := Cost(13, []tradecode.Code{"Hi", "In", "An"}); got != 2300 {
 		t.Errorf("Efate cost = %d, want 2300", got)
 	}
 
-	if got := CargoID(13, []string{"Hi", "In", "An"}, ""); got != "D-Hi In Cr2,300" {
+	if got := CargoID(13, []tradecode.Code{"Hi", "In", "An"}, ""); got != "D-Hi In Cr2,300" {
 		t.Errorf("Efate Cargo ID = %q, want %q", got, "D-Hi In Cr2,300")
 	}
 	// Carried to Alell (market Ri, TL 10): source In matches market Ri (+1,000)
 	// -> Cr6,000, x(1 + 10%x(13-10)) = Cr7,800; sold at Flux 0 -> 100%.
-	priceAlell := Price(13, 10, []string{"Hi", "In"}, []string{"Ri"})
+	priceAlell := Price(13, 10, []tradecode.Code{"Hi", "In"}, []tradecode.Code{"Ri"})
 	if priceAlell != 7800 {
 		t.Errorf("Alell price = %d, want 7800", priceAlell)
 	}
@@ -29,11 +31,11 @@ func TestBeowulfJourney(t *testing.T) {
 	}
 
 	// Cargo A-Ri Cr5,000 bought at a TL-10 Rich world: 3,000 +1,000 (Ri) + 1,000.
-	if got := Cost(10, []string{"Ri"}); got != 5000 {
+	if got := Cost(10, []tradecode.Code{"Ri"}); got != 5000 {
 		t.Errorf("Rich-world cost = %d, want 5000", got)
 	}
 
-	if got := CargoID(10, []string{"Ri"}, ""); got != "A-Ri Cr5,000" {
+	if got := CargoID(10, []tradecode.Code{"Ri"}, ""); got != "A-Ri Cr5,000" {
 		t.Errorf("Cargo ID = %q, want %q", got, "A-Ri Cr5,000")
 	}
 	// Carried to Uakye B439598-D Ni (TL 13): source Ri matches nothing on a
@@ -50,12 +52,12 @@ func TestBeowulfJourney(t *testing.T) {
 	// the POST-MATCH price and both reconcile exactly (Alell 6,000 x 130% =
 	// 7,800; the Efate return 7,000 x 70% = 4,900), and the assertions above
 	// and below already lock them. Under that one formula Uakye is Cr3,500.
-	if got := Price(10, 13, []string{"Ri"}, []string{"Ni"}); got != 3500 {
+	if got := Price(10, 13, []tradecode.Code{"Ri"}, []tradecode.Code{"Ni"}); got != 3500 {
 		t.Errorf("Uakye price = %d, want 3500", got)
 	}
 	// Carried to Efate (market Hi In, TL 13): source Ri matches Hi and In
 	// (+2,000) -> Cr7,000, x(1 + 10%x(10-13)) = Cr4,900.
-	priceEfate := Price(10, 13, []string{"Ri"}, []string{"Hi", "In", "An"})
+	priceEfate := Price(10, 13, []tradecode.Code{"Ri"}, []tradecode.Code{"Hi", "In", "An"})
 	if priceEfate != 4900 {
 		t.Errorf("Efate price = %d, want 4900", priceEfate)
 	}
@@ -67,9 +69,9 @@ func TestBeowulfJourney(t *testing.T) {
 
 func TestValueClasses(t *testing.T) {
 	// Only value classes survive, and they come out in chart order.
-	got := ValueClasses([]string{"Po", "Na", "An", "De", "Cp", "Hi", "In"})
+	got := ValueClasses([]tradecode.Code{"Po", "Na", "An", "De", "Cp", "Hi", "In"})
 
-	want := []string{"De", "Hi", "In", "Na", "Po"}
+	want := []tradecode.Code{"De", "Hi", "In", "Na", "Po"}
 	if !slices.Equal(got, want) {
 		t.Errorf("ValueClasses = %v, want %v", got, want)
 	}
@@ -77,13 +79,13 @@ func TestValueClasses(t *testing.T) {
 
 func TestCostChartExample(t *testing.T) {
 	// The p.221 chart example: TL 8, De Hi In Na Po -> Cr1,800.
-	if got := Cost(8, []string{"De", "Hi", "In", "Na", "Po"}); got != 1800 {
+	if got := Cost(8, []tradecode.Code{"De", "Hi", "In", "Na", "Po"}); got != 1800 {
 		t.Errorf("cost = %d, want 1800", got)
 	}
 
 	if got := CargoID(
 		8,
-		[]string{"De", "Hi", "In", "Na", "Po"},
+		[]tradecode.Code{"De", "Hi", "In", "Na", "Po"},
 		"",
 	); got != "8-De Hi In Na Po Cr1,800" {
 		t.Errorf("Cargo ID = %q, want %q", got, "8-De Hi In Na Po Cr1,800")
@@ -132,15 +134,15 @@ func TestActualValueRangeAndClamp(t *testing.T) {
 // market carrying the class whose oversupply produced them earn +Cr1,000.
 func TestImbalanceBonus(t *testing.T) {
 	knorbes := Good{Name: "Pelts", Type: "Rares", Imbalance: "Na"}
-	if got := ImbalanceBonus(knorbes, []string{"Na", "Ri"}); got != 1_000 {
+	if got := ImbalanceBonus(knorbes, []tradecode.Code{"Na", "Ri"}); got != 1_000 {
 		t.Errorf("ImbalanceBonus into an Na market = %d, want 1000", got)
 	}
 
-	if got := ImbalanceBonus(knorbes, []string{"Ag", "Ri"}); got != 0 {
+	if got := ImbalanceBonus(knorbes, []tradecode.Code{"Ag", "Ri"}); got != 0 {
 		t.Errorf("ImbalanceBonus into a non-Na market = %d, want 0", got)
 	}
 	// Ordinary (non-Imbalance) goods never earn the bonus.
-	if got := ImbalanceBonus(Good{Name: "Antibiotics"}, []string{"Na"}); got != 0 {
+	if got := ImbalanceBonus(Good{Name: "Antibiotics"}, []tradecode.Code{"Na"}); got != 0 {
 		t.Errorf("ordinary goods earned an imbalance bonus: %d", got)
 	}
 }
@@ -148,7 +150,7 @@ func TestImbalanceBonus(t *testing.T) {
 // TestCargoIDNoValueClasses guards against the dangling separator a world with no
 // value trade class used to produce ("8- Cr3,800").
 func TestCargoIDNoValueClasses(t *testing.T) {
-	if got := CargoID(8, []string{"Wa", "An"}, "Im"); got != "8 Cr3,800" {
+	if got := CargoID(8, []tradecode.Code{"Wa", "An"}, "Im"); got != "8 Cr3,800" {
 		t.Errorf("CargoID(no value classes) = %q, want %q", got, "8 Cr3,800")
 	}
 
@@ -159,11 +161,11 @@ func TestCargoIDNoValueClasses(t *testing.T) {
 
 func TestCargoIDAllegiance(t *testing.T) {
 	// A non-Imperial source appends its allegiance; Imperial and empty do not.
-	if got := CargoID(13, []string{"Hi"}, "Zh"); got != "D-Hi Cr3,300 Zh" {
+	if got := CargoID(13, []tradecode.Code{"Hi"}, "Zh"); got != "D-Hi Cr3,300 Zh" {
 		t.Errorf("Cargo ID = %q, want %q", got, "D-Hi Cr3,300 Zh")
 	}
 
-	if got := CargoID(13, []string{"Hi"}, "Im"); got != "D-Hi Cr3,300" {
+	if got := CargoID(13, []tradecode.Code{"Hi"}, "Im"); got != "D-Hi Cr3,300" {
 		t.Errorf("Imperial Cargo ID = %q, want %q", got, "D-Hi Cr3,300")
 	}
 }

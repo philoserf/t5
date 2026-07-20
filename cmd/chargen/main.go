@@ -18,6 +18,7 @@ import (
 
 	"github.com/philoserf/t5/internal/chargen"
 	"github.com/philoserf/t5/internal/cli"
+	"github.com/philoserf/t5/internal/tradecode"
 	"github.com/philoserf/t5/internal/uwp"
 	"github.com/philoserf/t5/internal/worldgen"
 )
@@ -289,7 +290,7 @@ func homeworldField(c chargen.Character) string {
 	}
 
 	if len(c.Homeworld.TradeCodes) > 0 {
-		parts = append(parts, strings.Join(c.Homeworld.TradeCodes, " "))
+		parts = append(parts, tradecode.Join(c.Homeworld.TradeCodes, " "))
 	}
 
 	return strings.Join(parts, "   ")

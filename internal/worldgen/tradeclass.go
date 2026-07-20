@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/philoserf/t5/internal/ehex"
+	"github.com/philoserf/t5/internal/tradecode"
 	"github.com/philoserf/t5/internal/uwp"
 )
 
@@ -13,7 +14,7 @@ import (
 // starport letter is in port). An empty set means the characteristic is
 // unconstrained.
 type tcRule struct {
-	code                         string
+	code                         tradecode.Code
 	siz, atm, hyd, pop, gov, law string // eHex-digit sets; "" = unconstrained
 	port                         string // allowed Starport letters; "" = any
 }
@@ -33,90 +34,49 @@ var tcRules = []tcRule{
 	// a mainworld and for a genuine Planetoids belt, but a Size-0 secondary Worldlet
 	// renders the same St000... without being a belt, so TradeClassificationsWithContext
 	// strips As from a non-belt non-mainworld (#324).
-	{code: "As", siz: "0", atm: "0", hyd: "0"},
-	{code: "De", atm: "23456789", hyd: "0"},
-	{code: "Fl", atm: "ABC", hyd: "123456789A"},
-	{code: "Ga", siz: "678", atm: "568", hyd: "567"},
-	{code: "He", siz: "3456789ABC", atm: "2479ABC", hyd: "012"},
-	{code: "Ic", atm: "01", hyd: "123456789A"},
-	{code: "Oc", siz: "ABCDEF", atm: "3456789DEF", hyd: "A"},
-	{code: "Va", atm: "0"},
-	{code: "Wa", siz: "3456789", atm: "3456789DEF", hyd: "A"},
+	{code: tradecode.As, siz: "0", atm: "0", hyd: "0"},
+	{code: tradecode.De, atm: "23456789", hyd: "0"},
+	{code: tradecode.Fl, atm: "ABC", hyd: "123456789A"},
+	{code: tradecode.Ga, siz: "678", atm: "568", hyd: "567"},
+	{code: tradecode.He, siz: "3456789ABC", atm: "2479ABC", hyd: "012"},
+	{code: tradecode.Ic, atm: "01", hyd: "123456789A"},
+	{code: tradecode.Oc, siz: "ABCDEF", atm: "3456789DEF", hyd: "A"},
+	{code: tradecode.Va, atm: "0"},
+	{code: tradecode.Wa, siz: "3456789", atm: "3456789DEF", hyd: "A"},
 	// Population. Di and Ba share the Pop0/Gov0/Law0 core, split by starport so
 	// exactly one fires (Book 3 p.26: Ba requires Starport E or X).
-	{code: "Di", pop: "0", gov: "0", law: "0", port: "ABCD"},
-	{code: "Ba", pop: "0", gov: "0", law: "0", port: "EX"},
-	{code: "Lo", pop: "123"},
-	{code: "Ni", pop: "456"},
-	{code: "Ph", pop: "8"},
-	{code: "Hi", pop: "9ABCDEF"},
-	{code: "Pa", atm: "456789", hyd: "45678", pop: "48"},
-	{code: "Ag", atm: "456789", hyd: "45678", pop: "567"},
-	{code: "Na", atm: "0123", hyd: "0123", pop: "6789ABCDEF"},
-	{code: "Px", atm: "23AB", hyd: "12345", pop: "3456", law: "6789"}, // Prison/Exile Camp
+	{code: tradecode.Di, pop: "0", gov: "0", law: "0", port: "ABCD"},
+	{code: tradecode.Ba, pop: "0", gov: "0", law: "0", port: "EX"},
+	{code: tradecode.Lo, pop: "123"},
+	{code: tradecode.Ni, pop: "456"},
+	{code: tradecode.Ph, pop: "8"},
+	{code: tradecode.Hi, pop: "9ABCDEF"},
+	{code: tradecode.Pa, atm: "456789", hyd: "45678", pop: "48"},
+	{code: tradecode.Ag, atm: "456789", hyd: "45678", pop: "567"},
+	{code: tradecode.Na, atm: "0123", hyd: "0123", pop: "6789ABCDEF"},
+	{code: tradecode.Px, atm: "23AB", hyd: "12345", pop: "3456", law: "6789"}, // Prison/Exile Camp
 	// Economic.
-	{code: "Pi", atm: "012479", pop: "78"},
-	{code: "In", atm: "012479ABC", pop: "9ABCDEF"},
-	{code: "Po", atm: "2345", hyd: "0123"},
-	{code: "Pr", atm: "68", pop: "59"},
-	{code: "Ri", atm: "68", pop: "678"},
+	{code: tradecode.Pi, atm: "012479", pop: "78"},
+	{code: tradecode.In, atm: "012479ABC", pop: "9ABCDEF"},
+	{code: tradecode.Po, atm: "2345", hyd: "0123"},
+	{code: tradecode.Pr, atm: "68", pop: "59"},
+	{code: tradecode.Ri, atm: "68", pop: "678"},
 	// Secondary.
-	{code: "Re", pop: "01234", gov: "6", law: "045"}, // Reserve
+	{code: tradecode.Re, pop: "01234", gov: "6", law: "045"}, // Reserve
 }
-
-// chartDOrder is every trade code in Book 3 Chart D (p.26) section order:
-// Planetary, Population, Economic, Climate, Secondary, Political, Special. A code's
-// position in this list is its canonical rank, which OrderTradeCodes sorts by — so
-// a world's codes render in the book's order however they were accumulated (base
-// codes at generation, zone codes appended after, climate and satellite codes at
-// placement, a capital code stamped by the region survey later still).
-var chartDOrder = []string{
-	// Planetary.
-	"As", "De", "Fl", "Ga", "He", "Ic", "Oc", "Va", "Wa", "Sa", "Lk",
-	// Population.
-	"Di", "Ba", "Lo", "Ni", "Ph", "Hi",
-	// Economic.
-	"Pa", "Ag", "Na", "Px", "Pi", "In", "Po", "Pr", "Ri",
-	// Climate.
-	"Fr", "Ho", "Co", "Tr", "Tu", "Tz",
-	// Secondary.
-	"Fa", "Mi", "Mr", "Pe", "Re",
-	// Political.
-	"Cp", "Cs", "Cx", "Cy",
-	// Special.
-	"Fo", "Pz", "Da", "Ab", "An",
-}
-
-// chartDRank maps a code to its Chart D position; a code not in the chart sorts
-// after every one that is (kept in its original relative order).
-var chartDRank = func() map[string]int {
-	m := make(map[string]int, len(chartDOrder))
-	for i, code := range chartDOrder {
-		m[code] = i
-	}
-
-	return m
-}()
 
 // OrderTradeCodes returns the codes sorted into Chart D order (Book 3 p.26). It
 // does not mutate the input, and it is what renderers call so a world's stored code
 // order — which follows the accumulation sequence, not the book's — never reaches a
-// record. Unknown codes keep their relative order, after the known ones.
-func OrderTradeCodes(tcs []string) []string {
+// record. Unknown codes keep their relative order, after the known ones. The order
+// is tradecode.Order, ranked by tradecode.Rank — the single source of truth.
+func OrderTradeCodes(tcs []tradecode.Code) []tradecode.Code {
 	out := slices.Clone(tcs)
-	slices.SortStableFunc(out, func(a, b string) int {
-		return rankOf(a) - rankOf(b)
+	slices.SortStableFunc(out, func(a, b tradecode.Code) int {
+		return tradecode.Rank(a) - tradecode.Rank(b)
 	})
 
 	return out
-}
-
-func rankOf(code string) int {
-	if r, ok := chartDRank[code]; ok {
-		return r
-	}
-
-	return len(chartDOrder)
 }
 
 // TradeClassifications returns the two-letter trade classification codes a
@@ -125,8 +85,8 @@ func rankOf(code string) int {
 // emits As for any Size0/Atm0/Hyd0 profile (correct for a mainworld, Book 3 p.16);
 // TradeClassificationsWithContext strips As from a secondary world that is not a
 // belt, since a Size-0 Worldlet shares the profile without being one (#324).
-func TradeClassifications(p uwp.Profile) []string {
-	var out []string
+func TradeClassifications(p uwp.Profile) []tradecode.Code {
+	var out []tradecode.Code
 
 	for _, r := range tcRules {
 		if allows(r.siz, p.Size) && allows(r.atm, p.Atmosphere) &&

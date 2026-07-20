@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/philoserf/t5/internal/dice"
+	"github.com/philoserf/t5/internal/tradecode"
 	"github.com/philoserf/t5/internal/worldgen"
 )
 
@@ -59,7 +60,7 @@ func TestGoldenScout(t *testing.T) {
 
 	// A fixed homeworld: Ag -> Animals-1, Va -> Vacc Suit-1 (dice-free grants that
 	// do not collide with the Survey/Navigation earned in the career).
-	homeworld := worldgen.World{TradeCodes: []string{"Ag", "Va"}}
+	homeworld := worldgen.World{TradeCodes: []tradecode.Code{"Ag", "Va"}}
 
 	c := GenerateCareered(dice.NewScripted(seq...), goldenPolicy{}, homeworld, ScoutCareer)
 

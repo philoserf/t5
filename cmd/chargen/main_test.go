@@ -7,6 +7,7 @@ import (
 	"github.com/philoserf/t5/internal/chargen"
 	"github.com/philoserf/t5/internal/clitest"
 	"github.com/philoserf/t5/internal/dice"
+	"github.com/philoserf/t5/internal/tradecode"
 	"github.com/philoserf/t5/internal/uwp"
 	"github.com/philoserf/t5/internal/worldgen"
 )
@@ -289,7 +290,7 @@ func TestHomeworldField(t *testing.T) {
 			"a real homeworld",
 			worldgen.World{
 				Profile:    uwp.Profile{Starport: 'A', Size: 7, Atmosphere: 8, Population: 8, TechLevel: 12},
-				TradeCodes: []string{"Ri", "Ph"},
+				TradeCodes: []tradecode.Code{"Ri", "Ph"},
 			},
 			"A780800-C   Ri Ph",
 		},
@@ -297,7 +298,7 @@ func TestHomeworldField(t *testing.T) {
 			// The goldens build homeworlds as trade codes alone; show those without
 			// inventing a UWP for them.
 			"trade codes but no profile",
-			worldgen.World{TradeCodes: []string{"Ag", "Va"}},
+			worldgen.World{TradeCodes: []tradecode.Code{"Ag", "Va"}},
 			"Ag Va",
 		},
 	}

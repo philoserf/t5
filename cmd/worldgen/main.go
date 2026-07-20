@@ -10,9 +10,9 @@ package main
 
 import (
 	"fmt"
-	"strings"
 
 	"github.com/philoserf/t5/internal/cli"
+	"github.com/philoserf/t5/internal/tradecode"
 	"github.com/philoserf/t5/internal/worldgen"
 )
 
@@ -23,7 +23,7 @@ func main() {
 	for range n {
 		p := worldgen.Generate(r)
 		if tc := worldgen.TradeClassifications(p); len(tc) > 0 {
-			fmt.Printf("%s  %s\n", p, strings.Join(tc, " "))
+			fmt.Printf("%s  %s\n", p, tradecode.Join(tc, " "))
 		} else {
 			fmt.Println(p)
 		}

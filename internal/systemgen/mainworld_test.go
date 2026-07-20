@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	"github.com/philoserf/t5/internal/dice"
+	"github.com/philoserf/t5/internal/tradecode"
 	"github.com/philoserf/t5/internal/uwp"
 	"github.com/philoserf/t5/internal/worldgen"
 )
@@ -34,7 +35,7 @@ func TestPlaceMainworld(t *testing.T) {
 	// (not a satellite), so no climate/satellite code beyond the given Ph.
 	mw := worldgen.World{
 		Profile:    uwp.Profile{Size: 7, Atmosphere: 8, Hydrographics: 8},
-		TradeCodes: []string{"Ph"},
+		TradeCodes: []tradecode.Code{"Ph"},
 	}
 
 	orbit, sat := placeMainworld(
@@ -50,7 +51,7 @@ func TestPlaceMainworld(t *testing.T) {
 		)
 	}
 
-	if !slices.Equal(mw.TradeCodes, []string{"Ph"}) {
+	if !slices.Equal(mw.TradeCodes, []tradecode.Code{"Ph"}) {
 		t.Errorf("temperate planet gained an extra code: %v", mw.TradeCodes)
 	}
 
@@ -126,7 +127,7 @@ func TestTagMainworldClimate(t *testing.T) {
 
 	tagMainworldClimate(&mw, 3, 4, true)
 
-	if !slices.Equal(mw.TradeCodes, []string{"Ho", "Tr"}) {
+	if !slices.Equal(mw.TradeCodes, []tradecode.Code{"Ho", "Tr"}) {
 		t.Errorf("orbit 3 of HZ 4 = %v, want [Ho Tr]", mw.TradeCodes)
 	}
 	// The same world placed in the habitable zone itself earns nothing — which is

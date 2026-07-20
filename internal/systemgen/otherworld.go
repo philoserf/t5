@@ -1,6 +1,7 @@
 package systemgen
 
 import (
+	"github.com/philoserf/t5/internal/tradecode"
 	"github.com/philoserf/t5/internal/uwp"
 	"github.com/philoserf/t5/internal/worldgen"
 )
@@ -10,7 +11,7 @@ import (
 type OtherWorld struct {
 	Type       worldgen.OtherWorldType
 	Profile    uwp.Profile
-	TradeCodes []string
+	TradeCodes []tradecode.Code
 }
 
 // orbitZone classifies an orbit relative to a star's habitable zone (Book 3

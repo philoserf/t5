@@ -4,6 +4,7 @@ import (
 	"slices"
 
 	"github.com/philoserf/t5/internal/dice"
+	"github.com/philoserf/t5/internal/tradecode"
 	"github.com/philoserf/t5/internal/uwp"
 	"github.com/philoserf/t5/internal/worldgen"
 )
@@ -21,7 +22,7 @@ type Satellite struct {
 	Type         worldgen.OtherWorldType
 	Profile      uwp.Profile
 	DoublePlanet bool
-	TradeCodes   []string
+	TradeCodes   []tradecode.Code
 }
 
 // rollSatellites gives each placed world and gas giant its moons (Book 3 p.29
@@ -137,7 +138,7 @@ func rollMoon(r *dice.Roller, orbits *satelliteOrbits, spec moonSpec) Satellite 
 // mainworldIndustrial reports whether the system mainworld carries In, which the
 // Mining (Mi) secondary code keys off (Book 3 Chart D p.26).
 func (s *System) mainworldIndustrial() bool {
-	return slices.Contains(s.Mainworld.TradeCodes, "In")
+	return slices.Contains(s.Mainworld.TradeCodes, tradecode.In)
 }
 
 // hostStar returns the star an orbit's host label names; an unknown or empty

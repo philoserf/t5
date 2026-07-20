@@ -8,6 +8,7 @@ import (
 	"github.com/philoserf/t5/internal/dice"
 	"github.com/philoserf/t5/internal/sectorgen"
 	"github.com/philoserf/t5/internal/systemgen"
+	"github.com/philoserf/t5/internal/tradecode"
 	"github.com/philoserf/t5/internal/uwp"
 	"github.com/philoserf/t5/internal/worldgen"
 )
@@ -111,8 +112,8 @@ func TestSheetRendersOrbitTree(t *testing.T) {
 // Contains is what tells the two apart.
 func TestSheetMarksCapital(t *testing.T) {
 	sv := Sector(dice.NewWithSeed(3), sectorgen.Dense)
-	titles := map[string]string{"Cs": "Sector Capital", "Cp": "Subsector Capital"}
-	seen := map[string]int{}
+	titles := map[tradecode.Code]string{"Cs": "Sector Capital", "Cp": "Subsector Capital"}
+	seen := map[tradecode.Code]int{}
 
 	var plain string
 

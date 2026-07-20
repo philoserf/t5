@@ -15,6 +15,7 @@ import (
 	"github.com/philoserf/t5/internal/route"
 	"github.com/philoserf/t5/internal/sectorgen"
 	"github.com/philoserf/t5/internal/systemgen"
+	"github.com/philoserf/t5/internal/tradecode"
 )
 
 // wayStationSpacing is the trade-route length, in parsecs, per Scout Way Station
@@ -180,7 +181,7 @@ func worldsOf(records []Record) []route.World {
 func markSectorCapitals(records []Record) {
 	sectorCap := bestCapital(records, nil)
 	if sectorCap >= 0 {
-		records[sectorCap].System.Mainworld.SetCapital("Cs")
+		records[sectorCap].System.Mainworld.SetCapital(tradecode.Cs)
 	}
 
 	bySub := map[byte][]int{}
@@ -192,7 +193,7 @@ func markSectorCapitals(records []Record) {
 
 	for _, idxs := range bySub {
 		if b := bestCapital(records, idxs); b >= 0 && b != sectorCap {
-			records[b].System.Mainworld.SetCapital("Cp")
+			records[b].System.Mainworld.SetCapital(tradecode.Cp)
 		}
 	}
 }
