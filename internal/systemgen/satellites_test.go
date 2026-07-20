@@ -306,7 +306,7 @@ func TestBeltMainworldRollsNoSatellites(t *testing.T) {
 
 	for seed := uint64(1); seed <= 200; seed++ {
 		s := GenerateForMap(dice.NewWithSeed(seed), true, true)
-		if !s.Mainworld.Profile.IsBelt() {
+		if !s.Mainworld.Belt {
 			continue // not a belt mainworld for this seed
 		}
 

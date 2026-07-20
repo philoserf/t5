@@ -47,6 +47,13 @@ func (t OtherWorldType) String() string {
 	}
 }
 
+// IsBelt reports whether the type is an asteroid belt (Planetoids, St000PGL-T).
+// This is where a secondary world's belt-ness is decided — its type, which knows,
+// rather than its Size digit, which a tiny solid world shares (#324). It is the
+// counterpart uwp.Profile could not have (a Profile cannot tell a belt from a
+// tiny Size-0 world); a mainworld carries the same fact as World.Belt.
+func (t OtherWorldType) IsBelt() bool { return t == Planetoids }
+
 // spaceport maps a non-mainworld's Population minus a 1D roll to a spaceport
 // class (Book 3 p.29 table 1B): 4+ Good (F), 3 Poor (G), 1-2 Basic (H), else
 // None (Y). Non-mainworlds carry spaceports, never the A-E/X starports.

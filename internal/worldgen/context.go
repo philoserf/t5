@@ -17,6 +17,14 @@ type WorldContext struct {
 	IsMainworld         bool // the mainworld never earns the secondary codes
 	MainworldIndustrial bool // the system mainworld carries In (enables Mi)
 
+	// Belt reports that a secondary world is a genuine asteroid belt (a Planetoids
+	// body). It exists because the pure classifier stamps As on any Size0/Atm0/Hyd0
+	// profile, but a Size-0 Worldlet renders St000... like a belt without being a
+	// field of asteroids (#324): a non-mainworld earns As only when Belt is true.
+	// The caller supplies it from the world's type (OtherWorldType.IsBelt). It has
+	// no effect on a mainworld, whose Size-0 profile is always a belt (Book 3 p.16).
+	Belt bool
+
 	Orbit   int  // the world's orbit number, for the habitable-zone and climate codes
 	HZOrbit int  // the star's habitable-zone orbit
 	HasHZ   bool // the star has a habitable zone at all
@@ -46,6 +54,14 @@ func TradeClassificationsWithContext(p uwp.Profile, ctx WorldContext) []string {
 	// The Secondary codes apply only to non-mainworlds (Book 3 Chart D p.26).
 	if !ctx.IsMainworld { //nolint:nestif // mirrors the book's nested contextual checks
 		inHZ := ctx.HasHZ && ctx.Orbit == ctx.HZOrbit
+		// As is a Size0/Atm0/Hyd0 UWP code the pure classifier emits, but for a
+		// secondary world it means a belt ONLY when the body is a Planetoids belt
+		// (ctx.Belt). A Size-0 Worldlet renders the same profile without being a
+		// field of asteroids, so strip its spurious As (#324) — the same shape as the
+		// Px strip below.
+		if !ctx.Belt {
+			tcs = slices.DeleteFunc(tcs, func(code string) bool { return code == "As" })
+		}
 		// Px (Prison/Exile Camp) is a mainworld-only code, "MW"; a non-mainworld
 		// with that same profile is a Pe (Penal Colony) instead, so strip any Px the
 		// base classifier emitted before considering Pe below.

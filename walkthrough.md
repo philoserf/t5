@@ -463,38 +463,41 @@ type Profile struct {
 
 ```
 
-### One field that is a code, not a dimension
+### One digit that is a code, not a dimension
 
-Size 0 does not mean "a very small world". It means **asteroid belt** — a field
-of rubble with no diameter at all. Every rule that reads Size as a measurement
-(a satellite cap, a parent body's classification, a downport's placement) has to
-resolve that first.
-
-Reading it as a dimension is a bug this codebase has shipped three separate
-times, so the comparison has been given a name and the raw comparison is banned:
+Size 0 renders an **asteroid belt** — a field of rubble with no diameter. But
+whether a Size-0 body actually _is_ a belt depends on what the body is, and that
+subtlety is the whole point. A **mainworld** with Size 0 is a belt (Book 3 p.16,
+"determined when World Size is generated"). A **secondary** Size-0 world usually
+is not: a Worldlet is a genuinely tiny solid world that renders the same
+`St000...`, and only a `Planetoids` body is a belt. A `Profile` alone cannot tell
+the two apart — so it must not try:
 
 ```bash
-sed -n '31,47p' internal/uwp/uwp.go
+sed -n '30,49p' internal/uwp/uwp.go
 ```
 
 ```output
-// dimension: a belt has no diameter, so the digit means "this world is a field
-// of asteroids" and every rule that reads Size as a measurement — a satellite
-// cap, a parent body's classification, a downport's placement — must resolve the
-// code first. Reading it as a dimension is a defect this codebase has shipped
-// three times (#213, #200, #309); IsBelt is the one place to ask.
+// BeltSize is the Size digit an asteroid belt renders with. It is a *code*, not
+// a dimension: a belt has no diameter, so the digit means "field of asteroids".
+//
+// Whether Size 0 MEANS a belt depends on the body, and that is why the reader is
+// not a Profile method:
+//
+//   - A mainworld with Size 0 is a belt — Book 3 p.16, "determined when World
+//     Size is generated" — whether the sector map forced it or the 2D-2 roll came
+//     up 0. That fact is carried as worldgen.World.Belt.
+//   - A SECONDARY world with Size 0 is usually NOT a belt: a Worldlet rolls a tiny
+//     solid world that renders the same St000..., and only a Planetoids body is a
+//     belt. That fact is its worldgen.OtherWorldType (IsBelt).
+//
+// So a Profile alone cannot answer "is this a belt" — the mainworld and the
+// Worldlet share the profile — which is why uwp.Profile.IsBelt was removed in #328
+// (it was Size == BeltSize, right for a mainworld but wrong for a Worldlet, and it
+// stamped phantom As-with-moons on Size-0 Worldlets, #324/#213/#200/#309). Ask the
+// body fact instead. BeltSize remains for its two genuine dimension uses: the
+// belt's rendered digit, and the smallest Size a satellite cap floors against.
 const BeltSize = 0
-
-// IsBelt reports whether the profile describes an asteroid belt rather than a
-// solid world (Book 3 p.13; Book 2 p.24, "An Asteroid Mainworld has a Beltport
-// instead"). Prefer it to comparing Size against zero, so that the belt-ness of
-// a world is visible wherever it matters.
-func (p Profile) IsBelt() bool { return p.Size == BeltSize }
-
-// String renders the profile in standard UWP notation: the starport letter,
-// the six eHex characteristic digits, a hyphen, and the eHex Tech Level —
-// for example "A788899-C".
-// A characteristic outside eHex range — or a Starport outside portLetters —
 ```
 
 ---
@@ -927,7 +930,7 @@ Primary: M6 V
 Orbits:
         0: Mainworld (1 moon: Dee Y69A000-0 dp)
         1: Gas Giant T LGG (2 moons: Eff YAD4035-5; Aitch Y891002-6)
-        2: Worldlet G000686-4 As Va Ni Na
+        2: Worldlet G000686-4 Va Ni Na
         3: Belt
         4: Iceworld Y541210-3 He Lo Po Fr
         5: Iceworld Y646121-6 Lo Fr (1 moon: Ring)

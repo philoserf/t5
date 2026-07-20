@@ -383,6 +383,7 @@ func (s *System) placeOrbits(r *dice.Roller) { //nolint:gocognit,cyclop,funlen /
 		prof := worldgen.GenerateOtherWorld(r, wt, mwPop)
 		tcs := worldgen.TradeClassificationsWithContext(prof, worldgen.WorldContext{
 			MainworldIndustrial: mwIndustrial,
+			Belt:                wt.IsBelt(),
 			Orbit:               o,
 			HZOrbit:             h.hz,
 			HasHZ:               h.hasHZ,

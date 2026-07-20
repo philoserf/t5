@@ -14,8 +14,16 @@ import (
 // Extensions, nobility, bases, travel zone, native status, and the population
 // multiplier digit.
 type World struct { //nolint:recvcheck // deliberate value-reader / pointer-mutator split
-	Profile         uwp.Profile
-	TradeCodes      []string
+	Profile    uwp.Profile
+	TradeCodes []string
+	// Belt reports whether the mainworld is an asteroid belt. For a mainworld — and
+	// only a mainworld — belt-ness is Size 0: Book 3 p.16 makes it a belt "when
+	// World Size is generated", whether the sector map forced it (GenerateBeltWorld)
+	// or the 2D-2 roll came up 0. The field carries that fact so systemgen asks it
+	// (placement, satellites, port) rather than re-reading the Size digit, and so a
+	// secondary world — where Size 0 does NOT mean belt (a Worldlet is not a belt,
+	// #324) — is never mistaken for one by sharing this accessor.
+	Belt            bool
 	Importance      int
 	Economic        Economic
 	Cultural        Cultural
@@ -62,8 +70,11 @@ func generateWorld(r *dice.Roller, gasGiants, belts int, isCapital, belt bool) W
 	ix := Importance(p, tcs, naval, scout, false)
 
 	return World{
-		Profile:         p,
-		TradeCodes:      tcs,
+		Profile:    p,
+		TradeCodes: tcs,
+		// A mainworld is a belt iff its Size is 0 (Book 3 p.16) — whether the belt
+		// param forced it or the 2D-2 roll produced it. See World.Belt.
+		Belt:            p.Size == uwp.BeltSize,
 		Importance:      ix,
 		Economic:        RollEconomic(r, p, ix, gasGiants, belts),
 		Cultural:        RollCultural(r, p, ix),

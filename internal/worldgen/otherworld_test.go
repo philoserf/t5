@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/philoserf/t5/internal/dice"
+	"github.com/philoserf/t5/internal/uwp"
 )
 
 func TestSpaceport(t *testing.T) {
@@ -56,8 +57,11 @@ func TestGenerateSatelliteWorldNegativeCapIsNotABelt(t *testing.T) {
 	want := GenerateSatelliteWorld(fours(), BigWorld, 8, NoSizeCap)
 	got := GenerateSatelliteWorld(fours(), BigWorld, 8, -3)
 
-	if got.IsBelt() {
-		t.Errorf("GenerateSatelliteWorld with maxSize -3 gave %s, an asteroid belt", got)
+	// A dimension check, not a belt check: the negative cap must not collapse the
+	// Big World's Size to 0 (belt-ness is now a body fact, no longer read from the
+	// profile — but a zeroed Size would still render St000... and mislead).
+	if got.Size == uwp.BeltSize {
+		t.Errorf("GenerateSatelliteWorld with maxSize -3 gave %s, its Size collapsed to 0", got)
 	}
 
 	if got != want {
