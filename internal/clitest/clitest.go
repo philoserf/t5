@@ -22,7 +22,6 @@ import (
 	"flag"
 	"os"
 	"os/exec"
-	"regexp"
 	"strings"
 	"testing"
 
@@ -37,12 +36,6 @@ import (
 // flags like "-weapon beamlaser:T1:orbit,sandcaster") and NUL (os/exec refuses it).
 // Using argv needs none of that.
 const childEnv = "T5_CLITEST_CHILD"
-
-// seedReport matches the seed line cli.Notef writes ("worldgen: seed 12345"). It
-// is matched as a whole line rather than searched for as the substring "seed ",
-// because flag's usage text describes the -seed flag and would otherwise read as a
-// seed report on every run rejected by flag itself.
-var seedReport = regexp.MustCompile(`(?m)^[^\s:]+: seed \d+$`)
 
 // Command binds a generator command's name and main for end-to-end testing.
 type Command struct {
@@ -144,7 +137,11 @@ func (r Result) AssertRejected(t *testing.T) {
 		t.Errorf("wrote %q to stdout, want nothing on the record stream", out)
 	}
 
-	if seedReport.MatchString(r.Stderr) {
+	// cli owns what a seed line looks like, and this is the direction that fails
+	// open: a matcher that drifted off the real wording would stop matching and
+	// wave a leaked seed through. Asking cli means there is no second wording to
+	// drift from.
+	if cli.HasSeedReport(r.Stderr) {
 		t.Errorf("named a seed for a run that generated nothing: %q", r.Stderr)
 	}
 
@@ -168,7 +165,7 @@ func (r Result) AssertReportedSeed(t *testing.T) {
 		t.Fatalf("exit code = %d, want 0 (stderr %q)", r.Code, r.Stderr)
 	}
 
-	if !seedReport.MatchString(r.Stderr) {
+	if !cli.HasSeedReport(r.Stderr) {
 		t.Errorf("an unseeded run must name its drawn seed on stderr, got %q", r.Stderr)
 	}
 
@@ -176,7 +173,17 @@ func (r Result) AssertReportedSeed(t *testing.T) {
 		t.Error("nothing on stdout; a successful run must print its records there")
 	}
 
-	if strings.Contains(r.Stdout, "seed") {
+	// Two checks, because they fail in opposite directions and neither subsumes
+	// the other. cli.HasSeedReport is the canonical Notef line, routed through the
+	// owner of the wording so a reword cannot leave a stale matcher behind. The
+	// broad substring catches a seed reaching stdout by any OTHER path — a record
+	// header like `fmt.Println("# seed", n)`, or a sheet field — which the anchored
+	// form cannot see.
+	//
+	// Replacing the substring with the anchored matcher alone was a mistake made in
+	// this very wave: it closed a drift hole and opened a coverage hole, in the one
+	// assertion whose whole job is catching a leak onto the record stream.
+	if cli.HasSeedReport(r.Stdout) || strings.Contains(strings.ToLower(r.Stdout), "seed") {
 		t.Errorf("the seed leaked onto the record stream: %q", r.Stdout)
 	}
 }

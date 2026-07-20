@@ -62,9 +62,9 @@ Scout — age 22, mustered out after 1 term
   Benefits       Ship Share
 
 $ go run ./cmd/sectorgen -seed 42 | head -3
-0101 Mecu E658352-3 Lo {-3}(820-5)[6121] B - - 520 9 Im F6 V F D
-0103 Donaejae B446466-7 Ni Pa Ho {-1}(B30+2)[3356] Bc N - 701 7 Im G5 V G0 VI K0 VI
-0110 Paela A69A215-C Wa Lo {+1}(C11-1)[134F] B - - 204 16 Im K6 V
+0101 Mecu C367632-9 Ni Ag Ri Ho {+1}(854+3)[7779] BC - - 430 10 Im G4 III
+0103 Sygipia C554666-7 Ni Ag Tz {-1}(255+0)[753A] BC - - 722 12 Im G D G8 VI
+0109 Ferorae C535B95-C Hi {+2}(6AB+0)[9D1E] BE - - 210 10 Im F6 V K9 VI
 
 $ go run ./cmd/shipgen -hull A -tl 12 -config S -maneuver A -jump A -weapon "beamlaser:T1:orbit" -defense blackglobe
 Ship  X-AS22

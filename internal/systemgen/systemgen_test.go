@@ -244,6 +244,185 @@ func TestGenerateForMap(t *testing.T) {
 	}
 }
 
+// scriptCounter replays faces while counting the draws. It exists only because
+// there is no way to count draws through dice.NewScripted, and it reproduces BOTH
+// of that constructor's safety properties, not just the obvious one:
+//
+//   - it panics past the end of the script, so a case that outruns its faces fails
+//     loudly rather than being served recycled ones;
+//   - it validates every face is a real 1..6, so a fixture typo ("44" for "4") is
+//     a loud failure rather than a silent impossible die.
+//
+// The second is easy to leave out, and leaving it out is what would make a green
+// suite stop being evidence about the dice stream — the property CLAUDE.md names
+// as the reason NewScripted is exact rather than cyclic.
+func scriptCounter(t *testing.T, faces []int, drawn *int) *dice.Roller {
+	t.Helper()
+
+	for i, f := range faces {
+		if f < 1 || f > 6 {
+			t.Fatalf("scriptCounter: face %d at index %d is not a die face 1..6", f, i)
+		}
+	}
+
+	return dice.NewSource(func() int {
+		if *drawn >= len(faces) {
+			panic("script exhausted")
+		}
+
+		f := faces[*drawn]
+		*drawn++
+
+		return f
+	})
+}
+
+// TestGiantsDiceBudget locks the dice budget of the gas-giant segment, which is
+// where GenerateForMap's alignment with Generate is either kept or lost (#321).
+// The count roll is 2D/2-2 and each detailed giant is one 2D, so the budget is
+// the whole claim: identical for every constraint over the same faces, save the
+// documented ggPresent-over-a-rolled-0 exception, which is exactly one 2D more.
+func TestGiantsDiceBudget(t *testing.T) {
+	// 5,5 -> 2D=10 -> 10/2-2 = 3 giants, then three 2D sizes (4,4 -> 8 -> eHex
+	// 20+8-1 = 27, a Large Gas Giant). 2 + 6 = 8 dice.
+	rolledThree := []int{5, 5, 4, 4, 4, 4, 4, 4}
+	// 2,2 -> 2D=4 -> max(4/2-2, 0) = 0 giants, so no size rolls follow: 2 dice.
+	rolledZero := []int{2, 2}
+	// The exception's extra giant needs a 2D of its own beyond those 2.
+	rolledZeroPlusExtra := []int{2, 2, 4, 4}
+
+	cases := []struct {
+		name      string
+		faces     []int
+		gg        ggConstraint
+		wantCount int
+		wantDice  int
+	}{
+		{"any over a rolled 3", rolledThree, ggAny, 3, 8},
+		// The fix: the giants are rolled and detailed, then discarded, so the
+		// budget matches ggAny's rather than collapsing to the count roll alone.
+		{"absent over a rolled 3", rolledThree, ggAbsent, 0, 8},
+		{"present over a rolled 3", rolledThree, ggPresent, 3, 8},
+		{"any over a rolled 0", rolledZero, ggAny, 0, 2},
+		{"absent over a rolled 0", rolledZero, ggAbsent, 0, 2},
+		// The one unalignable case: a giant with no roll to re-derive from.
+		{"present over a rolled 0", rolledZeroPlusExtra, ggPresent, 1, 4},
+	}
+
+	for _, c := range cases {
+		drawn := 0
+
+		count, detailed := giantsFor(scriptCounter(t, c.faces, &drawn), c.gg)
+		if count != c.wantCount {
+			t.Errorf("%s: count = %d, want %d", c.name, count, c.wantCount)
+		}
+
+		if len(detailed) != c.wantCount {
+			t.Errorf("%s: detailed %d giants, want %d", c.name, len(detailed), c.wantCount)
+		}
+
+		if drawn != c.wantDice {
+			t.Errorf("%s: drew %d dice, want %d", c.name, drawn, c.wantDice)
+		}
+	}
+}
+
+// TestGenerateForMapDiceAlignment is the falsifiable form of GenerateForMap's
+// alignment claim (#321). Detailing the rolled gas-giant count rather than the
+// constrained one keeps the constrained stream aligned with Generate's, so a
+// constraint that agrees with the roll yields the very same system, and one that
+// disagrees still re-derives the mainworld's UWP and the stellar family from the
+// same faces. The single documented exception — ggPresent over a rolled 0 — is
+// reached here as well; its size is pinned by TestGiantsDiceBudget, which can
+// see the segment in isolation.
+func TestGenerateForMapDiceAlignment(t *testing.T) {
+	var agreeAbsent, agreePresent, disagreeAbsent, exception int
+
+	for seed := uint64(1); seed <= 300; seed++ {
+		want := Generate(dice.NewWithSeed(seed))
+		rolled := want.GasGiants
+
+		if rolled == 0 {
+			// ggAbsent agrees with a rolled 0: identical dice, identical system.
+			if got := GenerateForMap(dice.NewWithSeed(seed), false, false); !reflect.DeepEqual(
+				got, want,
+			) {
+				t.Fatalf("seed %d: ggAbsent agreed with a rolled 0 but diverged:\n%s\n---\n%s",
+					seed, got, want)
+			}
+
+			agreeAbsent++
+
+			// ggPresent over a rolled 0 is the documented exception: the constraint
+			// is honoured with a giant the unconstrained stream never rolled. The
+			// size of the divergence — exactly one extra 2D — is not assertable
+			// from here, because that extra giant also gives the orbit map and the
+			// satellite pass another body to roll for; it is locked at the segment
+			// itself by TestGiantsDiceBudget.
+			if got := GenerateForMap(dice.NewWithSeed(seed), true, false); got.GasGiants != 1 {
+				t.Fatalf("seed %d: ggPresent over a rolled 0 gave %d giants, want 1",
+					seed, got.GasGiants)
+			}
+
+			exception++
+
+			continue
+		}
+
+		// ggPresent agrees with any rolled count of 1 or more: identical system.
+		if got := GenerateForMap(dice.NewWithSeed(seed), true, false); !reflect.DeepEqual(
+			got, want,
+		) {
+			t.Fatalf("seed %d: ggPresent agreed with a rolled %d but diverged:\n%s\n---\n%s",
+				seed, rolled, got, want)
+		}
+
+		agreePresent++
+
+		// ggAbsent disagreeing with a rolled 1+ is the case the fix addresses. The
+		// count is a genuine input downstream, so the systems are not equal; what
+		// must hold is that the stream did not shift, which shows up as the
+		// mainworld's UWP and the whole stellar family re-deriving unchanged.
+		got := GenerateForMap(dice.NewWithSeed(seed), false, false)
+		if got.GasGiants != 0 {
+			t.Fatalf("seed %d: ggAbsent gave %d giants, want 0", seed, got.GasGiants)
+		}
+
+		if got.Mainworld.Profile != want.Mainworld.Profile {
+			t.Fatalf(
+				"seed %d: ggAbsent dropped %d rolled giants and the mainworld UWP moved, "+
+					"%s vs %s — the discarded giants' 2D sizes were not drawn",
+				seed, rolled, got.Mainworld.Profile, want.Mainworld.Profile)
+		}
+
+		if !reflect.DeepEqual(got.Stars(), want.Stars()) {
+			t.Fatalf(
+				"seed %d: ggAbsent dropped %d rolled giants and the stellar family moved, "+
+					"%s vs %s — the discarded giants' 2D sizes were not drawn",
+				seed, rolled, got.Stellar(), want.Stellar())
+		}
+
+		disagreeAbsent++
+	}
+
+	// Each branch above is only evidence if seeds actually reached it.
+	// agreeAbsent and exception count the SAME seeds — both increment
+	// unconditionally in the rolled-0 branch, one per assertion made there — so
+	// listing both in the guard below reads like four populations when there are
+	// three. Asserted explicitly rather than left to look like coverage it is not.
+	if agreeAbsent != exception {
+		t.Fatalf("rolled-0 counters disagree: agreeAbsent=%d exception=%d — "+
+			"they count the same seeds and must move together",
+			agreeAbsent, exception)
+	}
+
+	if agreeAbsent == 0 || agreePresent == 0 || disagreeAbsent == 0 {
+		t.Fatalf(
+			"alignment cases not all exercised: rolled0=%d agreePresent=%d disagreeAbsent=%d",
+			agreeAbsent, agreePresent, disagreeAbsent)
+	}
+}
+
 // TestStars locks the single ordered enumeration of the stellar family that
 // String, Stellar, and the survey sheet all consume.
 func TestStars(t *testing.T) {

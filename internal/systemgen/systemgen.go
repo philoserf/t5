@@ -73,14 +73,21 @@ func Generate(r *dice.Roller) System {
 // asteroid symbol forces an asteroid-belt mainworld.
 //
 // Both constraints supersede a roll rather than skipping it: the gas-giant count
-// is rolled and then clamped, and the belt mainworld rolls its Size and discards
-// it. That keeps the two entry points structurally identical, but it does not
-// keep the dice streams aligned. Detailing consumes 2D per gas giant of the
-// clamped count, so whenever the constraint changes that count — ggPresent
-// raising a rolled 0 to 1, or ggAbsent dropping a rolled 3 to 0 — the stream
-// diverges from Generate's at that point and everything drawn afterwards (the
-// mainworld, the stars, the orbits) differs. The streams match only when the
-// constraint agrees with the count that was rolled.
+// is rolled and its giants detailed before the constraint is applied, and the
+// belt mainworld rolls its Size and discards it. giantsFor owns that rule and
+// documents exactly what it does and does not align.
+//
+// The caller-facing consequence: a constraint that disagrees with the roll still
+// changes the OUTPUT. The count feeds the PBG, the mainworld's Economic Extension,
+// and how many bodies the orbit map and satellite pass place. What no longer
+// differs is the dice stream feeding them: for ggAbsent, and for ggPresent over a
+// rolled count of 1 or more, the mainworld's UWP and the whole stellar family are
+// re-derived from the same faces either way, and when the constraint agrees with
+// the rolled count the two entry points return identical systems outright.
+//
+// The exception is ggPresent over a rolled 0 — about 28% of gas-giant hexes, see
+// giantsFor — where an extra 2D is drawn and belts onward do shift. Nothing above
+// applies to that case.
 func GenerateForMap(r *dice.Roller, gasGiant, asteroidMainworld bool) System {
 	gg := ggAbsent
 	if gasGiant {
@@ -94,8 +101,7 @@ func generate(r *dice.Roller, gg ggConstraint, asteroidMainworld bool) System {
 	var s System
 	// Gas giants and belts are needed to detail the mainworld (the Economic
 	// Extension and the PBG use them), so roll them before the mainworld.
-	s.GasGiants = clampGasGiants(gasGiants(r), gg)
-	s.Giants = rollGasGiants(r, s.GasGiants)
+	s.GasGiants, s.Giants = giantsFor(r, gg)
 	s.Belts = belts(r)
 	// Capital status needs region context (sectorgen), so default to false.
 	if asteroidMainworld {
@@ -189,6 +195,37 @@ const (
 	ggPresent
 	ggAbsent
 )
+
+// giantsFor rolls a system's gas-giant count, details every giant that rolled count
+// calls for, and only then applies the map constraint. Detailing the rolled
+// count rather than the constrained one is what keeps GenerateForMap's dice
+// stream aligned with Generate's: a ggAbsent system still rolls its giants' 2D
+// sizes and discards them, so nothing drawn afterwards shifts.
+//
+// The one case that cannot align is ggPresent over a rolled 0 — the giant the
+// constraint demands has no roll in the unconstrained stream to re-derive from,
+// so its 2D is drawn last, after the aligned segment. Everything drawn before it
+// still matches; belts onward is shifted by that one roll.
+//
+// That case is common, not a corner: gasGiants is max(2D/2-2, 0) in INTEGER
+// division, so it returns 0 for 2D of 2, 3, 4 and 5 — 5/2 is 2, not 2.5. Ten
+// outcomes in thirty-six, about 28%, roughly one system in 3.6. Reading the
+// predicate as 2D <= 4 and the frequency as one in six is the natural mistake,
+// and it was made twice while this was written.
+func giantsFor(r *dice.Roller, gg ggConstraint) (int, []GasGiant) {
+	rolled := gasGiants(r)
+	detailed := rollGasGiants(r, rolled)
+	count := clampGasGiants(rolled, gg)
+
+	switch {
+	case count < rolled: // ggAbsent: rolled, detailed, discarded
+		detailed = detailed[:count]
+	case count > rolled: // ggPresent over a rolled 0: the unalignable extra roll
+		detailed = append(detailed, rollGasGiants(r, count-rolled)...)
+	}
+
+	return count, detailed
+}
 
 // clampGasGiants applies a gas-giant map constraint to a rolled count: a map
 // symbol forces at least one gas giant, its absence forces none (Book 3 p.13).

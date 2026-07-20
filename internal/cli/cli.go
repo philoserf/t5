@@ -10,6 +10,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"regexp"
 	"slices"
 	"strings"
 
@@ -19,6 +20,50 @@ import (
 // FailureCode is the exit status for bad input. It is flag's own usage-error
 // code, so a rejected flag value and a rejected flag both exit the same way.
 const FailureCode = 2
+
+// seedNote is the Notef format Roller reports a drawn seed with, and the single
+// definition of what a seed line says. Nothing else spells the wording out:
+// seedLine below is BUILT from this constant, so the seed WORDING cannot drift
+// between writer and reader. The command prefix is not derived — seedLine spells
+// Notef's own "<command>: " shape by hand — so changing that prefix would still
+// drift silently. Deriving the whole line would mean parsing Notef's format, which
+// costs more than it buys; the gap is named here rather than papered over.
+const seedNote = "seed %d"
+
+// seedLine matches a whole seed line as Notef writes it ("worldgen: seed 12345"),
+// capturing the seed. The prefix is Notef's own "<command>: " shape; the rest is
+// seedNote with its %d verb widened to the digits it prints.
+//
+// It is anchored to a whole line rather than searched for as the substring "seed ",
+// because flag's usage text describes the -seed flag and would otherwise read as a
+// seed report on every run flag itself rejects. That false positive matters most in
+// the NEGATIVE direction: clitest asserts "this rejected run named no seed", and a
+// matcher that drifted off the real format would stop matching, so a run that DID
+// leak a seed would sail through. Deriving the pattern from the format string is
+// what keeps that assertion honest — and TestRollerReportsFreshSeed pins the pair
+// against a real subprocess, so a wording change that outran the derivation fails
+// loudly on the positive side rather than quietly on the negative one.
+var seedLine = regexp.MustCompile(`(?m)^[^\s:]+: ` +
+	strings.ReplaceAll(regexp.QuoteMeta(seedNote), `%d`, `(\d+)`) + `$`)
+
+// HasSeedReport reports whether a stream carries a drawn-seed line. Use it for
+// every direction of the obligation: a good run must name one on stderr, a run
+// rejected before it generated anything must not, and it must never appear on
+// stdout, where clitest passes the record stream to catch a leak.
+func HasSeedReport(stream string) bool {
+	return seedLine.MatchString(stream)
+}
+
+// ReportedSeed returns the seed named on stderr, as printed — so it can be handed
+// straight back as a -seed value to replay the run.
+func ReportedSeed(stderr string) (string, bool) {
+	m := seedLine.FindStringSubmatch(stderr)
+	if m == nil {
+		return "", false
+	}
+
+	return m[1], true
+}
 
 // Fatalf reports bad input on stderr, prefixed with the command name, and exits
 // with FailureCode. Use it for anything the caller must fix; a legitimate empty
@@ -98,7 +143,7 @@ func Roller() (*dice.Roller, func()) {
 
 		reported = true
 
-		Notef("seed %d", fresh)
+		Notef(seedNote, fresh)
 	}
 }
 

@@ -46,7 +46,7 @@ func TestPurposeStringOffLadder(t *testing.T) {
 }
 
 func TestStrategyValue(t *testing.T) {
-	// The same strategy is valued differently per purpose (Book 1 p.183).
+	// The same strategy is valued differently per purpose (Book 1 p.184, the P1 table).
 	if v, ok := StrategyValue(Persuade, Charming); !ok || v != 5 {
 		t.Errorf("Persuade/Charming = %d,%v, want 5,true", v, ok)
 	}
@@ -110,7 +110,7 @@ func TestResolveWorkedExample(t *testing.T) {
 	}
 }
 
-// The full Mods for Personals sidebar (Book 1 p.185).
+// The full Mods for Personals sidebar (Book 1 p.183).
 func TestSituationalMods(t *testing.T) {
 	cases := map[string]struct{ got, want int }{
 		"By Communicator. Voice":            {VoiceOnly, -4},
@@ -126,8 +126,8 @@ func TestSituationalMods(t *testing.T) {
 	}
 }
 
-// "Threat of Violence = +Fighter Skill" (Book 1 p.185).
-// "Bluff (once) Flux" (Book 1 p.185) — a Flux roll, so it can help or hurt.
+// "Threat of Violence = +Fighter Skill" (Book 1 p.183).
+// "Bluff (once) Flux" (Book 1 p.183) — a Flux roll, so it can help or hurt.
 func TestBluff(t *testing.T) {
 	if got := Bluff(dice.NewScripted(6, 1)); got != 5 {
 		t.Errorf("Bluff = %d, want 5", got)
