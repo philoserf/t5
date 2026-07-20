@@ -73,14 +73,28 @@ func Generate(r *dice.Roller) System {
 // asteroid symbol forces an asteroid-belt mainworld.
 //
 // Both constraints supersede a roll rather than skipping it: the gas-giant count
-// is rolled and then clamped, and the belt mainworld rolls its Size and discards
-// it. That keeps the two entry points structurally identical, but it does not
-// keep the dice streams aligned. Detailing consumes 2D per gas giant of the
-// clamped count, so whenever the constraint changes that count — ggPresent
-// raising a rolled 0 to 1, or ggAbsent dropping a rolled 3 to 0 — the stream
-// diverges from Generate's at that point and everything drawn afterwards (the
-// mainworld, the stars, the orbits) differs. The streams match only when the
-// constraint agrees with the count that was rolled.
+// is rolled and its giants detailed before the constraint is applied, and the
+// belt mainworld rolls its Size and discards it. Detailing the count that was
+// rolled rather than the constrained one is what keeps the dice stream aligned
+// with Generate's — a ggAbsent system rolls its giants' 2D sizes and then
+// discards them, so no later draw shifts. That is the same "re-derive rather
+// than re-roll" rule worldgen.GenerateSatelliteWorld follows for its size cap.
+//
+// Read that as a claim about the dice, not about the output. The count is a real
+// input downstream — to the PBG and the mainworld's Economic Extension, and to
+// how many bodies the orbit map and the satellite pass have to place — so under
+// a constraint that disagrees with the roll those still differ. What no longer
+// differs is the stream feeding them: the mainworld's UWP and the whole stellar
+// family are re-derived from the same faces either way. Whenever the constraint
+// agrees with the count that was rolled, the two entry points return systems
+// that are identical outright.
+//
+// One case cannot align, and does not: ggPresent when the count rolled 0, which
+// is 2D <= 4, about one system in six. A gas giant must then be detailed that
+// the unconstrained stream never rolled at all, and no ordering can conjure a
+// roll out of a stream that does not contain one. Its 2D is drawn after the
+// aligned segment, so everything Generate drew before it still matches and
+// everything after — the mainworld onward — is shifted by that one roll.
 func GenerateForMap(r *dice.Roller, gasGiant, asteroidMainworld bool) System {
 	gg := ggAbsent
 	if gasGiant {
@@ -94,8 +108,7 @@ func generate(r *dice.Roller, gg ggConstraint, asteroidMainworld bool) System {
 	var s System
 	// Gas giants and belts are needed to detail the mainworld (the Economic
 	// Extension and the PBG use them), so roll them before the mainworld.
-	s.GasGiants = clampGasGiants(gasGiants(r), gg)
-	s.Giants = rollGasGiants(r, s.GasGiants)
+	s.GasGiants, s.Giants = giantsFor(r, gg)
 	s.Belts = belts(r)
 	// Capital status needs region context (sectorgen), so default to false.
 	if asteroidMainworld {
@@ -189,6 +202,30 @@ const (
 	ggPresent
 	ggAbsent
 )
+
+// giantsFor rolls a system's gas-giant count, details every giant that rolled count
+// calls for, and only then applies the map constraint. Detailing the rolled
+// count rather than the constrained one is what keeps GenerateForMap's dice
+// stream aligned with Generate's: a ggAbsent system still rolls its giants' 2D
+// sizes and discards them, so nothing drawn afterwards shifts.
+//
+// The one case that cannot align is ggPresent over a rolled 0 — the giant the
+// constraint demands has no roll in the unconstrained stream to re-derive from,
+// so its 2D is drawn last, after the aligned segment.
+func giantsFor(r *dice.Roller, gg ggConstraint) (int, []GasGiant) {
+	rolled := gasGiants(r)
+	detailed := rollGasGiants(r, rolled)
+	count := clampGasGiants(rolled, gg)
+
+	switch {
+	case count < rolled: // ggAbsent: rolled, detailed, discarded
+		detailed = detailed[:count]
+	case count > rolled: // ggPresent over a rolled 0: the unalignable extra roll
+		detailed = append(detailed, rollGasGiants(r, count-rolled)...)
+	}
+
+	return count, detailed
+}
 
 // clampGasGiants applies a gas-giant map constraint to a rolled count: a map
 // symbol forces at least one gas giant, its absence forces none (Book 3 p.13).
