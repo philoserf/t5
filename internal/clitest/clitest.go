@@ -179,6 +179,11 @@ func (r Result) AssertReportedSeed(t *testing.T) {
 	// the leak it exists to catch would sail through. That is the fail-open shape
 	// this repo has now hit four times; the last one was in the change that
 	// centralised this very format.
+	//
+	// It is also strictly narrower than the substring it replaced: this catches a
+	// leak shaped exactly "<command>: seed N", where "seed" anywhere on the record
+	// stream used to trip it. That is the right trade — the old net also caught any
+	// record that happened to contain the word — but it is a trade, not a free win.
 	if cli.HasSeedReport(r.Stdout) {
 		t.Errorf("the seed leaked onto the record stream: %q", r.Stdout)
 	}

@@ -23,8 +23,11 @@ const FailureCode = 2
 
 // seedNote is the Notef format Roller reports a drawn seed with, and the single
 // definition of what a seed line says. Nothing else spells the wording out:
-// seedLine below is BUILT from this constant, so a reader that stopped agreeing
-// with the writer is not expressible.
+// seedLine below is BUILT from this constant, so the seed WORDING cannot drift
+// between writer and reader. The command prefix is not derived — seedLine spells
+// Notef's own "<command>: " shape by hand — so changing that prefix would still
+// drift silently. Deriving the whole line would mean parsing Notef's format, which
+// costs more than it buys; the gap is named here rather than papered over.
 const seedNote = "seed %d"
 
 // seedLine matches a whole seed line as Notef writes it ("worldgen: seed 12345"),

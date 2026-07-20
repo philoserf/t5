@@ -200,7 +200,14 @@ const (
 //
 // The one case that cannot align is ggPresent over a rolled 0 — the giant the
 // constraint demands has no roll in the unconstrained stream to re-derive from,
-// so its 2D is drawn last, after the aligned segment.
+// so its 2D is drawn last, after the aligned segment. Everything drawn before it
+// still matches; belts onward is shifted by that one roll.
+//
+// That case is common, not a corner: gasGiants is max(2D/2-2, 0) in INTEGER
+// division, so it returns 0 for 2D of 2, 3, 4 and 5 — 5/2 is 2, not 2.5. Ten
+// outcomes in thirty-six, about 28%, roughly one system in 3.6. Reading the
+// predicate as 2D <= 4 and the frequency as one in six is the natural mistake,
+// and it was made twice while this was written.
 func giantsFor(r *dice.Roller, gg ggConstraint) (int, []GasGiant) {
 	rolled := gasGiants(r)
 	detailed := rollGasGiants(r, rolled)

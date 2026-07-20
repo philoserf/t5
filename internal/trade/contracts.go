@@ -34,8 +34,9 @@ package trade
 // ("Freight = (Flux + Pop) x (total TCs +1)"), D.3 prints only "Possibly 1 ton.
 // Requires Mail Vault", and the MAIL SHIPMENTS sidebar hands the question to the
 // referee ("The steward can inquire at the starport about availability") with no
-// target, difficulty or mod. pp.209 and 220 are the only two rules pages for mail
-// in Book 2. So there is no AvailableMail beside AvailablePassengers and
+// target, difficulty or mod. pp.209 and 220 are the only pages that price or gate mail
+// CARRIAGE; the Vault component itself is specified around pp.42-48 and p.89.
+// So there is no AvailableMail beside AvailablePassengers and
 // AvailableFreight, and inventing one would be our formula wearing a citation.
 const MailRatePerTon = 15_000 // Cr per ton
 

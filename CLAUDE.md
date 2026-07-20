@@ -338,7 +338,8 @@ Tooling (go, go-task, golangci-lint, poppler's `pdftotext`) is pinned in `Brewfi
   `reportSeed` is an obligation nothing in the compiler enforces, so every command has a test that
   fails if the call is dropped. **`cli` owns the seed-line format**: `cli.seedNote` is the `Notef`
   format `Roller` prints, and the matcher behind `cli.HasSeedReport`/`cli.ReportedSeed` is _built
-  from_ that constant, so a reader that disagrees with the writer is not expressible. That matters
+  from_ that constant, so the seed wording cannot drift between writer and reader (the command
+  prefix is spelled by hand and is not derived — see the note at `seedNote`). That matters
   because `AssertRejected` uses it for a **negative** assertion ("this run named no seed"), which
   fails open: a matcher drifted off the real wording would stop matching and wave a leaked seed
   through. `internal/cli`'s own tests are an external `package cli_test` — `clitest` imports `cli`,
