@@ -241,6 +241,11 @@ Tooling (go, go-task, golangci-lint, poppler's `pdftotext`) is pinned in `Brewfi
   stay **separate tables that happen to agree**, because each is printed both ways in the book and
   each is settled by its own worked examples (**Modified** costs /2 on both sides: pp.104/127/134/190
   for drives against the x1 of pp.63/76, pp.83/225/226/251 for weapons against the p.279 appendix).
+  The drive side is a **majority** reading, not a clean one: p.48's sample-ship notes work Modified at
+  x1, note 14 saying "same pricing per ton" in prose. Four printings and two self-reconciling worked
+  columns outweigh two printings and two notes — but the book does not agree with itself, so do not
+  re-open this on finding p.48 (#300 was mis-resolved twice that way). The cell is asserted in
+  `TestDesignDriveStageCatalogP127`, which is what stops it drifting back.
   Drive stage tonnage **rounds up** and there is no tonnage floor — p.77's "no drive may be smaller
   than the Drive-A of the class" is a floor on the size **letter**, which is the only reading under
   which the worked tables' seven sub-Drive-A rows reproduce. Book conflicts are resolved against the
@@ -312,6 +317,26 @@ Tooling (go, go-task, golangci-lint, poppler's `pdftotext`) is pinned in `Brewfi
   parses — every per-command check (an unknown density, a bad hull letter) happens after it returns,
   which is why the ordering has to be the caller's. A command with a view flag validates it up front
   for the same reason (`sectorgen.selectView` resolves `-hex`/`-subsector` before the survey runs).
+  A flag the chosen path **cannot honor** is bad input, not a no-op — `cli.RejectUnusable`, which
+  every such path calls before reporting its seed. It is named the way round that stays correct:
+  the caller lists the flags its path *reads*, so a flag added later is covered the day it is added
+  rather than the day someone remembers to list it. `shipgen` without `-hull` rolls a random ship
+  that reads none of the design flags, and `sectorgen`'s views are exclusive, so the losing view's
+  flag is rejected too — `-hex 0436 -subsector Q` used to print a hex at exit 0 while that same
+  `-subsector Q` is refused on the default path. "Was it set" is asked of `flag.Visit`, never of the
+  value — `-tl 0` is a real Tech Level and `-armor 1` the hull's integral layer, so a
+  default-comparison would wave the caller's own input through as unset. A bool explicitly set false
+  is the exception: `-sector=false` asks for the path *not* to be taken, so it is not a conflict.
+- `internal/clitest/` — the end-to-end harness all six CLIs share. `main` calls `os.Exit`, so each
+  case re-executes the test binary as a child that runs `main` instead of the tests; `Command.TestMain`
+  intercepts before `m.Run` — which is what frees argv: nothing has parsed `os.Args` yet, so the
+  child's command line rides it and the environment variable is only a marker. `Command.Run` returns
+  the two streams and the exit code apart. `AssertRejected`
+  / `AssertReportedSeed` assert the whole `internal/cli` contract in one call. The seed line is matched
+  as a **whole line** (`^cmd: seed \d+$`), not as the substring `"seed "` — `flag`'s usage text
+  describes the `-seed` flag and would otherwise read as a seed report on every run `flag` rejects.
+  `reportSeed` is an obligation nothing in the compiler enforces, so every command has a test that
+  fails if the call is dropped.
 
 When adding a generator, transcribe the rule tables/formulas from `docs/reference/` and lock
 them with a golden test built from a worked example in the books.

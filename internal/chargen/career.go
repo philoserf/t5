@@ -132,7 +132,7 @@ const (
 	DMNone        MusterDM = iota // no modifier (the zero value)
 	DMTerms                       // + terms served
 	DMOfficerRank                 // + rank, only while on the officer track (armed forces, Merchant)
-	DMRank                        // + rank on any track, ladder numbered from 1 (the Scholar)
+	DMRank                        // + rank on any track, ladder numbered from 1 — no career uses it yet
 	DMRankF0                      // + rank on a ladder numbered from 0 (the Functionary; see below)
 	DMFameHalf                    // + Fame/2 (the Scout)
 	DMCommends                    // + Commendations (the Agent)
@@ -140,12 +140,20 @@ const (
 
 // benefitDM returns the value of a Benefit-column muster DM for a character.
 //
-// A rank DM is the rank *number the career prints*, and two careers number their
-// ladders differently. The Scholar begins at Scholar1 (Book 1 p.65, "Scholars
-// begin with formal rank (Scholar = Scholar1)"), so its first rung is 1. The
-// Functionary's ladder runs F0 Clerk … F8 Secretary (p.87), so its first rung is
-// 0 — a Clerk's "+Officer Rank" muster DM is +0, not +1. run.rank is always a
-// 1-based ladder index, so DMRankF0 subtracts the difference.
+// A rank DM is the rank *number the career prints*, and careers number their
+// ladders differently. Most start at 1 — the Scholar, say, begins at Scholar1
+// (Book 1 p.65, "Scholars begin with formal rank (Scholar = Scholar1)") — which
+// is the shape DMRank encodes. The Functionary's ladder runs F0 Clerk … F8
+// Secretary (p.87), so its first rung is 0 — a Clerk's "+Officer Rank" muster DM
+// is +0, not +1. rec.Rank is always a 1-based ladder index, so DMRankF0
+// subtracts the difference.
+//
+// DMRank itself is unused: no career sets it. On p.71 a career's two DMs are
+// printed Money-then-Benefits, and the rank ones land on Money — the Scholar's
+// pair is "+ Scholar Rank +Terms", i.e. Money +Scholar Rank and Benefits +Terms,
+// which is why ScholarCareer.BenefitDM is DMTerms. The Benefits-column rank DMs
+// are either officer-track-only (DMOfficerRank) or 0-based (the Functionary's
+// DMRankF0), so DMRank waits for a career that prints a plain 1-based one.
 func benefitDM(dm MusterDM, c Character, rec CareerRecord) int {
 	switch dm {
 	case DMTerms:
@@ -1365,8 +1373,10 @@ func payScheme(c *Character, s schemeValue, rewardTarget, rewardRoll int, riskOK
 }
 
 // awardPrisonSkills grants a Rogue's In-Prison skill rolls (Book 1 p. 84), drawn
-// only from the Personal and Academic columns (grid columns 0-1); the policy's
-// column choice is clamped into that range.
+// only from the Personal and Academic columns (grid columns 0-1). The engine, not
+// the Policy, picks between the two — Policy.ChooseSkillColumn is deliberately not
+// consulted, since a policy that named any other column would have to be overruled
+// anyway. The policy still resolves choice cells, via applyCell.
 func awardPrisonSkills(r *dice.Roller, p Policy, c *Character, career Career, n int) {
 	// In-Prison skills come from Personal (col 0) or Academic (col 1) only (Book 1
 	// p. 84). Prefer Academic when the character has a Major/Minor there worth

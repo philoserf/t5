@@ -185,16 +185,34 @@ const (
 // stageData is the p.76 X table. Cost and tons are stored as fractions
 // (numerator/denominator) to stay exact; fuelPct and eff are percentages.
 //
-// Book conflict, the Modified cost cell. The same X table is printed six times
-// in Book 2. Four printings give Modified /2 (pp.104, 127, 134, 190); two give
-// it x1 (pp.63, 76) — and those two are the only printings that carry no worked
-// example beside them. The worked columns decide it: p.127's Jump-B column
-// reconciles all eleven of its rows under /2 (base 15t at MCr1/t, so Modified is
-// 8t for MCr4 = 8 x 1/2, against Advanced's 5t for MCr10 = 5 x 2 and Ultimate's
-// 4t for MCr12 = 4 x 3), and p.134's Power-B column independently prints
-// "Mod P-Plant-B ... 4 (=3.5) 1.7" — 3.5 x 1/2 = 1.75. So /2 it is, and the
-// weapon side (weapon_data.go's stageCostData) agrees rather than conflicting.
-// TestDesignDriveStageCatalogP127 locks the column that settles this.
+// Book conflict, the Modified cost cell (#300). Book 2 prints the same X table
+// six times and does not agree with itself:
+//
+//   - /2 on pp.104, 127, 134, 190
+//   - x1 on pp.63, 76
+//
+// Two worked columns compute /2 and reconcile every row they print. p.127's
+// Jump-B column: base 15t at MCr1/t, so Modified is 8t for MCr4 = 8 x 1/2,
+// against Advanced's 5t for MCr10 = 5 x 2 and Ultimate's 4t for MCr12 = 4 x 3.
+// p.134's Power-B column independently prints "Mod P-Plant-B ... 4 (=3.5) 1.7",
+// and 3.5 x 1/2 = 1.75. (p.104's column is broken on its own terms — it honours
+// the multiplier for the eight non-divisor rows and ignores it for Mod/Adv/Ult —
+// so it is evidence for neither reading.)
+//
+// The x1 side is NOT unsupported, and pretending otherwise is how this cell got
+// mis-resolved twice. Book 2 p.48's sample-ship notes work it the other way, one
+// of them in prose: note 14 has "Standard Fusion Plant-S2 104 tons, MCr104 ...
+// The Modified version is TL+2, half-tonnage, same pricing per ton ... 52 tons,
+// MCr52", and note 13 does the same for a Jump Drive-Z (250t/MCr250 ->
+// 125t/MCr125, MCr1 per ton throughout). Those are worked, explicit, and flatly
+// incompatible with /2.
+//
+// So no reading satisfies the whole book. This code follows /2 on weight of
+// evidence: four printings against two, and two independent worked columns that
+// each reconcile all eleven of their rows, against two sample notes. A reader who
+// prices a Modified drive from p.48 and gets twice this figure has found the
+// book's inconsistency, not a bug here. TestDesignDriveStageCatalogP127 asserts
+// the cell, so the resolution cannot drift back silently.
 var stageData = [...]struct {
 	name             string
 	tlDelta          int
@@ -210,7 +228,7 @@ var stageData = [...]struct {
 	Alternate:    {"Alternate", 0, 1, 1, 100, 100, 1, 1},
 	Improved:     {"Improved", 1, 1, 1, 110, 90, 1, 1},
 	Generic:      {"Generic", 1, 1, 2, 90, 110, 1, 1},
-	Modified:     {"Modified", 2, 1, 1, 110, 90, 1, 2},
+	Modified:     {"Modified", 2, 1, 2, 110, 90, 1, 2},
 	Advanced:     {"Advanced", 3, 2, 1, 120, 80, 1, 3},
 	Ultimate:     {"Ultimate", 4, 3, 1, 130, 70, 1, 4},
 }

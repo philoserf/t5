@@ -30,10 +30,17 @@ func Attack(r *dice.Roller, w shipgen.Weapon, rangeBands, csk int, mods ...int) 
 }
 
 // AttackWithMissile rolls a designed round's Missile Attack Task (Book 2 p.197),
-// used when the target is at Range S=5 or more. The round's guidance supplies the
+// used when the target is at Range S=6 or more; at S=5 or less a missile uses the
+// Space Weapon Task instead, so call Attack. The round's guidance supplies the
 // second asset: a hardwired brain is worth a flat 5, an operator-guided one is
 // worth as much as the gunner flying it, and a self-aware one is worth whatever
 // mind it rolled at launch (C = 6+1D, S = 1D, plus Flux — pass it as brainCSK).
+//
+// The book states the boundary four times and disagrees with itself once: p.195
+// ("Missiles at S=5 or Less … use the Space Weapon Task" / "Missiles at S=6 or
+// More … use the Space Missile Task"), p.196, and p.197's own TO HIT (MISSILE)
+// all put the split at 6, while p.197's opening line says "if Attack Range is
+// S=5 or more". Resolved against that outlier by three-to-one.
 func AttackWithMissile(
 	r *dice.Roller,
 	m shipgen.Missile,
@@ -179,7 +186,7 @@ func Defend(r *dice.Roller, d shipgen.Defense, attackTL int) dice.CheckResult {
 const noDefenseMod = -100
 
 // ArmorLayers is a designed ship's armor as Penetrate wants it: one Armor Value
-// per layer (Book 2 p.86). Damage grinds through the layers in turn, so the shape
+// per layer (Book 2 p.75). Damage grinds through the layers in turn, so the shape
 // matters — four layers of AV-6 are not one layer of AV-24.
 //
 // Armor.AV is already the per-layer value: "identical layers are not summed on the

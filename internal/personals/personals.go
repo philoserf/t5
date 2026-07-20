@@ -1,5 +1,5 @@
 // Package personals implements Traveller5's social-interaction system, the
-// Personals (Book 1 pp. 180-185). A Personal is resolved roll-low: the Purpose
+// Personals (Book 1 pp. 181-185). A Personal is resolved roll-low: the Purpose
 // sets the dice, and Target = Strategy value × Tactic multiplier + the best
 // applicable Law + up to two situational Mods (three if the Personal is
 // Deliberate). That allowance is the caller's to keep: Resolve takes unbounded
@@ -65,8 +65,9 @@ func (p Purpose) String() string {
 // bounds should not be restated at every use.
 func (p Purpose) valid() bool { return p >= Carouse && p <= Command }
 
-// Strategy is the approach an Actor takes (Book 1 p.183). A strategy's base
-// point value depends on the Purpose it is used for.
+// Strategy is the approach an Actor takes (Book 1 p.185, STRATEGIES). A strategy's base
+// point value depends on the Purpose it is used for, and those values are the p.184
+// P1 table's, not p.185's prose.
 type Strategy int
 
 // Interaction strategies.
@@ -82,7 +83,7 @@ const (
 )
 
 // strategyValues[purpose][strategy] is the strategy's base point value 1-5
-// (Book 1 p.183 P1 table); a strategy absent from a purpose's map is not
+// (Book 1 p.184, the P1 table); a strategy absent from a purpose's map is not
 // available for that purpose.
 var strategyValues = map[Purpose]map[Strategy]int{
 	Carouse:  {Casual: 1, Enjoyment: 2, Discussion: 3, ActiveListening: 4, AppealTo: 5},
@@ -92,7 +93,7 @@ var strategyValues = map[Purpose]map[Strategy]int{
 }
 
 // StrategyValue returns a strategy's base point value for a purpose and whether
-// the strategy is available for that purpose (Book 1 p.183).
+// the strategy is available for that purpose (Book 1 p.184, the P1 table).
 func StrategyValue(p Purpose, s Strategy) (int, bool) {
 	v, ok := strategyValues[p][s]
 
@@ -113,7 +114,8 @@ const (
 )
 
 // lawMods[law] is the Law's unconditional Mod per Purpose (Carouse, Query,
-// Persuade, Command); 0 means the Law contributes nothing there (Book 1 p.183).
+// Persuade, Command); 0 means the Law contributes nothing there (Book 1 p.184, the
+// P1 table; p.183's Quick Personals sidebar reprints the same numbers).
 // Inferiority grants only Query +1 unconditionally — its Persuade +2 is
 // conditional (see InferiorityAppeal) and so is not in this table.
 var lawMods = map[Law][4]int{
@@ -140,7 +142,7 @@ func LawMod(l Law, p Purpose) int {
 	return lawMods[l][p]
 }
 
-// The flat Situational Mods of the Mods for Personals sidebar (Book 1 p.185).
+// The flat Situational Mods of the Mods for Personals sidebar (Book 1 p.183).
 // Bluff and Threat of Violence are not flat and have their own functions below;
 // Deliberate is not a Mod at all — it is the permission to apply a third one.
 const (
@@ -163,20 +165,20 @@ const (
 )
 
 // Bluff rolls the Flux Mod a bluff contributes ("Bluff (once) Flux", Book 1
-// p.185). Being Flux rather than a flat value, a bluff is a gamble: it ranges
+// p.183). Being Flux rather than a flat value, a bluff is a gamble: it ranges
 // -5..+5, so it can cost the Actor as easily as it pays. A Personal admits at
 // most one bluff.
 func Bluff(r *dice.Roller) int { return r.Flux() }
 
 // Threat of Violence is a Mod of +Fighter Skill ("Threat of Violence = +Fighter
-// Skill", Book 1 p.185) — pass the character's Fighter level (or a subordinate
+// Skill", Book 1 p.183) — pass the character's Fighter level (or a subordinate
 // Knowledge) straight to Resolve as a mod; there is no helper, because there is
 // nothing to compute. The page attaches a consequence this package does not
 // model — "failure converts the personal into a fight" — so a caller applying it
 // is responsible for opening combat on a failed Resolve.
 //
 // It is not the Violence entry in lawMods. That is the Law of Violence, whose
-// per-Purpose Mod comes through LawMod; this is the p.185 situational Mod. A
+// per-Purpose Mod comes through LawMod; this is the p.183 situational Mod. A
 // Personal backed by menace may well draw both.
 
 // Resolve resolves a Personal Interaction (Book 1 p.184): Target = strategyValue

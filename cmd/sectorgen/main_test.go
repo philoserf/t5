@@ -1,15 +1,16 @@
 package main
 
 import (
-	"errors"
-	"flag"
-	"os"
-	"os/exec"
 	"strings"
 	"testing"
 
-	"github.com/philoserf/t5/internal/cli"
+	"github.com/philoserf/t5/internal/clitest"
 )
+
+// command runs sectorgen end to end; see internal/clitest.
+var command = clitest.Command{Name: "sectorgen", Main: main}
+
+func TestMain(m *testing.M) { command.TestMain(m) }
 
 // TestSelectView: the three views are exclusive and ordered — -hex wins over
 // -sector, which wins over the default subsector listing.
@@ -57,15 +58,8 @@ func TestSelectViewRejects(t *testing.T) {
 // TestMainSeedFollowsValidation is the end-to-end contract of #293: an unseeded
 // run names the seed it drew only once its own flags check out. A rejected flag
 // exits 2 with its reason on stderr and no seed line — the seed would name a run
-// that surveyed nothing — and no records on stdout. main calls os.Exit, so each
-// case runs in a subprocess (the idiom internal/cli's own tests use).
+// that surveyed nothing — and no records on stdout.
 func TestMainSeedFollowsValidation(t *testing.T) {
-	if os.Getenv("SECTORGEN_TEST_MAIN") == "1" {
-		mainChild()
-
-		return // not reached
-	}
-
 	bad := map[string][]string{
 		"unknown density":   {"-density", "qqq"},
 		"invalid subsector": {"-subsector", "Q"},
@@ -73,84 +67,68 @@ func TestMainSeedFollowsValidation(t *testing.T) {
 	}
 	for name, args := range bad {
 		t.Run(name, func(t *testing.T) {
-			stdout, stderr, code := runMainChild(t, args...)
-
-			if code != cli.FailureCode {
-				t.Errorf("exit code = %d, want %d (stderr %q)", code, cli.FailureCode, stderr)
-			}
-
-			if strings.Contains(stderr, "seed ") {
-				t.Errorf("named a seed for a run that generated nothing: %q", stderr)
-			}
-
-			if strings.TrimSpace(stderr) == "" {
-				t.Errorf("nothing on stderr; a rejected flag must say why")
-			}
-
-			if out := strings.TrimSpace(stdout); out != "" {
-				t.Errorf("wrote %q to stdout, want nothing", out)
-			}
+			command.Run(t, args...).AssertRejected(t)
 		})
 	}
 
 	// The other half: a good command line still names its drawn seed, on stderr,
 	// with the records alone on stdout.
 	t.Run("valid run reports its seed", func(t *testing.T) {
-		stdout, stderr, code := runMainChild(t, "-subsector", "A")
-
-		if code != 0 {
-			t.Errorf("exit code = %d, want 0 (stderr %q)", code, stderr)
-		}
-
-		if !strings.Contains(stderr, "seed ") {
-			t.Errorf("an unseeded run must name its seed on stderr, got %q", stderr)
-		}
-
-		if strings.Contains(stdout, "seed") {
-			t.Errorf("seed leaked onto the record stream: %q", stdout)
-		}
+		command.Run(t, "-subsector", "A").AssertReportedSeed(t)
 	})
 }
 
-// mainChild is the subprocess half of TestMainSeedFollowsValidation: it rebuilds
-// a clean command line from the args after "--" and runs main as sectorgen
-// would. It passes no -seed, so every case exercises the drawn-seed path.
-func mainChild() {
-	args := flag.Args() // read before the reset discards them
-	flag.CommandLine = flag.NewFlagSet("sectorgen", flag.ExitOnError)
-
-	os.Args = append([]string{"sectorgen"}, args...)
-
-	main()
-	os.Exit(0)
-}
-
-// runMainChild runs sectorgen's main in a subprocess with the given flags and
-// returns its stdout, stderr, and exit code separately — the split is the thing
-// under test.
-func runMainChild(t *testing.T, args ...string) (string, string, int) {
-	t.Helper()
-
-	cmd := exec.Command(
-		os.Args[0],
-		append([]string{"-test.run=^TestMainSeedFollowsValidation$", "--"}, args...)...)
-	cmd.Env = append(os.Environ(), "SECTORGEN_TEST_MAIN=1")
-
-	var stdout, stderr strings.Builder
-
-	cmd.Stdout = &stdout
-	cmd.Stderr = &stderr
-
-	err := cmd.Run()
-
-	code := 0
-
-	var exit *exec.ExitError
-	if errors.As(err, &exit) {
-		code = exit.ExitCode()
-	} else if err != nil {
-		t.Fatalf("child failed: %v (stderr %q)", err, stderr.String())
+// TestMainRejectsFlagsTheViewIgnores covers the losing view's flag. The views are
+// exclusive, so a flag belonging to a view that did not win is input this run
+// cannot honor — and discarding it silently is worse here than it was in shipgen
+// (#315), because "-subsector Q" is a value sectorgen's OWN validator rejects on
+// the default path. It printed a hex at exit 0 while swallowing input it would
+// otherwise refuse.
+func TestMainRejectsFlagsTheViewIgnores(t *testing.T) {
+	cases := map[string][]string{
+		"subsector under hex":    {"-hex", "0436", "-subsector", "Q"},
+		"sector under hex":       {"-hex", "0436", "-sector"},
+		"subsector under sector": {"-sector", "-subsector", "A"},
 	}
 
-	return stdout.String(), stderr.String(), code
+	for name, args := range cases {
+		t.Run(name, func(t *testing.T) {
+			command.Run(t, append(args, "-seed", "1")...).AssertRejected(t)
+		})
+	}
+}
+
+// TestMainAcceptsTheWinningView is the control: the same views run clean when
+// nothing else is set, so the rejection above is about the discarded flag and not
+// about the view itself.
+//
+// -sector and -subsector always survey worlds, so they assert the full good-run
+// contract: records on stdout, the drawn seed on stderr and only there.
+//
+// -hex asserts the exit code alone, and only -hex. A hex holding no system is a
+// true-but-empty result — cli.Notef says so on stderr and exits 0 with nothing on
+// the record stream — so requiring records there made the test depend on whether a
+// randomly drawn seed happened to populate that one hex, and it failed about a
+// third of the time. Weakening the other two to match would have thrown away the
+// stdout/stderr split this harness exists to enforce.
+func TestMainAcceptsTheWinningView(t *testing.T) {
+	for name, args := range map[string][]string{
+		"sector":    {"-sector"},
+		"subsector": {"-subsector", "A"},
+	} {
+		t.Run(name, func(t *testing.T) {
+			command.Run(t, args...).AssertReportedSeed(t)
+		})
+	}
+
+	t.Run("hex", func(t *testing.T) {
+		res := command.Run(t, "-hex", "0436")
+		if res.Code != 0 {
+			t.Errorf("exit code = %d, want 0 (stderr %q)", res.Code, res.Stderr)
+		}
+
+		if strings.Contains(res.Stderr, "panic:") {
+			t.Errorf("panicked: %q", res.Stderr)
+		}
+	})
 }

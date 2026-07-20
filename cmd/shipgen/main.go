@@ -7,7 +7,8 @@
 //	        [-weapon "name[:mount[:range]],..."] [-n N] [-seed V]
 //
 // With -hull, a specific ship is designed from the flags; without it, a random
-// ship is generated (-n and -seed apply). Drive/hull letters are A-Z; config is
+// ship is generated, and only -n and -seed apply — a design flag given without
+// -hull is rejected rather than discarded. Drive/hull letters are A-Z; config is
 // one of C B P U S A L. Weapons name a model (and optionally a mount and a range
 // to build it for), e.g. -weapon "beamlaser:T1:orbit,sandcaster" — a hull carries
 // one mount per 100 tons.
@@ -49,7 +50,18 @@ func main() {
 	n, r, reportSeed := cli.SeededRoller("ships")
 
 	if *hull == "" {
-		reportSeed() // a random ship reads none of the design flags
+		// A random ship reads none of the design flags, so a design flag typed
+		// without -hull is input that cannot be honored. Discarding it silently
+		// printed a well-formed ship at exit 0 while the caller's -tl 99 vanished;
+		// applying it instead would need a rule for which of the ten can constrain
+		// a rolled ship and which cannot. Saying so is the honest answer, and it
+		// is the posture the rest of the command already takes toward bad input.
+		// Named the other way round — the flags a random ship DOES read — so a new
+		// design flag is covered the day it is added rather than the day someone
+		// remembers to list it.
+		cli.RejectUnusable("a random ship; give -hull to design one", "hull")
+
+		reportSeed() // nothing but -n and -seed was given, so the input is good
 
 		for i := range n {
 			if i > 0 {

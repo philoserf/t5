@@ -10,6 +10,8 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"slices"
+	"strings"
 
 	"github.com/philoserf/t5/internal/dice"
 )
@@ -114,4 +116,57 @@ func SeededRoller(item string) (int, *dice.Roller, func()) {
 	}
 
 	return *count, r, reportSeed
+}
+
+// sharedFlags are the flags internal/cli registers itself. Every path can honor
+// them, so RejectUnusable always allows them and callers never list them — a
+// command that later switches from Roller to SeededRoller would otherwise start
+// rejecting its own -n.
+var sharedFlags = []string{"n", "seed"}
+
+// RejectUnusable exits 2 if the command line set any flag the chosen code path
+// cannot honor. usable names the flags that path does read; everything else the
+// caller typed is reported and rejected. what describes the path in the message,
+// and should tell the caller how to get the behaviour they asked for
+// ("a random ship; give -hull to design one").
+//
+// A flag a path silently discards is bad input, not a no-op. Both generator CLIs
+// had a path that swallowed one: shipgen's random ship ignored every design flag,
+// so "-tl 99" produced a TL-14 ship at exit 0 (#315), and sectorgen's -hex view
+// ignored -subsector, so "-hex 0436 -subsector Q" printed a hex at exit 0 while
+// the same "-subsector Q" is rejected on the default path. The second is the worse
+// shape: input the command's own validator would refuse, waved through because
+// another flag outranked it.
+//
+// It asks flag.Visit — which walks only what was actually set — rather than
+// comparing values against defaults, because most defaults are legal values a
+// caller may well type. "-tl 0" is a real Tech Level and "-armor 1" is the hull's
+// integral layer; a value test would read both as unset, and "-tl 0" alongside a
+// random ship is exactly the discarded input this exists to catch.
+//
+// Call it before reporting the seed, so a run rejected here never names a seed
+// for records it did not generate.
+func RejectUnusable(what string, usable ...string) {
+	var unusable []string
+
+	flag.Visit(func(f *flag.Flag) {
+		if slices.Contains(usable, f.Name) || slices.Contains(sharedFlags, f.Name) {
+			return
+		}
+
+		// A bool explicitly set false asks for its path NOT to be taken, which is
+		// agreement rather than conflict: "-hex 0436 -sector=false" is an unambiguous
+		// command line, and a script building "-sector=$want" should not die on it.
+		// Only a bool set TRUE competes for the path.
+		if bv, ok := f.Value.(interface{ IsBoolFlag() bool }); ok && bv.IsBoolFlag() &&
+			f.Value.String() == "false" {
+			return
+		}
+
+		unusable = append(unusable, "-"+f.Name)
+	})
+
+	if len(unusable) > 0 {
+		Fatalf("%s cannot be combined with %s", strings.Join(unusable, ", "), what)
+	}
 }

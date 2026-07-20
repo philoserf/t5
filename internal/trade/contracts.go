@@ -1,9 +1,33 @@
 package trade
 
-// Delivery terms and mail (Book 2 pp.210, 220).
+// Delivery terms and mail (Book 2 pp.209, 210, 220).
 
-// MailRatePerTon is the per-jump rate for a ton of mail; the ship must carry a
-// 1-ton Mail Vault (Book 2 p.220).
+// MailRatePerTon is the premium rate for a ton of mail (Book 2 p.209, "Each ton
+// of mail is shipped at a premium rate of Cr15,000").
+//
+// Per jump is this package's reading, not the book's words: p.209 states the rate
+// without a period, and "Bid is per Jump" is said on p.220 of the CONTRACT table
+// only. Freight's "to the starship's next port of call" makes per-jump the natural
+// reading for a shipment too, but it is an inference.
+// Mail is always incidental — never a major or minor lot — and every lot is at
+// least one ton, so this is also the smallest mail payday. On the p.220
+// shipment side the payment is a voucher for the same Cr15,000, redeemable at
+// any class-A starport.
+//
+// Carrying mail at all is conditional, and the book states three separate
+// conditions in two places:
+//
+//   - "To be allowed to carry mail, the ship must be armed and the crew must
+//     include a gunner" (p.209).
+//   - "The ship must have an installed 1-ton Mail Vault" (p.220).
+//   - "Destination World must be at least Importance-2 less than current world"
+//     (p.220). This one is *directional* — mail flows from the more important
+//     world to the less important one — and so is not the same test as the
+//     long-term contract's symmetric Importance difference at mailContractBid.
+//
+// None of the three is enforced here. This package prices mail; it holds no
+// ship, no crew, and no pair of worlds to test them against, so a caller
+// building a mail workflow must gate on them itself before charging this rate.
 const MailRatePerTon = 15_000 // Cr per ton
 
 // StandardDeliveryDays is the customary window local merchants have to deliver
@@ -29,8 +53,12 @@ func NonStandardTermsSurcharge(amount int) int {
 
 // mailContractBid holds the long-term mail-contract low bids in Cr per jump for a
 // 10-round-trip and a 5-round-trip commitment, indexed by 2D roll - 2 (Book 2
-// p.220). A contract runs between two worlds whose Importance differs by at least
-// 2, and the ship must carry a 1-ton Mail Vault.
+// p.220). The ship names a route "between two worlds with an Importance
+// difference of at least 2" — symmetric, unlike the per-shipment destination
+// rule at MailRatePerTon — and "must have an installed 1-ton Mail Vault"; the
+// armed-and-gunner condition of p.209 applies to carrying mail at all. The
+// contract goes to a low bid: roll 2D, and if the bid this table returns is
+// acceptable to the captain, the ship wins it.
 var mailContractBid = [11]struct{ tenTrip, fiveTrip int }{
 	{8_000, 4_000},   // 2D = 2
 	{10_000, 6_000},  // 3
@@ -49,6 +77,13 @@ var mailContractBid = [11]struct{ tenTrip, fiveTrip int }{
 // contract at the given 2D roll (Book 2 p.220). roundTrips of 10 or more uses the
 // ten-round-trip column; fewer uses the five-round-trip column. The 2D roll is
 // clamped to the table's 2-12 range.
+//
+// Renewal is not modelled. The book adds that "10 Round Trips in a calendar
+// year allows negotiating a similar contract (at one level of bid higher) for
+// the same route in the next year" — but a bid level is a step along the 2D
+// axis, so a renewal is this table read one row up, and that needs a calendar
+// and a per-route trip tally that nothing in this package keeps. A caller
+// tracking those can renew by calling this with the previous roll plus one.
 func MailContractBid(twoD, roundTrips int) int {
 	bid := mailContractBid[clamp(twoD, 2, 12)-2]
 	if roundTrips >= 10 {

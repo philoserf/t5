@@ -1,16 +1,17 @@
 package main
 
 import (
-	"errors"
-	"flag"
-	"os"
-	"os/exec"
 	"strings"
 	"testing"
 
-	"github.com/philoserf/t5/internal/cli"
+	"github.com/philoserf/t5/internal/clitest"
 	"github.com/philoserf/t5/internal/shipgen"
 )
+
+// command runs shipgen end to end; see internal/clitest.
+var command = clitest.Command{Name: "shipgen", Main: main}
+
+func TestMain(m *testing.M) { command.TestMain(m) }
 
 // murphyFlags are the Murphy-class Scout's design flags (Book 2 pp.42-43), the
 // package's golden ship: 100t Hull-A, TL-12, Lifting Body, Maneuver-A + Jump-A +
@@ -213,16 +214,9 @@ func TestLetterOrdinal(t *testing.T) {
 
 // TestMainRejectsBadFlags is the end-to-end half of TestSpecFromFlagsRejects: a
 // rejected flag must reach the caller as the shared CLI contract says — the
-// message on stderr, nothing on stdout (a piped record stream stays clean), and
-// exit cli.FailureCode. main calls os.Exit, so each case runs in a subprocess
-// (the idiom internal/cli's own tests use).
+// message on stderr, nothing on stdout (a piped record stream stays clean), exit
+// cli.FailureCode, and no seed named for a run that designed nothing (#293).
 func TestMainRejectsBadFlags(t *testing.T) {
-	if os.Getenv("SHIPGEN_TEST_MAIN") == "1" {
-		mainChild()
-
-		return // not reached
-	}
-
 	cases := map[string][]string{
 		"invalid jump drive":     {"-jump", "I"},
 		"multi-char jump drive":  {"-jump", "AB"},
@@ -237,100 +231,63 @@ func TestMainRejectsBadFlags(t *testing.T) {
 	}
 	for name, args := range cases {
 		t.Run(name, func(t *testing.T) {
-			stdout, stderr, code := runMainChild(t, args...)
-
-			if code != cli.FailureCode {
-				t.Errorf("exit code = %d, want %d (stderr %q)", code, cli.FailureCode, stderr)
-			}
-
-			if strings.TrimSpace(stderr) == "" {
-				t.Errorf("nothing on stderr; a rejected flag must say why")
-			}
-			// The whole point of the convention: no ship record on stdout.
-			if out := strings.TrimSpace(stdout); out != "" {
-				t.Errorf("wrote %q to stdout, want nothing", out)
-			}
-			// #293: the seed is named only once the flags check out, so a run
-			// that designed nothing must not claim one.
-			if strings.Contains(stderr, "seed ") {
-				t.Errorf("named a seed for a run that designed nothing: %q", stderr)
-			}
+			// -hull puts these on the design path, which is where they are read.
+			command.Run(t, append([]string{"-hull", "A"}, args...)...).AssertRejected(t)
 		})
 	}
 }
 
+// TestMainRejectsDesignFlagsWithoutHull is #315: without -hull the ship is rolled,
+// not designed, so a design flag has nothing to act on. Each of the ten used to be
+// discarded in silence — "-tl 99" printed a well-formed TL-14 ship at exit 0 — and
+// must now be refused like any other input the command cannot honor.
+func TestMainRejectsDesignFlagsWithoutHull(t *testing.T) {
+	cases := map[string][]string{
+		"tech level": {"-tl", "99"},
+		// A design flag set to its own default value is still input the caller
+		// typed and the random path still cannot honor, so "was it set" is asked
+		// of flag.Visit, not of the value.
+		"tech level at the flag default": {"-tl", "12"},
+		// ...and 0 is a legal Tech Level, so it is not "unset" by any reading.
+		"tech level zero": {"-tl", "0"},
+		"config":          {"-config", "L"},
+		"structure":       {"-structure", "shell"},
+		"armor":           {"-armor", "2"},
+		"maneuver drive":  {"-maneuver", "A"},
+		"jump drive":      {"-jump", "A"},
+		"power plant":     {"-power", "A"},
+		"mission":         {"-mission", "S"},
+		"weapon":          {"-weapon", "beamlaser"},
+		"defense":         {"-defense", "blackglobe"},
+		// The message should name the flags, so several at once still resolves.
+		"several at once": {"-tl", "99", "-config", "L", "-armor", "2"},
+	}
+	for name, args := range cases {
+		t.Run(name, func(t *testing.T) {
+			command.Run(t, args...).AssertRejected(t)
+		})
+	}
+}
+
+// TestMainRandomShipStillRuns: the fix rejects design flags, not the random path
+// itself — with only the shared flags, an unseeded run still rolls a ship and
+// names the seed that would reproduce it.
+func TestMainRandomShipStillRuns(t *testing.T) {
+	res := command.Run(t, "-n", "2")
+	res.AssertReportedSeed(t)
+
+	if !strings.Contains(res.Stdout, "Hull:") {
+		t.Errorf("the ship record belongs on stdout, got %q", res.Stdout)
+	}
+}
+
 // TestMainReportsSeedOnValidRun is the other half of #293: a good command line
-// still names its drawn seed, on stderr, leaving the ship record alone on
-// stdout.
+// still names its drawn seed, on stderr, leaving the ship record alone on stdout.
 func TestMainReportsSeedOnValidRun(t *testing.T) {
-	if os.Getenv("SHIPGEN_TEST_MAIN") == "1" {
-		mainChild()
+	res := command.Run(t, "-hull", "A")
+	res.AssertReportedSeed(t)
 
-		return // not reached
+	if !strings.Contains(res.Stdout, "Hull:") {
+		t.Errorf("the ship record belongs on stdout, got %q", res.Stdout)
 	}
-
-	stdout, stderr, code := runMainChild(t)
-
-	if code != 0 {
-		t.Fatalf("exit code = %d, want 0 (stderr %q)", code, stderr)
-	}
-
-	if !strings.Contains(stderr, "seed ") {
-		t.Errorf("an unseeded run must name its seed on stderr, got %q", stderr)
-	}
-
-	if !strings.Contains(stdout, "Hull:") {
-		t.Errorf("the ship record belongs on stdout, got %q", stdout)
-	}
-
-	if strings.Contains(stdout, "seed") {
-		t.Errorf("seed leaked onto the record stream: %q", stdout)
-	}
-}
-
-// mainChild is the subprocess half of the end-to-end tests: it rebuilds a clean
-// command line from the args after "--" and runs main as shipgen would. It
-// passes no -seed, so every case exercises the drawn-seed path; the ship is
-// deterministic anyway, since Design rolls no dice.
-func mainChild() {
-	args := flag.Args() // read before the reset discards them
-	flag.CommandLine = flag.NewFlagSet("shipgen", flag.ExitOnError)
-
-	os.Args = append([]string{"shipgen", "-hull", "A"}, args...)
-
-	main()
-	os.Exit(0)
-}
-
-// runMainChild runs shipgen's main in a subprocess with the given extra flags
-// and returns its stdout, stderr, and exit code separately. The child re-runs
-// the calling test (its root name, since a subtest shares the same child), which
-// is what routes it back into mainChild.
-func runMainChild(t *testing.T, args ...string) (string, string, int) {
-	t.Helper()
-
-	root, _, _ := strings.Cut(t.Name(), "/")
-
-	cmd := exec.Command(
-		os.Args[0],
-		append([]string{"-test.run=^" + root + "$", "--"}, args...)...)
-	cmd.Env = append(os.Environ(), "SHIPGEN_TEST_MAIN=1")
-
-	var stdout, stderr strings.Builder
-
-	cmd.Stdout = &stdout
-	cmd.Stderr = &stderr
-
-	err := cmd.Run()
-
-	code := 0
-
-	var exit *exec.ExitError
-	if errors.As(err, &exit) {
-		code = exit.ExitCode()
-	} else if err != nil {
-		t.Fatalf("child failed: %v (stderr %q)", err, stderr.String())
-	}
-
-	return stdout.String(), stderr.String(), code
 }
