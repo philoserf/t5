@@ -28,10 +28,12 @@ type tcRule struct {
 // Farming) awaits the rest of systemgen per-world placement (catalog #15); and
 // the political and special codes are referee-assigned.
 var tcRules = []tcRule{
-	// Planetary. As (asteroid belt) is deliberately absent: it is not a UWP code
-	// but a body-type fact, since a belt and a tiny Size-0 world share the same
-	// profile. TradeClassificationsWithContext adds it from the caller's belt
-	// context (#324/#328).
+	// Planetary. As (asteroid belt) is a Chart-D UWP code — Siz0/Atm0/Hyd0 (Book 3
+	// p.26, and the p.16 rule that a Size-0 mainworld IS a belt). It is correct for
+	// a mainworld and for a genuine Planetoids belt, but a Size-0 secondary Worldlet
+	// renders the same St000... without being a belt, so TradeClassificationsWithContext
+	// strips As from a non-belt non-mainworld (#324).
+	{code: "As", siz: "0", atm: "0", hyd: "0"},
 	{code: "De", atm: "23456789", hyd: "0"},
 	{code: "Fl", atm: "ABC", hyd: "123456789A"},
 	{code: "Ga", siz: "678", atm: "568", hyd: "567"},
@@ -119,9 +121,10 @@ func rankOf(code string) int {
 
 // TradeClassifications returns the two-letter trade classification codes a
 // mainworld qualifies for, in table order. It reports only classifications
-// determinable from the UWP alone; see tcRules for what is intentionally left
-// out — including As, which needs the caller's belt context and is added by
-// TradeClassificationsWithContext, not here.
+// determinable from the UWP; see tcRules for what is intentionally left out. It
+// emits As for any Size0/Atm0/Hyd0 profile (correct for a mainworld, Book 3 p.16);
+// TradeClassificationsWithContext strips As from a secondary world that is not a
+// belt, since a Size-0 Worldlet shares the profile without being one (#324).
 func TradeClassifications(p uwp.Profile) []string {
 	var out []string
 

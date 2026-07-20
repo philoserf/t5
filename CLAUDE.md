@@ -60,12 +60,14 @@ Tooling (go, go-task, golangci-lint, poppler's `pdftotext`) is pinned in `Brewfi
 - `internal/ehex/` — Traveller extended-hex digits (0-9, A-Z omitting I and O). `Digit`
   encodes, `ParseDigit` decodes. Every UWP characteristic is an eHex value.
 - `internal/uwp/` — the `Profile` type and its `String` in StSAHPGL-T form (e.g. `A788899-C`).
-  `BeltSize` (0) is the one Size digit that is a **code, not a dimension** — a field of asteroids —
-  but belt-ness is **not readable from a Profile**: a belt and a genuinely tiny Size-0 world render
-  identically (`St000...`). So a Profile alone cannot tell them apart, and `uwp.Profile.IsBelt` was
-  **removed** in #328 precisely because it was `Size == BeltSize` in disguise — the banned comparison
-  under a trustworthy name. Belt-ness is a body fact carried alongside the Profile: `worldgen.World.Belt`
-  for a mainworld, `OtherWorldType == Planetoids` for a secondary world. `BeltSize` remains only for
+  `BeltSize` (0) is the one Size digit that is a **code, not a dimension** — a field of asteroids.
+  Whether Size 0 _means_ a belt depends on the body, which is why the reader is **not** a `Profile`
+  method: a **mainworld** with Size 0 is a belt (Book 3 p.16, "determined when World Size is
+  generated"), but a **secondary** Size-0 world usually is not — a Worldlet is a tiny solid world that
+  renders the same `St000...`, and only a `Planetoids` body is a belt. A Profile alone cannot tell
+  them apart, so `uwp.Profile.IsBelt` was **removed** in #328 (it was `Size == BeltSize`: right for a
+  mainworld, wrong for a Worldlet). Ask the body fact: `worldgen.World.Belt` for a mainworld (which
+  _does_ derive from Size 0), `OtherWorldType.IsBelt()` for a secondary. `BeltSize` remains only for
   genuine dimension uses (the rendered digit; the Size-0 floor below which nothing caps a satellite).
 - `internal/worldgen/` — mainworld UWP creation (Book 3 pp. 16-25). The characteristic
   formulas are **pure functions** taking their rolls as arguments (test them at their edges);
@@ -203,14 +205,16 @@ These have each been re-litigated at least once. The full reasoning lives in the
   has with itself, and #300 was mis-resolved that way twice. The cell is deliberately asserted in
   two catalogs (`TestDesignDriveStageCatalogP127`, `…P134`); do not collapse either assertion, and
   never re-introduce an `mcr == 0`-style sentinel that opts a row out of the check.
-- **uwp, belt-ness is a body fact, never a Size read.** A belt and a genuinely tiny Size-0 world
-  render identically (`St000...`), so a Profile cannot tell them apart — `Profile.IsBelt` was the
-  banned `Size == 0` comparison in disguise and was **removed** in #328. Ask the body's type instead:
-  `worldgen.World.Belt` for a mainworld, `OtherWorldType == Planetoids` for a secondary world. Reading
-  Size-as-belt shipped four times (#213, #200, #309, and #324's phantom As-with-moons). `BeltSize` (0)
-  stays only for genuine dimension uses (the belt's rendered digit; the no-cap floor for satellites).
-  The `As` trade code follows the same rule: it is added by `TradeClassificationsWithContext` from the
-  caller's `Belt` fact, not by the pure `TradeClassifications` digit rules.
+- **uwp, belt-ness is a body fact — Size 0 means belt only for a mainworld.** A mainworld with
+  Size 0 IS a belt (Book 3 p.16); a **secondary** Size-0 world usually is not (a Worldlet is a tiny
+  solid world rendering the same `St000...`, only `Planetoids` is a belt). A Profile cannot tell them
+  apart, so `Profile.IsBelt` — `Size == 0`, right for a mainworld, wrong for a Worldlet — was
+  **removed** in #328. Ask the body fact: `worldgen.World.Belt` for a mainworld (it derives from
+  Size 0), `OtherWorldType.IsBelt()` for a secondary. Reading Size-as-belt for a _secondary_ shipped
+  four times (#213, #200, #309, and #324's phantom As-with-moons). `BeltSize` (0) stays only for
+  genuine dimension uses (the belt's rendered digit; the no-cap floor for satellites). The `As` trade
+  code is a Chart-D UWP code (correct for a mainworld), but `TradeClassificationsWithContext` **strips**
+  it from a secondary world that is not a `Planetoids` belt (`WorldContext.Belt`).
 - **clitest, the two stdout leak checks.** `AssertReportedSeed` runs both an anchored seed-line
   matcher and a broad `"seed"` substring check. They fail in opposite directions and neither
   subsumes the other; collapsing them to the anchored form alone looks like a tidy-up and is a

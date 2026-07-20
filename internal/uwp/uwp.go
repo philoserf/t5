@@ -28,18 +28,24 @@ type Profile struct {
 }
 
 // BeltSize is the Size digit an asteroid belt renders with. It is a *code*, not
-// a dimension: a belt has no diameter, so the digit means "this world is a field
-// of asteroids". A Profile alone cannot tell a belt from a genuinely tiny Size-0
-// world — the two render identically (St000...) — so belt-ness is NOT readable
-// from a Profile. It is a body fact carried alongside it: worldgen.World.Belt for
-// a mainworld, worldgen.OtherWorldType (Planetoids) for a secondary world. Every
-// rule that once compared Size to 0 to find a belt asks that instead. Reading
-// Size-as-belt is a defect this codebase shipped three times (#213, #200, #309)
-// and the phantom-moons bug #324; #328 removed the Size==0 reader that invited it.
+// a dimension: a belt has no diameter, so the digit means "field of asteroids".
 //
-// BeltSize remains as the belt's rendered digit and as the smallest Size value a
-// dimension read floors against (a Size-0 world caps no satellite) — both genuine
-// dimension uses, distinct from asking "is this a belt".
+// Whether Size 0 MEANS a belt depends on the body, and that is why the reader is
+// not a Profile method:
+//
+//   - A mainworld with Size 0 is a belt — Book 3 p.16, "determined when World
+//     Size is generated" — whether the sector map forced it or the 2D-2 roll came
+//     up 0. That fact is carried as worldgen.World.Belt.
+//   - A SECONDARY world with Size 0 is usually NOT a belt: a Worldlet rolls a tiny
+//     solid world that renders the same St000..., and only a Planetoids body is a
+//     belt. That fact is its worldgen.OtherWorldType (IsBelt).
+//
+// So a Profile alone cannot answer "is this a belt" — the mainworld and the
+// Worldlet share the profile — which is why uwp.Profile.IsBelt was removed in #328
+// (it was Size == BeltSize, right for a mainworld but wrong for a Worldlet, and it
+// stamped phantom As-with-moons on Size-0 Worldlets, #324/#213/#200/#309). Ask the
+// body fact instead. BeltSize remains for its two genuine dimension uses: the
+// belt's rendered digit, and the smallest Size a satellite cap floors against.
 const BeltSize = 0
 
 // String renders the profile in standard UWP notation: the starport letter,

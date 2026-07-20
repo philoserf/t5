@@ -122,22 +122,30 @@ func TestAssemblerReturnsChartDOrder(t *testing.T) {
 	}
 }
 
-// TestAsIsBeltContext is #324/#328: As is a body-type code, added only from the
-// caller's belt context, never from the UWP. The same Size-0 profile earns As
-// with belt context and not without — for a mainworld and a secondary world alike.
+// TestAsIsBeltContext is #324/#328: As is a Chart-D UWP code, but for a SECONDARY
+// world it means a belt only when the body is a Planetoids belt (ctx.Belt). A
+// mainworld with a Size-0 profile is always a belt (Book 3 p.16), so it keeps As
+// regardless; a secondary keeps As only with Belt, and a Size-0 Worldlet (no Belt)
+// has its spurious As stripped.
 func TestAsIsBeltContext(t *testing.T) {
 	belt := uwp.Profile{Size: 0, Atmosphere: 0, Hydrographics: 0}
 
-	for _, mainworld := range []bool{true, false} {
-		withBelt := TradeClassificationsWithContext(belt, WorldContext{IsMainworld: mainworld, Belt: true})
-		if !slices.Contains(withBelt, "As") {
-			t.Errorf("mainworld=%v belt profile with Belt context = %v, want As", mainworld, withBelt)
+	// Mainworld: As stands whether or not Belt is set — Size 0 is a belt.
+	for _, b := range []bool{true, false} {
+		mw := TradeClassificationsWithContext(belt, WorldContext{IsMainworld: true, Belt: b})
+		if !slices.Contains(mw, "As") {
+			t.Errorf("mainworld Size-0 profile (Belt=%v) = %v, want As (a Size-0 mainworld is a belt)", b, mw)
 		}
+	}
 
-		noBelt := TradeClassificationsWithContext(belt, WorldContext{IsMainworld: mainworld, Belt: false})
-		if slices.Contains(noBelt, "As") {
-			t.Errorf("mainworld=%v Size-0 profile without Belt context = %v, must not have As", mainworld, noBelt)
-		}
+	// Secondary belt (Planetoids): As kept.
+	if sec := TradeClassificationsWithContext(belt, WorldContext{Belt: true}); !slices.Contains(sec, "As") {
+		t.Errorf("secondary Planetoids belt = %v, want As", sec)
+	}
+
+	// Secondary non-belt (Worldlet-shaped): the pure classifier's As is stripped.
+	if sec := TradeClassificationsWithContext(belt, WorldContext{Belt: false}); slices.Contains(sec, "As") {
+		t.Errorf("secondary non-belt Size-0 = %v, must not have As", sec)
 	}
 }
 

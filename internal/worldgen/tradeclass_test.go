@@ -49,12 +49,14 @@ func TestTradeClassifications(t *testing.T) {
 		want []string
 	}{
 		{
-			"bare Size-0 profile — no As without belt context",
+			"asteroid belt",
 			uwp.Profile{Size: 0, Atmosphere: 0, Hydrographics: 0, Population: 0},
-			// As is NOT a UWP code: a belt and a tiny Size-0 world share this profile,
-			// so the pure classifier cannot emit As — only Va (Atm 0). As is added by
-			// TradeClassificationsWithContext from the caller's belt fact (#324/#328).
-			[]string{"Va"},
+			// As is a Chart-D UWP code (Siz0/Atm0/Hyd0, Book 3 p.26/p.16), correct for
+			// a mainworld and a genuine belt. A secondary Size-0 Worldlet shares this
+			// profile without being a belt, so TradeClassificationsWithContext strips
+			// As there (#324); the pure classifier still emits it. Pop 0 matches no
+			// population class.
+			[]string{"As", "Va"},
 		},
 		{
 			"vacuum low-pop rock",

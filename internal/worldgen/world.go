@@ -16,11 +16,13 @@ import (
 type World struct { //nolint:recvcheck // deliberate value-reader / pointer-mutator split
 	Profile    uwp.Profile
 	TradeCodes []string
-	// Belt reports whether the mainworld is an asteroid belt (Book 3 p.13) rather
-	// than a solid world. It is a body fact set at generation — GenerateBeltWorld
-	// sets it, GenerateWorld does not — and is the authority every rule asks, since
-	// a Profile alone cannot distinguish a belt from a genuinely tiny Size-0 world
-	// (both render St000...). Reading Size==0 as belt-ness is the #324 defect.
+	// Belt reports whether the mainworld is an asteroid belt. For a mainworld — and
+	// only a mainworld — belt-ness is Size 0: Book 3 p.16 makes it a belt "when
+	// World Size is generated", whether the sector map forced it (GenerateBeltWorld)
+	// or the 2D-2 roll came up 0. The field carries that fact so systemgen asks it
+	// (placement, satellites, port) rather than re-reading the Size digit, and so a
+	// secondary world — where Size 0 does NOT mean belt (a Worldlet is not a belt,
+	// #324) — is never mistaken for one by sharing this accessor.
 	Belt            bool
 	Importance      int
 	Economic        Economic
@@ -63,14 +65,16 @@ func GenerateBeltWorld(r *dice.Roller, gasGiants, belts int, isCapital bool) Wor
 
 func generateWorld(r *dice.Roller, gasGiants, belts int, isCapital, belt bool) World {
 	p := generate(r, belt)
-	tcs := TradeClassificationsWithContext(p, WorldContext{IsMainworld: true, Belt: belt})
+	tcs := TradeClassificationsWithContext(p, WorldContext{IsMainworld: true})
 	naval, scout := RollBases(r, p.Starport)
 	ix := Importance(p, tcs, naval, scout, false)
 
 	return World{
-		Profile:         p,
-		TradeCodes:      tcs,
-		Belt:            belt,
+		Profile:    p,
+		TradeCodes: tcs,
+		// A mainworld is a belt iff its Size is 0 (Book 3 p.16) — whether the belt
+		// param forced it or the 2D-2 roll produced it. See World.Belt.
+		Belt:            p.Size == uwp.BeltSize,
 		Importance:      ix,
 		Economic:        RollEconomic(r, p, ix, gasGiants, belts),
 		Cultural:        RollCultural(r, p, ix),
