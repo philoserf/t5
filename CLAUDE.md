@@ -241,6 +241,11 @@ Tooling (go, go-task, golangci-lint, poppler's `pdftotext`) is pinned in `Brewfi
   stay **separate tables that happen to agree**, because each is printed both ways in the book and
   each is settled by its own worked examples (**Modified** costs /2 on both sides: pp.104/127/134/190
   for drives against the x1 of pp.63/76, pp.83/225/226/251 for weapons against the p.279 appendix).
+  The drive side is a **majority** reading, not a clean one: p.48's sample-ship notes work Modified at
+  x1, note 14 saying "same pricing per ton" in prose. Four printings and two self-reconciling worked
+  columns outweigh two printings and two notes — but the book does not agree with itself, so do not
+  re-open this on finding p.48 (#300 was mis-resolved twice that way). The cell is asserted in
+  `TestDesignDriveStageCatalogP127`, which is what stops it drifting back.
   Drive stage tonnage **rounds up** and there is no tonnage floor — p.77's "no drive may be smaller
   than the Drive-A of the class" is a floor on the size **letter**, which is the only reading under
   which the worked tables' seven sub-Drive-A rows reproduce. Book conflicts are resolved against the

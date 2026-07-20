@@ -183,7 +183,9 @@ func TestDesignDriveStageEfficiency(t *testing.T) {
 // whole — TL, Potential, Tons, and MCr for all eleven stages:
 //
 //   - The Modified cost cell is /2, not the x1 that pp.63 and 76 print. Modified
-//     is 8 tons for MCr4; only 8 x 1/2 gives 4 (see stageData's note).
+//     is 8 tons for MCr4; only 8 x 1/2 gives 4. The book contradicts itself here
+//     — p.48's sample notes work the same stage at x1, in prose — so this row is
+//     asserted deliberately, to hold the resolution stageData documents (#300).
 //   - Tonnage rounds UP: Modified is printed "8 (=7.5)" and Ultimate "4 (=3.7)"
 //     for 15/4 = 3.75, per the footer's "Round against advantage".
 //   - Three of those rows (8, 5, and 4 tons) sit below the 10-ton Jump-A, so
@@ -229,7 +231,7 @@ func TestDesignDriveStageCatalogP127(t *testing.T) {
 		{Alternate, 9, 2, 15, 15, ""},
 		{Improved, 10, 2, 15, 15, ""},
 		{Generic, 10, 1, 15, 8, ""},
-		{Modified, 11, 2, 8, 0, "=7.5"}, // cost disputed: p.127 prints MCr4 (/2), p.48 prints x1 — see note below
+		{Modified, 11, 2, 8, 4, "=7.5"}, // 8t x 1/2 = MCr4, the /2 reading (#300; see stageData's note)
 		{Advanced, 12, 2, 5, 10, ""},
 		{Ultimate, 13, 2, 4, 12, "=3.7"},
 	}
