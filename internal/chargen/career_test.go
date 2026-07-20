@@ -711,3 +711,46 @@ func TestRerollBranchIsDiceNeutralByDefault(t *testing.T) {
 		t.Errorf("an officer changed Branch: mod = %d, want the untouched 9", officer.branchMod)
 	}
 }
+
+// branchSpy records the CareerRecord.Branch it is shown at each end-of-term
+// reselect offer.
+type branchSpy struct {
+	stopAfter
+
+	seen *[]string
+}
+
+func (b branchSpy) RerollBranch(_ Character, rec CareerRecord) bool {
+	*b.seen = append(*b.seen, rec.Branch)
+
+	return false // keep the Branch, so no die is drawn and the stream is unchanged
+}
+
+// TestCareerRecordBranchVisibleToPolicy covers CareerRecord.Branch mid-career.
+// It is assigned at muster-out, but RerollBranch and Continue both receive the
+// record DURING the career and were shown "" for its whole length — so a policy
+// written the natural way ("reroll unless I am already in Flight") rerolled every
+// term, drew an extra die each time, and landed the character in a Branch he had
+// never chosen.
+//
+// A constant die source rather than a script: the assertion is about what the
+// policy is shown, not about an exact traced stream, and a 40-face script would
+// pin dice this test does not care about. End 2 keeps him enlisted — an officer
+// may not change Branch, so a commissioned character never reaches the hook.
+func TestCareerRecordBranchVisibleToPolicy(t *testing.T) {
+	c := Character{scores: [count]int{12, 12, 2, 12, 10, 12}, Age: 18}
+
+	var seen []string
+
+	RunCareer(dice.NewSource(func() int { return 3 }), branchSpy{stopAfter{2}, &seen}, &c, SoldierCareer)
+
+	if len(seen) != 2 {
+		t.Fatalf("RerollBranch offered %d times, want 2 (once per term)", len(seen))
+	}
+
+	for i, got := range seen {
+		if got != "Protected" {
+			t.Errorf("term %d: policy was shown Branch %q, want Protected", i+1, got)
+		}
+	}
+}

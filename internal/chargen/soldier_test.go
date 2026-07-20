@@ -2,6 +2,7 @@ package chargen
 
 import (
 	"slices"
+	"strings"
 	"testing"
 
 	"github.com/philoserf/t5/internal/dice"
@@ -217,16 +218,24 @@ func TestSelectBranchFailedSocFallsBack(t *testing.T) {
 // policy cannot perturb the dice stream on its way out.
 func TestSelectBranchRejectsOutOfRangeIndex(t *testing.T) {
 	defer func() {
-		if recover() == nil {
-			t.Error("an out-of-range SelectBranch index did not panic")
+		// Assert on the message, not merely that something panicked: an empty
+		// NewScripted panics at construction, so a test that only checks "did it
+		// panic" passes whether or not the bounds guard exists.
+		r := recover()
+		if r == nil {
+			t.Fatal("an out-of-range SelectBranch index did not panic")
+		}
+
+		if msg, ok := r.(string); !ok || !strings.Contains(msg, "SelectBranch index 8") {
+			t.Errorf("panicked with %v, want the SelectBranch bounds message", r)
 		}
 	}()
 
 	c := Character{scores: [count]int{7, 7, 7, 7, 7, 12}}
 	run := careerRun{}
-	// row 9 is off the 1-8 table; NewScripted provides no dice, so a Soc check
-	// before the bounds test would panic for the wrong reason.
-	selectBranch(dice.NewScripted(), selectingPolicy{row: 9}, &c, &run, SoldierCareer.BranchOps)
+	// row 9 is off the 1-8 table. Two faces are scripted, enough for a Soc check,
+	// so reaching the check would NOT panic — only the bounds guard can.
+	selectBranch(dice.NewScripted(3, 4), selectingPolicy{row: 9}, &c, &run, SoldierCareer.BranchOps)
 }
 
 // TestDefaultPolicyDrawsNoSocCheck is why every existing golden is undisturbed:
@@ -240,5 +249,90 @@ func TestDefaultPolicyDrawsNoSocCheck(t *testing.T) {
 
 	if run.branchName != "Artillery" {
 		t.Errorf("Branch = %q, want Artillery (rolled, unselected)", run.branchName)
+	}
+}
+
+// reselectPolicy takes the p.66 end-of-term "reselect" — the half #298 left out
+// because it needs the Soc gate to be a decision rather than a giveaway.
+type reselectPolicy struct {
+	goldenPolicy
+
+	row int
+}
+
+func (reselectPolicy) RerollBranch(Character, CareerRecord) bool      { return true }
+func (s reselectPolicy) SelectBranch(Character, []Branch) (int, bool) { return s.row - 1, true }
+
+// TestRerollBranchTakesTheSelectPath covers the end-of-term reselect, which is
+// the headline of the Soc-gate change and was reachable only through a policy
+// answering true to both RerollBranch and SelectBranch — a combination no test
+// built. It also pins where the Soc check lands in the stream: rerollBranch runs
+// after the term and before Continue.
+func TestRerollBranchTakesTheSelectPath(t *testing.T) {
+	c := Character{scores: [count]int{7, 7, 7, 7, 7, 12}}
+	run := careerRun{branchName: "Infantry"}
+	// Soc 12, and a check of 7 passes, so the selection lands and no branch die is
+	// drawn. Exactly two faces are scripted: a third draw would panic.
+	rerollBranch(dice.NewScripted(3, 4), reselectPolicy{row: 8}, &c, &run, SoldierCareer, CareerRecord{})
+
+	if run.branchName != "Medical" || run.branchRoll != 8 {
+		t.Errorf("after reselect: %q at roll %d, want Medical at 8", run.branchName, run.branchRoll)
+	}
+}
+
+// TestRerollBranchNotOfferedToOfficers is the guard the select path must not
+// erode: Book 1 p.66 gives the end-of-term change to a non-officer only ("A
+// non-officer character may change (reselect or reroll) Branch"). An officer must
+// reach neither the Soc check nor the roll, so no dice are scripted at all.
+func TestRerollBranchNotOfferedToOfficers(t *testing.T) {
+	c := Character{scores: [count]int{7, 7, 7, 7, 7, 12}}
+	run := careerRun{branchName: "Infantry", officer: true}
+
+	// One face: too few for the Soc check (which would panic) and exactly enough
+	// for a branch roll (which would change the Branch). Either wrong path is caught.
+	rerollBranch(dice.NewScripted(5), reselectPolicy{row: 8}, &c, &run, SoldierCareer, CareerRecord{})
+
+	if run.branchName != "Infantry" {
+		t.Errorf("an officer's Branch changed to %q, want Infantry unchanged", run.branchName)
+	}
+}
+
+// TestRiskXSRaisesTheSameTermPromotion pins an ordering the book's only traced
+// example cannot: Eneri Dinsha fails his Risk in both terms, so it never shows an
+// XS earned and spent in the same term. Book 1 p.65 runs a term Risk -> Reward ->
+// Promotion (the p.72 narrative follows exactly that order), so a badge earned by
+// holding the Risk is in hand before the promotion roll and raises its target.
+// Neither armed-forces golden distinguishes it — both clear their targets either
+// way — so without this test the ordering is unpinned.
+func TestRiskXSRaisesTheSameTermPromotion(t *testing.T) {
+	// End 8, no prior medals, and a Technical-shaped branch (Ops DM 6) so the four
+	// Operations rolls land on Base and the net Branch/Ops mod is 0, as the goldens
+	// arrange. The Enlisted Promotion rolls 10: it clears End 8 + both of this
+	// term's XS badges (+2) but not End 8 + the Reward badge alone (+1). That is the
+	// whole point — a one-point difference decides the rank.
+	c := Character{scores: [count]int{8, 8, 8, 8, 8, 8}}
+	run := careerRun{ccPool: []Characteristic{Endurance}, rank: 1, branchOpsDM: 6}
+
+	outcome := runTerm(dice.NewScripted(
+		3, 3, 3, 3, // 4 Operations rolls, each 3+6 = 9 -> Base (mod 0)
+		3, 4, // risk 7 vs End 8: held -> XS (mods +1)
+		3, 4, // reward 7, enlisted -> Medals line 7 = XS (mods +2)
+		6, 6, // commission 12 vs End 8: fails
+		4, 6, // enlisted promotion 10 vs End 8 + 2 = 10: promotes
+		1, 1, 1, 1, 1, // 4 term skills + 1 for promoting
+	), stopAfter{}, &c, &run, SoldierCareer)
+
+	if outcome != Ongoing {
+		t.Fatalf("outcome = %v, want Ongoing", outcome)
+	}
+
+	if c.MedalCount() != 2 || c.MedalMods() != 2 {
+		t.Fatalf("medals = %d mods = %d, want 2 and 2 (an XS for the Risk, an XS for the Reward)",
+			c.MedalCount(), c.MedalMods())
+	}
+
+	if run.rank != 2 {
+		t.Errorf("rank = %d, want 2 — the term's own Risk XS raises its promotion target",
+			run.rank)
 	}
 }

@@ -103,7 +103,8 @@ type Rank struct {
 }
 
 // A PromotionRule is a rank-advancement roll: 2D at or under a characteristic,
-// optionally raised by the character's Medals and Wound Badges, or Publications.
+// optionally raised by the character's Medal mods, or Publications. Wound Badges
+// do NOT raise it — see promoted, which resolves that book conflict.
 type PromotionRule struct {
 	Char Characteristic
 	// MedalMods raises the promotion target by the character's summed Medal mods
@@ -228,6 +229,10 @@ type BranchOps struct {
 // earns and coincides only because Soldier/Spacer/Marine are today's only
 // RewardMedal careers; hasRanks is broader still, matching the Merchant, Scholar
 // and Functionary, none of which print the XS line.
+//
+// Value receiver, like every other Career method, despite Career being 4384 bytes:
+// this inlines at all three call sites, so the copy is elided. Verified with
+// `go build -gcflags=-m`.
 func (c Career) armedForces() bool { return c.BranchOps != nil }
 
 // branchFor returns the Branch for a branch roll, read from the column matching
@@ -606,11 +611,20 @@ func runCareer(r *dice.Roller, p Policy, c *Character, run *careerRun, career Ca
 			break
 		}
 
+		// Keep the record's Branch in step with the run before any policy hook reads
+		// it. rec is passed by value to RerollBranch and Continue, and assigning it
+		// only at muster-out (below) left both seeing "" for the whole career — so a
+		// policy meaning "keep Flight" rerolled every term, drawing an extra die and
+		// landing the character somewhere he never chose.
+		rec.Branch = run.branchName
+
 		// The term is over and the character survived it: a non-officer may change
 		// Branch (Book 1 p. 66, "at the end of each Term"). It runs before the
 		// Continue roll — the change belongs to the term that just ended, and the
 		// Continue roll reads no Branch, so the order is not observable.
 		rerollBranch(r, p, c, run, career, rec)
+
+		rec.Branch = run.branchName // rerollBranch may have just changed it
 
 		if !continues(r, p, *c, career, rec, run) {
 			rec.Outcome = MusteredOut
@@ -835,9 +849,14 @@ func medalFor(rawRoll int, officer bool) Medal {
 		line++
 	}
 
-	// No clamp: 2D is 2..12 and the Officer bump tops out at 13, so every reachable
-	// line is a real row. An index outside that came from something other than a
-	// successful Reward roll, and should fail loudly rather than award a medal.
+	// 2D is 2..12 and the Officer bump tops at 13, so every reachable line is a real
+	// row. Rather than clamp an unreachable value into one, fail on it: lines 0 and 1
+	// are inside the array and would hand back a nameless zero-value Medal, which
+	// MedalCount would count and no sheet could render.
+	if line < 2 || line >= len(medalsTable) {
+		panic(fmt.Sprintf("chargen: medal line %d out of range 2-%d", line, len(medalsTable)-1))
+	}
+
 	return medalsTable[line]
 }
 
@@ -925,7 +944,12 @@ func (bo *BranchOps) officerBranchNamed(name string) (Branch, bool) {
 func selectBranch(r *dice.Roller, p Policy, c *Character, run *careerRun, bo *BranchOps) bool {
 	col := bo.column(run.officer)
 
-	idx, want := p.SelectBranch(*c, col[1:])
+	// A copy, not col[1:]: that slice aliases the package-level career table, so a
+	// policy that sorted it to pick the best Mod would permanently reorder the rules
+	// data for every character generated afterwards.
+	available := append([]Branch(nil), col[1:]...)
+
+	idx, want := p.SelectBranch(*c, available)
 	if !want {
 		return false
 	}
@@ -934,8 +958,8 @@ func selectBranch(r *dice.Roller, p Policy, c *Character, run *careerRun, bo *Br
 	// is a policy bug, not a rule outcome — panic rather than quietly rolling and
 	// leaving the character in a Branch nobody chose. This is the same treatment
 	// awardSkillsN gives an out-of-range skill column.
-	if idx < 0 || idx >= len(col)-1 {
-		panic(fmt.Sprintf("chargen: SelectBranch index %d out of range 0-%d", idx, len(col)-2))
+	if idx < 0 || idx >= len(available) {
+		panic(fmt.Sprintf("chargen: SelectBranch index %d out of range 0-%d", idx, len(available)-1))
 	}
 
 	// Checked before the roll, so a buggy policy fails without first perturbing the
@@ -1426,7 +1450,8 @@ func awardCitizenLife(p Policy, c *Character, run *careerRun) {
 // failing that, they roll Enlisted Promotion, and an officer rolls Officer
 // Promotion. A single-ladder career (no officer track, e.g. the Scholar) only
 // rolls its one promotion. Promotion (not Commission) targets are raised by
-// Medals, Wound Badges, or Publications. Reaching a rank grants its auto-skill.
+// Medal mods or Publications — not Wound Badges (see promoted). Reaching a rank
+// grants its auto-skill.
 // It reports whether the character commissioned or promoted this term (which
 // earns one extra skill, Book 1 p. 82).
 func resolveRank(r *dice.Roller, p Policy, c *Character, run *careerRun, career Career) bool {
@@ -1500,8 +1525,12 @@ func attemptTenure(r *dice.Roller, c *Character, rule TenureRule) {
 // Mods for Soldier / Spacer / Marine Promotion" (p.70) — and, decisively, the only
 // dice-traced example: Eneri Dinsha ends his first term holding a Wound Badge and
 // an XS, and promotes against "Soc plus Medal Mods (10 +1) = 11" (p.72). The badge
-// is not in that sum. A worked example beats a footnote, so the badge is excluded
-// and the field kept (it is still a muster-out and Fame input).
+// is not in that sum. A worked example beats a footnote, so the badge is excluded.
+//
+// WoundBadges is kept, but note it is now WRITE-ONLY in the engine: it is
+// incremented on a Wounded result and printed by cmd/chargen, and nothing reads it
+// mechanically. Book 1 p.91 gives it consequences this package has not implemented,
+// so it is a record awaiting a consumer, not a live input.
 //
 // The same example fixes the mod's SIZE: his second-term promotion is "(10 +1+2)
 // = 13", the first term's XS plus that term's MCUF. Medals contribute their table

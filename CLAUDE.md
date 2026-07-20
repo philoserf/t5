@@ -128,7 +128,9 @@ Tooling (go, go-task, golangci-lint, poppler's `pdftotext`) is pinned in `Brewfi
   generation is deterministic and testable. The rank step (`resolveRank`) runs after Risk & Reward
   for a surviving armed-forces character: an enlisted soldier rolls Commission (success → officer
   track) else Enlisted Promotion, an officer rolls Officer Promotion; promotion targets are raised
-  by `Character.Medals` (a Reward success) and `WoundBadges`, and each rank grants its automatic
+  by the summed p.70 table mods of the character's `Medals` — earned on a held Risk (an XS) as
+  well as a passed Reward — and **not** by `WoundBadges`, a book conflict resolved against the
+  Eneri Dinsha worked example (p.72) and documented at `promoted`. Each rank grants its automatic
   skill. Careers are data, each a file + hand-traced golden: `ScoutCareer` (`scout.go`, p. 79),
   `RogueCareer` (`rogue.go`, p. 84 — FixedCC), `SoldierCareer` (`soldier.go`, p. 82 — the first
   ranked career), `MarineCareer` (`marine.go`, p. 86), `SpacerCareer` (`spacer.go`, p. 81 — the
