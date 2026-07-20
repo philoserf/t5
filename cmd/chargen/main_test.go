@@ -5,10 +5,57 @@ import (
 	"testing"
 
 	"github.com/philoserf/t5/internal/chargen"
+	"github.com/philoserf/t5/internal/clitest"
 	"github.com/philoserf/t5/internal/dice"
 	"github.com/philoserf/t5/internal/uwp"
 	"github.com/philoserf/t5/internal/worldgen"
 )
+
+// command runs chargen end to end; see internal/clitest.
+var command = clitest.Command{Name: "chargen", Main: main}
+
+func TestMain(m *testing.M) { command.TestMain(m) }
+
+// TestMainReportsSeedOnValidRun is #316 for chargen: reportSeed is an obligation
+// the compiler cannot enforce, so this is what fails if the call is ever dropped.
+// chargen calls it from two places — the bare-UPP path and the career path — and
+// each is a separate chance to forget.
+func TestMainReportsSeedOnValidRun(t *testing.T) {
+	t.Run("bare UPP", func(t *testing.T) {
+		command.Run(t, "-n", "3").AssertReportedSeed(t)
+	})
+
+	t.Run("career path", func(t *testing.T) {
+		command.Run(t, "-career", "scout").AssertReportedSeed(t)
+	})
+
+	// A career sequence resolves several names before the seed is named; one bad
+	// name anywhere in the list must still take the run down (below), so the good
+	// list has to be shown to survive.
+	t.Run("career sequence", func(t *testing.T) {
+		command.Run(t, "-career", "scout,merchant").AssertReportedSeed(t)
+	})
+}
+
+// TestMainRejectsBadFlags: an unresolvable career is checked before reportSeed, so
+// a rejected run exits 2 with its reason on stderr, no character on stdout, and no
+// seed naming a run that generated nobody (#293).
+func TestMainRejectsBadFlags(t *testing.T) {
+	cases := map[string][]string{
+		"unknown career": {"-career", "starship-mechanic"},
+		// The whole list is resolved up front, so a bad name in any position
+		// rejects the run rather than generating the careers before it.
+		"unknown career later in a sequence": {"-career", "scout,starship-mechanic"},
+		"empty name in a sequence":           {"-career", "scout,"},
+		"zero count":                         {"-n", "0"},
+		"unknown flag":                       {"-nosuchflag"},
+	}
+	for name, args := range cases {
+		t.Run(name, func(t *testing.T) {
+			command.Run(t, args...).AssertRejected(t)
+		})
+	}
+}
 
 // served builds a Character who ran one career, for exercising the sheet's
 // rendering branches without generating a whole life.

@@ -312,6 +312,20 @@ Tooling (go, go-task, golangci-lint, poppler's `pdftotext`) is pinned in `Brewfi
   parses — every per-command check (an unknown density, a bad hull letter) happens after it returns,
   which is why the ordering has to be the caller's. A command with a view flag validates it up front
   for the same reason (`sectorgen.selectView` resolves `-hex`/`-subsector` before the survey runs).
+  A flag the chosen path **cannot honor** is bad input, not a no-op: `shipgen` without `-hull` rolls a
+  random ship, which reads none of the ten design flags, so any of them typed there is a `Fatalf`
+  rather than a silently discarded value (`designFlagsSet`). "Was it set" is asked of `flag.Visit`,
+  never of the value — `-tl 0` is a real Tech Level and `-armor 1` the hull's integral layer, so a
+  default-comparison would wave the caller's own input through as unset.
+- `internal/clitest/` — the end-to-end harness all six CLIs share. `main` calls `os.Exit`, so each
+  case re-executes the test binary as a child that runs `main` instead of the tests; `Command.TestMain`
+  intercepts before `m.Run` (args travel in an env var, so the child ignores the test binary's own
+  flags entirely) and `Command.Run` returns the two streams and the exit code apart. `AssertRejected`
+  / `AssertReportedSeed` assert the whole `internal/cli` contract in one call. The seed line is matched
+  as a **whole line** (`^cmd: seed \d+$`), not as the substring `"seed "` — `flag`'s usage text
+  describes the `-seed` flag and would otherwise read as a seed report on every run `flag` rejects.
+  `reportSeed` is an obligation nothing in the compiler enforces, so every command has a test that
+  fails if the call is dropped.
 
 When adding a generator, transcribe the rule tables/formulas from `docs/reference/` and lock
 them with a golden test built from a worked example in the books.

@@ -7,7 +7,8 @@
 //	        [-weapon "name[:mount[:range]],..."] [-n N] [-seed V]
 //
 // With -hull, a specific ship is designed from the flags; without it, a random
-// ship is generated (-n and -seed apply). Drive/hull letters are A-Z; config is
+// ship is generated, and only -n and -seed apply — a design flag given without
+// -hull is rejected rather than discarded. Drive/hull letters are A-Z; config is
 // one of C B P U S A L. Weapons name a model (and optionally a mount and a range
 // to build it for), e.g. -weapon "beamlaser:T1:orbit,sandcaster" — a hull carries
 // one mount per 100 tons.
@@ -16,6 +17,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"slices"
 	"strings"
 
 	"github.com/philoserf/t5/internal/cli"
@@ -49,7 +51,20 @@ func main() {
 	n, r, reportSeed := cli.SeededRoller("ships")
 
 	if *hull == "" {
-		reportSeed() // a random ship reads none of the design flags
+		// A random ship reads none of the design flags, so a design flag typed
+		// without -hull is input that cannot be honored. Discarding it silently
+		// printed a well-formed ship at exit 0 while the caller's -tl 99 vanished;
+		// applying it instead would need a rule for which of the ten can constrain
+		// a rolled ship and which cannot. Saying so is the honest answer, and it
+		// is the posture the rest of the command already takes toward bad input.
+		if set := designFlagsSet(); len(set) > 0 {
+			cli.Fatalf(
+				"%s cannot be combined with a random ship; give -hull to design one",
+				strings.Join(set, ", "),
+			)
+		}
+
+		reportSeed() // nothing but -n and -seed was given, so the input is good
 
 		for i := range n {
 			if i > 0 {
@@ -83,6 +98,35 @@ func main() {
 
 		fmt.Println(ship)
 	}
+}
+
+// designFlags are the flags that describe a ship to design, as opposed to -hull
+// (which selects the design path itself) and the shared -n/-seed (which apply to
+// either path).
+var designFlags = []string{
+	"tl", "config", "structure", "armor",
+	"maneuver", "jump", "power", "mission",
+	"weapon", "defense",
+}
+
+// designFlagsSet names the design flags actually present on the command line, in
+// the order flag reports them.
+//
+// It asks flag.Visit — which walks only what was set — rather than comparing each
+// value against its default, because most of these defaults are legal values a
+// caller may well type. "-tl 0" is a real Tech Level and "-armor 1" is the hull's
+// integral layer; a value test would wave both through as unset, and "-tl 0"
+// alongside a random ship is precisely the discarded input this reports.
+func designFlagsSet() []string {
+	var set []string
+
+	flag.Visit(func(f *flag.Flag) {
+		if slices.Contains(designFlags, f.Name) {
+			set = append(set, "-"+f.Name)
+		}
+	})
+
+	return set
 }
 
 type flags struct {
