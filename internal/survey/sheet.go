@@ -68,7 +68,7 @@ func (rec Record) Sheet() string {
 		field("Natives", "%s", mw.NativeStatus)
 	}
 
-	if f, ok := worldgen.PortFacilities(mw.Profile); ok {
+	if f, ok := worldgen.PortFacilities(mw.Profile, mw.Belt); ok {
 		field("Starport", "%c — %s", f.Class, f.Quality)
 		// Most no-port worlds (X, Y) list nothing — but a class-X world with water or
 		// ice still offers local unrefined fuel (Book 3 p.24), so the guard is on the

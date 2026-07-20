@@ -88,7 +88,7 @@ func TestPlaceMainworld(t *testing.T) {
 
 	// An asteroid-belt mainworld (Size 0) is placed via the P2 Belt column
 	// without regard to HZ: 2D=7 -> Belt offset 4; no satellite, no codes.
-	mw5 := worldgen.World{Profile: uwp.Profile{Size: 0}}
+	mw5 := worldgen.World{Profile: uwp.Profile{Size: 0}, Belt: true}
 
 	orbit5, sat5 := placeMainworld(dice.NewScripted(3, 4 /*2D=7*/), primary, &mw5)
 	if orbit5 != 4 || sat5.IsSatellite || len(mw5.TradeCodes) != 0 {
@@ -103,13 +103,13 @@ func TestPlaceMainworld(t *testing.T) {
 	// orbit and collided with the "no orbit" sentinel. It is floored at the star's
 	// innermost legal orbit: 0 for the main-sequence F7 V above, and 3 for an M0 III
 	// giant whose surface engulfs orbits 0-2 (Book 1 p.31 sub-orbits).
-	mw6 := worldgen.World{Profile: uwp.Profile{Size: 0}}
+	mw6 := worldgen.World{Profile: uwp.Profile{Size: 0}, Belt: true}
 
 	if orbit6, _ := placeMainworld(dice.NewScripted(1, 1 /*2D=2*/), primary, &mw6); orbit6 != 0 {
 		t.Errorf("belt mainworld at 2D=2: orbit %d, want 0 (the F7 V floor)", orbit6)
 	}
 
-	mw7 := worldgen.World{Profile: uwp.Profile{Size: 0}}
+	mw7 := worldgen.World{Profile: uwp.Profile{Size: 0}, Belt: true}
 	giant := Star{Type: "M", Decimal: 0, Size: "III"}
 
 	if orbit7, _ := placeMainworld(dice.NewScripted(1, 1 /*2D=2*/), giant, &mw7); orbit7 != 3 {
@@ -140,7 +140,7 @@ func TestTagMainworldClimate(t *testing.T) {
 		t.Errorf("orbit 4 of HZ 4 = %v, want no codes", mw2.TradeCodes)
 	}
 	// A belt mainworld takes no climate codes even in a coded orbit.
-	belt := worldgen.World{Profile: uwp.Profile{Size: 0}}
+	belt := worldgen.World{Profile: uwp.Profile{Size: 0}, Belt: true}
 
 	tagMainworldClimate(&belt, 3, 4, true)
 

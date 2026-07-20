@@ -27,19 +27,20 @@ type Profile struct {
 	TechLevel     int
 }
 
-// BeltSize is the Size digit of an asteroid belt. It is a *code*, not a
-// dimension: a belt has no diameter, so the digit means "this world is a field
-// of asteroids" and every rule that reads Size as a measurement — a satellite
-// cap, a parent body's classification, a downport's placement — must resolve the
-// code first. Reading it as a dimension is a defect this codebase has shipped
-// three times (#213, #200, #309); IsBelt is the one place to ask.
+// BeltSize is the Size digit an asteroid belt renders with. It is a *code*, not
+// a dimension: a belt has no diameter, so the digit means "this world is a field
+// of asteroids". A Profile alone cannot tell a belt from a genuinely tiny Size-0
+// world — the two render identically (St000...) — so belt-ness is NOT readable
+// from a Profile. It is a body fact carried alongside it: worldgen.World.Belt for
+// a mainworld, worldgen.OtherWorldType (Planetoids) for a secondary world. Every
+// rule that once compared Size to 0 to find a belt asks that instead. Reading
+// Size-as-belt is a defect this codebase shipped three times (#213, #200, #309)
+// and the phantom-moons bug #324; #328 removed the Size==0 reader that invited it.
+//
+// BeltSize remains as the belt's rendered digit and as the smallest Size value a
+// dimension read floors against (a Size-0 world caps no satellite) — both genuine
+// dimension uses, distinct from asking "is this a belt".
 const BeltSize = 0
-
-// IsBelt reports whether the profile describes an asteroid belt rather than a
-// solid world (Book 3 p.13; Book 2 p.24, "An Asteroid Mainworld has a Beltport
-// instead"). Prefer it to comparing Size against zero, so that the belt-ness of
-// a world is visible wherever it matters.
-func (p Profile) IsBelt() bool { return p.Size == BeltSize }
 
 // String renders the profile in standard UWP notation: the starport letter,
 // the six eHex characteristic digits, a hyphen, and the eHex Tech Level —

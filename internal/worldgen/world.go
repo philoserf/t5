@@ -14,8 +14,14 @@ import (
 // Extensions, nobility, bases, travel zone, native status, and the population
 // multiplier digit.
 type World struct { //nolint:recvcheck // deliberate value-reader / pointer-mutator split
-	Profile         uwp.Profile
-	TradeCodes      []string
+	Profile    uwp.Profile
+	TradeCodes []string
+	// Belt reports whether the mainworld is an asteroid belt (Book 3 p.13) rather
+	// than a solid world. It is a body fact set at generation — GenerateBeltWorld
+	// sets it, GenerateWorld does not — and is the authority every rule asks, since
+	// a Profile alone cannot distinguish a belt from a genuinely tiny Size-0 world
+	// (both render St000...). Reading Size==0 as belt-ness is the #324 defect.
+	Belt            bool
 	Importance      int
 	Economic        Economic
 	Cultural        Cultural
@@ -57,13 +63,14 @@ func GenerateBeltWorld(r *dice.Roller, gasGiants, belts int, isCapital bool) Wor
 
 func generateWorld(r *dice.Roller, gasGiants, belts int, isCapital, belt bool) World {
 	p := generate(r, belt)
-	tcs := TradeClassificationsWithContext(p, WorldContext{IsMainworld: true})
+	tcs := TradeClassificationsWithContext(p, WorldContext{IsMainworld: true, Belt: belt})
 	naval, scout := RollBases(r, p.Starport)
 	ix := Importance(p, tcs, naval, scout, false)
 
 	return World{
 		Profile:         p,
 		TradeCodes:      tcs,
+		Belt:            belt,
 		Importance:      ix,
 		Economic:        RollEconomic(r, p, ix, gasGiants, belts),
 		Cultural:        RollCultural(r, p, ix),

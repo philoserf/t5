@@ -927,7 +927,7 @@ Primary: M6 V
 Orbits:
         0: Mainworld (1 moon: Dee Y69A000-0 dp)
         1: Gas Giant T LGG (2 moons: Eff YAD4035-5; Aitch Y891002-6)
-        2: Worldlet G000686-4 As Va Ni Na
+        2: Worldlet G000686-4 Va Ni Na
         3: Belt
         4: Iceworld Y541210-3 He Lo Po Fr
         5: Iceworld Y646121-6 Lo Fr (1 moon: Ring)

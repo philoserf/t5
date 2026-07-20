@@ -219,9 +219,11 @@ var highportPop = map[byte]int{'A': 7, 'B': 8, 'C': 9}
 // PortFacilities returns the services for a world's port, from its whole profile:
 // the class fixes most of it, but the highport depends on population, the exotic
 // fuels on tech level (Book 3 p.24), the local-fuel fallback on hydrographics, and
-// the beltport on whether the mainworld is an asteroid belt (Size 0). It reports
-// false for an unknown class letter.
-func PortFacilities(p uwp.Profile) (Facilities, bool) {
+// the beltport on whether the mainworld is an asteroid belt. belt is a body fact
+// the caller supplies (worldgen.World.Belt) rather than a Size read, since a
+// tiny Size-0 world is not a belt and keeps its downport (#324). It reports false
+// for an unknown class letter.
+func PortFacilities(p uwp.Profile, belt bool) (Facilities, bool) {
 	f, ok := portTable[p.Starport]
 	if !ok {
 		return Facilities{}, false
@@ -246,9 +248,9 @@ func PortFacilities(p uwp.Profile) (Facilities, bool) {
 	if f.Fuel == NoFuel && p.Hydrographics >= 1 {
 		f.LocalFuel = true
 	}
-	// An asteroid-belt mainworld (Size 0) has a Beltport in place of a downport
-	// (Book 2 p.24).
-	if p.IsBelt() && f.Downport {
+	// An asteroid-belt mainworld has a Beltport in place of a downport (Book 2
+	// p.24). A tiny Size-0 world that is not a belt keeps its downport.
+	if belt && f.Downport {
 		f.Downport, f.Beltport = false, true
 	}
 

@@ -17,6 +17,13 @@ type WorldContext struct {
 	IsMainworld         bool // the mainworld never earns the secondary codes
 	MainworldIndustrial bool // the system mainworld carries In (enables Mi)
 
+	// Belt reports that the body is an asteroid belt (the As code). It is a body
+	// fact the caller supplies from the world's type — worldgen.World.Belt for a
+	// mainworld, Type == Planetoids for a secondary world — because As cannot be
+	// read from the UWP: a Size-0 Worldlet renders St000... like a belt but is a
+	// tiny solid world, not a field of asteroids (#324).
+	Belt bool
+
 	Orbit   int  // the world's orbit number, for the habitable-zone and climate codes
 	HZOrbit int  // the star's habitable-zone orbit
 	HasHZ   bool // the star has a habitable zone at all
@@ -43,6 +50,13 @@ type WorldContext struct {
 // when it renders instead (World.SecondSurvey).
 func TradeClassificationsWithContext(p uwp.Profile, ctx WorldContext) []string { //nolint:cyclop // Chart D, p.25
 	tcs := TradeClassifications(p)
+	// As (asteroid belt) is a body-type code, not a UWP code: a belt and a tiny
+	// Size-0 world are indistinguishable in the profile, so only the caller's
+	// context knows which this is (#324/#328). Both a belt mainworld and a
+	// Planetoids secondary earn it, so it is added here, before the mainworld gate.
+	if ctx.Belt {
+		tcs = append(tcs, "As")
+	}
 	// The Secondary codes apply only to non-mainworlds (Book 3 Chart D p.26).
 	if !ctx.IsMainworld { //nolint:nestif // mirrors the book's nested contextual checks
 		inHZ := ctx.HasHZ && ctx.Orbit == ctx.HZOrbit

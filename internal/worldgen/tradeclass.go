@@ -28,8 +28,10 @@ type tcRule struct {
 // Farming) awaits the rest of systemgen per-world placement (catalog #15); and
 // the political and special codes are referee-assigned.
 var tcRules = []tcRule{
-	// Planetary.
-	{code: "As", siz: "0", atm: "0", hyd: "0"},
+	// Planetary. As (asteroid belt) is deliberately absent: it is not a UWP code
+	// but a body-type fact, since a belt and a tiny Size-0 world share the same
+	// profile. TradeClassificationsWithContext adds it from the caller's belt
+	// context (#324/#328).
 	{code: "De", atm: "23456789", hyd: "0"},
 	{code: "Fl", atm: "ABC", hyd: "123456789A"},
 	{code: "Ga", siz: "678", atm: "568", hyd: "567"},
@@ -117,7 +119,9 @@ func rankOf(code string) int {
 
 // TradeClassifications returns the two-letter trade classification codes a
 // mainworld qualifies for, in table order. It reports only classifications
-// determinable from the UWP; see tcRules for what is intentionally left out.
+// determinable from the UWP alone; see tcRules for what is intentionally left
+// out — including As, which needs the caller's belt context and is added by
+// TradeClassificationsWithContext, not here.
 func TradeClassifications(p uwp.Profile) []string {
 	var out []string
 

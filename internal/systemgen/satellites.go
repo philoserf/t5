@@ -127,6 +127,7 @@ func rollMoon(r *dice.Roller, orbits *satelliteOrbits, spec moonSpec) Satellite 
 		DoublePlanet: double,
 		TradeCodes: worldgen.TradeClassificationsWithContext(prof, worldgen.WorldContext{
 			MainworldIndustrial: spec.Industrial,
+			Belt:                wt == worldgen.Planetoids,
 			Orbit:               spec.Orbit, HZOrbit: spec.HZOrbit, HasHZ: spec.HasHZ,
 			Satellite: true, SatelliteFar: far,
 		}),
@@ -184,9 +185,9 @@ func (s *System) satelliteParent(o *PlacedOrbit) (OrbitKind, int) {
 		// The accommodating host is a BigWorld (Siz 2D+7), never a belt.
 		return satelliteBody(o.Parent.Profile, false)
 	case o.Kind == KindMainworld:
-		// A mainworld's belt-ness IS its Size digit: 0 is the asteroid-belt code
-		// (Book 3 p.16, and the convention PortFacilities reads for a Beltport).
-		return satelliteBody(s.Mainworld.Profile, s.Mainworld.Profile.IsBelt())
+		// A mainworld's belt-ness is its Belt field, a body fact set at generation —
+		// not its Size digit, which a tiny Size-0 world shares without being a belt.
+		return satelliteBody(s.Mainworld.Profile, s.Mainworld.Belt)
 	case o.Kind == KindWorld && o.World != nil:
 		// A secondary world's belt-ness is its TYPE, not its Size: Planetoids is
 		// the belt (St000PGL-T), while a Size-0 Worldlet is a very small world.
