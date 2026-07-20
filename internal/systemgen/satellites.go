@@ -127,7 +127,7 @@ func rollMoon(r *dice.Roller, orbits *satelliteOrbits, spec moonSpec) Satellite 
 		DoublePlanet: double,
 		TradeCodes: worldgen.TradeClassificationsWithContext(prof, worldgen.WorldContext{
 			MainworldIndustrial: spec.Industrial,
-			Belt:                wt == worldgen.Planetoids,
+			Belt:                wt.IsBelt(),
 			Orbit:               spec.Orbit, HZOrbit: spec.HZOrbit, HasHZ: spec.HasHZ,
 			Satellite: true, SatelliteFar: far,
 		}),
@@ -191,7 +191,7 @@ func (s *System) satelliteParent(o *PlacedOrbit) (OrbitKind, int) {
 	case o.Kind == KindWorld && o.World != nil:
 		// A secondary world's belt-ness is its TYPE, not its Size: Planetoids is
 		// the belt (St000PGL-T), while a Size-0 Worldlet is a very small world.
-		return satelliteBody(o.World.Profile, o.World.Type == worldgen.Planetoids)
+		return satelliteBody(o.World.Profile, o.World.Type.IsBelt())
 	default:
 		// A gas giant or a belt orbit: uncapped, and a belt rolls no moons at all.
 		return o.Kind, worldgen.NoSizeCap

@@ -50,10 +50,9 @@ type WorldContext struct {
 // when it renders instead (World.SecondSurvey).
 func TradeClassificationsWithContext(p uwp.Profile, ctx WorldContext) []string { //nolint:cyclop // Chart D, p.25
 	tcs := TradeClassifications(p)
-	// As (asteroid belt) is a body-type code, not a UWP code: a belt and a tiny
-	// Size-0 world are indistinguishable in the profile, so only the caller's
-	// context knows which this is (#324/#328). Both a belt mainworld and a
-	// Planetoids secondary earn it, so it is added here, before the mainworld gate.
+	// As is a body-type code (see WorldContext.Belt), not a UWP code, and both a
+	// belt mainworld and a Planetoids secondary earn it — so it is added here from
+	// the caller's fact, before the mainworld-only gate below.
 	if ctx.Belt {
 		tcs = append(tcs, "As")
 	}

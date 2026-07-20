@@ -153,8 +153,9 @@ func TestSizeZeroWorldletCarriesNoAs(t *testing.T) {
 		t.Fatalf("expected a Size-0 Worldlet, got %s (Size %d)", wl, wl.Size)
 	}
 
-	// A Worldlet is not Planetoids, so its belt context is false.
-	tcs := TradeClassificationsWithContext(wl, WorldContext{Belt: Worldlet == Planetoids})
+	// Belt-ness comes from the type, exactly as systemgen sources it: a Worldlet
+	// is not Planetoids, so Worldlet.IsBelt() is false and it earns no As.
+	tcs := TradeClassificationsWithContext(wl, WorldContext{Belt: Worldlet.IsBelt()})
 	if slices.Contains(tcs, "As") {
 		t.Errorf("a Size-0 Worldlet must not be classified As (it is a tiny world, not a belt): %v", tcs)
 	}
