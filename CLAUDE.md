@@ -245,7 +245,12 @@ Tooling (go, go-task, golangci-lint, poppler's `pdftotext`) is pinned in `Brewfi
   x1, note 14 saying "same pricing per ton" in prose. Four printings and two self-reconciling worked
   columns outweigh two printings and two notes — but the book does not agree with itself, so do not
   re-open this on finding p.48 (#300 was mis-resolved twice that way). The cell is asserted in
-  `TestDesignDriveStageCatalogP127`, which is what stops it drifting back.
+  **both** catalogs — `TestDesignDriveStageCatalogP127` (MCr4) and `…P134` (Cr2,000,000) — so a
+  revert to x1 fails two tests, not one. That is deliberate: the note above cites p.127 and p.134
+  as two independent columns, and for a while only p.127 actually held the cell, so a revert would
+  have failed once while the note went on claiming two backed it. Do not "simplify" either
+  assertion away, and never re-introduce an `mcr == 0`-style sentinel that opts the row out of the
+  check — that hatch existed, and it was a documented way to silently un-resolve the conflict.
   Drive stage tonnage **rounds up** and there is no tonnage floor — p.77's "no drive may be smaller
   than the Drive-A of the class" is a floor on the size **letter**, which is the only reading under
   which the worked tables' seven sub-Drive-A rows reproduce. Book conflicts are resolved against the
@@ -311,6 +316,12 @@ Tooling (go, go-task, golangci-lint, poppler's `pdftotext`) is pinned in `Brewfi
   reports it via `Notef` ("`sectorgen: seed 16919235832026294750`"), so a run worth keeping can always
   be replayed — re-run with that `-seed` for byte-identical records, or to select another view of the
   same survey (`-hex`, `-sector`). The report is on stderr, so piped records are unaffected.
+  **`README.md` pins actual generated records** (the `sectorgen -seed 42` sample), and nothing in
+  the suite checks them — no test pins CLI output. So a change that shifts a seeded dice stream
+  silently falsifies the README's own reproducibility promise. #321 did exactly that and it
+  survived to review. When a generator's draw sequence changes, grep for pinned sample output and
+  regenerate it, then diff the regenerated block against a fresh run.
+
   It is **deferred, not printed at construction**: `Roller`/`SeededRoller` hand back a `reportSeed`
   func alongside the roller, and each command calls it only once its own flags validate, so a run
   that dies on bad input never names a seed for records it did not generate. `Roller` merely
@@ -342,7 +353,15 @@ Tooling (go, go-task, golangci-lint, poppler's `pdftotext`) is pinned in `Brewfi
   prefix is spelled by hand and is not derived — see the note at `seedNote`). That matters
   because `AssertRejected` uses it for a **negative** assertion ("this run named no seed"), which
   fails open: a matcher drifted off the real wording would stop matching and wave a leaked seed
-  through. `internal/cli`'s own tests are an external `package cli_test` — `clitest` imports `cli`,
+  through.
+
+  The stdout leak check in `AssertReportedSeed` therefore runs **two** checks, and both must stay:
+  `cli.HasSeedReport` for the canonical `Notef` line, plus a broad `"seed"` substring for a seed
+  reaching the record stream by any other path (a header like `fmt.Println("# seed", n)`, a sheet
+  field). They fail in opposite directions and neither subsumes the other — the anchored form
+  cannot see a non-`Notef` leak, and the substring cannot survive a reword. Collapsing them to the
+  anchored matcher alone looks like a tidy-up and is a coverage regression; that mistake shipped
+  once and was caught in review. `internal/cli`'s own tests are an external `package cli_test` — `clitest` imports `cli`,
   so testing from inside would cycle — and they drive `clitest.Command` like any `cmd`, with a
   stand-in `rollgen` whose `Main` dispatches on an env var to the fatal/roll/quiet child.
 
