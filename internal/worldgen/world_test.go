@@ -33,18 +33,20 @@ func TestGenerateBeltWorld(t *testing.T) {
 }
 
 func TestSecondSurveyRegina(t *testing.T) {
-	w := World{
-		Profile:      regina,
-		TradeCodes:   []tradecode.Code{"Ph", "Pa", "Ri"},
-		Importance:   4,
-		Economic:     Economic{Resources: 13, Labor: 7, Infrastructure: 14, Efficiency: 4},
-		Cultural:     Cultural{Heterogeneity: 9, Acceptance: 12, Strangeness: 6, Symbols: 13},
-		Nobility:     "BcCeF",
-		NavalBase:    true,
-		ScoutBase:    true,
-		Zone:         'G',
-		NativeStatus: "Natives",
-	}
+	w := NewWorld(
+		World{
+			Profile:      regina,
+			TradeCodes:   []tradecode.Code{"Ph", "Pa", "Ri"},
+			NavalBase:    true,
+			ScoutBase:    true,
+			Zone:         'G',
+			NativeStatus: "Natives",
+		},
+		4,
+		Economic{Resources: 13, Labor: 7, Infrastructure: 14, Efficiency: 4},
+		Cultural{Heterogeneity: 9, Acceptance: 12, Strangeness: 6, Symbols: 13},
+		"BcCeF",
+	)
 
 	want := "A788899-C Ph Pa Ri {+4}(D7E+4)[9C6D] BcCeF NS -"
 	if got := w.SecondSurvey(); got != want {
@@ -59,7 +61,7 @@ func TestSecondSurveyFieldEdges(t *testing.T) {
 	w := World{
 		Profile:  regina,
 		Zone:     'R',
-		Nobility: "B",
+		nobility: "B",
 	}
 
 	want := "A788899-C - {0}(000+0)[0000] B - R"
@@ -71,7 +73,7 @@ func TestSecondSurveyFieldEdges(t *testing.T) {
 func TestSecondSurveyZeroImportance(t *testing.T) {
 	// Ix of zero renders as "{0}", not "{+0}" (the book's Importance table
 	// shows a bare 0).
-	w := World{Profile: regina, Importance: 0, Nobility: "B"}
+	w := World{Profile: regina, importance: 0, nobility: "B"}
 
 	want := "A788899-C - {0}(000+0)[0000] B - -"
 	if got := w.SecondSurvey(); got != want {
@@ -82,7 +84,7 @@ func TestSecondSurveyZeroImportance(t *testing.T) {
 func TestSetWayStation(t *testing.T) {
 	w := World{Profile: regina, TradeCodes: []tradecode.Code{"Ph"}}
 	base := Importance(w.Profile, w.TradeCodes, w.NavalBase, w.ScoutBase, false)
-	w.Importance = base
+	w.importance = base
 
 	w.SetWayStation()
 
@@ -90,8 +92,8 @@ func TestSetWayStation(t *testing.T) {
 		t.Errorf("WayStation flag not set")
 	}
 
-	if w.Importance != base+1 {
-		t.Errorf("Importance = %d, want %d (base + Way Station bonus)", w.Importance, base+1)
+	if w.Importance() != base+1 {
+		t.Errorf("Importance = %d, want %d (base + Way Station bonus)", w.Importance(), base+1)
 	}
 
 	if got := w.bases(); got != "W" {
@@ -100,8 +102,46 @@ func TestSetWayStation(t *testing.T) {
 	// Idempotent: a second call does not bump Importance again.
 	w.SetWayStation()
 
-	if w.Importance != base+1 {
-		t.Errorf("second SetWayStation re-bumped Importance to %d", w.Importance)
+	if w.Importance() != base+1 {
+		t.Errorf("second SetWayStation re-bumped Importance to %d", w.Importance())
+	}
+}
+
+// TestMutatorsLeaveNoStaleDerivedField is the #330 guard: after a Set* mutator,
+// every derived field that is a pure function of the world's inputs (Importance,
+// Nobility) equals a fresh recompute — none is left stale. Economic and Cultural
+// are the deliberate exception: they are rolled once at generation (dice, from the
+// base Importance), so a survey-phase Way Station's +1 does NOT retroactively
+// change them — the book computes the Extensions before it lays routes and way
+// stations (Book 3 Chart E; the "+1 If Way Station" adjusts {Ix} only). The test
+// pins that they are untouched, so the non-cascade stays a documented choice rather
+// than drifting into an accident.
+func TestMutatorsLeaveNoStaleDerivedField(t *testing.T) {
+	for seed := uint64(1); seed <= 100; seed++ {
+		w := GenerateWorld(dice.NewWithSeed(seed), 2, 1, false)
+		ex, cx := w.Economic(), w.Cultural()
+
+		for _, mutate := range []func(*World){
+			(*World).SetWayStation,
+			func(w *World) { w.SetCapital("Cs") },
+			(*World).SetNavalDepot,
+		} {
+			mutate(&w)
+
+			wantIx := Importance(w.Profile, w.TradeCodes, w.NavalBase, w.ScoutBase, w.WayStation)
+			if w.Importance() != wantIx {
+				t.Fatalf("seed %d: stale Importance %d, recompute gives %d", seed, w.Importance(), wantIx)
+			}
+
+			wantNob := Nobility(w.TradeCodes, w.Importance(), hasCapitalCode(w.TradeCodes))
+			if w.Nobility() != wantNob {
+				t.Fatalf("seed %d: stale Nobility %q, recompute gives %q", seed, w.Nobility(), wantNob)
+			}
+
+			if w.Economic() != ex || w.Cultural() != cx {
+				t.Fatalf("seed %d: a mutator changed the generation-fixed Extensions", seed)
+			}
+		}
 	}
 }
 
@@ -157,7 +197,7 @@ func TestSecondSurveyNoTradeCodes(t *testing.T) {
 		t.Fatalf("this test needs a world with no trade codes; %s has %v", p, tcs)
 	}
 
-	w := World{Profile: p, Nobility: "B"}
+	w := World{Profile: p, nobility: "B"}
 	got := w.SecondSurvey()
 	// Six fields, always: UWP, TCs, extensions, nobility, bases, zone.
 	if n := len(strings.Fields(got)); n != 6 {

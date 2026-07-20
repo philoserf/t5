@@ -12,15 +12,15 @@ import (
 func TestSetCapital(t *testing.T) {
 	// A world with Regina's TCs/Ix, marked the subsector capital, gains Cs and
 	// the capital nobility (Duke, F).
-	w := World{TradeCodes: []tradecode.Code{"Ph", "Pa", "Ri"}, Importance: 4}
+	w := World{TradeCodes: []tradecode.Code{"Ph", "Pa", "Ri"}, importance: 4}
 	w.SetCapital("Cs")
 
 	if got := w.TradeCodes; got[len(got)-1] != "Cs" {
 		t.Errorf("TradeCodes = %v, want trailing Cs", got)
 	}
 
-	if w.Nobility != "BcCeF" {
-		t.Errorf("capital nobility = %q, want BcCeF", w.Nobility)
+	if w.Nobility() != "BcCeF" {
+		t.Errorf("capital nobility = %q, want BcCeF", w.Nobility())
 	}
 	// Idempotent: a second call does not duplicate the code.
 	w.SetCapital("Cs")

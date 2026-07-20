@@ -20,10 +20,10 @@ func recordWith(hex sectorgen.Hex, starport byte, ix int) Record {
 	return Record{
 		Hex: hex,
 		System: systemgen.System{
-			Mainworld: worldgen.World{
-				Profile:    uwp.Profile{Starport: starport},
-				Importance: ix,
-			},
+			Mainworld: worldgen.NewWorld(
+				worldgen.World{Profile: uwp.Profile{Starport: starport}},
+				ix, worldgen.Economic{}, worldgen.Cultural{}, "",
+			),
 		},
 	}
 }

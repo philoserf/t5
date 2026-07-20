@@ -11,19 +11,34 @@ import (
 
 // A Satellite is a moon (or ring) of a placed world or gas giant. A moon's orbit
 // is Close (tidally near) or Far, named by an orbit letter (Book 3 p.29 S-table
-// and the p.24 2C Close/Far letters), and it carries a generated world Type and
+// and the p.24 2C Close/Far letters), and it carries a generated world type and
 // UWP (the p.29 Satellites tables). A moon of a world is never larger than its
 // parent (Book 3 p.21): an oversized roll is cut to the parent's size and, at
 // equal size, the pair is a double planet. A Ring has no orbit letter or body.
+//
+// As with OtherWorld, the type, profile, and trade codes are unexported and
+// immutable after construction (systemgen generates the profile from the type), so
+// a moon's Type, Profile, and trade codes cannot drift apart once built (#330).
+// Read them through Type/Profile/TradeCodes.
 type Satellite struct {
 	Ring         bool
 	Far          bool
 	OrbitLetter  string
-	Type         worldgen.OtherWorldType
-	Profile      uwp.Profile
+	typ          worldgen.OtherWorldType
+	profile      uwp.Profile
 	DoublePlanet bool
-	TradeCodes   []tradecode.Code
+	tradeCodes   []tradecode.Code
 }
+
+// Type reports the moon's body type. It is meaningless for a Ring.
+func (s Satellite) Type() worldgen.OtherWorldType { return s.typ }
+
+// Profile reports the moon's UWP. It is the zero Profile for a Ring.
+func (s Satellite) Profile() uwp.Profile { return s.profile }
+
+// TradeCodes reports the moon's trade classifications. It returns a copy, so the
+// encapsulated slice stays immutable through the reader.
+func (s Satellite) TradeCodes() []tradecode.Code { return slices.Clone(s.tradeCodes) }
 
 // rollSatellites gives each placed world and gas giant its moons (Book 3 p.29
 // "Number Of Satellites"): a gas giant rolls 1D-1, and a world rolls by its
@@ -123,10 +138,10 @@ func rollMoon(r *dice.Roller, orbits *satelliteOrbits, spec moonSpec) Satellite 
 	return Satellite{
 		Far:          far,
 		OrbitLetter:  letter,
-		Type:         wt,
-		Profile:      prof,
+		typ:          wt,
+		profile:      prof,
 		DoublePlanet: double,
-		TradeCodes: worldgen.TradeClassificationsWithContext(prof, worldgen.WorldContext{
+		tradeCodes: worldgen.TradeClassificationsWithContext(prof, worldgen.WorldContext{
 			MainworldIndustrial: spec.Industrial,
 			Belt:                wt.IsBelt(),
 			Orbit:               spec.Orbit, HZOrbit: spec.HZOrbit, HasHZ: spec.HasHZ,
@@ -184,7 +199,7 @@ func (s *System) satelliteParent(o *PlacedOrbit) (OrbitKind, int) {
 		return KindGasGiant, worldgen.NoSizeCap
 	case o.Kind == KindMainworld && o.Parent != nil:
 		// The accommodating host is a BigWorld (Siz 2D+7), never a belt.
-		return satelliteBody(o.Parent.Profile, false)
+		return satelliteBody(o.Parent.Profile(), false)
 	case o.Kind == KindMainworld:
 		// A mainworld's belt-ness is its Belt field, a body fact set at generation —
 		// not its Size digit, which a tiny Size-0 world shares without being a belt.
@@ -192,7 +207,7 @@ func (s *System) satelliteParent(o *PlacedOrbit) (OrbitKind, int) {
 	case o.Kind == KindWorld && o.World != nil:
 		// A secondary world's belt-ness is its TYPE, not its Size: Planetoids is
 		// the belt (St000PGL-T), while a Size-0 Worldlet is a very small world.
-		return satelliteBody(o.World.Profile, o.World.Type.IsBelt())
+		return satelliteBody(o.World.Profile(), o.World.Type().IsBelt())
 	default:
 		// A gas giant or a belt orbit: uncapped, and a belt rolls no moons at all.
 		return o.Kind, worldgen.NoSizeCap

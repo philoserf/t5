@@ -139,7 +139,7 @@ func (s Survey) String() string {
 			&b,
 			"%s  [~%d/wk]\n",
 			rec.SecondSurvey(),
-			route.ExpectedTraffic(rec.System.Mainworld.Importance),
+			route.ExpectedTraffic(rec.System.Mainworld.Importance()),
 		)
 	}
 
@@ -158,7 +158,7 @@ func (s Survey) String() string {
 func worldsOf(records []Record) []route.World {
 	worlds := make([]route.World, len(records))
 	for i, rec := range records {
-		worlds[i] = route.World{Hex: rec.Hex, Importance: rec.System.Mainworld.Importance}
+		worlds[i] = route.World{Hex: rec.Hex, Importance: rec.System.Mainworld.Importance()}
 	}
 
 	return worlds
@@ -234,7 +234,7 @@ func starportAByImportance(records []Record, idxs []int) []int {
 	}
 
 	sort.SliceStable(a, func(x, y int) bool {
-		return records[a[x]].System.Mainworld.Importance > records[a[y]].System.Mainworld.Importance
+		return records[a[x]].System.Mainworld.Importance() > records[a[y]].System.Mainworld.Importance()
 	})
 
 	return a

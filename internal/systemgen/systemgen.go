@@ -262,13 +262,13 @@ func orbitLabel(o PlacedOrbit) string {
 			dp = " dp"
 		}
 
-		label = fmt.Sprintf("Mainworld (moon of %s %s%s)", o.Parent.Type, o.Parent.Profile, dp)
+		label = fmt.Sprintf("Mainworld (moon of %s %s%s)", o.Parent.Type(), o.Parent.Profile(), dp)
 	case o.Giant != nil:
 		label = fmt.Sprintf("%s %s", o.Kind, o.Giant)
 	case o.World != nil:
-		label = fmt.Sprintf("%s %s", o.World.Type, o.World.Profile)
-		if len(o.World.TradeCodes) > 0 {
-			label += " " + tradecode.Join(o.World.TradeCodes, " ")
+		label = fmt.Sprintf("%s %s", o.World.Type(), o.World.Profile())
+		if len(o.World.TradeCodes()) > 0 {
+			label += " " + tradecode.Join(o.World.TradeCodes(), " ")
 		}
 	}
 
@@ -291,9 +291,9 @@ func moonList(o PlacedOrbit) string {
 		case sat.Ring:
 			moons[j] = "Ring"
 		case sat.DoublePlanet:
-			moons[j] = fmt.Sprintf("%s %s dp", sat.OrbitLetter, sat.Profile)
+			moons[j] = fmt.Sprintf("%s %s dp", sat.OrbitLetter, sat.Profile())
 		default:
-			moons[j] = fmt.Sprintf("%s %s", sat.OrbitLetter, sat.Profile)
+			moons[j] = fmt.Sprintf("%s %s", sat.OrbitLetter, sat.Profile())
 		}
 	}
 
