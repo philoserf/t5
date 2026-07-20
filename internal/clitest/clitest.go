@@ -29,19 +29,14 @@ import (
 	"github.com/philoserf/t5/internal/cli"
 )
 
-// argsEnv carries the child's command line. The child ignores os.Args entirely —
-// those are the test binary's own flags — so the args travel out of band, and the
-// variable's mere presence (not its value) is what marks a process as the child.
-// An empty value is therefore a real command line: "run with no flags at all",
-// which is exactly what exercises a command's defaults.
-const argsEnv = "T5_CLITEST_ARGS"
-
-// argsSep joins the child's args into the single string an environment variable
-// can hold. It is the ASCII unit separator rather than a space or a comma, both of
-// which occur inside real flag values — several commands take list-valued flags
-// ("-weapon beamlaser:T1:orbit,sandcaster"). NUL would be the natural choice, but
-// os/exec refuses an environment entry containing one.
-const argsSep = "\x1f"
+// childEnv marks a process as the child. It is only a marker: the command line
+// rides argv, because the interception below happens before m.Run and so before
+// anything has looked at os.Args. Passing the args out of band through the
+// environment would need an encoding — a separator that cannot occur inside a real
+// flag value, which rules out space and comma (several commands take list-valued
+// flags like "-weapon beamlaser:T1:orbit,sandcaster") and NUL (os/exec refuses it).
+// Using argv needs none of that.
+const childEnv = "T5_CLITEST_CHILD"
 
 // seedReport matches the seed line cli.Notef writes ("worldgen: seed 12345"). It
 // is matched as a whole line rather than searched for as the substring "seed ",
@@ -67,8 +62,8 @@ type Command struct {
 // cannot be perturbed by which test happened to spawn it. That is what lets Run
 // stay a plain function call rather than a test that re-enters itself.
 func (c Command) TestMain(m *testing.M) {
-	if raw, ok := os.LookupEnv(argsEnv); ok {
-		c.runChild(raw) // never returns
+	if os.Getenv(childEnv) == "1" {
+		c.runChild(os.Args[1:]) // never returns
 	}
 
 	os.Exit(m.Run())
@@ -87,9 +82,10 @@ func (c Command) Run(t *testing.T, args ...string) Result {
 	cmd := exec.CommandContext( //nolint:gosec // os.Args[0] is the test binary itself
 		t.Context(),
 		os.Args[0],
+		args...,
 	)
 
-	cmd.Env = append(os.Environ(), argsEnv+"="+strings.Join(args, argsSep))
+	cmd.Env = append(os.Environ(), childEnv+"=1")
 
 	var stdout, stderr strings.Builder
 
@@ -110,13 +106,8 @@ func (c Command) Run(t *testing.T, args ...string) Result {
 	return Result{Stdout: stdout.String(), Stderr: stderr.String(), Code: code}
 }
 
-// runChild rebuilds the command line the parent asked for and runs main under it.
-func (c Command) runChild(raw string) {
-	var args []string
-	if raw != "" {
-		args = strings.Split(raw, argsSep)
-	}
-
+// runChild runs main under the command line the parent asked for.
+func (c Command) runChild(args []string) {
 	// The test binary's flags are already registered on the default FlagSet, and
 	// the command is about to register its own. Start it from a clean one, named
 	// as the command is, so a flag error reports the command's usage.

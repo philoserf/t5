@@ -76,3 +76,46 @@ func TestMainSeedFollowsValidation(t *testing.T) {
 		command.Run(t, "-subsector", "A").AssertReportedSeed(t)
 	})
 }
+
+// TestMainRejectsFlagsTheViewIgnores covers the losing view's flag. The views are
+// exclusive, so a flag belonging to a view that did not win is input this run
+// cannot honor — and discarding it silently is worse here than it was in shipgen
+// (#315), because "-subsector Q" is a value sectorgen's OWN validator rejects on
+// the default path. It printed a hex at exit 0 while swallowing input it would
+// otherwise refuse.
+func TestMainRejectsFlagsTheViewIgnores(t *testing.T) {
+	cases := map[string][]string{
+		"subsector under hex":    {"-hex", "0436", "-subsector", "Q"},
+		"sector under hex":       {"-hex", "0436", "-sector"},
+		"subsector under sector": {"-sector", "-subsector", "A"},
+	}
+
+	for name, args := range cases {
+		t.Run(name, func(t *testing.T) {
+			command.Run(t, append(args, "-seed", "1")...).AssertRejected(t)
+		})
+	}
+}
+
+// TestMainAcceptsTheWinningView is the control: the same views run clean when
+// nothing else is set, so the rejection above is about the discarded flag and not
+// about the view itself.
+//
+// It asserts only the exit code, deliberately. A -hex view whose hex holds no
+// system is a true-but-empty result: cli.Notef says so on stderr and exits 0 with
+// nothing on the record stream. Asserting records here made the test depend on
+// whether a randomly drawn seed happened to populate that one hex, which failed
+// about a third of the time.
+func TestMainAcceptsTheWinningView(t *testing.T) {
+	for name, args := range map[string][]string{
+		"hex":       {"-hex", "0436"},
+		"sector":    {"-sector"},
+		"subsector": {"-subsector", "A"},
+	} {
+		t.Run(name, func(t *testing.T) {
+			if res := command.Run(t, args...); res.Code != 0 {
+				t.Errorf("exit code = %d, want 0 (stderr %q)", res.Code, res.Stderr)
+			}
+		})
+	}
+}

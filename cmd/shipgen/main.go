@@ -17,7 +17,6 @@ package main
 import (
 	"flag"
 	"fmt"
-	"slices"
 	"strings"
 
 	"github.com/philoserf/t5/internal/cli"
@@ -57,12 +56,10 @@ func main() {
 		// applying it instead would need a rule for which of the ten can constrain
 		// a rolled ship and which cannot. Saying so is the honest answer, and it
 		// is the posture the rest of the command already takes toward bad input.
-		if set := designFlagsSet(); len(set) > 0 {
-			cli.Fatalf(
-				"%s cannot be combined with a random ship; give -hull to design one",
-				strings.Join(set, ", "),
-			)
-		}
+		// Named the other way round — the flags a random ship DOES read — so a new
+		// design flag is covered the day it is added rather than the day someone
+		// remembers to list it.
+		cli.RejectUnusable("a random ship; give -hull to design one", "hull", "n", "seed")
 
 		reportSeed() // nothing but -n and -seed was given, so the input is good
 
@@ -98,35 +95,6 @@ func main() {
 
 		fmt.Println(ship)
 	}
-}
-
-// designFlags are the flags that describe a ship to design, as opposed to -hull
-// (which selects the design path itself) and the shared -n/-seed (which apply to
-// either path).
-var designFlags = []string{
-	"tl", "config", "structure", "armor",
-	"maneuver", "jump", "power", "mission",
-	"weapon", "defense",
-}
-
-// designFlagsSet names the design flags actually present on the command line, in
-// the order flag reports them.
-//
-// It asks flag.Visit — which walks only what was set — rather than comparing each
-// value against its default, because most of these defaults are legal values a
-// caller may well type. "-tl 0" is a real Tech Level and "-armor 1" is the hull's
-// integral layer; a value test would wave both through as unset, and "-tl 0"
-// alongside a random ship is precisely the discarded input this reports.
-func designFlagsSet() []string {
-	var set []string
-
-	flag.Visit(func(f *flag.Flag) {
-		if slices.Contains(designFlags, f.Name) {
-			set = append(set, "-"+f.Name)
-		}
-	})
-
-	return set
 }
 
 type flags struct {

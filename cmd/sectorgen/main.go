@@ -53,6 +53,18 @@ func main() {
 		cli.Fatalf("%v", err)
 	}
 
+	// The views are exclusive, so the losing view's flag is input this run cannot
+	// honor. Silently discarding it let "-hex 0436 -subsector Q" print a hex at
+	// exit 0 — while that same "-subsector Q" is rejected outright on the default
+	// path, since subsectors are A-P. A flag one path validates and another
+	// swallows is the worst of both.
+	switch {
+	case *hex != "":
+		cli.RejectUnusable("-hex", "hex", "density", "seed")
+	case *sector:
+		cli.RejectUnusable("-sector", "sector", "density", "seed")
+	}
+
 	reportSeed()
 
 	show(r, d)
