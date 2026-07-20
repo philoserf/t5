@@ -407,16 +407,22 @@ The §3 figures are reproducible with `go run ./cmd/systemgen -n 40 -seed 5`:
 **15** `As`-stamped Size-0 secondary worlds, **9** of them carrying moons, across
 14 Worldlets and 1 Iceworld.
 
-## A note on `.issues/`
+## A note on `.issues/` — cleared 2026-07-20
 
-The git-ignored `.issues/` directory holds 34 markdown files. **All 34 describe
-problems that no longer exist** — the directory is dated Jul 16 and waves 5–10
-landed Jul 19–20, fixing every one. Two of its notes back the losing side of
-disagreements that have since been settled the other way
-(`shipcombat-table-h-page-ref-disagreement.md` argues for p.86; the tree
+The git-ignored `.issues/` directory held 34 markdown files. **All 34 described
+problems that no longer existed** — the directory was dated Jul 16 and waves
+5–10 landed Jul 19–20, fixing every one. Two of its notes backed the losing side
+of disagreements that had since been settled the other way
+(`shipcombat-table-h-page-ref-disagreement.md` argued for p.86; the tree
 normalized to p.95).
 
-It is not a backlog. It is an unswept output buffer from a prior `code-audit`
-run, and reading it as open work will send someone to re-fix nine `chargen`
-bugs that are already fixed. Recommend clearing it and having `code-audit`
-write somewhere that is obviously transient.
+It was not a backlog. It was an unswept output buffer from a prior `code-audit`
+run, and reading it as open work would have sent someone to re-fix nine
+`chargen` bugs that were already fixed. It has been removed.
+
+**The live recommendation is the second half:** `code-audit` writes there by
+default and will recreate it on its next run. Point it somewhere obviously
+transient, or sweep the directory as part of whatever closes the issues it
+raises. A findings buffer that outlives its findings is worse than no buffer —
+it reads exactly like a backlog, and this repo already has a documented habit of
+filing issues for problems that do not exist.
