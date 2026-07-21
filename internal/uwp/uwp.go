@@ -16,7 +16,7 @@ import (
 // table 1), a secondary world a spaceport class F, G, H or Y (Book 3 p.29 table
 // 1B). Code switching on this field must cover both sets — worldgen's portTable
 // does — because a Profile alone does not say which kind of world it describes.
-type Profile struct {
+type Profile struct { //nolint:recvcheck // value readers + pointer UnmarshalText (encoding.TextUnmarshaler)
 	Starport      byte
 	Size          int
 	Atmosphere    int
@@ -80,9 +80,16 @@ const portLetters = "ABCDEXFGHY"
 // may come from a caller-built Profile — including the zero value, whose unset
 // Starport would otherwise emit a NUL into a piped record stream.
 func formatStarport(c byte) byte {
-	if strings.IndexByte(portLetters, c) < 0 {
+	if !isPortLetter(c) {
 		return '?'
 	}
 
 	return c
+}
+
+// isPortLetter reports whether c is one of the Starport domain letters — the one
+// membership test the display path (formatStarport) and the codec (Valid,
+// UnmarshalText) share.
+func isPortLetter(c byte) bool {
+	return strings.IndexByte(portLetters, c) >= 0
 }
