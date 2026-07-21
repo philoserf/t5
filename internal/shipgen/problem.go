@@ -63,6 +63,8 @@ const (
 	MissileRoundTypeMismatch    // launcher does not throw the round's type
 	MissileGuidanceIncompatible // the round cannot carry the chosen guidance
 	MissileGuidanceUnavailable  // guidance too advanced for this size/TL
+
+	numProblemKinds // sentinel: the count of kinds, kept last so it tracks the enum
 )
 
 // String names the kind for readable test-failure messages. It is not the display

@@ -146,6 +146,11 @@ func TestWeaponAboveShipTL(t *testing.T) {
 	for _, p := range over.Problems {
 		if p.Kind == ComponentAboveShipTL {
 			found = true
+			// The detail names both the weapon's shifted TL-13 and the ship's TL-12
+			// (interpolated numbers, not prose — a wrong TL must still be caught).
+			if !strings.Contains(p.Detail, "TL-13") || !strings.Contains(p.Detail, "TL-12") {
+				t.Errorf("TL-overrun detail should name the weapon's TL-13 and the ship's TL-12, got %q", p.Detail)
+			}
 		}
 	}
 
