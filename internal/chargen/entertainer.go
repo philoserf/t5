@@ -23,7 +23,7 @@ var EntertainerCareer = Career{
 	Qualify: Qualification{
 		Chars: []Characteristic{Dexterity, Endurance},
 	}, // Begin Actor: C2 or C3
-	FameCareer:  true,
+	Term: FameTerm,
 	Continue:    ContinueRule{UseFame: true}, // Continue vs Fame
 	EligPerTerm: 4,
 	BenefitDM:   DMTerms,

@@ -46,7 +46,7 @@ var FunctionaryCareer = Career{
 	ID:             Functionary,
 	Name:           "Functionary",
 	AutoBegin:      true,
-	OfficePolitics: true,
+	Term: PoliticsTerm,
 	ControllingChars: []Characteristic{
 		Dexterity,
 		Endurance,

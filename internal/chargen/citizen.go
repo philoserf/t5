@@ -17,7 +17,7 @@ var CitizenCareer = Career{
 	ID:               Citizen,
 	Name:             "Citizen",
 	AutoBegin:        true,
-	CitizenLife:      true,
+	Term: CitizenTerm,
 	ControllingChars: []Characteristic{Strength, Dexterity, Endurance, Intelligence}, // C1 C2 C3 C4
 	Continue:         ContinueRule{Fixed: 10},                                        // 10-
 	EligPerTerm:      4,

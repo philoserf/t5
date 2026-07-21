@@ -341,7 +341,7 @@ func careerNames(c chargen.Character) string {
 // "after 1 term" already implies no promotion.
 func rankOf(c chargen.Character, rec chargen.CareerRecord) string {
 	career := chargen.CareerByID(rec.Career)
-	if career.ReturnIntrigue {
+	if career.Term == chargen.IntrigueTerm {
 		return chargen.NobleTitle(c.Score(chargen.Social))
 	}
 

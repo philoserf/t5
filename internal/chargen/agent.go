@@ -26,7 +26,7 @@ var AgentCareer = Career{
 		TermsMod: true,
 	}, // Str, Mod +Terms
 	EligPerTerm:      2, // Per Term 2 (Undercover 1 and Successful Mission 4 are added in awardUndercover)
-	UndercoverCareer: true,
+	Term: UndercoverTerm,
 	RewardKind:       RewardCommendation,
 	BenefitDM:        DMCommends,
 	Skills: SkillGrid{

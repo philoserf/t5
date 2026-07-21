@@ -77,7 +77,7 @@ var ScoutCareer = Career{
 	ControllingChars: []Characteristic{Strength, Dexterity, Endurance},
 	Continue:         ContinueRule{UseChar: true, Char: Intelligence},
 	EligPerTerm:      8, // Explorer duty
-	ScoutDuty:        true,
+	Term: ScoutTerm,
 	RewardKind:       RewardDiscovery, // a successful Explorer Reward is a Discovery
 	BenefitDM:        DMFameHalf,
 	Skills: SkillGrid{

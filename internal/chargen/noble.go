@@ -39,7 +39,7 @@ var NobleCareer = Career{
 	ID:             Noble,
 	Name:           "Noble",
 	AutoBegin:      true,
-	ReturnIntrigue: true,
+	Term: IntrigueTerm,
 	ControllingChars: []Characteristic{
 		Dexterity,
 		Endurance,
