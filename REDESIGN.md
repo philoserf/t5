@@ -12,27 +12,30 @@ should not be touched.
 
 ---
 
-## Status (updated 2026-07-20, `main` at `c1f5207`)
+## Status (updated 2026-07-21, `main` at `4087231`) — program complete
 
-The seven findings were driven as a wave program in the suggested order below. The
-review text is preserved as written; this section records where it landed. The
-companion `THEORY.md` and `walkthrough.md` were removed in the same pass — both had
-been overtaken by these changes (`THEORY.md` presented §2/§3/§4/§6/§7 as live when
-they were fixed), and the durable rulings they held now live in the root and
-per-package `CLAUDE.md` files.
+The seven findings were driven as a wave program in the suggested order below and
+are all now structurally resolved. The review text is preserved as written; this
+section records where it landed. The companion `THEORY.md` and `walkthrough.md` were
+removed in an earlier pass — both had been overtaken by these changes (`THEORY.md`
+presented §2/§3/§4/§6/§7 as live when they were fixed), and the durable rulings they
+held now live in the root and per-package `CLAUDE.md` files.
 
-| §   | issue                            | state                                                                                                                                                        |
-| --- | -------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| §1  | #326 dice substreams             | ✅ merged (PR #333). `Roller.Derive`; per-hex isolation at the sector→hex boundary.                                                                          |
-| §3  | #328 mainworld body type (+#324) | ✅ merged (PR #334). `World.Belt`; `IsBelt` removed; `As` a belt fact, not a digit.                                                                          |
-| §4  | #329 trade-code type             | ✅ merged (PR #335). `internal/tradecode`; the dead `"Ds"` key is now a compile error.                                                                       |
-| §5  | #330 encapsulate derived fields  | ✅ merged (PR #336). Readers on `World`/`Facilities`/`OtherWorld`/`Satellite`.                                                                               |
-| §2  | #327 serialization               | ◐ partial (PR #337). `uwp.Profile` codec + round-trip. **Remaining:** the Second Survey world line, byte-identical sector save/load, T5SS `.sec`.            |
-| §7  | #332 typed `Problems`            | ✅ merged (PR #338). `Problem{Kind, Detail}`; tests assert `Kind`.                                                                                           |
-| §6  | #331 `chargen` term engine       | ◐ partial (PR #339). The 8 variant bools → one `TermVariant`. **Remaining:** split `career.go` (item 1); `Species` on `Character` (item 4, tracked to #185). |
+| §   | issue                            | state                                                                                                                                                                                                                                              |
+| --- | -------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| §1  | #326 dice substreams             | ✅ merged (PR #333). `Roller.Derive`; per-hex isolation at the sector→hex boundary.                                                                                                                                                                |
+| §3  | #328 mainworld body type (+#324) | ✅ merged (PR #334). `World.Belt`; `IsBelt` removed; `As` a belt fact, not a digit.                                                                                                                                                                |
+| §4  | #329 trade-code type             | ✅ merged (PR #335). `internal/tradecode`; the dead `"Ds"` key is now a compile error.                                                                                                                                                             |
+| §5  | #330 encapsulate derived fields  | ✅ merged (PR #336). Readers on `World`/`Facilities`/`OtherWorld`/`Satellite`.                                                                                                                                                                     |
+| §7  | #332 typed `Problems`            | ✅ merged (PR #338). `Problem{Kind, Detail}`; tests assert `Kind`.                                                                                                                                                                                 |
+| §2  | #327 serialization               | ✅ done (PRs #337, #341). `uwp.Profile` codec + the full Second Survey record codec + byte-identical sector save/load. **Deferred remainder:** T5SS `.sec` **import** → #195.                                                                      |
+| §6  | #331 `chargen` term engine       | ✅ done (PRs #339, #342). 8 variant bools → one `TermVariant`; `career.go` split into five concern files. **Deferred remainders:** `Species` on `Character` → #185; the `Policy` seam and `Check`'s `numDice` were reviewed and deliberately kept. |
 
-The §4-general shared-primitive tier (`geom`/#176, Money/Value) is unstarted, to be
-done when a Maker forces it.
+Every structural finding is resolved. `#327` and `#331` were closed once their
+remaining pieces (external-format import; the `Species` change) were confirmed to
+belong to other epics (#195, #185). The §4-general shared-primitive tier (`geom`/#176,
+Money/Value) remains unstarted by design — it is to be built when a Maker forces it,
+which is the next chapter of work rather than part of this review.
 
 ---
 
