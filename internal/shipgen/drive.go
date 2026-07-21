@@ -367,7 +367,3 @@ func designDrive(kind DriveKind, spec DriveSpec, hullOrd, tl int) (*Drive, Probl
 		Potential: pot, Stage: spec.Stage, Tons: tons, Cost: cost,
 	}, problem
 }
-
-// hasProblem reports whether p carries a reported failure. designDrive returns a
-// zero Problem (empty Detail) when the drive is buildable.
-func (p Problem) reported() bool { return p.Detail != "" }

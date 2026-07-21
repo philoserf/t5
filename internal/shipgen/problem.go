@@ -18,6 +18,11 @@ type Problem struct {
 // []string form did (fmt "%s"/"%v"/"%q" all honour this Stringer).
 func (p Problem) String() string { return p.Detail }
 
+// reported reports whether p carries a real failure. designDrive returns a single
+// Problem by value — the zero Problem (empty Detail) when the drive is buildable —
+// rather than a slice, so callers ask this instead of the slice-form aboard/len.
+func (p Problem) reported() bool { return p.Detail != "" }
+
 // ProblemKind names a distinct design-failure category. Giving the failure a type
 // means the failure prose is no longer a cross-package test contract: tests assert
 // the Kind, and the Detail wording is free to change (#332).
