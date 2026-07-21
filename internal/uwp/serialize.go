@@ -16,8 +16,8 @@ import (
 // rather than write bytes UnmarshalText could not read back.
 
 // characteristicPositions are the string offsets of the seven eHex characteristics
-// in the StSAHPGL-T form "Xdddddd-d": Size..Law at 1-6 and Tech Level at 8 (7 is
-// the hyphen). It is the single source both the reader and the length check use.
+// in the StSAHPGL-T form "Xdddddd-d": Size..Law at 1-6 and Tech Level at 8 (0 is
+// the starport, 7 the hyphen). UnmarshalText reads the characteristics from here.
 var characteristicPositions = [7]int{1, 2, 3, 4, 5, 6, 8}
 
 // Valid reports whether every field of p is within its encodable domain: the
@@ -51,9 +51,12 @@ func (p Profile) MarshalText() ([]byte, error) {
 }
 
 // UnmarshalText parses canonical StSAHPGL-T text into p (encoding.TextUnmarshaler).
-// It is strict — the text must be exactly the nine-character "Xdddddd-d" form with
-// a port letter and eHex characteristics — so a malformed record fails loudly
-// rather than yielding a plausible-but-wrong profile. p is left unchanged on error.
+// It is strict — the text must be exactly the nine-character "Xdddddd-d" form that
+// String emits, canonical and upper-case — so a malformed or non-canonical record
+// fails loudly rather than yielding a plausible-but-wrong profile. In particular a
+// lower-case eHex digit is rejected even though ehex.ParseDigit would tolerate it,
+// so the codec is an exact bijection: Marshal(Unmarshal(text)) == text. p is left
+// unchanged on error.
 func (p *Profile) UnmarshalText(text []byte) error {
 	s := string(text)
 	if len(s) != 9 || s[7] != '-' {
@@ -75,10 +78,18 @@ func (p *Profile) UnmarshalText(text []byte) error {
 		d[i] = v
 	}
 
-	*p = Profile{
+	q := Profile{
 		Starport: s[0], Size: d[0], Atmosphere: d[1], Hydrographics: d[2],
 		Population: d[3], Government: d[4], Law: d[5], TechLevel: d[6],
 	}
+	// The parsed profile must render back to exactly the input, which rejects any
+	// non-canonical spelling (a lower-case digit ParseDigit accepted) and makes the
+	// reader the exact inverse of String.
+	if q.String() != s {
+		return fmt.Errorf("uwp: %q is not in canonical form (canonical is %q)", s, q.String())
+	}
+
+	*p = q
 
 	return nil
 }

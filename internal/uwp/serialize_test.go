@@ -100,9 +100,11 @@ func TestParseRejectsMalformed(t *testing.T) {
 	for _, s := range []string{
 		"",            // empty
 		"A788899-C ",  // trailing space (wrong length)
-		"A788899C",    // no hyphen
-		"A788899+C",   // hyphen misplaced / wrong separator
-		"a788899-C",   // lowercase starport (canonical form is upper)
+		"A788899C",    // too short — no room for the hyphen
+		"A788899+C",   // right length, wrong separator
+		"a788899-C",   // lowercase starport — canonical is upper
+		"A78a899-C",   // lowercase eHex digit — canonical is upper (ParseDigit tolerates it)
+		"A788899-c",   // lowercase Tech Level digit
 		"Q788899-C",   // starport not a port letter
 		"A78I899-C",   // I is not an eHex digit
 		"A788899-C-9", // too long
