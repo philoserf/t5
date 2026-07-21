@@ -11,7 +11,7 @@ import (
 	"github.com/philoserf/t5/internal/worldgen"
 )
 
-// Serialization for a full Second Survey record (REDESIGN.md §2, #327). A record
+// Serialization for a full Second Survey record (#327). A record
 // renders as
 //
 //	hex  name  <world>  PBG  worlds  allegiance  <stellar>

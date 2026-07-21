@@ -50,8 +50,8 @@ Tooling (go, go-task, golangci-lint, poppler's `pdftotext`) is pinned in `Brewfi
   dice consumption fails loudly instead of being served recycled faces.
   `Roller.Derive(discriminators...)` mints an independent child stream from the parent's seed
   and the discriminators alone — **not** from how many rolls the parent has made (splitmix64
-  fold; panics on an unseeded parent). It is the substream primitive from `REDESIGN.md` §1
-  (#326): `sectorgen.DeriveHex` keys a hex on `(seed, col, row)`, so a hex is regenerable in
+  fold; panics on an unseeded parent). It is the substream primitive from #326:
+  `sectorgen.DeriveHex` keys a hex on `(seed, col, row)`, so a hex is regenerable in
   isolation and a rule fix touching one hex's draws cannot shift any other. The reach is
   currently the **sector→hex boundary only** — the entity generators (`worldgen`, `systemgen`,
   `chargen`) still run a single sub-entity on one stream, so their intra-entity roll-and-discard
