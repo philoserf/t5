@@ -114,6 +114,16 @@ var rank = func() map[Code]int {
 	return m
 }()
 
+// Valid reports whether c is one of the Chart D codes. It is the membership check
+// a parser needs at the text boundary — a code read from a record (worldgen's
+// Second Survey reader, #327) must be rejected if it is not a real classification,
+// the way ehex.ParseDigit rejects a non-digit.
+func Valid(c Code) bool {
+	_, ok := rank[c]
+
+	return ok
+}
+
 // Rank returns c's position in Chart D order (Book 3 p.26), for sorting a code
 // list. An unknown code ranks after every known one, so a stray code sorts last
 // rather than panicking — the same total behavior the old rankOf had.

@@ -30,9 +30,17 @@ func TestRank(t *testing.T) {
 		if Rank(c) != i {
 			t.Errorf("Rank(%q) = %d, want %d", c, Rank(c), i)
 		}
+
+		if !Valid(c) {
+			t.Errorf("%q is in Order but not Valid", c)
+		}
 	}
 
 	if unknown := Code("Zz"); Rank(unknown) != len(Order) {
 		t.Errorf("Rank(unknown) = %d, want %d (sorts last)", Rank(unknown), len(Order))
+	}
+
+	if Valid("Zz") {
+		t.Error("Valid(Zz) = true, want false for a non-Chart-D code")
 	}
 }
