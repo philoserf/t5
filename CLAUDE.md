@@ -204,7 +204,11 @@ These have each been re-litigated at least once. The full reasoning lives in the
   p.48's x1 sample-ship notes is not new evidence — it is the losing side of a conflict the book
   has with itself, and #300 was mis-resolved that way twice. The cell is deliberately asserted in
   two catalogs (`TestDesignDriveStageCatalogP127`, `…P134`); do not collapse either assertion, and
-  never re-introduce an `mcr == 0`-style sentinel that opts a row out of the check.
+  never add an `mcr == 0`-style sentinel that opts the **Modified `/2` cell** out of the check. (The
+  `P134` table _does_ carry an `mcr == 0` sentinel — for rows whose printed cost derives from
+  unrounded tonnage and so is not reproducible under the final-tonnage rule; that is legitimate, and
+  the Modified cell's `P134`-side corroboration lives in the separate exact-cost loop, not the main
+  table. The prohibition is against sentinelling away the `/2` reading, not against that mechanism.)
 - **uwp, belt-ness is a body fact — Size 0 means belt only for a mainworld.** A mainworld with
   Size 0 IS a belt (Book 3 p.16); a **secondary** Size-0 world usually is not (a Worldlet is a tiny
   solid world rendering the same `St000...`, only `Planetoids` is a belt). A Profile cannot tell them
