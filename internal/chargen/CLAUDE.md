@@ -43,25 +43,25 @@ Careers are data, each a file + hand-traced golden: `ScoutCareer` (`scout.go`, p
 `RogueCareer` (`rogue.go`, p. 84 — FixedCC), `SoldierCareer` (`soldier.go`, p. 82 — the first
 ranked career), `MarineCareer` (`marine.go`, p. 86), `SpacerCareer` (`spacer.go`, p. 81 — the
 naval career, whose Rating ladder uses the engine's EnlistedPromote), `AgentCareer` (`agent.go`,
-p. 83 — a rankless `UndercoverCareer` whose `awardUndercover` borrows one skill from a rolled
+p. 83 — a rankless `Term UndercoverTerm` whose `awardUndercover` borrows one skill from a rolled
 career's grid (`undercoverAssignment` + the `CareerByID` registry) each term, adds the
 Successful-Mission skills on a held Risk, and earns a Commendation on a Reward
 [`RewardCommendation`, `DMCommends`]; Continue eases with terms served via
 `ContinueRule.TermsMod`), `CitizenCareer` (`citizen.go`, p. 78 — an `AutoBegin` career whose
-`CitizenLife` term (`runCitizenTerm`) replaces Risk & Reward with a benign roll that grants a
-Job/Hobby skill and never injures), `EntertainerCareer` (`entertainer.go`, p. 77 — a `FameCareer`
+`Term CitizenTerm` (`runCitizenTerm`) replaces Risk & Reward with a benign roll that grants a
+Job/Hobby skill and never injures), `EntertainerCareer` (`entertainer.go`, p. 77 — a `Term FameTerm`
 whose `runFameTerm` shifts `Character.Fame` by a Flux roll, granting Talent +1 and two extra
 skills on a rise, and Continues vs Fame via `ContinueRule.UseFame`), `CraftsmanCareer`
-(`craftsman.go`, p. 75 — a `Masterpiece` career whose `runCraftsmanTerm` attempts a Masterpiece
+(`craftsman.go`, p. 75 — a `Term CraftsmanTerm` career whose `runCraftsmanTerm` attempts a Masterpiece
 from Master Points [CC + Craftsman skill + `skill.Set.TopLevels`], raises the Craftsman skill each
 term, and Continues vs Craftsman×2 via `ContinueRule.UseSkill`), `ScholarCareer` (`scholar.go`,
 p. 76 — standard Risk & Reward where a Reward is a Publication [`RewardKind`], with a single rank
 ladder [`resolveRank` skips Commission when there is no officer track] and Publication-boosted
 promotion/continue [`PromotionRule.PubsMod`, `ContinueRule.PubsMod`]), `FunctionaryCareer`
-(`functionary.go`, p. 87 — an `OfficePolitics` career whose `runPoliticsTerm` is two unmodified
+(`functionary.go`, p. 87 — a `Term PoliticsTerm` career whose `runPoliticsTerm` is two unmodified
 rolls: a failed Risk ends the career as a job loss [`MusteredOut` from the term, handled in
 `RunCareer`], a Reward success is a promotion), `NobleCareer` (`noble.go`, p. 85 — a
-`ReturnIntrigue` career whose `runIntrigueTerm` risks Exile and offers Elevation [a roll-high
+`Term IntrigueTerm` career whose `runIntrigueTerm` risks Exile and offers Elevation [a roll-high
 check vs Soc that raises Soc and awards a Land Grant]; the Noble's rank is their Social Standing
 via `NobleTitle`), and `MerchantCareer` (`merchant.go`, p. 80 — standard Risk & Reward where a
 Reward is escalating Ship Shares [`RewardShipShares`, the Nth reward = N shares], with a dual

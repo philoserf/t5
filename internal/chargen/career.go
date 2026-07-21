@@ -328,12 +328,12 @@ type Career struct {
 	CCMode           CCMode
 	ControllingChars []Characteristic
 	Continue         ContinueRule
-	EligPerTerm      int        // number of skill rolls a surviving term grants
-	BenefitDM        MusterDM   // die modifier the muster Benefit column adds (Money always adds +Terms)
-	Term         TermVariant // how each term resolves; StandardTerm (Risk & Reward) unless a career varies it
-	AutoBegin    bool        // the career is entered automatically, with no qualify roll (Citizen)
-	AutoFailOn12 bool        // a natural 12 always fails, whatever the target (Rogue; see autoFails)
-	RewardKind   RewardKind  // what a successful Reward roll earns
+	EligPerTerm      int         // number of skill rolls a surviving term grants
+	BenefitDM        MusterDM    // die modifier the muster Benefit column adds (Money always adds +Terms)
+	Term             TermVariant // how each term resolves; StandardTerm (Risk & Reward) unless a career varies it
+	AutoBegin        bool        // the career is entered automatically, with no qualify roll (Citizen)
+	AutoFailOn12     bool        // a natural 12 always fails, whatever the target (Rogue; see autoFails)
+	RewardKind       RewardKind  // what a successful Reward roll earns
 	Skills           SkillGrid
 	MusterOut        MusterTable
 

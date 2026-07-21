@@ -43,10 +43,10 @@ const goldWatchValuePerTerm = 100
 
 // FunctionaryCareer is the Functionary (Book 1 p. 87).
 var FunctionaryCareer = Career{
-	ID:             Functionary,
-	Name:           "Functionary",
-	AutoBegin:      true,
-	Term: PoliticsTerm,
+	ID:        Functionary,
+	Name:      "Functionary",
+	AutoBegin: true,
+	Term:      PoliticsTerm,
 	ControllingChars: []Characteristic{
 		Dexterity,
 		Endurance,

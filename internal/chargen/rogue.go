@@ -2,7 +2,7 @@ package chargen
 
 // Rogue career data, transcribed from Book 1 p. 84.
 //
-// Each term the Rogue masterminds a Scheme (SchemeCareer, runRogueTerm): a
+// Each term the Rogue masterminds a Scheme (Term RogueTerm, runRogueTerm): a
 // Scheme rolled from the Rogue Schemes table pays out on a successful Reward,
 // a failed Risk imprisons the Rogue and earns Infamy, and skill eligibility
 // swings with the outcome (Successful Scheme 6 / Failed Scheme 3 / In Prison 2).
@@ -35,7 +35,7 @@ var RogueCareer = Career{
 	Continue:         ContinueRule{UseCC: true, TermsMod: true}, // "Mod +Terms" (Book 1 p. 84)
 	AutoFailOn12:     true,                                      // "But, 12 is always automatic failure" (p. 84)
 	EligPerTerm:      2,
-	Term: RogueTerm,
+	Term:             RogueTerm,
 	BenefitDM:        DMTerms,
 	Skills: SkillGrid{
 		// Col 0 — Personal.

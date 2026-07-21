@@ -36,10 +36,10 @@ func NobleTitle(soc int) string {
 
 // NobleCareer is the Noble (Book 1 p. 85).
 var NobleCareer = Career{
-	ID:             Noble,
-	Name:           "Noble",
-	AutoBegin:      true,
-	Term: IntrigueTerm,
+	ID:        Noble,
+	Name:      "Noble",
+	AutoBegin: true,
+	Term:      IntrigueTerm,
 	ControllingChars: []Characteristic{
 		Dexterity,
 		Endurance,

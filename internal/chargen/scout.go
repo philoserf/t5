@@ -68,7 +68,7 @@ var (
 // underspecifies which roll it retries and how, so rather than guess a misread into
 // the term loop it stays out until the mechanic is pinned down. The Scout's other
 // R&R escape, avoiding the rolls entirely via Courier Duty, is implemented
-// (ScoutDuty).
+// (Term ScoutTerm).
 var ScoutCareer = Career{
 	ID:               Scout,
 	Name:             "Scout",
@@ -77,7 +77,7 @@ var ScoutCareer = Career{
 	ControllingChars: []Characteristic{Strength, Dexterity, Endurance},
 	Continue:         ContinueRule{UseChar: true, Char: Intelligence},
 	EligPerTerm:      8, // Explorer duty
-	Term: ScoutTerm,
+	Term:             ScoutTerm,
 	RewardKind:       RewardDiscovery, // a successful Explorer Reward is a Discovery
 	BenefitDM:        DMFameHalf,
 	Skills: SkillGrid{
