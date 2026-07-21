@@ -26,7 +26,7 @@ const firmPointsPerBlock = 3
 // tonnage, and cost — so they cannot drift into disagreeing about which components
 // exist. Defense.installed asks it too, so a refused component does not render a
 // full line of tonnage and cost for something the ship does not carry.
-func aboard(problems []string) bool { return len(problems) == 0 }
+func aboard(problems []Problem) bool { return len(problems) == 0 }
 
 // mountPoints reports whether a hull of the given tonnage can carry the weapons
 // and defenses, and the shortfall message if it cannot. Mounts of one ton or more
@@ -45,7 +45,7 @@ func aboard(problems []string) bool { return len(problems) == 0 }
 func mountPoints(h Hull, weapons []Weapon, defenses []Defense) string {
 	hard, firm := 0, 0
 
-	count := func(t Tonnage, problems []string) {
+	count := func(t Tonnage, problems []Problem) {
 		if !aboard(problems) || t == 0 {
 			return
 		}
@@ -112,7 +112,7 @@ func mountPhrase(hard, firm int) string {
 func armamentTonnage(weapons []Weapon, defenses []Defense) int {
 	var total Tonnage
 
-	charge := func(t Tonnage, problems []string) {
+	charge := func(t Tonnage, problems []Problem) {
 		if !aboard(problems) {
 			return
 		}

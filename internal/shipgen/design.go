@@ -8,21 +8,23 @@ import "fmt"
 // different ship than they asked for — so the substitution is reported here.
 // That is the same choice DesignWeapon makes for an unknown model, mount, or
 // range: build something, and say what was wrong with the request.
-func specProblems(spec ShipSpec) []string {
-	var problems []string
+func specProblems(spec ShipSpec) []Problem {
+	var problems []Problem
 
 	if !validConfig(spec.Config) {
-		problems = append(problems, fmt.Sprintf(
+		problems = append(problems, Problem{Kind: ConfigInvalid, Detail: fmt.Sprintf(
 			"configuration %d is not one of Cluster..Lifting; built as %s",
-			spec.Config, configIndex(spec.Config)))
+			spec.Config, configIndex(spec.Config),
+		)})
 	}
 	// Hull sizes are the eHex letters as an ordinal, A=1 .. Z=24 (Book 2 p.93).
 	// An ordinal outside that range does not panic — it yields a nonsense
 	// tonnage and prints "?" — so it is reported rather than substituted, there
 	// being no defensible guess at what size was meant.
 	if spec.HullLetter < 1 || spec.HullLetter > maxLetter {
-		problems = append(problems, fmt.Sprintf(
-			"hull size %d is outside A..Z (1..%d)", spec.HullLetter, maxLetter))
+		problems = append(problems, Problem{Kind: HullSizeInvalid, Detail: fmt.Sprintf(
+			"hull size %d is outside A..Z (1..%d)", spec.HullLetter, maxLetter,
+		)})
 	}
 
 	// Ordered, not a map: Problems is a rendered list, so its order is part of
@@ -37,9 +39,10 @@ func specProblems(spec ShipSpec) []string {
 		}
 
 		if stageIndex(d.spec.Stage) != d.spec.Stage {
-			problems = append(problems, fmt.Sprintf(
+			problems = append(problems, Problem{Kind: DriveStageInvalid, Detail: fmt.Sprintf(
 				"%s drive stage %d is not one of Standard..Ultimate; built as %s",
-				d.kind, d.spec.Stage, Standard))
+				d.kind, d.spec.Stage, Standard,
+			)})
 		}
 		// Book 2 p.77: "No drive may be smaller than the Drive-A of the class."
 		// Read as a floor on the size LETTER, not on tonnage — which is what
@@ -54,10 +57,11 @@ func specProblems(spec ShipSpec) []string {
 		// ADDS budget and frees hull space, which is the phantom the tonnage
 		// accounting exists to prevent.
 		if !buildableDriveOrd(d.spec.Letter) {
-			problems = append(problems, fmt.Sprintf(
+			problems = append(problems, Problem{Kind: DriveSizeInvalid, Detail: fmt.Sprintf(
 				"%s drive size %d names no drive: sizes are A..Z (1..%d) and the "+
 					"even Nexus pairs A2..Z2 (26..%d)",
-				d.kind, d.spec.Letter, maxLetter, 2*maxLetter))
+				d.kind, d.spec.Letter, maxLetter, 2*maxLetter,
+			)})
 		}
 	}
 
@@ -88,7 +92,7 @@ func Design(spec ShipSpec) Ship { //nolint:gocognit,cyclop,funlen // ship-design
 		d, problem := designDrive(kind, *ds, h.Letter, spec.TL)
 		used += d.Tons
 
-		if problem != "" {
+		if problem.reported() {
 			problems = append(problems, problem)
 		}
 
@@ -115,22 +119,24 @@ func Design(spec ShipSpec) Ship { //nolint:gocognit,cyclop,funlen // ship-design
 	if ship.Maneuver != nil && ship.Maneuver.Potential > h.MaxG {
 		problems = append(
 			problems,
-			fmt.Sprintf("maneuver drive rated %dG but a %s hull is capped at %dG",
-				ship.Maneuver.Potential, h.Config, h.MaxG),
+			Problem{Kind: DriveExceedsHullG, Detail: fmt.Sprintf(
+				"maneuver drive rated %dG but a %s hull is capped at %dG",
+				ship.Maneuver.Potential, h.Config, h.MaxG,
+			)},
 		)
 	}
 
 	switch {
 	case powered > 0 && ship.Power == nil:
-		problems = append(problems, "drives require a power plant")
+		problems = append(problems, Problem{Kind: NoPowerPlant, Detail: "drives require a power plant"})
 	case ship.Power != nil && ship.Power.Potential < powered:
 		problems = append(
 			problems,
-			fmt.Sprintf(
+			Problem{Kind: PowerBelowDrives, Detail: fmt.Sprintf(
 				"power plant potential %d is below the drives it feeds (%d)",
 				ship.Power.Potential,
 				powered,
-			),
+			)},
 		)
 	}
 
@@ -164,8 +170,9 @@ func Design(spec ShipSpec) Ship { //nolint:gocognit,cyclop,funlen // ship-design
 		// prevent — two complaints for one mistake, one of them about a ship that
 		// was never built.
 		if aboard(w.Problems) && w.TL > spec.TL {
-			problems = append(problems, fmt.Sprintf("%s is TL-%d, above the ship's TL-%d",
-				w.Name(), w.TL, spec.TL))
+			problems = append(problems, Problem{Kind: ComponentAboveShipTL, Detail: fmt.Sprintf(
+				"%s is TL-%d, above the ship's TL-%d", w.Name(), w.TL, spec.TL,
+			)})
 		}
 	}
 	// Defenses are built the same way, and mostly ride Bolt-Ins, which need no
@@ -176,20 +183,23 @@ func Design(spec ShipSpec) Ship { //nolint:gocognit,cyclop,funlen // ship-design
 
 		problems = append(problems, d.Problems...)
 		if aboard(d.Problems) && d.TL > spec.TL {
-			problems = append(problems, fmt.Sprintf("%s is TL-%d, above the ship's TL-%d",
-				d.Name(), d.TL, spec.TL))
+			problems = append(problems, Problem{Kind: ComponentAboveShipTL, Detail: fmt.Sprintf(
+				"%s is TL-%d, above the ship's TL-%d", d.Name(), d.TL, spec.TL,
+			)})
 		}
 	}
 
 	if p := mountPoints(h, ship.Weapons, ship.Defenses); p != "" {
-		problems = append(problems, p)
+		problems = append(problems, Problem{Kind: MountsExceedHull, Detail: p})
 	}
 
 	used += armamentTonnage(ship.Weapons, ship.Defenses)
 
 	ship.Tonnage = Budget{Hull: h.Tons, Used: used, Payload: h.Tons - used}
 	if ship.Tonnage.Payload < 0 {
-		problems = append(problems, fmt.Sprintf("over budget by %dt", -ship.Tonnage.Payload))
+		problems = append(problems, Problem{Kind: OverBudget, Detail: fmt.Sprintf(
+			"over budget by %dt", -ship.Tonnage.Payload,
+		)})
 	}
 
 	ship.Cost = h.Cost + ship.Fuel.Cost

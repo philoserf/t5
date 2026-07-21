@@ -251,7 +251,7 @@ type Missile struct {
 	Effect   string
 	PerTon   int // rounds per ton of magazine (0 if the round is measured in tons)
 	TonsEach int // tons per round (0 if many fit in a ton)
-	Problems []string
+	Problems []Problem
 }
 
 // DesignMissile builds a round for a designed launcher (Book 2 p.170). Like the
@@ -264,8 +264,9 @@ func DesignMissile(launcher Weapon, spec MissileSpec) Missile {
 
 	i, ok := findMissileRow(spec.Launcher, spec.Size)
 	if !ok {
-		m.Problems = append(m.Problems, fmt.Sprintf("%s does not throw a Size-%d round",
-			launcher.Name(), spec.Size))
+		m.Problems = append(m.Problems, Problem{Kind: MissileRoundSizeMismatch, Detail: fmt.Sprintf(
+			"%s does not throw a Size-%d round", launcher.Name(), spec.Size,
+		)})
 
 		return m
 	}
@@ -275,26 +276,28 @@ func DesignMissile(launcher Weapon, spec MissileSpec) Missile {
 
 	effect, ok := missileEffect(spec.Size, spec.Type)
 	if !ok {
-		m.Problems = append(m.Problems, fmt.Sprintf("a Size-%d round carries no %s warhead",
-			spec.Size, spec.Type))
+		m.Problems = append(m.Problems, Problem{Kind: WarheadUnavailable, Detail: fmt.Sprintf(
+			"a Size-%d round carries no %s warhead", spec.Size, spec.Type,
+		)})
 	}
 
 	m.Effect = effect
 	if !slices.Contains(row.types, spec.Type) {
-		m.Problems = append(m.Problems, fmt.Sprintf("%s does not throw a %s round",
-			launcher.Name(), spec.Type))
+		m.Problems = append(m.Problems, Problem{Kind: MissileRoundTypeMismatch, Detail: fmt.Sprintf(
+			"%s does not throw a %s round", launcher.Name(), spec.Type,
+		)})
 	}
 
 	if !slices.Contains(row.guidance, spec.Guidance) {
-		m.Problems = append(m.Problems, fmt.Sprintf("a Size-%d %s round cannot be %s",
-			spec.Size, row.name, spec.Guidance))
+		m.Problems = append(m.Problems, Problem{Kind: MissileGuidanceIncompatible, Detail: fmt.Sprintf(
+			"a Size-%d %s round cannot be %s", spec.Size, row.name, spec.Guidance,
+		)})
 	} else if !spec.Guidance.Available(spec.Size, launcher.TL) {
 		d := guidanceData[spec.Guidance]
-		m.Problems = append(
-			m.Problems,
-			fmt.Sprintf("%s guidance needs Size %d at TL %d (this is Size %d at TL %d)",
-				spec.Guidance, d.minSize, d.minTL, spec.Size, launcher.TL),
-		)
+		m.Problems = append(m.Problems, Problem{Kind: MissileGuidanceUnavailable, Detail: fmt.Sprintf(
+			"%s guidance needs Size %d at TL %d (this is Size %d at TL %d)",
+			spec.Guidance, d.minSize, d.minTL, spec.Size, launcher.TL,
+		)})
 	}
 
 	return m

@@ -123,17 +123,17 @@ func TestAvailabilityMax(t *testing.T) {
 func TestDesignDriveMurphy(t *testing.T) {
 	// Murphy Scout drives: Maneuver-A/Jump-A/Power-A (Standard) in Hull-A, TL-12.
 	m, p1 := designDrive(Maneuver, DriveSpec{Letter: 1}, 1, 12)
-	if p1 != "" || m.Potential != 2 || m.Tons != 2 || m.Cost != 4_000_000 {
+	if p1.reported() || m.Potential != 2 || m.Tons != 2 || m.Cost != 4_000_000 {
 		t.Errorf("Maneuver-A = %+v (%q), want 2G/2t/MCr4", m, p1)
 	}
 
 	j, p2 := designDrive(Jump, DriveSpec{Letter: 1}, 1, 12)
-	if p2 != "" || j.Potential != 2 || j.Tons != 10 || j.Cost != 10_000_000 {
+	if p2.reported() || j.Potential != 2 || j.Tons != 10 || j.Cost != 10_000_000 {
 		t.Errorf("Jump-A = %+v (%q), want J2/10t/MCr10", j, p2)
 	}
 
 	pw, p3 := designDrive(Power, DriveSpec{Letter: 1}, 1, 12)
-	if p3 != "" || pw.Potential != 2 || pw.Tons != 4 || pw.Cost != 4_000_000 {
+	if p3.reported() || pw.Potential != 2 || pw.Tons != 4 || pw.Cost != 4_000_000 {
 		t.Errorf("Power-A = %+v (%q), want pot2/4t/MCr4", pw, p3)
 	}
 }
@@ -248,7 +248,7 @@ func TestDesignDriveStageCatalogP127(t *testing.T) {
 		// TL-18 keeps availability out of the way; the book's TL column is the
 		// stage delta, checked separately against the base TL-9.
 		j, problem := designDrive(Jump, DriveSpec{Letter: 2, Stage: c.stage}, 2, 18)
-		if problem != "" {
+		if problem.reported() {
 			t.Errorf("%s J-Drive-B in Hull-B: unexpected problem %q", c.stage, problem)
 		}
 
@@ -319,7 +319,7 @@ func TestDesignDriveStageCatalogP134(t *testing.T) {
 
 	for _, c := range cases {
 		p, problem := designDrive(Power, DriveSpec{Letter: 2, Stage: c.stage}, 2, 18)
-		if problem != "" {
+		if problem.reported() {
 			t.Errorf("%s P-Plant-B in Hull-B: unexpected problem %q", c.stage, problem)
 		}
 
@@ -408,7 +408,7 @@ func TestDesignDriveStageCatalogP104(t *testing.T) {
 	}
 	for _, c := range cases {
 		m, problem := designDrive(Maneuver, DriveSpec{Letter: 2, Stage: c.stage}, 2, 18)
-		if problem != "" {
+		if problem.reported() {
 			t.Errorf("%s M-Drive-B in Hull-B: unexpected problem %q", c.stage, problem)
 		}
 
@@ -464,7 +464,7 @@ func TestDesignDriveAvailabilityCap(t *testing.T) {
 	// A Jump-E (Z1 rating 9) in Hull-A at TL-12, where availability caps Jump at
 	// 3: the potential is reduced and a problem is recorded.
 	j, problem := designDrive(Jump, DriveSpec{Letter: 5}, 1, 12)
-	if j.Potential != 3 || problem == "" {
+	if j.Potential != 3 || !problem.reported() {
 		t.Errorf("expected Jump capped to 3 with a problem, got %+v (%q)", j, problem)
 	}
 }
@@ -480,7 +480,7 @@ func TestDesignDriveStageShiftsAvailabilityDown(t *testing.T) {
 	// Experimental (-3) at a TL-6 yard reads availability at TL-9, where Jump
 	// reaches Potential-1. Its 50% efficiency rates it at 1, so it is buildable.
 	j, problem := designDrive(Jump, DriveSpec{Letter: 2, Stage: Experimental}, 2, 6)
-	if j.Potential != 1 || problem != "" {
+	if j.Potential != 1 || problem.reported() {
 		t.Errorf("Experimental J-Drive-B at TL-6 = Potential %d (%q), want 1 and no problem",
 			j.Potential, problem)
 	}
@@ -489,13 +489,20 @@ func TestDesignDriveStageShiftsAvailabilityDown(t *testing.T) {
 	// drive exists at all. Its 120% efficiency rates it at 2; the yard cannot
 	// build it.
 	j, problem = designDrive(Jump, DriveSpec{Letter: 2, Stage: Advanced}, 2, 9)
-	if j.Potential != 0 || problem == "" {
+	if j.Potential != 0 || !problem.reported() {
 		t.Errorf("Advanced J-Drive-B at TL-9 = Potential %d (%q), want 0 with a problem",
 			j.Potential, problem)
 	}
 
-	// The problem names the shifted TL that did the capping, not just the yard's.
-	if !strings.Contains(problem, "TL-9") || !strings.Contains(problem, "TL-6") {
+	// It is a TL-cap problem, and its detail names the shifted TL that did the
+	// capping (TL-6), not just the yard's (TL-9). The Kind is the contract; the
+	// TL numbers are interpolated data (the shift math), not prose, so matching
+	// them is verifying the computation, not the wording.
+	if problem.Kind != DriveAboveTL {
+		t.Errorf("problem kind = %v, want DriveAboveTL", problem.Kind)
+	}
+
+	if !strings.Contains(problem.Detail, "TL-9") || !strings.Contains(problem.Detail, "TL-6") {
 		t.Errorf("problem %q should name both the yard TL-9 and the shifted TL-6", problem)
 	}
 }
@@ -506,22 +513,23 @@ func TestDesignDriveStageShiftsAvailabilityDown(t *testing.T) {
 func TestDesignDrivePotentialZeroIsReported(t *testing.T) {
 	// Too small for the hull: Jump-A in a Hull-C is 2*1/3 = 0.
 	j, problem := designDrive(Jump, DriveSpec{Letter: 1}, 3, 15)
-	if j.Potential != 0 || problem == "" {
+	if j.Potential != 0 || !problem.reported() {
 		t.Errorf("Jump-A in Hull-C = Potential %d (%q), want 0 with a problem",
 			j.Potential, problem)
 	}
 
 	// Rounded away by efficiency: the book's own Early Jump-1 case.
 	j, problem = designDrive(Jump, DriveSpec{Letter: 1, Stage: Early}, 2, 15)
-	if j.Potential != 0 || problem == "" {
+	if j.Potential != 0 || !problem.reported() {
 		t.Errorf("Early Jump-A in Hull-B = Potential %d (%q), want 0 with a problem",
 			j.Potential, problem)
 	}
 
-	// One mistake, one message: a Potential-0 drive is not also complained about
-	// for the TL cap (design.go's `aboard` policy).
-	if strings.Count(problem, ";") != 0 {
-		t.Errorf("expected a single problem, got %q", problem)
+	// One mistake, one message: a Potential-0 drive is reported for exactly that,
+	// not also for the TL cap (design.go's `aboard` policy). designDrive returns a
+	// single Problem, so "one message" is now the type; assert it is the right one.
+	if problem.Kind != DrivePotentialZero {
+		t.Errorf("expected the Potential-0 problem, got %v (%q)", problem.Kind, problem)
 	}
 }
 

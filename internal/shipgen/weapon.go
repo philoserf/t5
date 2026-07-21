@@ -101,7 +101,7 @@ type Weapon struct {
 	Cost     int // Cr
 	Band     int // the S= or R= range band
 	Scale    Scale
-	Problems []string
+	Problems []Problem
 }
 
 // DesignWeapon computes a weapon installation from its spec (Book 2 p.83). Like
@@ -111,30 +111,37 @@ type Weapon struct {
 // look at.
 func DesignWeapon(spec WeaponSpec) Weapon {
 	if !validWeapon(spec.Model) || !validMount(spec.Mount) || !validRange(spec.Range) {
-		return Weapon{Spec: spec, Problems: []string{"unknown weapon, mount, or range"}}
+		return Weapon{Spec: spec, Problems: []Problem{{Kind: UnknownWeapon, Detail: "unknown weapon, mount, or range"}}}
 	}
 
 	w := weaponData[spec.Model]
 	m := mountData[spec.Mount]
 	rng := rangeData[spec.Range]
 
-	var problems []string
+	var problems []Problem
 	// The Bolt-In is a defense's mount: a weapon has to see out of the hull.
 	if !m.weaponOK {
-		problems = append(problems, "a weapon cannot be installed in a "+m.name)
+		problems = append(problems, Problem{
+			Kind:   WeaponMountIncompatible,
+			Detail: "a weapon cannot be installed in a " + m.name,
+		})
 	}
 	// Each weapon has a minimum mount (p.155): a Meson Gun does not fit in a
 	// turret. Anything at or above the minimum may be selected.
 	if m.weaponOK && spec.Mount < w.minMount {
-		problems = append(problems, fmt.Sprintf("%s needs at least a %s, not a %s",
-			w.name, mountData[w.minMount].name, m.name))
+		problems = append(problems, Problem{Kind: MountTooSmall, Detail: fmt.Sprintf(
+			"%s needs at least a %s, not a %s",
+			w.name, mountData[w.minMount].name, m.name,
+		)})
 	}
 	// A weapon reaches on one ladder or the other, so a World range cannot be
 	// asked of a Space weapon (p.83 Tables D and E). The two dual-scale weapons
 	// take either.
 	if !w.scale.reaches(rng.scale) {
-		problems = append(problems, fmt.Sprintf("%s is a %s weapon and cannot be built for %s",
-			w.name, scaleName(w.scale), rng.name))
+		problems = append(problems, Problem{Kind: RangeIncompatible, Detail: fmt.Sprintf(
+			"%s is a %s weapon and cannot be built for %s",
+			w.name, scaleName(w.scale), rng.name,
+		)})
 	}
 
 	tl, tons, cost, band := install(w.tl, w.cost, m.tons, m.cost, spec.Range, spec.Stage)

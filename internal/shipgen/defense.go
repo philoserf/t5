@@ -170,7 +170,7 @@ type Defense struct {
 	Band      int
 	Scale     Scale // which ladder Band is on, so the record prints R= or S=
 	Principle Principle
-	Problems  []string
+	Problems  []Problem
 }
 
 // A device is the thing being installed as a defense: a screen of its own, or a
@@ -201,7 +201,10 @@ func DesignDefense(spec DefenseSpec) Defense {
 	}
 
 	if !validDefenseMount(spec.Mount) || !validRange(spec.Range) {
-		return Defense{Spec: spec, Device: dev.name, Problems: []string{"unknown mount or range"}}
+		return Defense{
+			Spec: spec, Device: dev.name,
+			Problems: []Problem{{Kind: UnknownDefenseMountOrRange, Detail: "unknown mount or range"}},
+		}
 	}
 
 	m := defenseMountData[spec.Mount]
@@ -211,14 +214,14 @@ func DesignDefense(spec DefenseSpec) Defense {
 	// this a screen could be built for a Space range and would print an R= band from
 	// the wrong ladder entirely.
 	if !dev.scale.reaches(rng.scale) {
-		problems = append(problems, fmt.Sprintf("%s is a %s device and cannot be built for %s",
-			dev.name, scaleName(dev.scale), rng.name))
+		problems = append(problems, Problem{Kind: RangeIncompatible, Detail: fmt.Sprintf(
+			"%s is a %s device and cannot be built for %s", dev.name, scaleName(dev.scale), rng.name,
+		)})
 	} else if !defenseAllowed(spec.Range) {
-		problems = append(
-			problems,
-			fmt.Sprintf("a defense cannot be built for %s: its range may be decreased but not "+
-				"increased, and %s is the standard", rng.name, standardRangeName(rng.scale)),
-		)
+		problems = append(problems, Problem{Kind: DefenseRangeIncrease, Detail: fmt.Sprintf(
+			"a defense cannot be built for %s: its range may be decreased but not "+
+				"increased, and %s is the standard", rng.name, standardRangeName(rng.scale),
+		)})
 	}
 
 	if spec.Weapon != nil {
@@ -227,12 +230,14 @@ func DesignDefense(spec DefenseSpec) Defense {
 		// cannot take the Bolt-In, whatever its ordinal says. Comparing mounts with
 		// "<" alone would never catch this: BoltIn sorts above every real mount.
 		if !mountData[spec.Mount].weaponOK {
-			problems = append(problems, fmt.Sprintf("%s cannot be installed in a %s",
-				w.name, mountName(spec.Mount)))
+			problems = append(problems, Problem{Kind: WeaponMountIncompatible, Detail: fmt.Sprintf(
+				"%s cannot be installed in a %s", w.name, mountName(spec.Mount),
+			)})
 		} else if spec.Mount < w.minMount {
 			// And it still needs a mount big enough to hold it.
-			problems = append(problems, fmt.Sprintf("%s needs at least a %s",
-				w.name, mountName(w.minMount)))
+			problems = append(problems, Problem{Kind: MountTooSmall, Detail: fmt.Sprintf(
+				"%s needs at least a %s", w.name, mountName(w.minMount),
+			)})
 		}
 	}
 
@@ -268,10 +273,10 @@ func DesignWeaponAsDefense(spec WeaponSpec) Defense {
 
 // defenseDevice resolves what a spec is actually installing — a screen, or a
 // weapon serving as one.
-func defenseDevice(spec DefenseSpec) (device, []string) {
+func defenseDevice(spec DefenseSpec) (device, []Problem) {
 	if spec.Weapon != nil {
 		if !validWeapon(*spec.Weapon) {
-			return device{}, []string{"unknown weapon"}
+			return device{}, []Problem{{Kind: UnknownWeapon, Detail: "unknown weapon"}}
 		}
 
 		w := weaponData[*spec.Weapon]
@@ -279,14 +284,17 @@ func defenseDevice(spec DefenseSpec) (device, []string) {
 		// Only nine weapons may be allocated to Defensive Fire (Book 2 p.174). A
 		// Meson Gun is not point defence.
 		if !w.defenseOK {
-			return dev, []string{fmt.Sprintf("a %s cannot serve as a defense", w.name)}
+			return dev, []Problem{{
+				Kind:   WeaponNotADefense,
+				Detail: fmt.Sprintf("a %s cannot serve as a defense", w.name),
+			}}
 		}
 
 		return dev, nil
 	}
 
 	if !validDefense(spec.Model) {
-		return device{}, []string{"unknown defense"}
+		return device{}, []Problem{{Kind: UnknownDefense, Detail: "unknown defense"}}
 	}
 
 	d := defenseData[spec.Model]

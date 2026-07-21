@@ -264,7 +264,7 @@ type Ship struct {
 
 	Cost     int // total, Cr
 	Tonnage  Budget
-	Problems []string
+	Problems []Problem
 }
 
 // QSP renders the Quick Ship Profile (Book 2 p.93): Mission-HullConfig G Jump,

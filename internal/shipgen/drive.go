@@ -289,12 +289,14 @@ func driveLabel(ord int) string {
 // the yard's reach downward. The shared stageData.tlDelta column is correct for
 // both; only the direction of use differs, so this is corrected here rather
 // than in the table.
-func designDrive(kind DriveKind, spec DriveSpec, hullOrd, tl int) (*Drive, string) {
+func designDrive(kind DriveKind, spec DriveSpec, hullOrd, tl int) (*Drive, Problem) {
 	st := stageData[stageIndex(spec.Stage)]
 	raw := drivePotential(spec.Letter, hullOrd, st.eff)
 	availTL := tl - st.tlDelta
 
-	pot, problem := raw, ""
+	pot := raw
+
+	var problem Problem
 
 	switch {
 	case raw == 0:
@@ -303,17 +305,21 @@ func designDrive(kind DriveKind, spec DriveSpec, hullOrd, tl int) (*Drive, strin
 		// away — p.127's own "Early Jump-1 at 90% becomes Jump-0". Reported
 		// instead of the TL cap, never alongside it: capMax < 0 is impossible, so
 		// one mistake still yields one message (see design.go's `aboard` note).
-		problem = fmt.Sprintf("%s-%s in a Hull-%s yields Potential 0: too small to drive this hull",
-			kind, driveLabel(spec.Letter), driveLabel(hullOrd))
+		problem = Problem{Kind: DrivePotentialZero, Detail: fmt.Sprintf(
+			"%s-%s in a Hull-%s yields Potential 0: too small to drive this hull",
+			kind, driveLabel(spec.Letter), driveLabel(hullOrd),
+		)}
 	case availabilityMax(kind, availTL) < raw:
 		capMax := availabilityMax(kind, availTL)
 		pot = capMax
-		problem = fmt.Sprintf("%s-%s rated %d but TL-%d caps it at %d",
+		detail := fmt.Sprintf("%s-%s rated %d but TL-%d caps it at %d",
 			kind, driveLabel(spec.Letter), raw, tl, capMax)
 
 		if st.tlDelta != 0 {
-			problem += fmt.Sprintf(" (%s reads availability at TL-%d)", spec.Stage, availTL)
+			detail += fmt.Sprintf(" (%s reads availability at TL-%d)", spec.Stage, availTL)
 		}
+
+		problem = Problem{Kind: DriveAboveTL, Detail: detail}
 	}
 
 	// A Potential-0 drive is still built, weighed, and billed. Design is total
@@ -361,3 +367,7 @@ func designDrive(kind DriveKind, spec DriveSpec, hullOrd, tl int) (*Drive, strin
 		Potential: pot, Stage: spec.Stage, Tons: tons, Cost: cost,
 	}, problem
 }
+
+// hasProblem reports whether p carries a reported failure. designDrive returns a
+// zero Problem (empty Detail) when the drive is buildable.
+func (p Problem) reported() bool { return p.Detail != "" }

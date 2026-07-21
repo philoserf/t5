@@ -57,7 +57,7 @@ func TestHardpointLimit(t *testing.T) {
 		t.Fatalf("two turrets should not fit a 100t hull's single hardpoint")
 	}
 
-	if !strings.Contains(two.Problems[0], "mount blocks") {
+	if two.Problems[0].Kind != MountsExceedHull {
 		t.Errorf("problem should name the mount shortfall, got %q", two.Problems[0])
 	}
 
@@ -68,7 +68,7 @@ func TestHardpointLimit(t *testing.T) {
 		Weapons: []WeaponSpec{turret, turret, turret, turret},
 	})
 	for _, p := range four.Problems {
-		if strings.Contains(p, "mount blocks") {
+		if p.Kind == MountsExceedHull {
 			t.Errorf("a 400t hull has four hardpoints, but: %s", p)
 		}
 	}
@@ -144,7 +144,7 @@ func TestWeaponAboveShipTL(t *testing.T) {
 	found := false
 
 	for _, p := range over.Problems {
-		if strings.Contains(p, "above the ship's TL-12") {
+		if p.Kind == ComponentAboveShipTL {
 			found = true
 		}
 	}
@@ -172,7 +172,7 @@ func TestWeaponProblemsReachTheShip(t *testing.T) {
 		t.Fatalf("a Meson Gun in a scout's turret should be reported")
 	}
 
-	if !strings.Contains(strings.Join(s.Problems, "; "), "Main") {
+	if !hasKind(s.Problems, MountTooSmall) {
 		t.Errorf("problems should name the minimum mount, got %v", s.Problems)
 	}
 }
@@ -233,7 +233,7 @@ func TestFailedWeaponSpendsNoTonnage(t *testing.T) {
 
 	s := Design(spec)
 	for _, p := range s.Problems {
-		if strings.Contains(p, "over budget") {
+		if p.Kind == OverBudget {
 			t.Errorf("the failed weapon should not also manufacture a budget overrun: %q", p)
 		}
 	}
@@ -254,12 +254,24 @@ func TestFailedWeaponTakesNoMountPoint(t *testing.T) {
 
 	s := Design(spec)
 	for _, p := range s.Problems {
-		if strings.Contains(p, "mount blocks") {
+		if p.Kind == MountsExceedHull {
 			t.Errorf("the failed weapon should not also manufacture a mount shortfall: %q", p)
 		}
 	}
 	// The real problem is still reported.
-	if !strings.Contains(strings.Join(s.Problems, "; "), "Bolt-In") {
+	if !hasKind(s.Problems, WeaponMountIncompatible) {
 		t.Errorf("the Bolt-In weapon should be reported, got %v", s.Problems)
 	}
+}
+
+// hasKind reports whether any problem in the list has the given kind, for tests
+// that assert a specific failure was reported without matching its prose (#332).
+func hasKind(problems []Problem, k ProblemKind) bool {
+	for _, p := range problems {
+		if p.Kind == k {
+			return true
+		}
+	}
+
+	return false
 }
