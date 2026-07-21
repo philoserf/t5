@@ -37,9 +37,10 @@ func ParseStellar(s string) ([]Star, error) {
 		i += used
 	}
 
-	// The reader is the exact inverse of Stellar: re-rendering must reproduce the
-	// input, which rejects any non-canonical spelling a loose parse might accept.
-	if re := renderStellar(stars); re != s {
+	// The reader is the exact inverse of Stellar: re-rendering through the real
+	// writer must reproduce the input, which rejects any non-canonical spelling a
+	// loose parse might accept.
+	if re := StellarString(stars); re != s {
 		return nil, fmt.Errorf("systemgen: %q is not canonical stellar data (want %q)", s, re)
 	}
 
@@ -74,14 +75,4 @@ func parseStar(tokens []string) (Star, int, error) {
 	default:
 		return Star{}, 0, fmt.Errorf("%q is an incomplete star", tokens[0])
 	}
-}
-
-// renderStellar joins stars the way System.Stellar does, for the round-trip check.
-func renderStellar(stars []Star) string {
-	out := make([]string, len(stars))
-	for i, star := range stars {
-		out[i] = star.String()
-	}
-
-	return strings.Join(out, " ")
 }

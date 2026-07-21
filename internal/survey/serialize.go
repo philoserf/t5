@@ -45,7 +45,7 @@ func (r RecordLine) String() string {
 		stars[i] = s.String()
 	}
 
-	pbg := ehex.Format(r.PopDigit) + ehex.Format(r.Belts) + ehex.Format(r.Giants)
+	pbg := systemgen.PBGString(r.PopDigit, r.Belts, r.Giants)
 
 	return fmt.Sprintf("%s %s %s %s %d %s %s",
 		r.Hex, r.Name, r.Mainworld.SecondSurvey(), pbg, r.Worlds, r.Allegiance, strings.Join(stars, " "))
@@ -118,15 +118,9 @@ func parsePBG(s string) (int, int, int, error) {
 		return 0, 0, 0, fmt.Errorf("PBG %q is not three digits", s)
 	}
 
-	var d [3]int
-
-	for i := range 3 {
-		v, err := ehex.ParseDigit(s[i])
-		if err != nil {
-			return 0, 0, 0, fmt.Errorf("PBG %q: %w", s, err)
-		}
-
-		d[i] = v
+	d, err := ehex.ParseDigits(s)
+	if err != nil {
+		return 0, 0, 0, fmt.Errorf("PBG %q: %w", s, err)
 	}
 
 	return d[0], d[1], d[2], nil

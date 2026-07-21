@@ -160,7 +160,7 @@ func parseEconomic(s string) (Economic, error) {
 		return Economic{}, fmt.Errorf("Economic %q too short", s)
 	}
 
-	d, err := ehexDigits(s[:3])
+	d, err := ehex.ParseDigits(s[:3])
 	if err != nil {
 		return Economic{}, fmt.Errorf("Economic %q: %w", s, err)
 	}
@@ -179,28 +179,12 @@ func parseCultural(s string) (Cultural, error) {
 		return Cultural{}, fmt.Errorf("Cultural %q is not four digits", s)
 	}
 
-	d, err := ehexDigits(s)
+	d, err := ehex.ParseDigits(s)
 	if err != nil {
 		return Cultural{}, fmt.Errorf("Cultural %q: %w", s, err)
 	}
 
 	return Cultural{Heterogeneity: d[0], Acceptance: d[1], Strangeness: d[2], Symbols: d[3]}, nil
-}
-
-// ehexDigits parses each byte of s as an eHex digit.
-func ehexDigits(s string) ([]int, error) {
-	out := make([]int, len(s))
-
-	for i := range len(s) {
-		v, err := ehex.ParseDigit(s[i])
-		if err != nil {
-			return nil, fmt.Errorf("digit %q: %w", s[i:i+1], err)
-		}
-
-		out[i] = v
-	}
-
-	return out, nil
 }
 
 // parseBases reverses the bases field: "-" is none, otherwise a run of N/S/D/W in
@@ -228,30 +212,14 @@ func parseBases(s string) (bool, bool, bool, bool, error) {
 		}
 	}
 
-	// Reject any spelling bases() would not emit (wrong order, repeats), so the
-	// reader is the exact inverse of the writer.
-	if reBases(naval, scout, depot, wayStation) != s {
-		return false, false, false, false, fmt.Errorf("%q is not canonical bases (want %q)",
-			s, reBases(naval, scout, depot, wayStation))
+	// Reject any spelling the writer would not emit (wrong order, repeats) by
+	// comparing against bases() itself, so the reader is provably its inverse.
+	canonical := World{NavalBase: naval, ScoutBase: scout, NavalDepot: depot, WayStation: wayStation}.bases()
+	if canonical != s {
+		return false, false, false, false, fmt.Errorf("%q is not canonical bases (want %q)", s, canonical)
 	}
 
 	return naval, scout, depot, wayStation, nil
-}
-
-// reBases renders base flags exactly as baseList does, for the canonical-form check.
-func reBases(naval, scout, depot, wayStation bool) string {
-	var b strings.Builder
-
-	for _, base := range []struct {
-		set  bool
-		code string
-	}{{naval, "N"}, {scout, "S"}, {depot, "D"}, {wayStation, "W"}} {
-		if base.set {
-			b.WriteString(base.code)
-		}
-	}
-
-	return b.String()
 }
 
 // parseZone reverses the zone field: "-" is Green (zone() renders A and R only, so

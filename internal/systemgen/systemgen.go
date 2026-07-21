@@ -361,8 +361,13 @@ func (s System) String() string {
 // multiplier digit, the planetoid-belt count, and the gas-giant count, each an
 // eHex digit (e.g. Regina's "703").
 func (s System) PBG() string {
-	return fmt.Sprintf("%s%s%s",
-		ehex.Format(s.Mainworld.PopulationDigit), ehex.Format(s.Belts), ehex.Format(s.GasGiants))
+	return PBGString(s.Mainworld.PopulationDigit, s.Belts, s.GasGiants)
+}
+
+// PBGString renders the three Population-Belts-Giants eHex digits — the single
+// writer of the PBG field, shared by System.PBG and the record round-trip.
+func PBGString(pop, belts, giants int) string {
+	return ehex.Format(pop) + ehex.Format(belts) + ehex.Format(giants)
 }
 
 // A StarSlot is one member of a system's stellar family: the role it fills, the
@@ -411,12 +416,24 @@ func (s System) Stars() []StarSlot {
 // Stellar renders the system's stars as a compact space-joined list, primary
 // first (e.g. "F8 V M6 VI F5 VI").
 func (s System) Stellar() string {
-	stars := make([]string, 0, 8)
+	stars := make([]Star, 0, 8)
 	for _, sl := range s.Stars() {
-		stars = append(stars, sl.Star.String())
+		stars = append(stars, sl.Star)
 	}
 
-	return strings.Join(stars, " ")
+	return StellarString(stars)
+}
+
+// StellarString renders an ordered star list as Stellar does — the single writer
+// of the stellar field, so ParseStellar can check its result re-renders identically
+// without a second copy of the join.
+func StellarString(stars []Star) string {
+	out := make([]string, len(stars))
+	for i, star := range stars {
+		out[i] = star.String()
+	}
+
+	return strings.Join(out, " ")
 }
 
 // SecondSurvey renders the canonical one-line system record:
