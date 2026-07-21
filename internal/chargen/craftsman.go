@@ -18,7 +18,7 @@ var CraftsmanCareer = Career{
 	ID:               Craftsman,
 	Name:             "Craftsman",
 	AutoBegin:        true,
-	Masterpiece:      true,
+	Term:             CraftsmanTerm,
 	ControllingChars: []Characteristic{Strength, Dexterity, Endurance, Intelligence}, // C1 C2 C3 C4
 	Continue: ContinueRule{
 		UseSkill:  "Craftsman",

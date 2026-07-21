@@ -4,7 +4,7 @@ package chargen
 // career (no rank ladders) with a standard Risk & Reward and a Continue roll
 // that eases with experience ("Str, Mod +Terms").
 //
-// Each term the Agent runs an Undercover Assignment (UndercoverCareer,
+// Each term the Agent runs an Undercover Assignment (Term UndercoverTerm,
 // awardUndercover): two years undercover in a rolled career, selecting one
 // skill from that career's tables, then two completing the Mission. Skill
 // eligibility is Per Term 2 + Undercover 1 + Successful Mission 4 (a held Risk).
@@ -25,10 +25,10 @@ var AgentCareer = Career{
 		Char:     Strength,
 		TermsMod: true,
 	}, // Str, Mod +Terms
-	EligPerTerm:      2, // Per Term 2 (Undercover 1 and Successful Mission 4 are added in awardUndercover)
-	UndercoverCareer: true,
-	RewardKind:       RewardCommendation,
-	BenefitDM:        DMCommends,
+	EligPerTerm: 2, // Per Term 2 (Undercover 1 and Successful Mission 4 are added in awardUndercover)
+	Term:        UndercoverTerm,
+	RewardKind:  RewardCommendation,
+	BenefitDM:   DMCommends,
 	Skills: SkillGrid{
 		// Col 0 — Personal.
 		{

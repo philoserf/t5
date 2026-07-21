@@ -54,7 +54,7 @@ C7A5958-A  Fl Hi In
 B160113-B  De Lo
 
 $ go run ./cmd/chargen -career scout -seed 7
-Scout — age 22, mustered out after 1 term
+Scout — age 27, mustered out after 1 term
   UPP            785399
   Homeworld      B6667B8-9   Ga Ag Ri
   Education      BA — Psychology (major), Robotics (minor)

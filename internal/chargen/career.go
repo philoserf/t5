@@ -297,6 +297,28 @@ const (
 	RewardCommendation                   // the Agent: an official Commendation (Book 1 p. 83)
 )
 
+// A TermVariant selects how a career resolves each of its terms (Book 1 careers).
+// Most careers run the Standard Risk & Reward term; a handful replace it wholesale
+// or run something alongside it, and this one field names which. It replaces eight
+// exclusive-by-convention bools (#331): a career could set two of those and
+// silently run whichever the dispatch ladder reached first, but it can hold only
+// one TermVariant, so two variants are now unrepresentable rather than ordered.
+type TermVariant int
+
+// The term variants. StandardTerm is the zero value, so a career that names none
+// runs Risk & Reward (Soldier, Marine, Spacer, Scholar, Merchant).
+const (
+	StandardTerm   TermVariant = iota // Risk & Reward
+	FameTerm                          // Fame/Talent instead of R&R, and no Controlling Characteristic (Entertainer)
+	CitizenTerm                       // benign Citizen Life instead of R&R (Citizen)
+	CraftsmanTerm                     // a Masterpiece attempt instead of R&R (Craftsman)
+	PoliticsTerm                      // Office Politics instead of R&R (Functionary)
+	IntrigueTerm                      // Return & Intrigue instead of R&R (Noble)
+	RogueTerm                         // a Rogue Scheme instead of R&R (Rogue)
+	ScoutTerm                         // Courier (no R&R) or Explorer (R&R), the Scout's per-term choice
+	UndercoverTerm                    // an Undercover Assignment alongside R&R (Agent)
+)
+
 // A Career is the data for one career. It grows as later slices add the skill
 // grid, ranks, and mustering-out table.
 type Career struct {
@@ -306,19 +328,12 @@ type Career struct {
 	CCMode           CCMode
 	ControllingChars []Characteristic
 	Continue         ContinueRule
-	EligPerTerm      int        // number of skill rolls a surviving term grants
-	BenefitDM        MusterDM   // die modifier the muster Benefit column adds (Money always adds +Terms)
-	AutoBegin        bool       // the career is entered automatically, with no qualify roll (Citizen)
-	CitizenLife      bool       // the term uses benign Citizen Life instead of Risk & Reward (Citizen)
-	FameCareer       bool       // the term resolves Fame/Talent instead of Risk & Reward (Entertainer)
-	Masterpiece      bool       // the term attempts a Masterpiece instead of Risk & Reward (Craftsman)
-	OfficePolitics   bool       // the term resolves Office Politics instead of Risk & Reward (Functionary)
-	ReturnIntrigue   bool       // the term resolves Return & Intrigue instead of Risk & Reward (Noble)
-	ScoutDuty        bool       // the term picks Courier (no R&R, 4 skills) or Explorer (R&R, EligPerTerm skills) (Scout)
-	SchemeCareer     bool       // the term masterminds a Rogue Scheme instead of Risk & Reward (Rogue)
-	AutoFailOn12     bool       // a natural 12 always fails, whatever the target (Rogue; see autoFails)
-	UndercoverCareer bool       // the term runs an Undercover Assignment alongside Risk & Reward (Agent)
-	RewardKind       RewardKind // what a successful Reward roll earns
+	EligPerTerm      int         // number of skill rolls a surviving term grants
+	BenefitDM        MusterDM    // die modifier the muster Benefit column adds (Money always adds +Terms)
+	Term             TermVariant // how each term resolves; StandardTerm (Risk & Reward) unless a career varies it
+	AutoBegin        bool        // the career is entered automatically, with no qualify roll (Citizen)
+	AutoFailOn12     bool        // a natural 12 always fails, whatever the target (Rogue; see autoFails)
+	RewardKind       RewardKind  // what a successful Reward roll earns
 	Skills           SkillGrid
 	MusterOut        MusterTable
 
@@ -555,7 +570,7 @@ func RunCareer(r *dice.Roller, p Policy, c *Character, career Career) {
 
 // runCareer is RunCareer over a caller-owned run.
 func runCareer(r *dice.Roller, p Policy, c *Character, run *careerRun, career Career) {
-	if len(career.ControllingChars) == 0 && !career.FameCareer {
+	if len(career.ControllingChars) == 0 && career.Term != FameTerm {
 		panic("chargen: career " + career.Name + " has no controlling characteristics")
 	}
 
@@ -569,7 +584,7 @@ func runCareer(r *dice.Roller, p Policy, c *Character, run *careerRun, career Ca
 		}
 	}
 
-	if career.FameCareer {
+	if career.Term == FameTerm {
 		// One 2D roll opens the career (Book 1 p. 77: "roll initial Fame and Talent
 		// (with one 2D roll; they are equal)"). Returning to it is a Comeback, and
 		// the p.64/p.77 Fame-and-Talent table says what a Comeback does with the
@@ -693,32 +708,32 @@ func resolveRiskInjury(
 //
 //nolint:cyclop // the term engine dispatches every career variant; irreducibly branchy
 func runTerm(r *dice.Roller, p Policy, c *Character, run *careerRun, career Career) TermOutcome {
-	if career.FameCareer {
+	if career.Term == FameTerm {
 		return runFameTerm(r, p, c, run, career) // no CC — the Entertainer resolves Fame/Talent
 	}
 
 	cc := selectCC(p, *c, run, career)
-	if career.CitizenLife {
+	if career.Term == CitizenTerm {
 		return runCitizenTerm(r, p, c, run, career, cc)
 	}
 
-	if career.Masterpiece {
+	if career.Term == CraftsmanTerm {
 		return runCraftsmanTerm(r, p, c, career, cc)
 	}
 
-	if career.OfficePolitics {
+	if career.Term == PoliticsTerm {
 		return runPoliticsTerm(r, p, c, run, career, cc)
 	}
 
-	if career.ReturnIntrigue {
+	if career.Term == IntrigueTerm {
 		return runIntrigueTerm(r, p, c, run, career, cc)
 	}
 
-	if career.SchemeCareer {
+	if career.Term == RogueTerm {
 		return runRogueTerm(r, p, c, run, career, cc)
 	}
 
-	if career.ScoutDuty && !p.ChooseExplorerDuty(*c) {
+	if career.Term == ScoutTerm && !p.ChooseExplorerDuty(*c) {
 		awardSkillsN(r, p, c, career, courierElig) // Courier duty avoids Risk & Reward
 
 		return Ongoing
@@ -770,7 +785,7 @@ func runTerm(r *dice.Roller, p Policy, c *Character, run *careerRun, career Care
 	// An Agent runs an Undercover Assignment; everyone else takes their term
 	// skills, with one extra on a term they commission or promote (Book 1 p. 82:
 	// "1 skill because he was promoted").
-	if career.UndercoverCareer {
+	if career.Term == UndercoverTerm {
 		awardUndercover(r, p, c, career, riskOK)
 
 		return outcome
