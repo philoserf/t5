@@ -7,8 +7,8 @@ import (
 	"github.com/philoserf/t5/internal/ehex"
 )
 
-// Serialization for the stellar tail of a Second Survey record (REDESIGN.md §2,
-// #327). Stellar renders each of the up-to-eight star slots through Star.String,
+// Serialization for the stellar tail of a Second Survey record (#327). Stellar
+// renders each of the up-to-eight star slots through Star.String,
 // which has three forms — "BD" (a brown dwarf, one token), "K D" (a white dwarf,
 // type then D), and "K8 V" (type+decimal then luminosity). ParseStellar reverses
 // the flat list; the slot a star came from (Primary, a companion, …) is not in the

@@ -10,8 +10,8 @@ import (
 	"github.com/philoserf/t5/internal/uwp"
 )
 
-// Serialization for the world portion of a Second Survey record (REDESIGN.md §2,
-// #327). World.SecondSurvey renders six space-separated fields —
+// Serialization for the world portion of a Second Survey record (#327).
+// World.SecondSurvey renders six space-separated fields —
 //
 //	UWP  TCs  {Ix}(Ex)[Cx]  Nobility  Bases  Zone
 //

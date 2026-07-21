@@ -6,7 +6,7 @@ import (
 	"github.com/philoserf/t5/internal/ehex"
 )
 
-// Serialization for Profile (REDESIGN.md §2, #327). String is the display path:
+// Serialization for Profile (#327). String is the display path:
 // total, and it renders an out-of-domain field as '?' so it never panics on a
 // caller-built value. That makes it lossy, so a rendered profile could not be read
 // back. The MarshalText/UnmarshalText pair (encoding.TextMarshaler /
