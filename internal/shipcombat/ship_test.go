@@ -113,8 +113,10 @@ func TestDefendIgnoresRefusedDefense(t *testing.T) {
 // anti-matter round still reported a full 10x detonation.
 func TestWeaponsMassiveExplosionRejectsUndesignableRound(t *testing.T) {
 	bad := shipgen.Missile{
-		Spec:     shipgen.MissileSpec{Type: shipgen.AntiMatter, Size: 7},
-		Problems: []string{"anti-matter warhead is not available at size 7"},
+		Spec: shipgen.MissileSpec{Type: shipgen.AntiMatter, Size: 7},
+		// A failed design (Problems non-empty) is all WeaponsMassiveExplosion gates
+		// on — construct it by Kind, not by guessing shipgen's wording (#332).
+		Problems: []shipgen.Problem{{Kind: shipgen.WarheadUnavailable}},
 	}
 
 	if _, ok := WeaponsMassiveExplosion(bad); ok {

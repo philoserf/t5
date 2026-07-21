@@ -1,7 +1,6 @@
 package shipgen
 
 import (
-	"strings"
 	"testing"
 )
 
@@ -88,7 +87,7 @@ func TestDesignOverBudget(t *testing.T) {
 		t.Errorf("payload = %d, want negative (over budget)", s.Tonnage.Payload)
 	}
 
-	if !hasProblem(s, "over budget") {
+	if !hasKind(s.Problems, OverBudget) {
 		t.Errorf("expected an over-budget problem, got %v", s.Problems)
 	}
 }
@@ -107,7 +106,7 @@ func TestDesignUnderpoweredPlant(t *testing.T) {
 		)
 	}
 
-	if !hasProblem(s, "power plant potential") {
+	if !hasKind(s.Problems, PowerBelowDrives) {
 		t.Errorf("expected an underpowered-plant problem, got %v", s.Problems)
 	}
 }
@@ -122,19 +121,9 @@ func TestDesignNeedsPowerPlant(t *testing.T) {
 			Maneuver:   &DriveSpec{Letter: 1},
 		},
 	)
-	if !hasProblem(s, "require a power plant") {
+	if !hasKind(s.Problems, NoPowerPlant) {
 		t.Errorf("expected a missing-plant problem, got %v", s.Problems)
 	}
-}
-
-func hasProblem(s Ship, substr string) bool {
-	for _, p := range s.Problems {
-		if strings.Contains(p, substr) {
-			return true
-		}
-	}
-
-	return false
 }
 
 // Design is total (design.go): every out-of-range enum in a ShipSpec has to come
@@ -149,37 +138,37 @@ func TestDesignOutOfRangeSpecFields(t *testing.T) {
 	}
 
 	tests := []struct {
-		name    string
-		mutate  func(*ShipSpec)
-		problem string
+		name   string
+		mutate func(*ShipSpec)
+		kind   ProblemKind
 	}{
 		{"stage above the table", func(s *ShipSpec) {
 			s.Maneuver.Stage = 99
-		}, "stage 99"},
+		}, DriveStageInvalid},
 		{"negative stage", func(s *ShipSpec) {
 			s.Maneuver.Stage = -1
-		}, "stage -1"},
+		}, DriveStageInvalid},
 		{"jump stage above the table", func(s *ShipSpec) {
 			s.Jump = &DriveSpec{Letter: 1, Stage: 42}
-		}, "stage 42"},
+		}, DriveStageInvalid},
 		{"power stage below the table", func(s *ShipSpec) {
 			s.Power.Stage = -7
-		}, "stage -7"},
+		}, DriveStageInvalid},
 		{"config above the table", func(s *ShipSpec) {
 			s.Config = Config(7)
-		}, "configuration 7"},
+		}, ConfigInvalid},
 		{"negative config", func(s *ShipSpec) {
 			s.Config = Config(-1)
-		}, "configuration -1"},
+		}, ConfigInvalid},
 		{"hull letter above Z", func(s *ShipSpec) {
 			s.HullLetter = 25
-		}, "hull size 25"},
+		}, HullSizeInvalid},
 		{"hull letter of zero", func(s *ShipSpec) {
 			s.HullLetter = 0
-		}, "hull size 0"},
+		}, HullSizeInvalid},
 		{"negative hull letter", func(s *ShipSpec) {
 			s.HullLetter = -3
-		}, "hull size -3"},
+		}, HullSizeInvalid},
 	}
 
 	for _, tt := range tests {
@@ -188,8 +177,8 @@ func TestDesignOutOfRangeSpecFields(t *testing.T) {
 			tt.mutate(&spec)
 
 			s := Design(spec) // must not panic
-			if !hasProblem(s, tt.problem) {
-				t.Errorf("expected a %q problem, got %v", tt.problem, s.Problems)
+			if !hasKind(s.Problems, tt.kind) {
+				t.Errorf("expected a %v problem, got %v", tt.kind, s.Problems)
 			}
 		})
 	}
@@ -289,7 +278,7 @@ func TestSubADriveDoesNotRefundTonnage(t *testing.T) {
 			t.Errorf("drive letter %d: cost Cr%d is negative", letter, got.Cost)
 		}
 
-		if letter < 1 && !hasProblem(got, "names no drive") {
+		if letter < 1 && !hasKind(got.Problems, DriveSizeInvalid) {
 			t.Errorf("drive letter %d: no problem reported, got %v", letter, got.Problems)
 		}
 	}
