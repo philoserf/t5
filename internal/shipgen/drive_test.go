@@ -217,9 +217,6 @@ func TestDesignDriveStageEfficiency(t *testing.T) {
 // because omitting it is how this cell was mis-resolved twice. The tonnage half of
 // both pages still reproduces exactly, which is what corroborates the round-up
 // ruling independently of this.
-//
-// Tracked in #300. Until it is settled, asserting either value here would dress
-// a coin-flip as a golden.
 func TestDesignDriveStageCatalogP127(t *testing.T) {
 	cases := []struct {
 		stage    Stage
