@@ -1,8 +1,7 @@
 # Where `t5` will not stretch
 
 _A design review, written against the working tree at `b84d273` (2026-07-20).
-Companion to `THEORY.md` (what the system means) and `walkthrough.md` (how it
-reads). This document covers only what the current shape cannot absorb._
+This document covers only what the current shape cannot absorb._
 
 The repo is 183 commits old, all of them inside 60 days. Everything below is
 cheaper now than after four more Makers. That is the whole argument for reading
@@ -10,6 +9,30 @@ it today rather than filing it.
 
 Seven findings. Five are structural; two are refactors. Section 8 lists what
 should not be touched.
+
+---
+
+## Status (updated 2026-07-20, `main` at `c1f5207`)
+
+The seven findings were driven as a wave program in the suggested order below. The
+review text is preserved as written; this section records where it landed. The
+companion `THEORY.md` and `walkthrough.md` were removed in the same pass — both had
+been overtaken by these changes (`THEORY.md` presented §2/§3/§4/§6/§7 as live when
+they were fixed), and the durable rulings they held now live in the root and
+per-package `CLAUDE.md` files.
+
+| §   | issue                            | state                                                                                                                                                        |
+| --- | -------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| §1  | #326 dice substreams             | ✅ merged (PR #333). `Roller.Derive`; per-hex isolation at the sector→hex boundary.                                                                          |
+| §3  | #328 mainworld body type (+#324) | ✅ merged (PR #334). `World.Belt`; `IsBelt` removed; `As` a belt fact, not a digit.                                                                          |
+| §4  | #329 trade-code type             | ✅ merged (PR #335). `internal/tradecode`; the dead `"Ds"` key is now a compile error.                                                                       |
+| §5  | #330 encapsulate derived fields  | ✅ merged (PR #336). Readers on `World`/`Facilities`/`OtherWorld`/`Satellite`.                                                                               |
+| §2  | #327 serialization               | ◐ partial (PR #337). `uwp.Profile` codec + round-trip. **Remaining:** the Second Survey world line, byte-identical sector save/load, T5SS `.sec`.            |
+| §7  | #332 typed `Problems`            | ✅ merged (PR #338). `Problem{Kind, Detail}`; tests assert `Kind`.                                                                                           |
+| §6  | #331 `chargen` term engine       | ◐ partial (PR #339). The 8 variant bools → one `TermVariant`. **Remaining:** split `career.go` (item 1); `Species` on `Character` (item 4, tracked to #185). |
+
+The §4-general shared-primitive tier (`geom`/#176, Money/Value) is unstarted, to be
+done when a Maker forces it.
 
 ---
 
