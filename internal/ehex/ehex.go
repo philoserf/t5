@@ -54,10 +54,10 @@ func ParseDigit(c byte) (int, error) {
 	return 0, fmt.Errorf("ehex: %q is not an eHex digit", c)
 }
 
-// ParseDigits parses every byte of s as an eHex digit (ParseDigit), returning the
-// values in order. It is the fixed-width reader the record parsers use for a run
-// of characteristics — a Cultural [Cx], a PBG field — rejecting the whole run if
-// any byte is not a digit.
+// ParseDigits parses every byte of s as an eHex digit (ParseDigit), returning one
+// value per byte in order and erroring on the first byte that is not a digit. It
+// does not check length — a caller that requires a fixed width (a Cultural [Cx], a
+// PBG field) must validate len(s) itself before or after calling.
 func ParseDigits(s string) ([]int, error) {
 	out := make([]int, len(s))
 
