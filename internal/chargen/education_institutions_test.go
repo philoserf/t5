@@ -144,6 +144,18 @@ func TestHonorsOfficerTrainingAndFlight(t *testing.T) {
 	}
 }
 
+func TestOTC(t *testing.T) {
+	c := Character{scores: [count]int{7, 7, 7, 8, 8, 7}, Age: 22}
+	if !AttendInstitution(dice.NewScripted(3, 3), DefaultPolicy{}, &c, OTC) {
+		t.Fatal("OTC failed")
+	}
+
+	last := c.EducationHistory[len(c.EducationHistory)-1]
+	if last.Institution != OTC || last.Commission != "Army" || !last.Graduated {
+		t.Errorf("OTC status = %+v", last)
+	}
+}
+
 func TestPrerequisiteWaiverIsPolicy(t *testing.T) {
 	c := Character{scores: [count]int{7, 7, 7, 8, 8, 8}, Age: 18}
 	if AttendInstitution(dice.NewScripted(1), tradeNoWaiver{}, &c, MedicalSchool) {
@@ -163,20 +175,23 @@ func TestPrerequisiteWaiverIsPolicy(t *testing.T) {
 }
 
 func TestAssignedMilitarySchools(t *testing.T) {
+	for _, institution := range []Institution{ArmySchool, NavySchool, MarineSchool} {
+		c := Character{scores: [count]int{7, 8, 8, 9, 9, 7}, Age: 30}
+		if !AttendInstitution(dice.NewScripted(3, 3), DefaultPolicy{}, &c, institution) {
+			t.Fatalf("%q failed", institution)
+		}
+
+		if c.Age != 31 || c.EducationHistory[len(c.EducationHistory)-1].Institution != institution {
+			t.Errorf("%q status age=%d history=%+v", institution, c.Age, c.EducationHistory)
+		}
+	}
+
 	c := Character{scores: [count]int{7, 8, 8, 9, 9, 7}, Age: 30}
-	if !AttendInstitution(dice.NewScripted(3, 3), DefaultPolicy{}, &c, NavySchool) {
-		t.Fatal("Naval ANM School failed")
-	}
-
-	if c.Age != 31 || c.EducationHistory[len(c.EducationHistory)-1].Institution != NavySchool {
-		t.Errorf("ANM status age=%d history=%+v", c.Age, c.EducationHistory)
-	}
-
 	if !AttendInstitution(dice.NewScripted(3, 3, 3, 3), DefaultPolicy{}, &c, CommandCollege) {
 		t.Fatal("Command College failed")
 	}
 
-	if c.Age != 32 || c.EducationHistory[len(c.EducationHistory)-1].Institution != CommandCollege {
+	if c.Age != 31 || c.EducationHistory[len(c.EducationHistory)-1].Institution != CommandCollege {
 		t.Errorf("Command College status age=%d history=%+v", c.Age, c.EducationHistory)
 	}
 }
