@@ -34,28 +34,37 @@ type SEC struct {
 // are exactly Record.SecondSurvey output; adding relationship metadata therefore
 // does not change the existing Second Survey stream.
 func (s Survey) SEC() string {
-	var b strings.Builder
-
-	for _, rec := range s.Records {
-		b.WriteString(rec.SecondSurvey())
-		b.WriteByte('\n')
+	lines := make([]string, len(s.Records))
+	for i, rec := range s.Records {
+		lines[i] = rec.SecondSurvey()
 	}
 
-	writeSECMetadata(&b, s.Routes, s.Ownerships)
-
-	return strings.TrimRight(b.String(), "\n")
+	return renderSEC(lines, s.Routes, s.Ownerships)
 }
 
 // String renders a parsed SEC document in the same format as Survey.SEC.
 func (s SEC) String() string {
+	lines := make([]string, len(s.Records))
+	for i, rec := range s.Records {
+		lines[i] = rec.String()
+	}
+
+	return renderSEC(lines, s.Routes, s.Ownerships)
+}
+
+// renderSEC assembles a .sec document from already-rendered world lines: the
+// one difference between Survey.SEC (Record.SecondSurvey) and SEC.String
+// (RecordLine.String), sharing everything else — the metadata block and the
+// trailing-newline trim.
+func renderSEC(lines []string, routes []route.Link, ownerships []Ownership) string {
 	var b strings.Builder
 
-	for _, rec := range s.Records {
-		b.WriteString(rec.String())
+	for _, line := range lines {
+		b.WriteString(line)
 		b.WriteByte('\n')
 	}
 
-	writeSECMetadata(&b, s.Routes, s.Ownerships)
+	writeSECMetadata(&b, routes, ownerships)
 
 	return strings.TrimRight(b.String(), "\n")
 }

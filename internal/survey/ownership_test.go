@@ -69,6 +69,27 @@ func TestMarkColoniesChoosesCanonicalOwner(t *testing.T) {
 	}
 }
 
+func TestMarkColoniesLeavesUnreachableCandidateUnmarked(t *testing.T) {
+	records := []Record{
+		{Hex: sectorgen.Hex{Col: 4, Row: 4}, System: systemgen.System{
+			Mainworld: surveyWorld(0, 7, 6, 2, 8),
+		}},
+		// Well past the six-hex ownership range (Book 3 Chart D, p.26).
+		{Hex: sectorgen.Hex{Col: 20, Row: 20}, System: systemgen.System{
+			Mainworld: surveyWorld(4, 8, 0, 0, 12),
+		}},
+	}
+
+	got := markColonies(records)
+	if len(got) != 0 {
+		t.Fatalf("ownerships = %+v, want none (no world within range)", got)
+	}
+
+	if slices.Contains(records[0].System.Mainworld.TradeCodes, tradecode.Cy) {
+		t.Errorf("unreachable colony candidate was stamped Cy: %v", records[0].System.Mainworld.TradeCodes)
+	}
+}
+
 func TestColonyOwnerRangeAndTie(t *testing.T) {
 	records := []Record{
 		{Hex: sectorgen.Hex{Col: 10, Row: 10}, System: systemgen.System{
