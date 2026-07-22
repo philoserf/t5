@@ -67,11 +67,11 @@ var availableSkillCodes = map[string]string{
 	"Bureaucrat": "C", "Comms": "S", "Computer": "S", "Counsellor": "C", "Designer": "C",
 	"Diplomat": "R", "Driver": "", "Explosives": "S", "Fleet Tactics": "N", "Flyer": "",
 	"Forensics": "X", "Gambler": "", "High-G": "S", "Hostile Env": "S", "JOT": "",
-	"Language": "CNRS", "Leader": "NR", "Liaison": "NR", "Naval Arch": "N", "Seafarer": "",
+	"Language": "CNRS", "Leader": "NR", "Liaison": "NR", "Naval Architect": "N", "Seafarer": "",
 	"Stealth": "", "Strategy": "NR", "Streetwise": "", "Survey": "S", "Survival": "S",
 	"Tactics": "NRS", "Teacher": "C", "Trader": "S", "Vacc Suit": "S", "Zero-G": "S",
-	"Astrogator": "CN", "Engineer": "", "Gunner": "N", "Medic": "XNRS", "Pilot": "",
-	"Sensors": "NS", "Steward": "NS", "Fighter": "R", "Fwd Obs": "RS", "Hvy Wpns": "RS",
+	"Astrogation": "CN", "Engineer": "", "Gunner": "N", "Medic": "XNRS", "Pilot": "",
+	"Sensors": "NS", "Steward": "NS", "Fighter": "R", "Fwd Obs": "RS", "Heavy Weapons": "RS",
 	"Navigation": "RS", "Recon": "RS", "Sapper": "RS", "Actor": "CS", "Artist": "CS",
 	"Author": "CS", "Chef": "CS", "Dancer": "CS", "Musician": "CS", "Biologics": "CS",
 	"Craftsman": "CS", "Electronics": "CS", "Fluidics": "CS", "Gravitics": "CS",
@@ -214,8 +214,8 @@ func serviceSchool(serviceColumn Institution) Institution {
 }
 
 var (
-	shipEducationSkills    = []string{"Astrogator", "Engineer", "Gunner", "Medic", "Pilot", "Sensors", "Steward"}
-	soldierEducationSkills = []string{"Fighter", "Fwd Obs", "Hvy Wpns", "Navigation", "Recon", "Sapper"}
+	shipEducationSkills    = []string{"Astrogation", "Engineer", "Gunner", "Medic", "Pilot", "Sensors", "Steward"}
+	soldierEducationSkills = []string{"Fighter", "Fwd Obs", "Heavy Weapons", "Navigation", "Recon", "Sapper"}
 )
 
 // attendServiceAcademy runs a Military, Naval, or Marine Academy (Book 1 p.60
@@ -227,6 +227,10 @@ var (
 // Officer1"), via the shared academicProgram machinery (4 years, Major+1 per
 // Pass, Minor+1 per 2 Passes).
 func attendServiceAcademy(r *dice.Roller, p Policy, c *Character, service string) bool {
+	if alreadyGraduated(c, academyInstitution(service)) {
+		return false
+	}
+
 	waivers := 0
 	if c.Score(Education) < 6 && !waiverGranted(r, p, c, &waivers) {
 		return false
@@ -261,6 +265,20 @@ func academyInstitution(service string) Institution {
 	}
 }
 
+// alreadyGraduated reports whether c already holds a graduated EducationRecord
+// for institution — it keeps the one-shot p.59 institutions (Service Academy,
+// Medical/Law School, Honors, Flight School) from silently stacking their
+// bonus if AttendInstitution is called twice for the same one.
+func alreadyGraduated(c *Character, institution Institution) bool {
+	for _, rec := range c.EducationHistory {
+		if rec.Institution == institution && rec.Graduated {
+			return true
+		}
+	}
+
+	return false
+}
+
 // attendProfessional runs the shared Medical School / Law School mechanic
 // (Book 1 p.60 chart rows): both share a Pre-Requisite of Honors BA, waivable
 // like any prerequisite (p.59), then a Pass/Fail Check (the better of Int or
@@ -278,6 +296,10 @@ func attendProfessional(
 	level int,
 	degree string,
 ) bool {
+	if alreadyGraduated(c, institution) {
+		return false
+	}
+
 	waivers := 0
 	if !c.hasDegree("Honors BA") && !waiverGranted(r, p, c, &waivers) {
 		return false
@@ -311,15 +333,13 @@ func attendProfessional(
 // describes only makes sense for a character who has already passed every
 // year of an academic program (p.59: "a character who Graduates... receives
 // Graduation benefits").
-func attendHonors(r *dice.Roller, p Policy, c *Character) bool {
-	if !c.hasDegree("BA") {
+func attendHonors(r *dice.Roller, _ Policy, c *Character) bool {
+	if !c.hasDegree("BA") || alreadyGraduated(c, HonorsProgram) {
 		return false
 	}
 
-	waivers := 0
-
 	ch := bestChar(*c, Intelligence, Education)
-	if !c.Check(r, ch, 2, 0).Success && !waiverGranted(r, p, c, &waivers) {
+	if !c.Check(r, ch, 2, 0).Success {
 		return false
 	}
 
@@ -375,6 +395,10 @@ func attendOfficerTraining(
 // Eneri Dinsha example (p.61) waives the Honors BA prerequisite, then Checks
 // C2 and receives Pilot+3.
 func attendFlightSchool(r *dice.Roller, p Policy, c *Character) bool {
+	if alreadyGraduated(c, FlightSchool) {
+		return false
+	}
+
 	waivers := 0
 	if !c.hasDegree("Honors BA") && !waiverGranted(r, p, c, &waivers) {
 		return false
@@ -411,7 +435,7 @@ func attendCommandCollege(r *dice.Roller, p Policy, c *Character) bool {
 		return false
 	}
 
-	options := slices.Concat(AvailableSkills(MilitaryAcademy), AvailableSkills(NavalAcademy))
+	options := AvailableSkills(commandAcademy(c))
 	for range 2 {
 		c.Skills.Raise(p.ChooseSkill(*c, options), 1)
 	}
@@ -419,4 +443,19 @@ func attendCommandCollege(r *dice.Roller, p Policy, c *Character) bool {
 	c.EducationHistory = append(c.EducationHistory, EducationRecord{Institution: CommandCollege, Graduated: true})
 
 	return true
+}
+
+// commandAcademy returns the Service Academy matching c's own service (Book 1
+// p.62: "two skill levels from the appropriate Military or Naval Academy"),
+// inferred from the most recent Commission-bearing education record. It falls
+// back to MilitaryAcademy — matching academyInstitution's own default — when
+// no service record exists.
+func commandAcademy(c *Character) Institution {
+	for _, rec := range slices.Backward(c.EducationHistory) {
+		if rec.Commission != "" {
+			return academyInstitution(rec.Commission)
+		}
+	}
+
+	return MilitaryAcademy
 }
