@@ -266,12 +266,7 @@ func waiverGranted(r *dice.Roller, p Policy, c *Character, priorWaivers *int) bo
 func awardAcademicPass(c *Character, p Policy, prog academicProgram, passNum int) {
 	if prog.awardsMajor {
 		if c.Major == "" {
-			available := prog.available
-			if len(available) == 0 {
-				available = academicMajors
-			}
-
-			c.Major = p.ChooseSkill(*c, available)
+			c.Major = p.ChooseSkill(*c, prog.majorPool())
 		}
 
 		c.Skills.Raise(c.Major, 1)
@@ -279,16 +274,21 @@ func awardAcademicPass(c *Character, p Policy, prog academicProgram, passNum int
 
 	if prog.awardsMinor && passNum%2 == 0 {
 		if c.Minor == "" {
-			available := prog.available
-			if len(available) == 0 {
-				available = academicMajors
-			}
-
-			c.Minor = p.ChooseSkill(*c, without(available, c.Major))
+			c.Minor = p.ChooseSkill(*c, without(prog.majorPool(), c.Major))
 		}
 
 		c.Skills.Raise(c.Minor, 1)
 	}
+}
+
+// majorPool returns a program's Major/Minor candidate list: its own
+// institution-specific list if it has one, else the shared academicMajors list.
+func (prog academicProgram) majorPool() []string {
+	if len(prog.available) == 0 {
+		return academicMajors
+	}
+
+	return prog.available
 }
 
 // graduate applies a program's graduation benefit: Edu rises to the program's

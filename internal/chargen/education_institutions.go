@@ -3,6 +3,7 @@ package chargen
 import (
 	"fmt"
 	"slices"
+	"strings"
 
 	"github.com/philoserf/t5/internal/dice"
 )
@@ -96,11 +97,18 @@ var availableSkillCodes = map[string]string{
 // Naval, Marine, Trade, apprentice, and training schools use School together
 // with the appropriate academy column where the chart marks both.
 func AvailableSkills(institution Institution) []string {
-	column := matrixColumn(institution)
+	column := rune(matrixColumn(institution))
+
+	return skillsInMatrix(func(codes string) bool { return strings.ContainsRune(codes, column) })
+}
+
+// skillsInMatrix returns, in stable alphabetical order, every skill whose Book
+// 1 p.60 matrix column codes satisfy match.
+func skillsInMatrix(match func(codes string) bool) []string {
 	result := make([]string, 0)
 
 	for name, codes := range availableSkillCodes {
-		if slices.Contains([]byte(codes), column) {
+		if match(codes) {
 			result = append(result, name)
 		}
 	}
@@ -114,8 +122,6 @@ func matrixColumn(institution Institution) byte {
 	switch institution {
 	case MedicalSchool:
 		return 'X'
-	case MarineAcademy:
-		return 'R'
 	default:
 		return byte(institution)
 	}
@@ -181,16 +187,11 @@ func attendANMSchool(r *dice.Roller, p Policy, c *Character, serviceColumn Insti
 		return false
 	}
 
-	options := make([]string, 0)
-
-	for name, codes := range availableSkillCodes {
-		if slices.Contains([]byte(codes), matrixColumn(School)) &&
-			slices.Contains([]byte(codes), matrixColumn(serviceColumn)) {
-			options = append(options, name)
-		}
-	}
-
-	slices.Sort(options)
+	schoolColumn := rune(matrixColumn(School))
+	serviceCol := rune(matrixColumn(serviceColumn))
+	options := skillsInMatrix(func(codes string) bool {
+		return strings.ContainsRune(codes, schoolColumn) && strings.ContainsRune(codes, serviceCol)
+	})
 
 	c.Skills.Raise(p.ChooseSkill(*c, options), 2)
 	c.EducationHistory = append(
@@ -295,14 +296,7 @@ func attendProfessional(
 	}
 
 	c.Skills.Raise(skill, level)
-
-	if c.scores[Education] < 10 {
-		c.scores[Education] = 10
-	} else {
-		c.scores[Education] = min(c.scores[Education]+1, maxCharacteristic)
-	}
-
-	c.Degrees = append(c.Degrees, degree)
+	graduate(c, academicProgram{gradEdu: 10, degree: degree})
 	c.EducationHistory = append(c.EducationHistory, EducationRecord{Institution: institution, Graduated: true})
 
 	return true
@@ -417,7 +411,7 @@ func attendCommandCollege(r *dice.Roller, p Policy, c *Character) bool {
 		return false
 	}
 
-	options := append(AvailableSkills(MilitaryAcademy), AvailableSkills(NavalAcademy)...)
+	options := slices.Concat(AvailableSkills(MilitaryAcademy), AvailableSkills(NavalAcademy))
 	for range 2 {
 		c.Skills.Raise(p.ChooseSkill(*c, options), 1)
 	}
