@@ -5,8 +5,83 @@ import (
 	"testing"
 
 	"github.com/philoserf/t5/internal/dice"
+	"github.com/philoserf/t5/internal/route"
 	"github.com/philoserf/t5/internal/sectorgen"
 )
+
+func TestSECRoundTripWithRelationshipMetadata(t *testing.T) {
+	const first = "0101 Maesavo E410100-7 Lo Co {-3}(500-2)[1139] B - - 233 17 Im K8 V BD K4 VI"
+
+	const second = "0201 Regina A788899-C Ph Pa Ri Cy {+4}(D7E+4)[9C6D] BcCeF NS - 503 6 Im F7 V"
+
+	a, err := ParseRecord(first)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	b, err := ParseRecord(second)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	doc := SEC{
+		Records: []RecordLine{a, b},
+		Routes: []route.Link{{
+			From: sectorgen.Hex{Col: 1, Row: 1}, To: sectorgen.Hex{Col: 2, Row: 1}, Jump: 1,
+		}},
+		Ownerships: []Ownership{{
+			Colony: sectorgen.Hex{Col: 2, Row: 1}, Owner: sectorgen.Hex{Col: 1, Row: 1},
+		}},
+	}
+
+	want := first + "\n" + second + "\n\n" +
+		"# Route: 0101 0201 J1\n" +
+		"# Owner: 0201 O:0101"
+	if got := doc.String(); got != want {
+		t.Fatalf("SEC.String() =\n%s\nwant\n%s", got, want)
+	}
+
+	parsed, err := ParseSEC(want)
+	if err != nil {
+		t.Fatalf("ParseSEC: %v", err)
+	}
+
+	if got := parsed.String(); got != want {
+		t.Fatalf("SEC round trip =\n%s\nwant\n%s", got, want)
+	}
+}
+
+func TestSurveySECPreservesSecondSurveyLines(t *testing.T) {
+	sv := Sector(dice.NewWithSeed(42), sectorgen.Sparse)
+	sec := sv.SEC()
+
+	wantPrefix := sv.Records[0].SecondSurvey() + "\n"
+	if !strings.HasPrefix(sec, wantPrefix) {
+		t.Fatalf("SEC changed first Second Survey line\n got %q\nwant %q", sec[:len(wantPrefix)], wantPrefix)
+	}
+
+	parsed, err := ParseSEC(sec)
+	if err != nil {
+		t.Fatalf("ParseSEC(generated): %v", err)
+	}
+
+	if parsed.String() != sec {
+		t.Fatal("generated SEC did not round-trip byte-identically")
+	}
+}
+
+func TestParseSECRejectsMalformedMetadata(t *testing.T) {
+	for _, line := range []string{
+		"# Route: 0101 0201 J2", // jump disagrees with endpoints
+		"# Route: 0101 ZZZZ J1",
+		"# Owner: 0101 O:0101", // cannot own itself
+		"# Owner: 0101 O:3201", // farther than six hexes
+	} {
+		if _, err := ParseSEC(line); err == nil {
+			t.Errorf("ParseSEC(%q) succeeded", line)
+		}
+	}
+}
 
 // TestSectorSaveLoadByteIdentical is the #327 acceptance: a generated sector,
 // saved as its Second Survey record lines, survives a load/save cycle
