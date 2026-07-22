@@ -5,6 +5,7 @@
 package combat
 
 import (
+	"github.com/philoserf/t5/internal/benchmark"
 	"github.com/philoserf/t5/internal/dice"
 	"github.com/philoserf/t5/internal/task"
 )
@@ -103,7 +104,7 @@ func Impact(r *dice.Roller, defenderC2, attackerSpeed int) dice.CheckResult {
 
 // ImpactDamageDice is the number of damage dice an Impact inflicts: Speed
 // squared (Book 1 p.202).
-func ImpactDamageDice(speed int) int { return speed * speed }
+func ImpactDamageDice(speed int) int { return int(benchmark.ImpactHits(speed, 1)) }
 
 // Absorb returns the hits that get through armor: those beyond the armor rating,
 // which absorbs hits equal to its value (Book 1 p.202).
