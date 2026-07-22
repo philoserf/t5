@@ -45,7 +45,7 @@ type PerceptionDetail struct {
 // Perception, represented by Constant zero while retaining canonical details.
 var (
 	Vision     = Sense{'V', 16, "RGB"}
-	Hearing    = Sense{'H', 16, "9392"}
+	Hearing    = Sense{'H', 16, "9382"}
 	Smell      = Sense{'S', 10, "2"}
 	Touch      = Sense{'T', 6, "2"}
 	Awareness  = Sense{'A', 0, "0"}

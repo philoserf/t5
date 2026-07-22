@@ -74,7 +74,7 @@ func TestSenseString(t *testing.T) {
 }
 
 func TestHumanSenseIDs(t *testing.T) {
-	want := []string{"V-16-RGB", "H-16-9392", "S-10-2", "T-06-2", "A-00-0", "P-00-00"}
+	want := []string{"V-16-RGB", "H-16-9382", "S-10-2", "T-06-2", "A-00-0", "P-00-00"}
 
 	got := []Sense{Vision, Hearing, Smell, Touch, Awareness, Perception}
 	for i, s := range got {
@@ -90,7 +90,7 @@ func TestHumanSenseIDs(t *testing.T) {
 
 func TestSenseCodecRoundTrip(t *testing.T) {
 	texts := []string{
-		"V-16-RGB", "V-20-VHD", "H-16-9392", "H-20-A4B2",
+		"V-16-RGB", "V-20-VHD", "H-16-9382", "H-20-A4B2",
 		"S-10-2", "T-06-2", "A-16-1", "P-24-24",
 	}
 	for _, text := range texts {
@@ -136,7 +136,7 @@ func TestSenseDetails(t *testing.T) {
 	}
 
 	hearing, ok := Hearing.HearingParameters()
-	if !ok || hearing != (HearingDetail{Frequency: 9, Span: 3, Voice: 9, VoiceRange: 2}) {
+	if !ok || hearing != (HearingDetail{Frequency: 9, Span: 3, Voice: 8, VoiceRange: 2}) {
 		t.Errorf("HearingParameters = %+v, %v", hearing, ok)
 	}
 
