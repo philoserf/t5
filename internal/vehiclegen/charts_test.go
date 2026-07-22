@@ -8,13 +8,13 @@ import (
 func TestCreationChartRegistriesComplete(t *testing.T) {
 	wantTypes := []string{
 		"G:GC", "G:U", "G:T", "G:V", "G:M", "G:H", "G:R",
-		"M:T", "M:C", "M:V", "M:R",
+		"M:T", "M:C", "M:V", "M:R", "M:W",
 		"F:F", "F:G", "F:B",
 		"W:S", "W:U", "W:B",
 	}
 	wantMissions := []string{
 		"G:RO", "G:P", "G:C", "G:MP", "G:OR",
-		"M:W", "M:T", "M:S", "M:R",
+		"M:T", "M:S", "M:R",
 		"F:A", "F:B", "F:C", "F:P", "F:S", "F:U",
 		"W:C", "W:P", "W:E", "W:T",
 	}
@@ -28,6 +28,17 @@ func TestCreationChartRegistriesComplete(t *testing.T) {
 	assertRegistry(t, "type", typeRows, wantTypes)
 	assertRegistry(t, "mission", missionRows, wantMissions)
 	assertRegistry(t, "motive", motiveRows, wantMotives)
+}
+
+func TestDesignMilitaryWeaponType(t *testing.T) {
+	v := Design(Spec{Category: "M", Type: "W", Mission: "T", Motive: "W"})
+	if len(v.Problems) != 0 {
+		t.Fatalf("military Weapon design problems = %v", v.Problems)
+	}
+
+	if v.TechLevel != 6 || v.Tons != 3 || v.Speed != 5 || v.CostKCr != 100 {
+		t.Errorf("military Weapon values = %+v", v.Values)
+	}
 }
 
 func assertRegistry(t *testing.T, name string, rows map[string]Modifier, want []string) {
