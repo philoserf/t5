@@ -10,8 +10,8 @@ func TestScaffoldMatchesTypicalEPIC(t *testing.T) {
 	adventure := Scaffold()
 	wantPurposes := []string{
 		"Who What Why Where When How",
-		"Meeting the Key Non-Players",
-		"Pursuing the Key Goal",
+		"Meeting The Key Non-Players",
+		"Pursuing The Key Goal",
 		"Approaching Resolution",
 	}
 
