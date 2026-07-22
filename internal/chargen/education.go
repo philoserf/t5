@@ -58,7 +58,8 @@ type academicProgram struct {
 	preReqEdu    int    // minimum Edu to enroll (0 when preReqDegree is the gate)
 	preReqDegree string // a prior degree required to enroll ("" for undergraduate programs)
 	gradEdu      int
-	degree       string // the degree conferred on graduation
+	degree       string   // the degree conferred on graduation
+	available    []string // optional institution-specific Major/Minor list
 }
 
 var (
@@ -195,6 +196,12 @@ func attemptED5(r *dice.Roller, c *Character) {
 // prior degree for a post-graduate program — cannot attend and is left
 // unchanged.
 func attendAcademic(r *dice.Roller, p Policy, c *Character, prog academicProgram) {
+	attendAcademicWithWaivers(r, p, c, prog, 0)
+}
+
+// attendAcademicWithWaivers continues the cumulative education-waiver modifier
+// when an explicitly selected program first waived its prerequisite.
+func attendAcademicWithWaivers(r *dice.Roller, p Policy, c *Character, prog academicProgram, priorWaivers int) {
 	if prog.preReqDegree != "" && !c.hasDegree(prog.preReqDegree) {
 		return
 	}
@@ -203,7 +210,6 @@ func attendAcademic(r *dice.Roller, p Policy, c *Character, prog academicProgram
 		return
 	}
 
-	priorWaivers := 0
 	// Admission and each yearly Pass/Fail Check use the better of Int or Edu.
 	passCh := bestChar(*c, Intelligence, Education)
 	if !admitted(r, p, c, passCh, &priorWaivers) {
@@ -260,7 +266,12 @@ func waiverGranted(r *dice.Roller, p Policy, c *Character, priorWaivers *int) bo
 func awardAcademicPass(c *Character, p Policy, prog academicProgram, passNum int) {
 	if prog.awardsMajor {
 		if c.Major == "" {
-			c.Major = p.ChooseSkill(*c, academicMajors)
+			available := prog.available
+			if len(available) == 0 {
+				available = academicMajors
+			}
+
+			c.Major = p.ChooseSkill(*c, available)
 		}
 
 		c.Skills.Raise(c.Major, 1)
@@ -268,7 +279,12 @@ func awardAcademicPass(c *Character, p Policy, prog academicProgram, passNum int
 
 	if prog.awardsMinor && passNum%2 == 0 {
 		if c.Minor == "" {
-			c.Minor = p.ChooseSkill(*c, without(academicMajors, c.Major))
+			available := prog.available
+			if len(available) == 0 {
+				available = academicMajors
+			}
+
+			c.Minor = p.ChooseSkill(*c, without(available, c.Major))
 		}
 
 		c.Skills.Raise(c.Minor, 1)
