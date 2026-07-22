@@ -2,14 +2,191 @@ package survey
 
 import (
 	"fmt"
+	"slices"
 	"strconv"
 	"strings"
 
 	"github.com/philoserf/t5/internal/ehex"
+	"github.com/philoserf/t5/internal/route"
 	"github.com/philoserf/t5/internal/sectorgen"
 	"github.com/philoserf/t5/internal/systemgen"
+	"github.com/philoserf/t5/internal/tradecode"
 	"github.com/philoserf/t5/internal/worldgen"
 )
+
+const (
+	routeMetadataPrefix = "# Route: "
+	ownerMetadataPrefix = "# Owner: "
+)
+
+// SEC is this package's lossless sector-document representation: the existing
+// Second Survey record lines plus comment metadata for relationships that a
+// world line cannot carry. Book 3 specifies O:nnnn for a Cy colony's owner but
+// does not specify a text encoding for trade routes; "# Route:" is therefore a
+// documented survey convention, not a claimed T5SS standard.
+type SEC struct {
+	Records    []RecordLine
+	Routes     []route.Link
+	Ownerships []Ownership
+}
+
+// SEC renders a generated survey as a lossless .sec document. Its world lines
+// are exactly Record.SecondSurvey output; adding relationship metadata therefore
+// does not change the existing Second Survey stream.
+func (s Survey) SEC() string {
+	var b strings.Builder
+
+	for _, rec := range s.Records {
+		b.WriteString(rec.SecondSurvey())
+		b.WriteByte('\n')
+	}
+
+	writeSECMetadata(&b, s.Routes, s.Ownerships)
+
+	return strings.TrimRight(b.String(), "\n")
+}
+
+// String renders a parsed SEC document in the same format as Survey.SEC.
+func (s SEC) String() string {
+	var b strings.Builder
+
+	for _, rec := range s.Records {
+		b.WriteString(rec.String())
+		b.WriteByte('\n')
+	}
+
+	writeSECMetadata(&b, s.Routes, s.Ownerships)
+
+	return strings.TrimRight(b.String(), "\n")
+}
+
+func writeSECMetadata(b *strings.Builder, routes []route.Link, ownerships []Ownership) {
+	if len(routes) == 0 && len(ownerships) == 0 {
+		return
+	}
+
+	if b.Len() > 0 {
+		b.WriteByte('\n')
+	}
+
+	for _, link := range routes {
+		fmt.Fprintf(b, "%s%s %s J%d\n", routeMetadataPrefix, link.From, link.To, link.Jump)
+	}
+
+	for _, own := range ownerships {
+		fmt.Fprintf(b, "%s%s O:%s\n", ownerMetadataPrefix, own.Colony, own.Owner)
+	}
+}
+
+// ParseSEC decodes the document emitted by Survey.SEC. Blank lines and unrelated
+// comments are ignored; malformed Route/Owner comments using this format fail.
+func ParseSEC(data string) (SEC, error) {
+	var doc SEC
+
+	for lineNo, line := range strings.Split(strings.ReplaceAll(data, "\r\n", "\n"), "\n") {
+		line = strings.TrimSpace(line)
+		if line == "" || strings.HasPrefix(line, "#") &&
+			!strings.HasPrefix(line, routeMetadataPrefix) && !strings.HasPrefix(line, ownerMetadataPrefix) {
+			continue
+		}
+
+		switch {
+		case strings.HasPrefix(line, routeMetadataPrefix):
+			link, err := parseRouteMetadata(strings.TrimPrefix(line, routeMetadataPrefix))
+			if err != nil {
+				return SEC{}, fmt.Errorf("survey: line %d: %w", lineNo+1, err)
+			}
+
+			doc.Routes = append(doc.Routes, link)
+		case strings.HasPrefix(line, ownerMetadataPrefix):
+			own, err := parseOwnerMetadata(strings.TrimPrefix(line, ownerMetadataPrefix))
+			if err != nil {
+				return SEC{}, fmt.Errorf("survey: line %d: %w", lineNo+1, err)
+			}
+
+			doc.Ownerships = append(doc.Ownerships, own)
+		default:
+			rec, err := ParseRecord(line)
+			if err != nil {
+				return SEC{}, fmt.Errorf("survey: line %d: %w", lineNo+1, err)
+			}
+
+			doc.Records = append(doc.Records, rec)
+		}
+	}
+
+	if err := validateSECRelationships(doc); err != nil {
+		return SEC{}, err
+	}
+
+	return doc, nil
+}
+
+func validateSECRelationships(doc SEC) error {
+	records := make(map[sectorgen.Hex]RecordLine, len(doc.Records))
+	for _, rec := range doc.Records {
+		records[rec.Hex] = rec
+	}
+
+	for _, link := range doc.Routes {
+		if _, ok := records[link.From]; !ok {
+			return fmt.Errorf("survey: route start %s has no world record", link.From)
+		}
+
+		if _, ok := records[link.To]; !ok {
+			return fmt.Errorf("survey: route end %s has no world record", link.To)
+		}
+	}
+
+	for _, own := range doc.Ownerships {
+		colony, colonyOK := records[own.Colony]
+
+		_, ownerOK := records[own.Owner]
+		if !colonyOK || !ownerOK {
+			return fmt.Errorf("survey: ownership %s O:%s references a missing world", own.Colony, own.Owner)
+		}
+
+		if !slices.Contains(colony.Mainworld.TradeCodes, tradecode.Cy) {
+			return fmt.Errorf("survey: owned world %s is not classified Cy", own.Colony)
+		}
+	}
+
+	return nil
+}
+
+func parseRouteMetadata(s string) (route.Link, error) {
+	fields := strings.Fields(s)
+	if len(fields) != 3 || !strings.HasPrefix(fields[2], "J") {
+		return route.Link{}, fmt.Errorf("bad route metadata %q", s)
+	}
+
+	from, fromOK := sectorgen.ParseHex(fields[0])
+
+	to, toOK := sectorgen.ParseHex(fields[1])
+
+	jump, jumpErr := strconv.Atoi(strings.TrimPrefix(fields[2], "J"))
+	if jumpErr != nil || !fromOK || !toOK || jump < 1 || from.Distance(to) != jump {
+		return route.Link{}, fmt.Errorf("bad route metadata %q", s)
+	}
+
+	return route.Link{From: from, To: to, Jump: jump}, nil
+}
+
+func parseOwnerMetadata(s string) (Ownership, error) {
+	fields := strings.Fields(s)
+	if len(fields) != 2 || !strings.HasPrefix(fields[1], "O:") {
+		return Ownership{}, fmt.Errorf("bad owner metadata %q", s)
+	}
+
+	colony, colonyOK := sectorgen.ParseHex(fields[0])
+
+	owner, ownerOK := sectorgen.ParseHex(strings.TrimPrefix(fields[1], "O:"))
+	if !colonyOK || !ownerOK || colony == owner || colony.Distance(owner) > 6 {
+		return Ownership{}, fmt.Errorf("bad owner metadata %q", s)
+	}
+
+	return Ownership{Colony: colony, Owner: owner}, nil
+}
 
 // Serialization for a full Second Survey record (#327). A record
 // renders as

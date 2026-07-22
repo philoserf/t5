@@ -135,6 +135,15 @@ func (w *World) SetCapital(code tradecode.Code) {
 	w.nobility = Nobility(w.TradeCodes, w.importance, true)
 }
 
+// SetColony marks the mainworld as a colony owned by another world (Book 3
+// Chart D, p.26). Ownership itself is a relationship between sector hexes and is
+// retained by survey; the world record carries the Cy classification.
+func (w *World) SetColony() {
+	if !slices.Contains(w.TradeCodes, tradecode.Cy) {
+		w.TradeCodes = append(w.TradeCodes, tradecode.Cy)
+	}
+}
+
 // SetNavalDepot places a Naval Depot on the world (Book 3 p.28), a system-
 // encompassing naval fleet base. Unlike a Way Station it confers no Importance
 // bonus — Chart E's Ix table does not list one — so it only sets the base. Depots
