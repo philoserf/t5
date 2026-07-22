@@ -68,7 +68,92 @@ func TestAbsentSenseAlwaysFails(t *testing.T) {
 }
 
 func TestSenseString(t *testing.T) {
-	if Vision.String() != "V-16" || Touch.String() != "T-6" {
-		t.Errorf("Sense.String = %q/%q, want V-16/T-6", Vision.String(), Touch.String())
+	if Vision.String() != "V-16-RGB" || Touch.String() != "T-06-2" {
+		t.Errorf("Sense.String = %q/%q, want V-16-RGB/T-06-2", Vision.String(), Touch.String())
+	}
+}
+
+func TestHumanSenseIDs(t *testing.T) {
+	want := []string{"V-16-RGB", "H-16-9392", "S-10-2", "T-06-2", "A-00-0", "P-00-00"}
+
+	got := []Sense{Vision, Hearing, Smell, Touch, Awareness, Perception}
+	for i, s := range got {
+		if s.String() != want[i] {
+			t.Errorf("sense %d = %q, want %q", i, s.String(), want[i])
+		}
+	}
+
+	if !Vision.Available() || Awareness.Available() || Perception.Available() {
+		t.Error("human sense availability does not match Constants")
+	}
+}
+
+func TestSenseCodecRoundTrip(t *testing.T) {
+	texts := []string{
+		"V-16-RGB", "V-20-VHD", "H-16-9392", "H-20-A4B2",
+		"S-10-2", "T-06-2", "A-16-1", "P-24-24",
+	}
+	for _, text := range texts {
+		s, err := Parse(text)
+		if err != nil {
+			t.Fatalf("Parse(%q): %v", text, err)
+		}
+
+		encoded, err := s.MarshalText()
+		if err != nil || string(encoded) != text {
+			t.Errorf("MarshalText(Parse(%q)) = %q, %v", text, encoded, err)
+		}
+
+		var decoded Sense
+		if err := decoded.UnmarshalText(encoded); err != nil || decoded != s {
+			t.Errorf("UnmarshalText(%q) = %+v, %v; want %+v", text, decoded, err, s)
+		}
+	}
+}
+
+func TestSenseCodecRejectsMalformed(t *testing.T) {
+	bad := []string{
+		"V-16", "V-016-RGB", "V-16-rgb", "V-16-RBG", // bands must be canonical and adjacent
+		"H-16-939", "H-16-93I2", "S-10-22", "T-6-2", "A-00-I", "P-24-2o",
+		"X-16-0", "V-AA-RGB", "V-100-RGB",
+	}
+	for _, text := range bad {
+		if _, err := Parse(text); err == nil {
+			t.Errorf("Parse(%q) succeeded, want error", text)
+		}
+	}
+
+	original := Vision
+	if err := original.UnmarshalText([]byte("V-16-rgb")); err == nil || original != Vision {
+		t.Errorf("failed UnmarshalText changed receiver: %+v, %v", original, err)
+	}
+}
+
+func TestSenseDetails(t *testing.T) {
+	bands, ok := Vision.VisionBands()
+	if !ok || bands != [3]byte{'R', 'G', 'B'} {
+		t.Errorf("VisionBands = %q, %v", bands, ok)
+	}
+
+	hearing, ok := Hearing.HearingParameters()
+	if !ok || hearing != (HearingDetail{Frequency: 9, Span: 3, Voice: 9, VoiceRange: 2}) {
+		t.Errorf("HearingParameters = %+v, %v", hearing, ok)
+	}
+
+	if sharpness, ok := Smell.Level(); !ok || sharpness != 2 {
+		t.Errorf("Smell.Level = %d, %v", sharpness, ok)
+	}
+
+	p, err := Parse("P-24-24")
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	if detail, ok := p.PerceptionParameters(); !ok || detail != (PerceptionDetail{Tone: 2, Poice: 4}) {
+		t.Errorf("PerceptionParameters = %+v, %v", detail, ok)
+	}
+
+	if _, ok := Vision.Level(); ok {
+		t.Error("Vision unexpectedly exposed a single-detail level")
 	}
 }
