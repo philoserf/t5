@@ -34,26 +34,19 @@ func ResolveUncertainDice(
 	refereeFaces := r.DiceFaces(uncertainDice)
 	actualFaces := append(append([]int(nil), playerFaces...), refereeFaces...)
 	adjustedTarget := target + sum(mods)
-	actual := resultFromFaces(actualFaces, adjustedTarget)
-	actual = applySpectacular(actual)
+	actual := applySpectacular(resultFromFaces(actualFaces, adjustedTarget))
 
-	visible := dice.Classify(playerFaces)
-	apparentRoll := faceSum(playerFaces) + assumedUncertainFace*uncertainDice
-	apparentSuccess := apparentRoll <= adjustedTarget
-
-	switch visible {
-	case dice.SpectacularSuccess:
-		apparentSuccess = true
-	case dice.SpectacularFailure:
-		apparentSuccess = false
-	case dice.NotSpectacular, dice.SpectacularlyInteresting:
-	}
+	apparentRoll := sum(playerFaces) + assumedUncertainFace*uncertainDice
+	apparent := applySpectacular(dice.CheckResult{
+		Success: apparentRoll <= adjustedTarget,
+		Faces:   playerFaces,
+	})
 
 	return UncertainResult{
 		Actual:             actual,
 		ApparentRoll:       apparentRoll,
-		ApparentSuccess:    apparentSuccess,
-		VisibleSpectacular: visible,
+		ApparentSuccess:    apparent.Success,
+		VisibleSpectacular: dice.Classify(playerFaces),
 		PlayerFaces:        playerFaces,
 		RefereeFaces:       refereeFaces,
 	}
@@ -67,20 +60,11 @@ func UncertaintyDice(base, harderLevels, pacedTaskDice int) int {
 }
 
 func resultFromFaces(faces []int, target int) dice.CheckResult {
-	roll := faceSum(faces)
+	roll := sum(faces)
 
 	return dice.CheckResult{
 		Roll: roll, Total: roll, Target: target,
 		Success: roll <= target, Effect: target - roll,
 		Faces: append([]int(nil), faces...),
 	}
-}
-
-func faceSum(faces []int) int {
-	total := 0
-	for _, face := range faces {
-		total += face
-	}
-
-	return total
 }
