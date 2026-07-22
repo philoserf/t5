@@ -31,7 +31,7 @@ func TestInventoryAndGoldenRows(t *testing.T) {
 		want string
 	}{
 		"Device Damage Location":     {6, "Processor"},
-		"Anatomical Damage Location": {9, "Limb-Group-3"},
+		"Anatomical Damage Location": {9, "Limb-Grip-3"},
 		"Theme4":                     {4, "Revenge"},
 		"Space Sensors":              {6, "Distress Call"},
 		"Reported Fault":             {3, "Power System"},
