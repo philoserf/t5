@@ -113,6 +113,7 @@ Entry points, each taking a `*dice.Roller` (except ship design, which is pure):
 | `chargen`   | `GenerateCareered(r, policy, homeworld, career)` | a character through their careers                   |
 | `sophont`   | `Generate(r)` · `chargen.GenerateSophont(…)`     | an alien species · an individual of it              |
 | `shipgen`   | `Design(spec)`                                   | a designed ship (deterministic)                     |
+| `vehiclegen`| `Design(spec)` · `Generate(r)`                   | a ground vehicle, flyer, or watercraft              |
 | `survey`    | `Sector(…)`                                      | a surveyed sector with capitals and trade routes    |
 
 The layers, bottom to top:
@@ -121,7 +122,7 @@ The layers, bottom to top:
   the one source of randomness.
 - **Primitives** — `ehex` (extended-hex digits), `uwp` (the `Profile`), `skill`, `calendar`,
   `task` (the Universal Task profile), `rangeband`.
-- **Generators** — `worldgen`, `systemgen`, `chargen`, `sophont`, `shipgen`, and the mapping
+- **Generators** — `worldgen`, `systemgen`, `chargen`, `sophont`, `shipgen`, `vehiclegen`, and the mapping
   stack (`sectorgen` + `survey` + `route`).
 - **Play & economy** — `senses`, `personals`, `combat`, `shipcombat`, and `trade` build on the
   task engine.
