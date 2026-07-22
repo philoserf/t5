@@ -59,6 +59,8 @@ Tooling (go, go-task, golangci-lint, poppler's `pdftotext`) is pinned in `Brewfi
   load-bearing until each adopts `Derive` internally.
 - `internal/ehex/` — Traveller extended-hex digits (0-9, A-Z omitting I and O). `Digit`
   encodes, `ParseDigit` decodes. Every UWP characteristic is an eHex value.
+- `internal/benchmark/` — shared Traveller5 benchmark scales and table lookups for
+  impact, risk, temperature, insulation, size, Fame, Danger, and Threat (Book 1 pp. 36-43).
 - `internal/uwp/` — the `Profile` type and its `String` in StSAHPGL-T form (e.g. `A788899-C`).
   `BeltSize` (0) is the one Size digit that is a **code, not a dimension** — a field of asteroids.
   Whether Size 0 _means_ a belt depends on the body, which is why the reader is **not** a `Profile`
