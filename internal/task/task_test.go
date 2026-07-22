@@ -78,6 +78,10 @@ func TestPace(t *testing.T) {
 		if got := c.d.Cautious(); got != c.cautious {
 			t.Errorf("%s.Cautious() = %d, want %d", c.d, got, c.cautious)
 		}
+
+		if got := c.d.ExtraHasty(); got != c.d.Dice()+2 {
+			t.Errorf("%s.ExtraHasty() = %d, want %d", c.d, got, c.d.Dice()+2)
+		}
 	}
 }
 
