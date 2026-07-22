@@ -1,9 +1,6 @@
 package personals
 
-import (
-	"github.com/philoserf/t5/internal/dice"
-	"github.com/philoserf/t5/internal/task"
-)
+import "github.com/philoserf/t5/internal/dice"
 
 // QuickNPC holds the referee-secret 2D base values for Carouse, Query,
 // Persuade, and Command, in that order (Book 1 p.183).
@@ -32,12 +29,14 @@ func (npc QuickNPC) Value(p Purpose) (int, bool) {
 }
 
 // Check rolls the Purpose's normal dice against its Quick NPC base value and
-// any applicable Law/situational Mods.
+// any applicable Law/situational Mods. It shares Resolve's target formula
+// with a neutral Strategy/Law (multiplier 1, lawMod 0): a Quick NPC has no
+// Strategy or Tactic of its own (p.183).
 func (npc QuickNPC) Check(r *dice.Roller, p Purpose, mods ...int) dice.CheckResult {
 	value, ok := npc.Value(p)
 	if !ok {
 		panic("personals: quick NPC purpose out of range")
 	}
 
-	return task.ResolveDice(r, p.Dice(), value, mods...)
+	return Resolve(r, p, value, 1, 0, mods...)
 }
