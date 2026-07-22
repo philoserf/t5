@@ -14,9 +14,18 @@ program — College or University (undergraduate) then, for a BA-holder electing
 (`Policy.PursueGraduateSchool`), the post-graduate Masters → Professors ladder — all one
 parameterized `academicProgram` (years, `awardsMajor`, `awardsMinor`, Edu-or-degree prereq,
 grad-Edu, degree) through the shared apply/pass-fail/waiver `attendAcademic`: undergraduates
-get Major+1 per pass and Minor+1 per 2 passes with a BA + Edu bump, the Masters raises only the
-Minor (MA, Edu 9), Professors neither (Edu 12); golden-locked to the book's Eneri Dinsha College
+get Major+1 per pass and Minor+1 per 2 passes with a BA + Edu bump; Masters and Professors use
+that same merged Provides cell; golden-locked to the book's Eneri Dinsha College
 example `9AB58A`) → Begin → term loop → muster-out.
+
+The remaining p.60 institutions are explicit opt-in operations through `AttendInstitution`:
+Service Academies, Medical and Law School, Honors, OTC/NOTC, Flight School, and Command College.
+`EducationRecord` preserves formal status (graduation, Honors, commission, Flight branch) without
+pretending that pre-career completion is already a served career. `AvailableSkills` transcribes
+all seven columns of the p.60 matrix and returns a sorted copy. Medical School and Marine Academy,
+both printed as `M`, are separate typed columns. Institution selection, academy
+service, and waiver use remain policy decisions; assigned ANM School and Command College timing
+remain with the career that assigns them.
 
 Begin (`beginCareer`, Book 1 p. 63) rolls to qualify; the first career Retries a failed Begin
 once, later careers do not, and a character refused by every chosen career falls back to the
@@ -72,7 +81,8 @@ Major/Minor (lost if uneducated, per the page footnote); `DefaultPolicy.ChooseSk
 character-aware, so a graduate specializes in the Academic column while an uneducated Scout falls
 through to Courier.
 
-Deferred: the rest of the education institutions (Trade School, higher/military), the Scout's
+Deferred: Tra-based Apprenticeship/Mentor/Training Course and career assignment of ANM School or
+Command College, the Scout's
 Courier/Explorer duty and R&R reward, the Rogue's Scheme mechanic, the armed-forces
 Branch/Operations R&R mods and commission/promotion skill eligibility, and each career's
 documented flavor deferrals (in its own file header). See the per-career `.go` files for the exact
