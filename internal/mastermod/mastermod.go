@@ -1,5 +1,13 @@
 // Package mastermod provides the named random-reference tables from Traveller5
 // Book 1 pp. 264-269.
+//
+// Rows are book-literal text; the seven "<none>" entries transcribe the
+// printed instruction "Treat blank entries as <none>." (Book 1 p.267).
+//
+// Deliberate exclusions (do not re-add): Barrier Height/Width/Depth (blank
+// cells in the appendix, Book 1 p.268), Scene Mods (a formula, not a die
+// table, p.268), and the unrolled Imperiallines/Hortalez MegaCorporation rows
+// (printed without 2x1D keys, p.269). See CLAUDE.md.
 package mastermod
 
 import (
@@ -55,47 +63,39 @@ func (t Table) Valid() bool {
 	return true
 }
 
-// Lookup returns the row for a die total. Substitutions replace tokens written
-// as <Name> deterministically; missing substitutions leave the source token
-// intact. Out-of-range totals return false.
-func (t Table) Lookup(total int, substitutions map[string]string) (string, bool) {
-	if !t.Valid() {
-		return "", false
-	}
-
-	index := total - t.Minimum
+// Lookup returns the row for a die total. Out-of-range totals (including the
+// gaps of a sparse table) return false.
+func (t Table) Lookup(total int) (string, bool) {
 	if len(t.Rolls) != 0 {
-		index, _ = slices.BinarySearch(t.Rolls, total)
-		if index >= len(t.Rolls) || t.Rolls[index] != total {
+		index, ok := slices.BinarySearch(t.Rolls, total)
+		if !ok {
 			return "", false
 		}
-	} else if total < t.Minimum || total > t.Maximum() {
+
+		return t.Rows[index], true
+	}
+
+	if total < t.Minimum || total > t.Maximum() {
 		return "", false
 	}
 
-	row := t.Rows[index]
-
-	keys := make([]string, 0, len(substitutions))
-	for key := range substitutions {
-		keys = append(keys, key)
-	}
-
-	slices.Sort(keys)
-
-	for _, key := range keys {
-		row = strings.ReplaceAll(row, "<"+key+">", substitutions[key])
-	}
-
-	return row, true
+	return t.Rows[total-t.Minimum], true
 }
 
 var registry = map[string]Table{}
 
-// Get returns a named Master Mod table.
+// Get returns a named Master Mod table. The returned Table is a deep copy;
+// mutating its Rows or Rolls cannot affect the registry.
 func Get(name string) (Table, bool) {
 	t, ok := registry[name]
+	if !ok {
+		return Table{}, false
+	}
 
-	return t, ok
+	t.Rows = slices.Clone(t.Rows)
+	t.Rolls = slices.Clone(t.Rolls)
+
+	return t, true
 }
 
 // Names returns all registered names in stable alphabetical order.
@@ -129,5 +129,9 @@ func table(name, dice string, minimum int, rows ...string) Table {
 }
 
 func sparse(name, dice string, rolls []int, rows ...string) Table {
+	if len(rolls) == 0 {
+		panic(fmt.Sprintf("mastermod: sparse table %q has no rolls", name))
+	}
+
 	return Table{Name: name, Dice: dice, Minimum: rolls[0], Rolls: rolls, Rows: rows}
 }
