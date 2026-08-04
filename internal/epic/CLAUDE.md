@@ -13,6 +13,13 @@ table on p. 279; `Theme` exposes that lookup without randomness. The much larger
 “Other Themes” word bank has no 1D-by-1D selection procedure printed on the page
 and is outside issue #182's explicit 1D×1D scope.
 
-The extraction has three obvious OCR errors corrected from context:
-`Truthfullness` becomes `Truthfulness`, `Pro table` becomes `Profitable`, and
-`Per dy` (in the out-of-scope word bank) reads `Perfidy`.
+Three spellings are corrected from context, in two distinct categories.
+`Pro table` → `Profitable` and `Per dy` → `Perfidy` (the latter in the
+out-of-scope word bank) are extraction artifacts — dropped "fi" ligatures;
+the rendered page prints both words correctly. `Truthfullness` →
+`Truthfulness` is different: the book itself prints the double-l, in both
+copies of the table (Book 3 p.279 and Book 1 p.267), so this one is a
+deliberate normalization of the book's own typo, not an OCR fix.
+`internal/mastermod` carries the same Themes table and makes the opposite
+call, preserving the printed spelling — both are settled; do not "align"
+one to the other.
