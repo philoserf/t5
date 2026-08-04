@@ -97,18 +97,68 @@ func TestOccupants(t *testing.T) {
 }
 
 func TestDesignGroundVehicle(t *testing.T) {
+	// Book 3 p.150: GroundCar Tons 2 / Load 1 / KCr 20; Passenger Armor 5 /
+	// Insulated 12 / KCr 10; Wheeled TL 6 / Speed 5 / x1.
 	v := Design(Spec{Category: "G", Type: "GC", Mission: "P", Motive: "W"})
 	if len(v.Problems) != 0 {
 		t.Fatalf("Design: %v", v.Problems)
 	}
 
-	want := Values{TechLevel: 6, Tons: 2, Speed: 4, Load: 5, Insulated: 12, CostKCr: 30}
+	want := Values{TechLevel: 6, Tons: 2, Speed: 5, Load: 1, Armor: 5, Insulated: 12, CostKCr: 30}
 	if v.Values != want {
 		t.Errorf("GroundCar = %+v, want %+v", v.Values, want)
 	}
 
-	if v.Beastpower != 128 {
-		t.Errorf("GroundCar BP = %g, want 128", v.Beastpower)
+	if v.Beastpower != 250 {
+		t.Errorf("GroundCar BP = %g, want 250", v.Beastpower)
+	}
+}
+
+func TestDesignEnduranceRows(t *testing.T) {
+	// Chart 13 (Book 3 p.153): Days..Year add TL +1..+4 and 1..4 x Speed tons;
+	// KCr 20/50/100 for Days/Weeks/Months, none printed for Year.
+	base := Design(Spec{Category: "G", Type: "T", Mission: "C", Motive: "W"})
+
+	for _, c := range []struct {
+		endurance Endurance
+		tl        int
+		tons      float64
+		kcr       float64
+	}{
+		{Minutes, 0, 0, 0},
+		{Hours, 0, 0, 0},
+		{Days, 1, 5, 20},
+		{Weeks, 2, 10, 50},
+		{Months, 3, 15, 100},
+		{Year, 4, 20, 0},
+	} {
+		v := Design(Spec{Category: "G", Type: "T", Mission: "C", Motive: "W", Endurance: c.endurance})
+		if v.TechLevel != base.TechLevel+c.tl || v.Tons != base.Tons+c.tons ||
+			v.CostKCr != base.CostKCr+c.kcr {
+			t.Errorf("endurance %d = %+v, want +%d TL, +%g tons, +%g KCr over %+v",
+				c.endurance, v.Values, c.tl, c.tons, c.kcr, base.Values)
+		}
+	}
+}
+
+func TestDesignLTATonnageAndBeastpowerShift(t *testing.T) {
+	// Book 3 p.151: "LTA final tonnage equals 10x the calculated tonnage."
+	lta := Design(Spec{Category: "F", Type: "B", Mission: "C", Motive: "LTA"})
+	if lta.Tons != 1600 { // (40 x4) x10
+		t.Errorf("Balloon Cargo tons = %g, want 1600", lta.Tons)
+	}
+
+	// Book 3 p.146 column shift: Watercraft Ship reads BP at Speed +3.
+	ship := Design(Spec{Category: "W", Type: "S", Mission: "T", Motive: "S"})
+	if want := 1000 * float64(7*7*7); ship.Beastpower != want {
+		t.Errorf("Ship BP = %g, want %g (Speed 4 shifted +3)", ship.Beastpower, want)
+	}
+
+	armored, _ := Enhancer("Armored")
+
+	tank := Design(Spec{Category: "M", Type: "T", Mission: "W", Motive: "T", Enhancers: []Modifier{armored}})
+	if want := tank.Tons * float64(5*5*5); tank.Beastpower != want {
+		t.Errorf("Armored tank BP = %g, want %g (Speed 3 shifted +2)", tank.Beastpower, want)
 	}
 }
 

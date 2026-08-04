@@ -2,25 +2,26 @@ package vehiclegen
 
 import (
 	"math"
+	"reflect"
 	"testing"
 )
 
 func TestCreationChartRegistriesComplete(t *testing.T) {
 	wantTypes := []string{
 		"G:GC", "G:U", "G:T", "G:V", "G:M", "G:H", "G:R",
-		"M:T", "M:C", "M:V", "M:R", "M:W",
+		"M:T", "M:C", "M:V", "M:R",
 		"F:F", "F:G", "F:B",
 		"W:S", "W:U", "W:B",
 	}
 	wantMissions := []string{
 		"G:RO", "G:P", "G:C", "G:MP", "G:OR",
-		"M:T", "M:S", "M:R",
+		"M:W", "M:T", "M:S", "M:R",
 		"F:A", "F:B", "F:C", "F:P", "F:S", "F:U",
 		"W:C", "W:P", "W:E", "W:T",
 	}
 	wantMotives := []string{
-		"G:AC", "G:W", "G:Z", "G:G", "G:T",
-		"M:AC", "M:W", "M:Z", "M:G", "M:T",
+		"G:AC", "G:W", "G:Z", "G:G", "G:T", "G:L",
+		"M:AC", "M:W", "M:Z", "M:G", "M:T", "M:L",
 		"F:W", "F:R", "F:F", "F:LTA", "F:Z", "F:G",
 		"W:S", "W:U", "W:H", "W:G",
 	}
@@ -30,14 +31,16 @@ func TestCreationChartRegistriesComplete(t *testing.T) {
 	assertRegistry(t, "motive", motiveRows, wantMotives)
 }
 
-func TestDesignMilitaryWeaponType(t *testing.T) {
-	v := Design(Spec{Category: "M", Type: "W", Mission: "T", Motive: "W"})
+func TestDesignMilitaryWeaponMission(t *testing.T) {
+	// Book 3 p.150: Weapon is a Mission row (section B); a Tank Type with the
+	// Weapon Mission is the book's Combat Tank ("TW" in the p.140 catalog).
+	v := Design(Spec{Category: "M", Type: "T", Mission: "W", Motive: "W"})
 	if len(v.Problems) != 0 {
-		t.Fatalf("military Weapon design problems = %v", v.Problems)
+		t.Fatalf("Combat Tank design problems = %v", v.Problems)
 	}
 
-	if v.TechLevel != 6 || v.Tons != 3 || v.Speed != 5 || v.CostKCr != 100 {
-		t.Errorf("military Weapon values = %+v", v.Values)
+	if v.TechLevel != 6 || v.Tons != 7 || v.Speed != 4 || v.Armor != 50 || v.CostKCr != 600 {
+		t.Errorf("Combat Tank values = %+v", v.Values)
 	}
 }
 
@@ -82,52 +85,121 @@ func TestEnhancerRegistryComplete(t *testing.T) {
 	}
 }
 
-func TestEnhancerColumns(t *testing.T) {
-	base := Values{
-		TechLevel: 8, Tons: 12, Speed: 6, Load: 4, Armor: 10, Cage: 10,
-		Flash: 10, Radiation: 10, Sound: 10, Psi: 10, Insulated: 10, Sealed: 10, CostKCr: 100,
+// TestEnhancerColumnsAgainstPage asserts every Chart 12 cell against literals
+// transcribed from the rendered Book 3 p.152 (independent of the registry —
+// a misread column must fail here, not be mirrored). Blank and printed-0
+// cells are zero Operations. Column order matches the chart: TL, Tons, Speed,
+// Load, Armor, Cage, FlashProof, RadProof, SoundProof, PsiShield, Insulated,
+// Sealed, KCr.
+func TestEnhancerColumnsAgainstPage(t *testing.T) {
+	non := Operation{}
+
+	want := map[string][13]Operation{
+		// D Bulk.
+		"Vl": {
+			add(-1), mul(1.0 / 3), add(1), add(-2), mul(1.0 / 3), non, non, mul(1.0 / 3), non, non,
+			mul(1.0 / 3), mul(1.0 / 3), mul(1.0 / 3),
+		},
+		"L": {add(-1), mul(.5), add(1), add(-1), mul(.5), non, non, mul(.5), non, non, mul(.5), mul(.5), mul(.5)},
+		"M": {},
+		"H": {add(1), mul(2), add(-1), add(2), mul(2), non, non, mul(2), mul(2), non, mul(2), mul(2), mul(3)},
+		"Vh": {
+			add(2), mul(3), add(-2), add(3), mul(3), non, non, mul(2), mul(2), non, mul(3), mul(3),
+			mul(9),
+		},
+		// E Stage.
+		"Fos": {add(-2), add(2), non, non, add(-10), non, non, non, add(-10), non, non, non, non},
+		"PC":  {add(-1), add(1), add(-2), add(-2), add(-5), non, non, non, add(-5), non, non, non, add(10)},
+		"Ren": {add(-1), add(1), add(-1), add(-1), non, non, non, non, non, non, non, non, add(20)},
+		"Pro": {add(-2), add(1), add(-1), add(-1), non, non, non, non, non, non, non, non, add(20)},
+		"Ear": {add(-1), add(1), non, non, add(-10), non, non, non, add(-10), non, non, non, add(10)},
+		"Std": {},
+		"Imp": {add(1), add(-1), non, non, add(10), non, non, non, add(10), non, non, non, add(20)},
+		"Adv": {add(3), add(-2), add(1), add(1), add(20), non, non, non, add(20), non, non, non, add(40)},
+		// F Environ.
+		"Air": {add(-2), non, non, non, non, non, non, non, non, non, non, non, non},
+		"Enclosed": {
+			add(-1), non, non, non, add(4), non, add(4), non, add(4), non, add(12), non,
+			non,
+		},
+		"Sealed": {non, non, non, non, add(6), add(2), add(6), non, add(8), non, add(16), add(20), add(2)},
+		"DoubleSealed": {
+			non, add(1), non, non, add(8), add(4), add(6), non, add(12), non, add(30),
+			add(20), add(5),
+		},
+		"Insulated": {
+			non, non, non, non, add(8), add(4), add(6), non, add(12), non, add(30), add(20),
+			add(10),
+		},
+		"Protected": {
+			add(1), add(1), non, non, add(10), add(10), add(10), add(10), add(12), non,
+			add(10), add(20), add(20),
+		},
+		"Armored": {
+			add(2), add(1), non, non, add(20), add(10), add(10), add(10), add(12), non,
+			add(20), add(20), add(30),
+		},
+		"UpArmored": {
+			add(3), add(2), non, non, add(30), add(20), add(20), add(20), add(20), non,
+			add(30), add(20), add(40),
+		},
+		"AltArmored": {
+			add(3), add(2), non, non, add(60), add(20), add(30), add(30), add(30), non,
+			add(30), add(30), add(50),
+		},
+		// G Options.
+		"HighPowered": {add(1), add(1), add(1), add(-1), non, non, non, non, non, non, non, non, add(100)},
+		"Slave":       {add(1), add(-1), non, non, non, non, non, non, non, non, non, non, add(10)},
+		"Remote":      {add(1), add(-2), non, non, non, non, non, non, non, non, non, non, add(20)},
+		"WeaponMount": {non, non, non, add(-1), non, non, non, non, non, non, non, non, non},
+		"Luxury":      {non, non, non, non, non, non, non, non, non, non, non, non, mul(2)},
+		"Fast":        {add(1), add(1), add(1), add(-2), non, non, non, non, non, non, non, non, add(30)},
+		"PassengerModule": {
+			non, non, non, add(-3), non, non, non, non, non, non, non, non,
+			add(100),
+		},
+		"CargoModule": {non, add(1), add(-1), add(1), non, non, non, non, non, non, non, non, add(20)},
+		"Redundancy":  {add(1), add(1), non, non, non, non, non, non, non, non, non, non, add(60)},
+		// J More Options.
+		"OffRoad":    {non, non, non, non, non, non, non, non, non, non, non, non, add(30)},
+		"Mole":       {add(1), mul(3), set(1), non, non, non, non, non, non, non, non, non, add(400)},
+		"Hydrofoils": {add(1), add(1), add(1), non, non, non, non, non, non, non, non, non, add(30)},
+		"Stubs":      {non, non, non, non, non, non, non, non, non, non, non, non, add(20)},
+		"VTOL":       {non, non, add(-1), add(-2), non, non, non, non, non, non, non, non, add(100)},
+		"STOL":       {non, non, non, add(-1), non, non, non, non, non, non, non, non, add(50)},
+		"LiftingBody": {
+			non, add(4), add(1), mul(2), non, non, non, non, non, non, non, non,
+			add(200),
+		},
+		"Wings1": {non, mul(2), add(1), mul(1), non, non, non, non, non, non, non, non, add(100)},
+		"Wings2": {non, mul(3), add(2), mul(2), non, non, non, non, non, non, non, non, add(200)},
+		"Wings3": {non, mul(4), add(3), mul(3), non, non, non, non, non, non, non, non, add(300)},
+		"Floats": {non, add(-1), add(-1), non, non, non, non, non, non, non, non, non, add(100)},
+		"ParasiteNipple": {
+			add(1), non, non, add(-1), non, non, non, non, non, non, non, non,
+			add(100),
+		},
 	}
 
-	for _, c := range []struct {
-		code string
-		want Values
-	}{
-		{"H", Values{
-			TechLevel: 9, Tons: 24, Speed: 5, Load: 6, Armor: 20, Cage: 20,
-			Flash: 10, Radiation: 10, Sound: 10, Psi: 10, Insulated: 20, Sealed: 20, CostKCr: 300,
-		}},
-		{"Adv", Values{
-			TechLevel: 11, Tons: 10, Speed: 7, Load: 5, Armor: 30, Cage: 30,
-			Flash: 10, Radiation: 10, Sound: 10, Psi: 10, Insulated: 10, Sealed: 10, CostKCr: 140,
-		}},
-		{"Armored", Values{
-			TechLevel: 10, Tons: 13, Speed: 6, Load: 4, Armor: 30, Cage: 20,
-			Flash: 20, Radiation: 20, Sound: 22, Psi: 0, Insulated: 30, Sealed: 30, CostKCr: 130,
-		}},
-		{"HighPowered", Values{
-			TechLevel: 9, Tons: 13, Speed: 7, Load: 3, Armor: 10, Cage: 10,
-			Flash: 10, Radiation: 10, Sound: 10, Psi: 10, Insulated: 10, Sealed: 10, CostKCr: 200,
-		}},
-	} {
-		row, _ := Enhancer(c.code)
+	if len(want) != len(enhancerRows) {
+		t.Fatalf("page transcription covers %d rows, registry has %d", len(want), len(enhancerRows))
+	}
 
-		got := applyTo(base, row)
-		if got != c.want {
-			t.Errorf("%s applied = %+v, want %+v", c.code, got, c.want)
+	for code, cols := range want {
+		row, ok := Enhancer(code)
+		if !ok {
+			t.Errorf("Enhancer(%q) missing", code)
+
+			continue
 		}
-	}
-}
 
-func applyTo(base Values, row Modifier) Values {
-	return Values{
-		TechLevel: int(row.TechLevel.apply(float64(base.TechLevel))),
-		Tons:      row.Tons.apply(base.Tons), Speed: int(row.Speed.apply(float64(base.Speed))),
-		Load: row.Load.apply(base.Load), Armor: int(row.Armor.apply(float64(base.Armor))),
-		Cage: int(row.Cage.apply(float64(base.Cage))), Flash: int(row.Flash.apply(float64(base.Flash))),
-		Radiation: int(row.Radiation.apply(float64(base.Radiation))),
-		Sound:     int(row.Sound.apply(float64(base.Sound))), Psi: int(row.Psi.apply(float64(base.Psi))),
-		Insulated: int(row.Insulated.apply(float64(base.Insulated))),
-		Sealed:    int(row.Sealed.apply(float64(base.Sealed))), CostKCr: row.CostKCr.apply(base.CostKCr),
+		got := [13]Operation{
+			row.TechLevel, row.Tons, row.Speed, row.Load, row.Armor, row.Cage, row.Flash,
+			row.Radiation, row.Sound, row.Psi, row.Insulated, row.Sealed, row.CostKCr,
+		}
+		if !reflect.DeepEqual(got, cols) {
+			t.Errorf("Enhancer(%q) columns = %+v, want %+v", code, got, cols)
+		}
 	}
 }
 

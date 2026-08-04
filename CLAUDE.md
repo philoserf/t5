@@ -126,6 +126,12 @@ Tooling (go, go-task, golangci-lint, poppler's `pdftotext`) is pinned in `Brewfi
 - `internal/shipgen/` — Adventure Class Ship design (Book 2 pp. 30-95), deterministic rather
   than rolled; plus the weapon/defense/missile armament system. See
   `internal/shipgen/CLAUDE.md`.
+- `internal/vehiclegen/` — the VehicleMaker design charts (Book 3 pp. 132-158): deterministic
+  `Design` over the Type/Mission/Motive creation charts plus Chart 12 enhancers and Chart 13
+  endurance, with `Generate` only choosing valid rows. The creation-chart pages are column-lossy
+  in the text extract — transcribe from the rendered PDF. See `internal/vehiclegen/CLAUDE.md`
+  for the settled rulings (per-category apply order, Weapon-as-Mission, the Legged erratum,
+  printed-0-as-no-op, LTA ×10, Beastpower column shifts).
 - `internal/trade/` — the Trade & Commerce pricing engine (Book 2 pp. 209-221): speculative
   cargo, shipping, random trade goods, contracts. See `internal/trade/CLAUDE.md`.
 - `internal/shipcombat/` — the Space Combat resolution engine (Book 2 pp. 193-204); bridges to

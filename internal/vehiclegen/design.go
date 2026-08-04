@@ -103,10 +103,13 @@ func Motive(category, code string) (Modifier, bool) {
 	return row, ok
 }
 
-// Spec selects the three creation-chart rows and optional enhancer rows.
+// Spec selects the three creation-chart rows, optional enhancer rows, and the
+// Chart 13 Endurance class (the zero value, Minutes, is treated like the
+// default Hours: no modifier row).
 type Spec struct {
 	Category, Type, Mission, Motive string
 	Enhancers                       []Modifier
+	Endurance                       Endurance
 }
 
 // Vehicle is a completed VehicleMaker calculation.
@@ -119,8 +122,9 @@ type Vehicle struct {
 	Problems   []string
 }
 
-// Design applies a chart selection. Motive supplies the base mechanism values;
-// Type and Mission then modify them, followed by enhancers in listed order.
+// Design applies a chart selection: the three creation-chart rows, then
+// enhancers in listed order, then the Chart 13 Endurance row, then the LTA
+// tonnage rule. Per-category creation order is documented inline.
 func Design(spec Spec) Vehicle {
 	motive, mok := Motive(spec.Category, spec.Motive)
 	typeRow, tok := vehicleType(spec.Category, spec.Type)
@@ -144,34 +148,125 @@ func Design(spec Spec) Vehicle {
 	}
 
 	rows := make([]Modifier, 0, 3+len(spec.Enhancers))
-	if spec.Category == "F" {
+
+	switch spec.Category {
+	case "F":
 		// Flyer Mission rows multiply the Motive's base columns; the chart prints
 		// Mission before Motive, but the arithmetic is evaluated on the completed
 		// column. Put the base first so the multiplication has its stated operand.
 		rows = append(rows, motive, typeRow, mission)
-	} else {
+	case "W":
+		// Watercraft: the Type row is the base and the Motive multipliers close
+		// (Grav /5, Unpowered /2) as in chart order, but the Mission TL adds
+		// (Patrol/Explorer +2) must be applied after the Motive's TL replacement
+		// or Hovercraft/Grav would erase them — so Motive precedes Mission here.
+		// W Missions carry no Tons or KCr operation, so this order changes
+		// nothing else.
 		rows = append(rows, typeRow, motive, mission)
+	default:
+		// Ground and military apply in chart order A Type, B Mission, C Motive,
+		// so the Motive cost multiplier covers Type+Mission: the Std catalog
+		// (Book 3 p.140) prints MVR-T minus MVR-W = KCr 200 = (100+100)x2 -
+		// (100+100)x1.
+		rows = append(rows, typeRow, mission, motive)
 	}
 
 	rows = append(rows, spec.Enhancers...)
+	rows = append(rows, enduranceModifier(spec.Endurance, Apply(rows...).Speed))
 	v.Values = Apply(rows...)
-	v.Beastpower = Beastpower(v.Tons, v.Speed)
+
+	if spec.Category == "F" && spec.Motive == "LTA" {
+		// Book 3 p.151: "LTA final tonnage equals 10x the calculated tonnage."
+		// Final means after every chart row, so Beastpower and Occupants both
+		// see the x10 figure.
+		v.Tons *= 10
+	}
+
+	v.Beastpower = Beastpower(v.Tons, v.Speed+beastpowerShift(spec))
 
 	return v
 }
 
+// enduranceModifier is the Chart 13 H Endurance row (Book 3 p.153): Days,
+// Weeks, Months (LR), and Year (VLR) add TL +1..+4 and 1..4 x Vehicle Speed
+// tons of stores, at KCr 20/50/100 for Days/Weeks/Months (the printed Year row
+// has no KCr value). Hours is the default and, like Minutes, contributes
+// nothing.
+func enduranceModifier(e Endurance, speed int) Modifier {
+	if e < Days || e > Year {
+		return Modifier{}
+	}
+
+	steps := float64(e - Hours)
+	kcr := [...]float64{20, 50, 100, 0}[e-Days]
+
+	return Modifier{
+		Code:      "H",
+		TechLevel: add(steps),
+		Tons:      add(steps * float64(speed)),
+		CostKCr:   add(kcr),
+	}
+}
+
+// beastpowerShift is the Chart 06 "Column Shift Based on Vehicle Type" box
+// (Book 3 p.146). The shift moves the Beastpower lookup to a higher or lower
+// Speed column; the vehicle's own Speed value is unchanged.
+func beastpowerShift(spec Spec) int {
+	shift := 0
+
+	if spec.Category == "W" {
+		switch spec.Type {
+		case "S":
+			shift += 3
+		case "U":
+			shift += 2
+		case "B":
+			shift++
+		}
+	}
+
+	for _, row := range spec.Enhancers {
+		switch row.Code {
+		case "Vh", "HighPowered", "Protected":
+			shift++
+		case "Armored":
+			shift += 2
+		case "Vl", "Hydrofoils":
+			shift--
+		}
+	}
+
+	return shift
+}
+
 // Generate selects a valid ground, flyer, or watercraft design with injected
-// dice, then delegates to deterministic Design.
+// dice, then delegates to deterministic Design. Flyer motive choice honors the
+// p.151 notes: a Glider requires the Winged motive (Note G) and a Balloon
+// requires Lighter-Than-Air (Note B), so those types roll no motive die.
 func Generate(r *dice.Roller) Vehicle {
 	categories := []string{"G", "F", "W"}
 	category := categories[r.Index(len(categories))]
 	choices := generationChoices[category]
 
+	vehicleType := choices.types[r.Index(len(choices.types))]
+	mission := choices.missions[r.Index(len(choices.missions))]
+
+	var motive string
+
+	switch {
+	case category == "F" && vehicleType == "G":
+		motive = "W" // Note G. Requires Motive= W and unpowered.
+	case category == "F" && vehicleType == "B":
+		motive = "LTA" // Note B. Requires Lighter-Than-Air and unpowered.
+	default:
+		motive = choices.motives[r.Index(len(choices.motives))]
+	}
+
 	return Design(Spec{
 		Category: category,
-		Type:     choices.types[r.Index(len(choices.types))],
-		Mission:  choices.missions[r.Index(len(choices.missions))],
-		Motive:   choices.motives[r.Index(len(choices.motives))],
+		Type:     vehicleType,
+		Mission:  mission,
+		Motive:   motive,
 	})
 }
 
@@ -181,7 +276,7 @@ var generationChoices = map[string]choices{
 	"G": {
 		[]string{"GC", "U", "T", "V", "M", "H", "R"},
 		[]string{"RO", "P", "C", "MP", "OR"},
-		[]string{"AC", "W", "Z", "G", "T"},
+		[]string{"AC", "W", "Z", "G", "T", "L"},
 	},
 	"F": {[]string{"F", "G", "B"}, []string{"A", "B", "C", "P", "S", "U"}, []string{"W", "R", "F", "LTA", "Z", "G"}},
 	"W": {[]string{"S", "U", "B"}, []string{"C", "P", "E", "T"}, []string{"S", "U", "H", "G"}},
@@ -200,13 +295,15 @@ func vehicleMission(category, code string) (Modifier, bool) {
 }
 
 var typeRows = map[string]Modifier{
-	"G:GC": {Code: "GC", Descriptor: "GroundCar", Tons: add(2), Speed: add(-1), CostKCr: add(20)},
-	"G:U":  {Code: "U", Descriptor: "Utility", Tons: add(3), Speed: add(-2), CostKCr: add(30)},
-	"G:T":  {Code: "T", Descriptor: "Truck", Tons: add(4), Speed: add(-3), CostKCr: add(50)},
-	"G:V":  {Code: "V", Descriptor: "Vehicle", Tons: add(5), Speed: add(-3), CostKCr: add(60)},
+	// Book 3 p.150 Chart 10 section A: the civil Type rows carry Tons, Load, and
+	// KCr only — Speed comes entirely from the Motive row.
+	"G:GC": {Code: "GC", Descriptor: "GroundCar", Tons: add(2), Load: add(1), CostKCr: add(20)},
+	"G:U":  {Code: "U", Descriptor: "Utility", Tons: add(3), Load: add(2), CostKCr: add(30)},
+	"G:T":  {Code: "T", Descriptor: "Truck", Tons: add(4), Load: add(3), CostKCr: add(50)},
+	"G:V":  {Code: "V", Descriptor: "Vehicle", Tons: add(5), Load: add(3), CostKCr: add(60)},
 	"G:M":  {Code: "M", Descriptor: "Mover", Tons: add(3), CostKCr: add(50)},
-	"G:H":  {Code: "H", Descriptor: "Hauler", Tons: add(5), Speed: add(-4), CostKCr: add(40)},
-	"G:R":  {Code: "R", Descriptor: "Trailer", Tons: add(5), Speed: add(4), CostKCr: add(40)},
+	"G:H":  {Code: "H", Descriptor: "Hauler", Tons: add(5), Load: add(4), CostKCr: add(40)},
+	"G:R":  {Code: "R", Descriptor: "Trailer", Tons: add(5), Load: add(4), CostKCr: add(40)},
 	"M:T": {
 		Code:       "T",
 		Descriptor: "Tank",
@@ -254,7 +351,6 @@ var typeRows = map[string]Modifier{
 		Code: "R", Descriptor: "Trailer", Tons: add(5), Load: add(4), Armor: add(30), Cage: add(10),
 		Flash: add(10), Radiation: add(10), Sound: add(20), Insulated: add(20), Sealed: add(20), CostKCr: add(50),
 	},
-	"M:W": {Code: "W", Descriptor: "Weapon", Tons: add(2), CostKCr: add(100)},
 	"F:F": {Code: "F", Descriptor: "Flyer"},
 	"F:G": {Code: "G", Descriptor: "Glider", Note: "requires Winged motive and unpowered"},
 	"F:B": {Code: "B", Descriptor: "Balloon", Note: "requires LTA motive and unpowered"},
@@ -293,24 +389,32 @@ var typeRows = map[string]Modifier{
 }
 
 var missionRows = map[string]Modifier{
+	// Book 3 p.150 Chart 10 section B: the civil Mission values sit in the Armor
+	// and Insulated columns (Passenger/Cargo/Multi-Purpose have no Load or Sealed
+	// value at all).
 	"G:RO": {Code: "RO", Descriptor: "Road Only"},
-	"G:P":  {Code: "P", Descriptor: "Passenger", Load: add(5), Insulated: add(12), CostKCr: add(10)},
-	"G:C":  {Code: "C", Descriptor: "Cargo", Load: add(5), Sealed: add(6), CostKCr: add(10)},
-	"G:MP": {Code: "MP", Descriptor: "Multi-Purpose", Load: add(5), Sealed: add(6), CostKCr: add(10)},
+	"G:P":  {Code: "P", Descriptor: "Passenger", Armor: add(5), Insulated: add(12), CostKCr: add(10)},
+	"G:C":  {Code: "C", Descriptor: "Cargo", Armor: add(5), Insulated: add(6), CostKCr: add(10)},
+	"G:MP": {Code: "MP", Descriptor: "Multi-Purpose", Armor: add(5), Insulated: add(6), CostKCr: add(10)},
 	"G:OR": {
 		Code:       "OR",
 		Descriptor: "Off Road",
-		Load:       add(20),
-		Armor:      add(10),
+		Armor:      add(20),
 		Cage:       add(10),
 		Flash:      add(10),
 		Radiation:  add(10),
+		Sound:      add(10),
 		Insulated:  add(20),
 		Sealed:     add(20),
 		CostKCr:    add(100),
 	},
+	// Book 3 p.150 Chart 10 (M) section B: Weapon is a Mission row — the Type
+	// rows are Tank/Carrier/Vehicle/Trailer only. NoteV: install ONE fixed mount
+	// weapon (supersedes NoteT or NoteC). The Std catalog corroborates: "TW"
+	// Combat Tank = Tank Type + Weapon Mission.
+	"M:W": {Code: "W", Descriptor: "Weapon", Tons: add(2), CostKCr: add(100), Note: "NoteV: one fixed mount weapon"},
 	"M:T": {Code: "T", Descriptor: "Troop", Tons: add(1)},
-	"M:S": {Code: "S", Descriptor: "Supply", Tons: add(3), Load: add(1), Armor: add(-10)},
+	"M:S": {Code: "S", Descriptor: "Supply", Tons: add(3), Speed: add(-1), Load: add(1), Armor: add(-10)},
 	"M:R": {Code: "R", Descriptor: "Recon", Tons: add(-1), Speed: add(1), Armor: add(-10), CostKCr: add(100)},
 	"F:A": {
 		Code:       "A",
@@ -384,9 +488,10 @@ var missionRows = map[string]Modifier{
 		CostKCr:    mul(2),
 	},
 	"F:U": {
+		// Book 3 p.151: Utility's x3 is in the Load column (Tons is blank).
 		Code:       "U",
 		Descriptor: "Utility",
-		Tons:       mul(3),
+		Load:       mul(3),
 		Flash:      add(20),
 		Radiation:  add(1),
 		Sound:      add(20),
@@ -396,7 +501,8 @@ var missionRows = map[string]Modifier{
 	},
 	"W:C": {Code: "C", Descriptor: "Cargo", Speed: add(-1)},
 	"W:P": {Code: "P", Descriptor: "Patrol", TechLevel: add(2), Speed: add(1), Armor: mul(2)},
-	"W:E": {Code: "E", Descriptor: "Explorer", TechLevel: add(2), Sealed: mul(2)},
+	// Book 3 p.151: Explorer's x2 is in the Insulated column, not Sealed.
+	"W:E": {Code: "E", Descriptor: "Explorer", TechLevel: add(2), Insulated: mul(2)},
 	"W:T": {Code: "T", Descriptor: "Transport"},
 }
 
@@ -406,11 +512,18 @@ var motiveRows = map[string]Modifier{
 	"G:Z":  {Code: "Z", Descriptor: "Lifter", TechLevel: set(9), Tons: add(1), Speed: add(3), CostKCr: mul(2)},
 	"G:G":  {Code: "G", Descriptor: "Grav", TechLevel: set(10), Tons: add(-1), Speed: add(5), CostKCr: mul(3)},
 	"G:T":  {Code: "T", Descriptor: "Tracked", TechLevel: set(7), Tons: add(2), Speed: add(4), CostKCr: mul(2)},
+	// Erratum: Book 3 p.150 prints a sixth motive row "W Wheeled 6 0 5 x1" twice
+	// in both the G and M charts. It is read here as L Legged: the OR* footnote
+	// on the same page references "-Legged", and the Std military catalog
+	// (p.140) prints -L designs (MVR-L, MCS-L, MCT-L, RS-L, TW-L) whose TL 6 /
+	// Speed 5 / x1 arithmetic reproduces exactly under this reading.
+	"G:L":  {Code: "L", Descriptor: "Legged", TechLevel: set(6), Speed: add(5), CostKCr: mul(1)},
 	"M:AC": {Code: "AC", Descriptor: "Air Cushion", TechLevel: set(8), Tons: add(2), Speed: add(6), CostKCr: mul(2)},
 	"M:W":  {Code: "W", Descriptor: "Wheeled", TechLevel: set(6), Speed: add(5), CostKCr: mul(1)},
 	"M:Z":  {Code: "Z", Descriptor: "Lifter", TechLevel: set(9), Tons: add(1), Speed: add(3), CostKCr: mul(2)},
 	"M:G":  {Code: "G", Descriptor: "Grav", TechLevel: set(10), Tons: add(-1), Speed: add(5), CostKCr: mul(3)},
 	"M:T":  {Code: "T", Descriptor: "Tracked", TechLevel: set(7), Tons: add(2), Speed: add(4), CostKCr: mul(2)},
+	"M:L":  {Code: "L", Descriptor: "Legged", TechLevel: set(6), Speed: add(5), CostKCr: mul(1)},
 	"F:W": {
 		Code:       "W",
 		Descriptor: "Winged",
@@ -479,32 +592,41 @@ var motiveRows = map[string]Modifier{
 	"W:G": {Code: "G", Descriptor: "Grav", TechLevel: set(10), Tons: mul(.2), Speed: add(4), CostKCr: mul(2)},
 }
 
+// enhancerRows transcribes Chart 12 (Book 3 p.152). A printed 0 is a no-op —
+// the chart uses 0 for "no change" (compare p.151's "** = No Change"), never
+// as a reset of protection already bought by the creation rows.
 var enhancerRows = map[string]Modifier{ //nolint:gochecknoglobals // immutable chart registry
 	"Vl": {
 		Code: "Vl", Descriptor: "Vlight", TechLevel: add(-1), Tons: mul(1.0 / 3), Speed: add(1),
-		Load: add(-2), Armor: mul(1.0 / 3), Insulated: mul(1.0 / 3), Sealed: mul(1.0 / 3),
-		CostKCr: mul(1.0 / 3),
+		Load: add(-2), Armor: mul(1.0 / 3), Radiation: mul(1.0 / 3), Insulated: mul(1.0 / 3),
+		Sealed: mul(1.0 / 3), CostKCr: mul(1.0 / 3),
 	},
 	"L": {
 		Code: "L", Descriptor: "Light", TechLevel: add(-1), Tons: mul(.5), Speed: add(1),
-		Load: add(-1), Armor: mul(.5), Insulated: mul(.5), Sealed: mul(.5), CostKCr: mul(.5),
+		Load: add(-1), Armor: mul(.5), Radiation: mul(.5), Insulated: mul(.5), Sealed: mul(.5),
+		CostKCr: mul(.5),
 	},
 	"M": {Code: "M", Descriptor: "Medium"},
+	// Heavy and VHeavy print their multiplier pair under RadProof and
+	// SoundProof (the Cage column is blank).
 	"H": {
 		Code: "H", Descriptor: "Heavy", TechLevel: add(1), Tons: mul(2), Speed: add(-1),
-		Load: add(2), Armor: mul(2), Cage: mul(2), Insulated: mul(2), Sealed: mul(2), CostKCr: mul(3),
+		Load: add(2), Armor: mul(2), Radiation: mul(2), Sound: mul(2), Insulated: mul(2),
+		Sealed: mul(2), CostKCr: mul(3),
 	},
 	"Vh": {
 		Code: "Vh", Descriptor: "VHeavy", TechLevel: add(2), Tons: mul(3), Speed: add(-2),
-		Load: add(3), Armor: mul(3), Cage: mul(2), Insulated: mul(3), Sealed: mul(3), CostKCr: mul(9),
+		Load: add(3), Armor: mul(3), Radiation: mul(2), Sound: mul(2), Insulated: mul(3),
+		Sealed: mul(3), CostKCr: mul(9),
 	},
+	// The Stage rows' second value sits under SoundProof, not Cage.
 	"Fos": {
 		Code: "Fos", Descriptor: "Fossil", TechLevel: add(-2), Tons: add(2), Armor: add(-10),
-		Cage: add(-10), Note: "not Grav or Lifter",
+		Sound: add(-10), Note: "not Grav or Lifter",
 	},
 	"PC": {
 		Code: "PC", Descriptor: "PowerCell", TechLevel: add(-1), Tons: add(1), Speed: add(-2),
-		Load: add(-2), Armor: add(-5), Cage: add(-5), CostKCr: add(10), Note: "not Grav or Lifter",
+		Load: add(-2), Armor: add(-5), Sound: add(-5), CostKCr: add(10), Note: "not Grav or Lifter",
 	},
 	"Ren": {
 		Code: "Ren", Descriptor: "Renewable", TechLevel: add(-1), Tons: add(1), Speed: add(-1),
@@ -516,53 +638,52 @@ var enhancerRows = map[string]Modifier{ //nolint:gochecknoglobals // immutable c
 	},
 	"Ear": {
 		Code: "Ear", Descriptor: "Early", TechLevel: add(-1), Tons: add(1), Armor: add(-10),
-		Cage: add(-10), CostKCr: add(10),
+		Sound: add(-10), CostKCr: add(10),
 	},
 	"Std": {Code: "Std", Descriptor: "Standard"},
 	"Imp": {
 		Code: "Imp", Descriptor: "Improved", TechLevel: add(1), Tons: add(-1), Armor: add(10),
-		Cage: add(10), CostKCr: add(20),
+		Sound: add(10), CostKCr: add(20),
 	},
 	"Adv": {
 		Code: "Adv", Descriptor: "Advanced", TechLevel: add(3), Tons: add(-2), Speed: add(1),
-		Load: add(1), Armor: add(20), Cage: add(20), CostKCr: add(40),
+		Load: add(1), Armor: add(20), Sound: add(20), CostKCr: add(40),
 	},
-	"Air": {Code: "Air", Descriptor: "Air (Open)", TechLevel: add(-2), Load: set(0)},
+	"Air": {Code: "Air", Descriptor: "Air (Open)", TechLevel: add(-2)},
 	"Enclosed": {
 		Code: "Enclosed", Descriptor: "Enclosed", TechLevel: add(-1), Armor: add(4),
 		Flash: add(4), Sound: add(4), Insulated: add(12),
 	},
 	"Sealed": {
 		Code: "Sealed", Descriptor: "Sealed", Armor: add(6), Cage: add(2), Flash: add(6),
-		Radiation: set(0), Sound: add(8), Psi: set(0), Insulated: add(16), Sealed: add(20), CostKCr: add(2),
+		Sound: add(8), Insulated: add(16), Sealed: add(20), CostKCr: add(2),
 	},
 	"DoubleSealed": {
 		Code: "DoubleSealed", Descriptor: "Double Sealed", Tons: add(1), Armor: add(8), Cage: add(4),
-		Flash: add(6), Radiation: set(0), Sound: add(12), Psi: set(0), Insulated: add(30),
-		Sealed: add(20), CostKCr: add(5),
+		Flash: add(6), Sound: add(12), Insulated: add(30), Sealed: add(20), CostKCr: add(5),
 	},
 	"Insulated": {
 		Code: "Insulated", Descriptor: "Insulated", Armor: add(8), Cage: add(4), Flash: add(6),
-		Sound: add(12), Psi: set(0), Insulated: add(30), Sealed: add(10), CostKCr: add(10),
+		Sound: add(12), Insulated: add(30), Sealed: add(20), CostKCr: add(10),
 	},
 	"Protected": {
 		Code: "Protected", Descriptor: "Protected", TechLevel: add(1), Tons: add(1), Armor: add(10),
-		Cage: add(10), Flash: add(10), Radiation: add(10), Sound: add(12), Psi: set(0),
-		Insulated: add(30), Sealed: add(20), CostKCr: add(20),
+		Cage: add(10), Flash: add(10), Radiation: add(10), Sound: add(12),
+		Insulated: add(10), Sealed: add(20), CostKCr: add(20),
 	},
 	"Armored": {
 		Code: "Armored", Descriptor: "Armored", TechLevel: add(2), Tons: add(1), Armor: add(20),
-		Cage: add(10), Flash: add(10), Radiation: add(10), Sound: add(12), Psi: set(0),
+		Cage: add(10), Flash: add(10), Radiation: add(10), Sound: add(12),
 		Insulated: add(20), Sealed: add(20), CostKCr: add(30),
 	},
 	"UpArmored": {
 		Code: "UpArmored", Descriptor: "UpArmored", TechLevel: add(3), Tons: add(2), Armor: add(30),
-		Cage: add(20), Flash: add(20), Radiation: add(20), Sound: add(20), Psi: set(0),
+		Cage: add(20), Flash: add(20), Radiation: add(20), Sound: add(20),
 		Insulated: add(30), Sealed: add(20), CostKCr: add(40),
 	},
 	"AltArmored": {
 		Code: "AltArmored", Descriptor: "AltArmored", TechLevel: add(3), Tons: add(2), Armor: add(60),
-		Cage: add(20), Flash: add(30), Radiation: add(30), Sound: add(30), Psi: set(0),
+		Cage: add(20), Flash: add(30), Radiation: add(30), Sound: add(30),
 		Insulated: add(30), Sealed: add(30), CostKCr: add(50),
 	},
 	"HighPowered": {
