@@ -14,7 +14,7 @@ operating/design tables.
 The creation charts (pp.150-152) are dense and the docs/reference text extract is **column-lossy**
 for them — every cell here was transcribed from the rendered PDF pages, and
 `TestEnhancerColumnsAgainstPage` pins all 43 Chart 12 rows with literals transcribed independently
-of the registry. `TestStdMilitaryCatalogGolden` reproduces six vehicles from the p.140 Std military
+of the registry. `TestStdMilitaryCatalogGolden` reproduces seven vehicles from the p.140 Std military
 catalog.
 
 ## Settled rulings (each verified against the rendered pages — do not re-open)
