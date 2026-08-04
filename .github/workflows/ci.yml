@@ -27,7 +27,7 @@ jobs:
       # formatting (gofumpt/goimports/golines drift is reported) and vet (the
       # govet linter), so the lint step replaces the former gofmt + vet steps.
       - name: lint
-        uses: golangci/golangci-lint-action@v8
+        uses: golangci/golangci-lint-action@v9
         with:
           version: v2.12.2
 

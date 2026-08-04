@@ -54,29 +54,30 @@ type Character struct {
 	Age    int  // years; a freshly generated character starts at 18
 	Dead   bool // set when aging (or a career mishap) kills the character
 
-	Homeworld        worldgen.World // the world the character was raised on (Book 1 p. 56)
-	Gender           string         // the individual's gender, for a non-human sophont (Book 3 p. 230); "" for a human
-	Caste            string         // the individual's caste, for a casted sophont (Book 3 p. 229); "" if none
-	Major            string         // College Major subject, if educated
-	Minor            string         // College Minor subject, if educated
-	Degrees          []string       // academic degrees earned (BA, …)
-	Skills           skill.Set      // skills and knowledges gained in careers
-	Careers          []CareerRecord // one record per career served
-	Credits          int            // cash mustered out
-	Benefits         []string       // named mustering-out benefits (Ship Share, TAS, …)
-	Entitlements     []Entitlement  // recurring annual income earned in careers (Book 1 p. 69)
-	WoundBadges      int            // career injuries survived
-	Medals           []Medal        // awards earned on Risk and Reward successes (armed forces)
-	Fame             int            // reputation, the Entertainer's measure of success (Book 1 p. 77)
-	Talent           int            // the Entertainer's performance ability
-	Masterpieces     int            // works of art the Craftsman has created (Book 1 p. 75)
-	MasterpieceValue int            // total Cr value of those masterpieces
-	Publications     int            // research the Scholar has published (Book 1 p. 76)
-	Tenured          bool           // the Scholar has earned academic Tenure (Book 1 p. 76)
-	Commendations    int            // official recognitions the Agent has earned (Book 1 p. 83)
-	LandGrants       int            // fiefs to the Noble per Elevation and the Scout per Discovery (Book 1 pp. 79, 85)
-	Discoveries      int            // valuable worlds or features the Scout has found (Book 1 p. 79)
-	ShipShares       int            // ownership shares the Merchant accumulates (Book 1 p. 80)
+	Homeworld        worldgen.World    // the world the character was raised on (Book 1 p. 56)
+	Gender           string            // the individual's gender, for a non-human sophont (Book 3 p. 230); "" for a human
+	Caste            string            // the individual's caste, for a casted sophont (Book 3 p. 229); "" if none
+	Major            string            // College Major subject, if educated
+	Minor            string            // College Minor subject, if educated
+	Degrees          []string          // academic degrees earned (BA, …)
+	EducationHistory []EducationRecord // completed higher/professional/military institutions
+	Skills           skill.Set         // skills and knowledges gained in careers
+	Careers          []CareerRecord    // one record per career served
+	Credits          int               // cash mustered out
+	Benefits         []string          // named mustering-out benefits (Ship Share, TAS, …)
+	Entitlements     []Entitlement     // recurring annual income earned in careers (Book 1 p. 69)
+	WoundBadges      int               // career injuries survived
+	Medals           []Medal           // awards earned on Risk and Reward successes (armed forces)
+	Fame             int               // reputation, the Entertainer's measure of success (Book 1 p. 77)
+	Talent           int               // the Entertainer's performance ability
+	Masterpieces     int               // works of art the Craftsman has created (Book 1 p. 75)
+	MasterpieceValue int               // total Cr value of those masterpieces
+	Publications     int               // research the Scholar has published (Book 1 p. 76)
+	Tenured          bool              // the Scholar has earned academic Tenure (Book 1 p. 76)
+	Commendations    int               // official recognitions the Agent has earned (Book 1 p. 83)
+	LandGrants       int               // fiefs to the Noble per Elevation and the Scout per Discovery (Book 1 pp. 79, 85)
+	Discoveries      int               // valuable worlds or features the Scout has found (Book 1 p. 79)
+	ShipShares       int               // ownership shares the Merchant accumulates (Book 1 p. 80)
 
 	extremeAgings       int // aging checks that zeroed 3+ characteristics; the 2nd is fatal
 	pensionDoublings    int // "Pension x2" muster results; each adds one multiple (Book 1 p. 68)
