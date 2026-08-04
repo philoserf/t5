@@ -245,7 +245,7 @@ func init() { //nolint:funlen,gochecknoinits // declarative transcription
 			"Lagging",
 			"Cruise",
 			"Fast Lane",
-			"Vfast Land",
+			"Vfast Land", // sic — the book prints "Land" under "Fast Lane"
 			"Grid Control",
 			"Speeding",
 		),

@@ -51,7 +51,7 @@ func init() { //nolint:funlen,gochecknoinits // declarative transcription
 			"Talking",
 			"Loud",
 			"Shout",
-			"Cacaphony",
+			"Cacaphony", // sic — the book prints "Cacaphony", not "Cacophony"
 			"Deafening",
 			"Destructive",
 		),
@@ -251,8 +251,8 @@ func init() { //nolint:funlen,gochecknoinits // declarative transcription
 			"Slightly Unergonomic",
 			"Unwieldy",
 			"Hard To Carry",
-			"More Burdensom",
-			"Very Burdensom",
+			"More Burdensom", // sic — the book prints "Burdensom" in both rows
+			"Very Burdensom", // sic
 		),
 		table(
 			"Safety",

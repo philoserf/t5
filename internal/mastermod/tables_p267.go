@@ -4,6 +4,9 @@ package mastermod
 func init() { //nolint:funlen,gochecknoinits,maintidx // declarative transcription
 	register(
 		// Chart 09, Themes (Book 1 p.267): 1D.
+		// "Truthfullness" is sic — the book prints the double-l in both
+		// copies of this table (Book 1 p.267 and Book 3 p.279). epic
+		// deliberately normalizes it; mastermod preserves the print.
 		table("Theme1", "1D", 1, "Justice", "Happiness", "Kindness", "Honesty", "Truthfullness", "Cleanliness"),
 		table("Theme2", "1D", 1, "Loyalty", "Cheerful", "Trustworthy", "Admiration", "Friendly", "Novelty"),
 		table("Theme3", "1D", 1, "Awe", "Human Frailty", "Brave", "Bizarre", "Thrifty", "Profitable"),

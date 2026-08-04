@@ -33,3 +33,12 @@ Table files are split by printed page: `tables_p264.go` … `tables_p269.go`.
   wider than plain Flux.
 - `Dice` strings not parseable by `dice.Parse` are allowlisted by exact
   string in the tests: `Bad Flux`, `2x1D`, `Hits/2`. A typo fails the suite.
+- **Printed typos are preserved, not corrected** (verified against the
+  rendered PDF pages, not the text extract): `Truthfullness` (p.267 — also
+  printed that way in Book 3 p.279), `Cacaphony` (p.268), `More Burdensom`
+  and `Very Burdensom` (p.268), and `Vfast Land` (p.266, directly under
+  "Fast Lane").
+  Rows are book-literal; a consumer wanting normalized English must map it
+  itself. Note the divergence: `internal/epic` carries the same Themes table
+  and deliberately normalizes `Truthfullness` → `Truthfulness` (see its
+  CLAUDE.md) — that is epic's settled call, and this is mastermod's.

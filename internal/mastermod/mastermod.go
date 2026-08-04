@@ -16,8 +16,10 @@ import (
 	"strings"
 )
 
-// Table is a named contiguous die-total lookup. Dice documents the source roll
-// notation; Rows[0] corresponds to Minimum.
+// Table is a named die-total lookup. Dice documents the source roll notation.
+// With Rolls empty the keys are contiguous and Rows[0] corresponds to Minimum;
+// a non-empty Rolls lists each row's key explicitly, for sparse or
+// non-contiguous source columns.
 type Table struct {
 	Name    string
 	Dice    string
