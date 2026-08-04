@@ -2,7 +2,10 @@ package benchmark
 
 // SpeedEntry is one impact-speed benchmark (Book 1 p.37).
 type SpeedEntry struct {
-	Speed      int
+	Speed int
+	// KPH is the printed kilometers-per-hour cell. The book leaves it blank
+	// above Speed 16, so KPH 0 for Speeds 17-20 means "no printed kph", not
+	// zero speed; only Speed 0 is genuinely 0 kph.
 	KPH        int
 	HitsPerTon int
 	Descriptor string

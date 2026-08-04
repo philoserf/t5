@@ -73,16 +73,28 @@ func (r Risk) Level() int { return r.Probability + r.Severity + r.Imminence }
 // RequiresAction reports whether the risk is positive and must be addressed.
 func (r Risk) RequiresAction() bool { return r.Level() > 0 }
 
+// RiskDescriptor gives the meanings of one Flux value in the three Risk
+// columns (Book 1 p.36).
+type RiskDescriptor struct {
+	Probability string
+	Severity    string
+	Imminence   string
+}
+
 // RiskDescriptors gives the meanings of a Flux value in the three Risk
 // columns. Values outside -6..+6 have no entry.
-func RiskDescriptors(flux int) (string, string, string, bool) {
+func RiskDescriptors(flux int) (RiskDescriptor, bool) {
 	if flux < -6 || flux > 6 {
-		return "", "", "", false
+		return RiskDescriptor{}, false
 	}
 
 	index := flux + 6
 
-	return probabilityDescriptors[index], severityDescriptors[index], imminenceDescriptors[index], true
+	return RiskDescriptor{
+		Probability: probabilityDescriptors[index],
+		Severity:    severityDescriptors[index],
+		Imminence:   imminenceDescriptors[index],
+	}, true
 }
 
 var probabilityDescriptors = [...]string{

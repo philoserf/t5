@@ -38,6 +38,18 @@ func TestImpactReginaExample(t *testing.T) {
 	}
 }
 
+func TestImpactDamageDiceClampsNegativeSpeed(t *testing.T) {
+	// Speed is a magnitude: a negative input deals zero dice, not the square
+	// of its sign-stripped value.
+	if got := ImpactDamageDice(-3); got != 0 {
+		t.Errorf("ImpactDamageDice(-3) = %d, want 0", got)
+	}
+
+	if got := ImpactDamageDice(0); got != 0 {
+		t.Errorf("ImpactDamageDice(0) = %d, want 0", got)
+	}
+}
+
 func TestMeleeCayneExample(t *testing.T) {
 	// Book 1 p.203: Corbett (DMN 7) allocates all 5 Dexterity to his AMN 7 ->
 	// target 7+5-7 = 5 on 2D; he rolls 7 and fails.
