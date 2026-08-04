@@ -121,7 +121,8 @@ The layers, bottom to top:
 - **`dice`** — the T5 dice engine (Flux, roll-low checks/resolves, Many-Dice, chart notation),
   the one source of randomness.
 - **Primitives** — `ehex` (extended-hex digits), `uwp` (the `Profile`), `skill`, `calendar`,
-  `task` (the Universal Task profile), `rangeband`.
+  `task` (the Universal Task profile), `rangeband`, and `kinematics` (distance, light-delay,
+  and constant-acceleration travel time).
 - **Generators** — `worldgen`, `systemgen`, `chargen`, `sophont`, `shipgen`, `vehiclegen`, and the mapping
   stack (`sectorgen` + `survey` + `route`).
 - **Play & economy** — `senses`, `personals`, `combat`, `shipcombat`, and `trade` build on the

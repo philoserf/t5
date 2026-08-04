@@ -128,11 +128,16 @@ func (w World) Nobility() string { return w.nobility }
 // capital is a whole-region decision the caller makes; this only encodes the
 // result on the world.
 func (w *World) SetCapital(code tradecode.Code) {
-	if !slices.Contains(w.TradeCodes, code) {
-		w.TradeCodes = append(w.TradeCodes, code)
-	}
+	w.addTradeCode(code)
 
 	w.nobility = Nobility(w.TradeCodes, w.importance, true)
+}
+
+// SetColony marks the mainworld as a colony owned by another world (Book 3
+// Chart D, p.26). Ownership itself is a relationship between sector hexes and is
+// retained by survey; the world record carries the Cy classification.
+func (w *World) SetColony() {
+	w.addTradeCode(tradecode.Cy)
 }
 
 // SetNavalDepot places a Naval Depot on the world (Book 3 p.28), a system-
@@ -287,6 +292,14 @@ func (w World) bases() string {
 	}
 
 	return b.String()
+}
+
+// addTradeCode adds code to the world's trade codes if it is not already
+// present.
+func (w *World) addTradeCode(code tradecode.Code) {
+	if !slices.Contains(w.TradeCodes, code) {
+		w.TradeCodes = append(w.TradeCodes, code)
+	}
 }
 
 // zone renders the travel zone, leaving Green blank (the common case).
