@@ -5,7 +5,8 @@ Fire tasks are roll-low over `task.ResolveDice` (range-band or 5D dice; targets
 `weaponTL+C+S+K+mods`, `missileTL+guidance+mods`, `defenseTL−attackTL+mountMod`); plus
 `HitCompartment` (Flux + targeting), `Penetrate` (layered armor), the L1 damage-location table,
 damage/diagnosis `Severity`, the missile `MassiveExplosion` proximity table, and movement
-(`Agility`, `RammingHits`, the p.200 range-change grid).
+(`Agility`, `RammingHits`, the p.200 range-change grid). The p.201 tactical helpers expose
+clustered defense coverage and interference options, including target substitution and decoy size.
 
 The ShipCard compartment model (`HullLocations`, p.95 Table H — compartments/span/subcompartments
 by hull ordinal) backs hit location and `SubCompartmentsKnockedOut` damage spread; the missile and
@@ -20,4 +21,6 @@ Murphy/Gryphon, Vanguard/Antares, Joshua, and Vigilant worked examples.
 Note `Armor.AV` is the **per-layer** value, not a total (`ArmorLayers` repeats it, and must not
 divide by the layer count), and `ShipAgility` is capped by `Hull.MaxG`, not just the drive.
 
-Out of scope: the p.201 interference/clustering tactical options.
+Interference's R=7 limit is a **world-range** code (50 km), not Space Range S=7. Cluster membership
+and the choice to spend an available defense remain encounter state; these helpers only determine
+the eligibility and options the printed rules define.
