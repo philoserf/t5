@@ -16,6 +16,7 @@ import (
 	"github.com/philoserf/t5/internal/sectorgen"
 	"github.com/philoserf/t5/internal/systemgen"
 	"github.com/philoserf/t5/internal/tradecode"
+	"github.com/philoserf/t5/internal/worldgen"
 )
 
 // wayStationSpacing is the trade-route length, in parsecs, per Scout Way Station
@@ -40,8 +41,15 @@ func (rec Record) SecondSurvey() string {
 // A Survey is a surveyed region: its per-hex system records and the trade routes
 // linking their Important worlds (Book 3 pp. 21, 27).
 type Survey struct {
-	Records []Record
-	Routes  []route.Link
+	Records    []Record
+	Routes     []route.Link
+	Ownerships []Ownership
+}
+
+// Ownership links a Cy colony to the world which owns it (Book 3 Chart D,
+// p.26). Colony and Owner are sector CCRR locations.
+type Ownership struct {
+	Colony, Owner sectorgen.Hex
 }
 
 // Sector surveys an entire sector (all 1280 hexes) at the given density: every
@@ -87,8 +95,86 @@ func Sector(r *dice.Roller, d sectorgen.Density) Survey {
 	placeNavalDepots(records)
 	links := route.Build(worldsOf(records), route.DefaultJump)
 	placeWayStations(records, links)
+	ownerships := markColonies(records)
 
-	return Survey{Records: records, Routes: links}
+	return Survey{Records: records, Routes: links, Ownerships: ownerships}
+}
+
+// markColonies marks each mainworld matching Chart D's Cy profile and links it
+// to an owner within six hexes. The owner is selected by the book's priority:
+// greatest Importance, then Population, then Tech Level. If all three tie, CCRR
+// order supplies the deterministic tie-break the source does not state. A world
+// cannot own itself; a candidate with no other world in range is left unmarked
+// because Cy means ownership by another world.
+func markColonies(records []Record) []Ownership {
+	var ownerships []Ownership
+
+	for i := range records {
+		if !colonyProfile(records[i].System.Mainworld) {
+			continue
+		}
+
+		owner := colonyOwner(records, i)
+		if owner < 0 {
+			continue
+		}
+
+		records[i].System.Mainworld.SetColony()
+		ownerships = append(ownerships, Ownership{Colony: records[i].Hex, Owner: records[owner].Hex})
+	}
+
+	return ownerships
+}
+
+func colonyProfile(w worldgen.World) bool {
+	p := w.Profile
+
+	return p.Population >= 5 && p.Population <= 10 && p.Government == 6 && p.Law <= 3
+}
+
+func colonyOwner(records []Record, colony int) int {
+	var (
+		best   = -1
+		choice Record
+	)
+
+	for i := range records {
+		if i == colony || records[colony].Hex.Distance(records[i].Hex) > 6 {
+			continue
+		}
+
+		if best < 0 {
+			best = i
+			choice = records[i]
+
+			continue
+		}
+
+		if betterOwner(records[i], choice) {
+			best = i
+			choice = records[i]
+		}
+	}
+
+	return best
+}
+
+func betterOwner(a, b Record) bool {
+	aw, bw := a.System.Mainworld, b.System.Mainworld
+
+	if aw.Importance() != bw.Importance() {
+		return aw.Importance() > bw.Importance()
+	}
+
+	if aw.Profile.Population != bw.Profile.Population {
+		return aw.Profile.Population > bw.Profile.Population
+	}
+
+	if aw.Profile.TechLevel != bw.Profile.TechLevel {
+		return aw.Profile.TechLevel > bw.Profile.TechLevel
+	}
+
+	return a.Hex.String() < b.Hex.String()
 }
 
 // At finds the record for a hex, reporting whether that hex holds a star system.

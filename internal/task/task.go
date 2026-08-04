@@ -58,6 +58,12 @@ func (d Difficulty) Hasty() int {
 	return d.Dice() + 1
 }
 
+// ExtraHasty returns the dice count for a task rushed ahead of every competing
+// non-Extra-Hasty task: two levels harder (+2D, Book 1 p. 125).
+func (d Difficulty) ExtraHasty() int {
+	return d.Dice() + 2
+}
+
 // Cautious returns the dice count when taking extra care: one level easier
 // (-1D), never below 1D.
 func (d Difficulty) Cautious() int {
