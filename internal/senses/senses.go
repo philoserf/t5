@@ -201,7 +201,11 @@ func validEHex(detail string, width int) bool {
 	return true
 }
 
-// NoticeAtRange resolves an at-range sense Action.
+// NoticeAtRange resolves an at-range sense Action (Vision/Hearing/Awareness/
+// Perception; Book 1 p. 190). It rolls R=Range dice — Range 0 and the R/T
+// sub-bands count as 1 — and succeeds on a roll at or under Constant plus the
+// Benchmark (objectSize - Range) plus any situational mods (Master Mods;
+// higher is better). A sense the sophont lacks automatically fails.
 func NoticeAtRange(r *dice.Roller, s Sense, objectSize, rng int, mods ...int) dice.CheckResult {
 	if !s.Available() {
 		return dice.CheckResult{}
@@ -210,7 +214,9 @@ func NoticeAtRange(r *dice.Roller, s Sense, objectSize, rng int, mods ...int) di
 	return task.ResolveDice(r, rng, s.Constant+(objectSize-rng), mods...)
 }
 
-// NoticeInContact resolves a Touch or Smell Action on 2D.
+// NoticeInContact resolves an in-contact sense Action (Touch, and Smell by
+// scent intensity; Book 1 p. 187): 2D at or under Constant + benchmark + mods.
+// A sense the sophont lacks automatically fails.
 func NoticeInContact(r *dice.Roller, s Sense, benchmark int, mods ...int) dice.CheckResult {
 	if !s.Available() {
 		return dice.CheckResult{}
@@ -219,11 +225,12 @@ func NoticeInContact(r *dice.Roller, s Sense, benchmark int, mods ...int) dice.C
 	return task.ResolveDice(r, task.Average.Dice(), s.Constant+benchmark, mods...)
 }
 
-// RangeBand returns the sense Range band (0-9) for a distance in meters.
+// RangeBand returns the sense Range band (0-9) for a distance in meters, using
+// the shared world-range ladder (Book 1 pp. 24, 188).
 func RangeBand(meters float64) int {
 	n, ok := rangeband.WorldForDistance(meters).Number()
 	if !ok {
-		return 1
+		return 1 // the R and T reading/talking sub-bands both count as Range 1
 	}
 
 	return n

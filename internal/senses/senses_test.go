@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/philoserf/t5/internal/dice"
+	"github.com/philoserf/t5/internal/ehex"
 )
 
 func TestNoticeAtRangeReginaExample(t *testing.T) {
@@ -107,6 +108,101 @@ func TestSenseCodecRoundTrip(t *testing.T) {
 		var decoded Sense
 		if err := decoded.UnmarshalText(encoded); err != nil || decoded != s {
 			t.Errorf("UnmarshalText(%q) = %+v, %v; want %+v", text, decoded, err, s)
+		}
+	}
+}
+
+// assertRoundTrip checks Parse(s.String()) == s and that MarshalText /
+// UnmarshalText reproduce s exactly.
+func assertRoundTrip(t *testing.T, s Sense) {
+	t.Helper()
+
+	text := s.String()
+
+	parsed, err := Parse(text)
+	if err != nil {
+		t.Fatalf("Parse(%q): %v", text, err)
+	}
+
+	if parsed != s {
+		t.Fatalf("Parse(%q) = %+v, want %+v", text, parsed, s)
+	}
+
+	encoded, err := s.MarshalText()
+	if err != nil || string(encoded) != text {
+		t.Fatalf("MarshalText(%+v) = %q, %v; want %q", s, encoded, err, text)
+	}
+
+	var decoded Sense
+	if err := decoded.UnmarshalText(encoded); err != nil || decoded != s {
+		t.Fatalf("UnmarshalText(%q) = %+v, %v; want %+v", encoded, decoded, err, s)
+	}
+}
+
+func TestSenseCodecRoundTripExhaustiveVision(t *testing.T) {
+	// Every valid Vision detail is an adjacent 3-letter window of the 16-letter
+	// spectrum, read in either direction: 14 forward + 14 reversed.
+	var details []string
+
+	for i := 0; i+3 <= len(visionSpectrum); i++ {
+		window := visionSpectrum[i : i+3]
+		details = append(details, window, string([]byte{window[2], window[1], window[0]}))
+	}
+
+	if len(details) != 28 {
+		t.Fatalf("enumerated %d Vision details, want 28", len(details))
+	}
+
+	for _, detail := range details {
+		for _, constant := range []int{0, 1, 9, 16, 99} {
+			assertRoundTrip(t, Sense{ID: 'V', Constant: constant, Detail: detail})
+		}
+	}
+}
+
+func TestSenseCodecRoundTripExhaustiveEHex(t *testing.T) {
+	// For each eHex-detail sense, sweep every valid eHex digit through every
+	// detail position (the other positions held at '0').
+	widths := map[byte]int{'H': 4, 'S': 1, 'T': 1, 'A': 1, 'P': 2}
+	for id, width := range widths {
+		for pos := range width {
+			for i := range len(ehex.Alphabet) {
+				detail := []byte("0000"[:width])
+				detail[pos] = ehex.Alphabet[i]
+
+				for _, constant := range []int{0, 1, 9, 16, 99} {
+					assertRoundTrip(t, Sense{ID: id, Constant: constant, Detail: string(detail)})
+				}
+			}
+		}
+	}
+}
+
+func TestInvalidSenseFailsClosed(t *testing.T) {
+	// String must render "?" and MarshalText must error for every invalid
+	// Sense — the checked persistence path must not fail open.
+	invalid := []Sense{
+		{ID: 'V', Constant: 16, Detail: "RBG"},  // non-adjacent bands
+		{ID: 'V', Constant: 16, Detail: "rgb"},  // lowercase bands
+		{ID: 'V', Constant: 100, Detail: "RGB"}, // Constant above 99
+		{ID: 'V', Constant: -1, Detail: "RGB"},  // negative Constant
+		{ID: 'H', Constant: 16, Detail: "939"},  // wrong detail width
+		{ID: 'S', Constant: 10, Detail: "I"},    // I is not an eHex digit
+		{ID: 'P', Constant: 24, Detail: "2o"},   // lowercase eHex
+		{ID: 'X', Constant: 16, Detail: "0"},    // unknown sense ID
+		{},                                      // zero value
+	}
+	for _, s := range invalid {
+		if s.Valid() {
+			t.Errorf("Valid(%+v) = true, want false", s)
+		}
+
+		if got := s.String(); got != "?" {
+			t.Errorf("String(%+v) = %q, want %q", s, got, "?")
+		}
+
+		if encoded, err := s.MarshalText(); err == nil {
+			t.Errorf("MarshalText(%+v) = %q, nil; want error", s, encoded)
 		}
 	}
 }
