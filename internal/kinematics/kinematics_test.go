@@ -7,18 +7,24 @@ import (
 )
 
 func TestKilometersFromAU(t *testing.T) {
-	cases := map[float64]float64{
-		-1:  0,
-		0:   0,
-		0.2: 30_000_000,
-		1:   150_000_000,
-		10:  1_500_000_000,
+	cases := []struct {
+		name string
+		au   float64
+		want float64
+	}{
+		{"negative", -1, 0},
+		{"zero", 0, 0},
+		{"orbit 0", 0.2, 30_000_000},
+		{"one AU", 1, 150_000_000},
+		{"orbit 7", 10, 1_500_000_000},
 	}
 
-	for au, want := range cases {
-		if got := KilometersFromAU(au); got != want {
-			t.Errorf("KilometersFromAU(%v) = %v, want %v", au, got, want)
-		}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			if got := KilometersFromAU(c.au); got != c.want {
+				t.Errorf("KilometersFromAU(%v) = %v, want %v", c.au, got, c.want)
+			}
+		})
 	}
 }
 

@@ -11,8 +11,12 @@ import (
 // These deliberately reproduce the game tables rather than use more precise
 // real-world measurements.
 const (
-	KilometersPerAU                       = 150_000_000.0
-	LightSpeedKilometersPerSecond         = 300_000.0
+	KilometersPerAU               = 150_000_000.0
+	LightSpeedKilometersPerSecond = 300_000.0
+
+	// StandardGravityMetersPerSecondSquared is the book's rounded working
+	// value for one G — deliberately NOT the defined physical constant
+	// 9.80665 m/s². The p.35 chart cells only reproduce with 10.
 	StandardGravityMetersPerSecondSquared = 10.0
 )
 
@@ -66,6 +70,10 @@ func StartStopTime(distanceKM, accelerationG float64) time.Duration {
 	return seconds(2 * math.Sqrt(distanceM/acceleration))
 }
 
+// seconds converts a float second count to a time.Duration. The conversion is
+// only meaningful within Duration's range (about ±292 years); NaN or
+// out-of-range values produce implementation-defined garbage. In-book
+// distances are far inside that range, so no clamping is done.
 func seconds(value float64) time.Duration {
 	return time.Duration(value * float64(time.Second))
 }
