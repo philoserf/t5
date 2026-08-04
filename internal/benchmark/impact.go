@@ -51,5 +51,5 @@ func ImpactHits(speed int, tons float64) float64 {
 		return 0
 	}
 
-	return float64(speed*speed) * tons
+	return float64(speed) * float64(speed) * tons
 }
