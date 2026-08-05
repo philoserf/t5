@@ -203,6 +203,23 @@ Tooling (go, go-task, golangci-lint, poppler's `pdftotext`) is pinned in `Brewfi
   so testing from inside would cycle — and they drive `clitest.Command` like any `cmd`, with a
   stand-in `rollgen` whose `Main` dispatches on an env var to the fatal/roll/quiet child.
 
+  `clitest` also pins rendered stdout (#361, `golden.go`): `Result.AssertGolden(t, name)` compares
+  stdout byte for byte against `testdata/<name>.txt`, and the shared `-update` flag (registered
+  once here, so every `cmd/*_test.go` gets it for free) rewrites the fixture instead —
+  `go test ./cmd/... -update`, eyeball the diff before committing a regen. This is the structural
+  fix for #321: a shifted dice stream that silently falsified the README's pinned samples, caught
+  only by luck in review. `Result.AssertReadmeUpToDate(t, readmePath, marker)` closes that class
+  directly — it extracts the sample block following a `"$ go run ..."` marker line out of the
+  README itself (`ReadmeBlock`, stopping at a blank line or a closing code fence, whichever a given
+  sample hits first: mid-block samples are blank-line-separated, but the last one in a fenced block
+  has no trailing blank line before the fence) and compares it against a fresh run, trailing
+  newlines trimmed on both sides (the README's blank line after a sample is markdown's own
+  block-boundary marker, not literal output, so it carries no information about a command's own
+  trailing blank line — `AssertGolden` already pins that byte for byte). Writing these once already
+  caught a real stale sample: the shipgen README block was missing the Defenses/Fuel/problem lines
+  the command has printed for a while. `AssertGolden`/`AssertReadmeUpToDate` cover stdout only —
+  `AssertRejected`/`AssertReportedSeed` above still own the exit-code/stderr half of the contract.
+
 When adding a generator, transcribe the rule tables/formulas from `docs/reference/` and lock
 them with a golden test built from a worked example in the books.
 
