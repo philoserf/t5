@@ -68,9 +68,15 @@ func main() {
 		tc := worldgen.TradeClassifications(p)
 
 		if *format == "json" {
+			// uwpStr is used for both UWP and Starport: p.String() already
+			// guards an invalid Starport byte down to '?' rather than the raw
+			// (possibly NUL) byte, so reading Starport out of it keeps that
+			// guard rather than bypassing it via string(p.Starport) directly.
+			uwpStr := p.String()
+
 			err := enc.Encode(jsonWorld{
-				UWP:           p.String(),
-				Starport:      string(p.Starport),
+				UWP:           uwpStr,
+				Starport:      uwpStr[:1],
 				Size:          p.Size,
 				Atmosphere:    p.Atmosphere,
 				Hydrographics: p.Hydrographics,
