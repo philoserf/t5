@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	"github.com/philoserf/t5/internal/dice"
+	"github.com/philoserf/t5/internal/seedsearch"
 	"github.com/philoserf/t5/internal/worldgen"
 )
 
@@ -92,6 +93,43 @@ func TestResolveRankTenureGate(t *testing.T) {
 
 	if run.rank != 4 {
 		t.Errorf("rank = %d, want 4 (Associate Professor)", run.rank)
+	}
+}
+
+// TestTenureReachableFromFullGeneration is a reachability test (#357): the
+// tenure gate is unit-tested above by handing resolveRank a Character built
+// with Int/Edu 10 and rank already at 3 — proof the mechanic is correct in
+// isolation, not that a real GenerateCareered run ever reaches that state.
+// Nothing else in this package drives a Scholar through DefaultPolicy end to
+// end and checks whether Tenure ever actually gets earned.
+//
+// A frequency probe across the first 20,000 seeds found it in ~9.7% of them,
+// first at seed 1 — comfortably reachable, not the buried-in-compounding-odds
+// case one might assume from the gate's preconditions (Edu 10+, two
+// promotions). limit is set well above that for headroom, not because the
+// outcome is rare.
+func TestTenureReachableFromFullGeneration(t *testing.T) {
+	const limit = 2000
+
+	seed := seedsearch.Find(t, limit, "a Scholar who earns Tenure via full generation", func(seed uint64) bool {
+		c := GenerateCareered(dice.NewWithSeed(seed), DefaultPolicy{}, worldgen.World{}, ScholarCareer)
+
+		return c.Tenured
+	})
+
+	c := GenerateCareered(dice.NewWithSeed(seed), DefaultPolicy{}, worldgen.World{}, ScholarCareer)
+
+	if !c.Tenured {
+		t.Fatalf("seed %d: regenerating did not reproduce Tenure", seed)
+	}
+
+	if got := c.Score(Education); got < ScholarCareer.Tenure.EduMin {
+		t.Errorf("Tenured Scholar has Edu %d, want >= %d (the gate's own minimum)", got, ScholarCareer.Tenure.EduMin)
+	}
+
+	rec := c.Careers[0]
+	if rec.Career != Scholar || rec.Rank < 3 {
+		t.Errorf("Tenured record = %+v, want Scholar at rank >= 3 (Assistant Professor+)", rec)
 	}
 }
 

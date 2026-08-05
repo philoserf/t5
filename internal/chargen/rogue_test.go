@@ -7,6 +7,43 @@ import (
 	"github.com/philoserf/t5/internal/worldgen"
 )
 
+// TestPayScheme pins payScheme's formula (Book 1 p.84: a credit Scheme pays
+// V x (1 + CC - R), halved when the Risk failed) against literals computed
+// independently of the function itself — the case a Copilot review on #370
+// correctly flagged: the golden tests below build their expectations by
+// CALLING payScheme, so a bug in payScheme's own arithmetic needs coverage
+// that doesn't also call it.
+func TestPayScheme(t *testing.T) {
+	cases := []struct {
+		name                  string
+		value                 schemeValue
+		target, roll          int
+		riskOK                bool
+		wantCredits, wantSubs int
+	}{
+		{"roll equals target", schemeValue{credits: 100_000}, 7, 7, true, 100_000, 0},
+		{"roll under target pays more", schemeValue{credits: 100_000}, 8, 5, true, 400_000, 0},
+		{"failed risk halves the payoff", schemeValue{credits: 500_000}, 7, 7, false, 250_000, 0},
+		{"ship-share scheme grants a share, no credits", schemeValue{share: true}, 7, 7, true, 0, 1},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			var c Character
+
+			payScheme(&c, tc.value, tc.target, tc.roll, tc.riskOK)
+
+			if c.Credits != tc.wantCredits {
+				t.Errorf("Credits = %d, want %d", c.Credits, tc.wantCredits)
+			}
+
+			if c.ShipShares != tc.wantSubs {
+				t.Errorf("ShipShares = %d, want %d", c.ShipShares, tc.wantSubs)
+			}
+		})
+	}
+}
+
 // TestGoldenRogue traces a complete two-term Rogue whose Schemes both succeed,
 // exercising the fixed-CC seam and the Scheme payoff end-to-end. The character
 // is all 7s, so the policy's fixed CC (the first controlling characteristic,
@@ -50,8 +87,16 @@ func TestGoldenRogue(t *testing.T) {
 		t.Errorf("Pilot = %d, want 12 (6 Successful-Scheme rolls x 2 terms)", got)
 	}
 
-	if c.Credits != 300_000 {
-		t.Errorf("Credits = %d, want 300000 (Cr100,000 + Cr200,000 Scheme payoffs)", c.Credits)
+	// Derived by calling payScheme itself rather than hand-tracing its formula
+	// into a comment (#357): each term's Spacer Scheme (Cr100,000) pays out at
+	// the CC target/roll that term actually rolled, held both times.
+	var want Character
+
+	payScheme(&want, schemeValue{credits: 100_000}, 7, 7, true) // term 1: CC 7, roll 7
+	payScheme(&want, schemeValue{credits: 100_000}, 8, 7, true) // term 2: CC 7 +1 term, roll 7
+
+	if c.Credits != want.Credits {
+		t.Errorf("Credits = %d, want %d (two Spacer Scheme payoffs via payScheme)", c.Credits, want.Credits)
 	}
 
 	if c.Fame != 0 {
@@ -174,6 +219,12 @@ func TestRogueSchemeInfamy(t *testing.T) {
 	c := Character{scores: [count]int{7, 7, 7, 7, 7, 7}}
 	run := careerRun{fixed: Strength, fixedChosen: true} // fixed CC already chosen
 
+	// Derived by calling payScheme directly (#357) rather than hand-tracing its
+	// halving into a comment: Noble Scheme (Cr500,000), CC target/roll both 7,
+	// halved for the failed Risk.
+	var want Character
+	payScheme(&want, schemeValue{credits: 500_000}, 7, 7, false)
+
 	// Failure term: Scheme Flux 6-2 = +4 -> Noble, Cr500,000.
 	seq := []int{
 		6, 2, // Scheme Flux = +4 -> Noble, Cr500,000
@@ -193,10 +244,10 @@ func TestRogueSchemeInfamy(t *testing.T) {
 		t.Fatalf("failure term outcome = %v, want Ongoing (a Scheme carries no injury)", out)
 	}
 
-	if c.Credits != 250_000 {
+	if c.Credits != want.Credits {
 		t.Errorf(
-			"Credits = %d, want 250000 (Cr500,000 payoff halved by the failed Risk)",
-			c.Credits,
+			"Credits = %d, want %d (Cr500,000 Noble payoff halved by the failed Risk, via payScheme)",
+			c.Credits, want.Credits,
 		)
 	}
 
@@ -234,8 +285,8 @@ func TestRogueSchemeInfamy(t *testing.T) {
 		t.Errorf("Soc = %d, want 9 (two In-Prison Personal bumps for an uneducated Rogue)", got)
 	}
 
-	if c.Credits != 250_000 {
-		t.Errorf("Credits = %d, want 250000 unchanged (no Scheme in prison)", c.Credits)
+	if c.Credits != want.Credits {
+		t.Errorf("Credits = %d, want %d unchanged (no Scheme in prison)", c.Credits, want.Credits)
 	}
 }
 
