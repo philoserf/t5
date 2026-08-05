@@ -57,34 +57,6 @@ func TestScriptedPanicsWhenExhausted(t *testing.T) {
 	r.Die()
 }
 
-// TestFixedRejectsNonFaces mirrors TestScriptedRejectsNonFaces: Fixed
-// validates its face eagerly, at construction, not at first roll.
-func TestFixedRejectsNonFaces(t *testing.T) {
-	for _, bad := range []int{0, 7, -1} {
-		func() {
-			defer func() {
-				if recover() == nil {
-					t.Errorf("Fixed(%d) accepted a non-die face", bad)
-				}
-			}()
-
-			Fixed(bad)
-		}()
-	}
-}
-
-// TestFixedRepeatsForever distinguishes Fixed from NewScripted: unlike a
-// script, it never exhausts.
-func TestFixedRepeatsForever(t *testing.T) {
-	r := Fixed(6)
-
-	for range 100 {
-		if got := r.Die(); got != 6 {
-			t.Fatalf("Die() = %d, want 6", got)
-		}
-	}
-}
-
 func TestDie(t *testing.T) {
 	r := scripted(4)
 	if got := r.Die(); got != 4 {

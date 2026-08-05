@@ -74,6 +74,16 @@ func main() {
 			// guard rather than bypassing it via string(p.Starport) directly.
 			uwpStr := p.String()
 
+			// TradeClassifications returns a nil slice when no code matches —
+			// a real, valid outcome, not an edge case to special-case away —
+			// so it is coerced to an empty slice here to render "[]" rather
+			// than "null"; a code-less world otherwise breaks any JSON
+			// consumer that iterates tradeCodes without a null check.
+			jsonTC := tc
+			if jsonTC == nil {
+				jsonTC = []tradecode.Code{}
+			}
+
 			err := enc.Encode(jsonWorld{
 				UWP:           uwpStr,
 				Starport:      uwpStr[:1],
@@ -84,9 +94,15 @@ func main() {
 				Government:    p.Government,
 				Law:           p.Law,
 				TechLevel:     p.TechLevel,
-				TradeCodes:    tc,
+				TradeCodes:    jsonTC,
 			})
 			if err != nil {
+				// Flush what already rendered before exiting: out is only
+				// otherwise flushed once, after the loop, so an unflushed
+				// buffer here would silently discard every earlier record
+				// this run already generated.
+				_ = out.Flush()
+
 				cli.Fatalf("writing world %d: %v", i, err)
 			}
 

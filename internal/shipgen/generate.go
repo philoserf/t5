@@ -27,20 +27,15 @@ func ConfigByLetter(letter string) (Config, bool) {
 
 // StructureByName returns the Structure for a name and whether it was found,
 // matching case-, space-, and hyphen-insensitively against the structure's CLI
-// short name (see StructureNames), its display name, or any of its aliases —
-// so "plate", "Frame-and-Plate", and "frame-plate" all resolve to FramePlate.
+// short name (see StructureNames), its display name, or its alias — so
+// "plate", "Frame-and-Plate", and "frame-plate" all resolve to FramePlate.
 func StructureByName(name string) (Structure, bool) {
 	key := squash(name)
 
 	for i, d := range structureData {
-		if squash(d.cliName) == key || squash(d.display) == key {
+		if squash(d.cliName) == key || squash(d.display) == key ||
+			(d.alias != "" && squash(d.alias) == key) {
 			return Structure(i), true
-		}
-
-		for _, alias := range d.aliases {
-			if squash(alias) == key {
-				return Structure(i), true
-			}
 		}
 	}
 
