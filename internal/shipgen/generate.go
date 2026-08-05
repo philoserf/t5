@@ -2,11 +2,11 @@ package shipgen
 
 import "github.com/philoserf/t5/internal/dice"
 
-// ConfigByLetter returns the Config for a QSP config letter (C/B/P/U/S/A/L,
+// ConfigByLetter returns the HullConfig for a QSP config letter (C/B/P/U/S/A/L,
 // case-insensitive) and whether it was found. Only the first character is
 // significant, so a full config name whose initial matches (e.g. "Cluster")
 // also resolves.
-func ConfigByLetter(letter string) (Config, bool) {
+func ConfigByLetter(letter string) (HullConfig, bool) {
 	if letter == "" {
 		return 0, false
 	}
@@ -29,13 +29,13 @@ func ConfigByLetter(letter string) (Config, bool) {
 // matching case-, space-, and hyphen-insensitively against the structure's CLI
 // short name (see StructureNames), its display name, or its alias — so
 // "plate", "Frame-and-Plate", and "frame-plate" all resolve to FramePlate.
-func StructureByName(name string) (Structure, bool) {
+func StructureByName(name string) (HullMaterial, bool) {
 	key := squash(name)
 
 	for i, d := range structureData {
 		if squash(d.cliName) == key || squash(d.display) == key ||
 			(d.alias != "" && squash(d.alias) == key) {
-			return Structure(i), true
+			return HullMaterial(i), true
 		}
 	}
 
@@ -62,7 +62,7 @@ func Generate(r *dice.Roller) Ship {
 	targetG := 1 + r.Index(2) // 1-2 G
 	targetJ := 1 + r.Index(2) // Jump 1-2
 	tl := 12 + r.Index(4)     // TL 12-15
-	config := Config(r.Index(int(Lifting) + 1))
+	config := HullConfig(r.Index(int(Lifting) + 1))
 	maxG := configAttr[config].maxG
 	targetG = min(targetG, maxG)
 	// Clamping the target is not by itself enough, because thrust has a floor: a

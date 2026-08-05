@@ -15,9 +15,12 @@ func TestCheckMishap(t *testing.T) {
 		{"unsafe destructive task", DestructiveMishap, -4, -2, -6, true},
 		{"zero is not negative", DangerousMishap, -2, 2, 0, false},
 	} {
-		got := CheckMishap(tc.kind, tc.flux, tc.rating)
+		got := EvaluateMishap(tc.kind, tc.flux, tc.rating)
 		if got.Total != tc.wantTotal || got.Triggered != tc.wantTriggered {
-			t.Errorf("%s: CheckMishap = %+v, want total %d triggered %v", tc.name, got, tc.wantTotal, tc.wantTriggered)
+			t.Errorf(
+				"%s: EvaluateMishap = %+v, want total %d triggered %v",
+				tc.name, got, tc.wantTotal, tc.wantTriggered,
+			)
 		}
 	}
 }

@@ -241,10 +241,10 @@ func (s Survey) String() string {
 }
 
 // worldsOf projects the survey records to the route package's world summaries.
-func worldsOf(records []Record) []route.World {
-	worlds := make([]route.World, len(records))
+func worldsOf(records []Record) []route.Node {
+	worlds := make([]route.Node, len(records))
 	for i, rec := range records {
-		worlds[i] = route.World{Hex: rec.Hex, Importance: rec.System.Mainworld.Importance()}
+		worlds[i] = route.Node{Hex: rec.Hex, Importance: rec.System.Mainworld.Importance()}
 	}
 
 	return worlds

@@ -18,7 +18,7 @@ var AgentCareer = Career{
 	ID:               Agent,
 	Name:             "Agent",
 	Qualify:          Qualification{Chars: []Characteristic{Endurance}}, // C3
-	CCMode:           RotateCC,
+	CCMode:           RotatingCC,
 	ControllingChars: []Characteristic{Strength, Dexterity, Endurance, Intelligence}, // C1 C2 C3 C4
 	Continue: ContinueRule{
 		UseChar:  true,

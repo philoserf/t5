@@ -291,7 +291,7 @@ func TestRogueSchemeInfamy(t *testing.T) {
 }
 
 func TestRogueFixedCCChosenOnce(t *testing.T) {
-	// Under FixedCC the policy selects the CC once (highest score) and it is
+	// Under FixedControllingChar the policy selects the CC once (highest score) and it is
 	// reused every term.
 	c := Character{scores: [count]int{6, 6, 9, 6, 6, 6}} // Endurance highest
 	run := careerRun{}

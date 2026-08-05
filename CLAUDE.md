@@ -300,6 +300,17 @@ dependencies. (The former `docs/automation-catalog.md` planning doc has been ret
 - **YAGNI.** The user actively prunes speculative scaffolding — do not create empty directories,
   placeholder packages, or `.gitkeep` trees ahead of real content. Add structure when something
   goes in it.
+- **Naming: rules-faithful without being a slave to the terminology.** When a book term and Go
+  readability conflict, Go readability wins for ad-hoc abbreviations and chart-formula names
+  baked into a signature (`csk` → `attackerAsset`, `CCMode` → `ControllingCharMode`, `szPlus1D` →
+  `detonationRoll`) — keep the book's own wording in the doc comment instead of the identifier. A
+  genuine rulebook term-of-art, one a reader will meet by that exact name in the book (`Flux`,
+  `Poice`, `ThisIsHardDice`), stays as the identifier verbatim, book-cited in the doc comment as
+  usual — that is the case where the book term should win. Go conventions (a consistent suffix
+  family, no collision with a sibling package's flagship type, and no name-stutters-package
+  (`revive`) — e.g. `route.World` renamed to `route.Node` to stop colliding with
+  `worldgen.World` without stuttering as `route.RouteWorld` would) win over literal
+  transcription generally.
 - Commit only when asked (see the user's global git guidance).
 - **A fix that changes nothing measurable usually means the reading is wrong.** If a rules
   correction (a formula tweak, a re-derived cell, a re-read chart) lands and every golden test

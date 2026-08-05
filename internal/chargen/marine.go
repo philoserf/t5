@@ -33,7 +33,7 @@ var MarineCareer = Career{
 	ID:               Marine,
 	Name:             "Marine",
 	Qualify:          Qualification{Chars: []Characteristic{Strength}},
-	CCMode:           RotateCC,
+	CCMode:           RotatingCC,
 	ControllingChars: []Characteristic{Strength, Intelligence},    // C1 C4
 	Continue:         ContinueRule{UseChar: true, Char: Strength}, // C1
 	EligPerTerm:      4,

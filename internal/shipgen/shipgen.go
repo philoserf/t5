@@ -16,14 +16,14 @@ import (
 	"github.com/philoserf/t5/internal/ehex"
 )
 
-// Config is a hull configuration (Book 2 p.71), which sets streamlining
+// HullConfig is a hull configuration (Book 2 p.71), which sets streamlining
 // (friction), agility, stability, max acceleration, and whether the hull can
 // land. Its QSP letter is one of C B P U S A L.
-type Config int
+type HullConfig int
 
 // Hull configurations.
 const (
-	Cluster Config = iota
+	Cluster HullConfig = iota
 	Braced
 	Planetoid
 	Unstreamlined
@@ -46,7 +46,7 @@ var configData = [...]struct {
 }
 
 // Letter returns the config's QSP letter, or '?' if the value is out of range.
-func (c Config) Letter() byte {
+func (c HullConfig) Letter() byte {
 	if c < Cluster || c > Lifting {
 		return '?'
 	}
@@ -54,7 +54,7 @@ func (c Config) Letter() byte {
 	return configData[c].letter
 }
 
-func (c Config) String() string {
+func (c HullConfig) String() string {
 	if c < Cluster || c > Lifting {
 		return "?"
 	}
@@ -62,14 +62,14 @@ func (c Config) String() string {
 	return configData[c].name
 }
 
-// Structure is a hull's structural material (Book 2 p.52); it sets the base
+// HullMaterial is a hull's structural material (Book 2 p.52); it sets the base
 // armor value and a cost multiplier. FramePlate is the default (zero value).
-type Structure int
+type HullMaterial int
 
 // Hull structures.
 const (
-	FramePlate Structure = iota // Frame-and-Plate (default)
-	Shell                       // base AV = TL/2
+	FramePlate HullMaterial = iota // Frame-and-Plate (default)
+	Shell                          // base AV = TL/2
 	Polymer
 	FeNi
 	Organic // x0.5 cost
@@ -95,7 +95,7 @@ var structureData = [...]struct {
 	Charged:    {"Charged", "charged", ""},
 }
 
-func (s Structure) String() string {
+func (s HullMaterial) String() string {
 	if s < FramePlate || s > Charged {
 		return "?"
 	}
@@ -207,8 +207,8 @@ type ShipSpec struct {
 	TL          int
 	HullLetter  int // ordinal 1..24
 	Tons        int // 0 = nominal (HullLetter*100)
-	Config      Config
-	Structure   Structure
+	Config      HullConfig
+	Structure   HullMaterial
 	ArmorLayers int
 
 	Maneuver *DriveSpec
@@ -224,8 +224,8 @@ type ShipSpec struct {
 // A Hull is a designed hull with its derived attributes.
 type Hull struct {
 	Letter, Tons       int
-	Config             Config
-	Structure          Structure
+	Config             HullConfig
+	Structure          HullMaterial
 	Friction           int // as a divisor/multiplier code (Book 2 p.71)
 	MaxG               int
 	Agility, Stability int

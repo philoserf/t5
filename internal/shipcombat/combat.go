@@ -39,8 +39,8 @@ func SpaceWeaponDice(rangeBands, weaponTL int) int {
 // SpaceWeaponTarget is the Space Weapon Task's target number (Book 2 p.195):
 // weapon TL + the gunner's C+S+K (or the weapon console's TL, whichever is used)
 // + the weapon's mods.
-func SpaceWeaponTarget(weaponTL, csk, mods int) int {
-	return weaponTL + csk + mods
+func SpaceWeaponTarget(weaponTL, attackerAsset, mods int) int {
+	return weaponTL + attackerAsset + mods
 }
 
 // ResolveSpaceWeapon rolls the Space Weapon Task (Book 2 p.195): (range-band)D
@@ -48,13 +48,13 @@ func SpaceWeaponTarget(weaponTL, csk, mods int) int {
 // at Range 5 or less.
 func ResolveSpaceWeapon(
 	r *dice.Roller,
-	rangeBands, weaponTL, csk int,
+	rangeBands, weaponTL, attackerAsset int,
 	mods ...int,
 ) dice.CheckResult {
 	return task.ResolveDice(
 		r,
 		SpaceWeaponDice(rangeBands, weaponTL),
-		SpaceWeaponTarget(weaponTL, csk, 0),
+		SpaceWeaponTarget(weaponTL, attackerAsset, 0),
 		mods...,
 	)
 }

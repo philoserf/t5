@@ -25,8 +25,8 @@ import (
 //
 // A gunner whose C+S+K falls short of the weapon's tech level may use the weapon
 // console's TL instead (p.156); pass whichever is better.
-func Attack(r *dice.Roller, w shipgen.Weapon, rangeBands, csk int, mods ...int) dice.CheckResult {
-	return ResolveSpaceWeapon(r, rangeBands, w.TL, csk, append([]int{w.Mod}, mods...)...)
+func Attack(r *dice.Roller, w shipgen.Weapon, rangeBands, attackerAsset int, mods ...int) dice.CheckResult {
+	return ResolveSpaceWeapon(r, rangeBands, w.TL, attackerAsset, append([]int{w.Mod}, mods...)...)
 }
 
 // AttackWithMissile rolls a designed round's Missile Attack Task (Book 2 p.197),
@@ -34,7 +34,7 @@ func Attack(r *dice.Roller, w shipgen.Weapon, rangeBands, csk int, mods ...int) 
 // Space Weapon Task instead, so call Attack. The round's guidance supplies the
 // second asset: a hardwired brain is worth a flat 5, an operator-guided one is
 // worth as much as the gunner flying it, and a self-aware one is worth whatever
-// mind it rolled at launch (C = 6+1D, S = 1D, plus Flux — pass it as brainCSK).
+// mind it rolled at launch (C = 6+1D, S = 1D, plus Flux — pass it as missileAsset).
 //
 // The book states the boundary four times and disagrees with itself once: p.195
 // ("Missiles at S=5 or Less … use the Space Weapon Task" / "Missiles at S=6 or
@@ -44,14 +44,14 @@ func Attack(r *dice.Roller, w shipgen.Weapon, rangeBands, csk int, mods ...int) 
 func AttackWithMissile(
 	r *dice.Roller,
 	m shipgen.Missile,
-	rangeBands, gunnerCSK, brainCSK int,
+	rangeBands, gunnerAsset, missileAsset int,
 	mods ...int,
 ) dice.CheckResult {
 	return ResolveMissile(
 		r,
 		rangeBands,
 		m.TL,
-		guidanceAsset(m.Spec.Guidance, gunnerCSK, brainCSK),
+		guidanceAsset(m.Spec.Guidance, gunnerAsset, missileAsset),
 		mods...,
 	)
 }
@@ -64,14 +64,14 @@ func AttackWithMissile(
 //
 // The Guidance type is a design property and lives in shipgen; what it is worth in
 // a fight is a target-number rule, and belongs here beside the other two.
-func guidanceAsset(g shipgen.Guidance, gunnerCSK, brainCSK int) int {
+func guidanceAsset(g shipgen.Guidance, gunnerAsset, missileAsset int) int {
 	switch g {
 	case shipgen.HardWired:
 		return 5
 	case shipgen.OperatorGuided, shipgen.DownLoaded:
-		return gunnerCSK
+		return gunnerAsset
 	case shipgen.SelfAware:
-		return brainCSK
+		return missileAsset
 	default: // UnGuided
 		return 0
 	}

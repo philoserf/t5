@@ -41,7 +41,7 @@ var SoldierCareer = Career{
 	ID:               Soldier,
 	Name:             "Soldier",
 	Qualify:          Qualification{Chars: []Characteristic{Strength}},
-	CCMode:           RotateCC,
+	CCMode:           RotatingCC,
 	ControllingChars: []Characteristic{Strength, Endurance, Intelligence}, // C1 C3 C4
 	Continue:         ContinueRule{UseChar: true, Char: Endurance},        // C3
 	EligPerTerm:      4,

@@ -13,7 +13,7 @@ var testCareer = Career{
 	ID:               Scout,
 	Name:             "Scout",
 	Qualify:          Qualification{Chars: []Characteristic{Intelligence}},
-	CCMode:           RotateCC,
+	CCMode:           RotatingCC,
 	ControllingChars: []Characteristic{Strength, Dexterity, Endurance, Intelligence},
 	Continue:         ContinueRule{UseChar: true, Char: Intelligence},
 }
@@ -77,7 +77,7 @@ func TestSelectCCRotation(t *testing.T) {
 }
 
 func TestSelectCCFixed(t *testing.T) {
-	fixed := Career{CCMode: FixedCC, ControllingChars: []Characteristic{Endurance}}
+	fixed := Career{CCMode: FixedControllingChar, ControllingChars: []Characteristic{Endurance}}
 
 	run := careerRun{}
 	for range 3 {

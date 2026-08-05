@@ -26,3 +26,25 @@ Deferred until a consumer needs them: the physical/flavor tier (senses, body str
 manipulators, special abilities, size-BFP body form, uniques, psionics), the caste/gender life-cycle
 sub-mechanics (shift, assignment timing, caste-gender relation), the Skilled-caste skill lists
 (Chart 12), sophont career service, and species-driven aging.
+
+## Settled: `CharName` is not a naming inconsistency with `chargen.Characteristic`
+
+`CharName` has 14 members, not 6 — 8 (Gra, Sta, Vig, Ins, Tra, Cha, Cas) are alien-analog
+identities from chart 06A with no `chargen.Characteristic` counterpart at all. It was never "the
+same six characteristics named on two conventions"; the two types overlap on six slots and
+diverge past that. Do not rename `CharName`'s constants to full words:
+
+- The abbreviations are the book's own chart-06A column identity — `gpLetter()` derives the
+  Genetic Profile letters directly from them (`Cha`→C, `Cas`→K, etc.). The abbreviation **is**
+  the data, not a display shortcut over a "real" long form.
+- Renaming would mean inventing 8 canonical long-form names attested nowhere in the book or the
+  code, for zero benefit.
+- Both `Characteristic.String()` and `CharName.String()` already return identical hardcoded
+  three-letter strings independent of the Go constant's identifier, so renaming changes no
+  rendered output either way — and neither `String()` is on any production/golden path
+  (`cmd/sophont` has no `testdata/` at all).
+
+The real, narrower finding: `chargen.GenerateSophont` trusts `species.Chars[i]` to be slot
+C(i+1), matching `chargen.Characteristic(i)`'s own C1..C6 order — documented at both
+`chargen/sophont.go`'s `GenerateSophont` and this package's `CharSpec`, since nothing checks it
+in code.

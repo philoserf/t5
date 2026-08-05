@@ -30,7 +30,7 @@ var ScholarCareer = Career{
 		Chars: []Characteristic{Education},
 	}, // an Amateur (Edu <8) rolls 2D <= Edu to Begin
 	PromoteEduMin:    8, // Edu 8+ auto-begins at Scholar1 and may promote; else an Amateur (rank 0)
-	CCMode:           RotateCC,
+	CCMode:           RotatingCC,
 	ControllingChars: []Characteristic{Strength, Dexterity, Endurance, Intelligence}, // C1 C2 C3 C4
 	Continue: ContinueRule{
 		UseChar: true,

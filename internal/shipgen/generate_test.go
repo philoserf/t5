@@ -29,7 +29,7 @@ func TestGenerateDeterministic(t *testing.T) {
 // and the maneuver target used to be rolled independently of the config, so
 // about one ship in fourteen came back flagged.
 func TestGenerateIsAlwaysFeasible(t *testing.T) {
-	seen := map[Config]int{}
+	seen := map[HullConfig]int{}
 
 	for seed := range uint64(500) {
 		s := Generate(dice.NewWithSeed(seed))
@@ -105,8 +105,8 @@ func TestStructureNamesMatchesString(t *testing.T) {
 
 	for i, name := range names {
 		s, ok := StructureByName(name)
-		if !ok || s != Structure(i) {
-			t.Errorf("StructureByName(%q) = %v,%v, want %v,true", name, s, ok, Structure(i))
+		if !ok || s != HullMaterial(i) {
+			t.Errorf("StructureByName(%q) = %v,%v, want %v,true", name, s, ok, HullMaterial(i))
 		}
 	}
 }

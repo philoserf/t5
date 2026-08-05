@@ -30,6 +30,13 @@ func GenerateSophont(r *dice.Roller, species sophont.Species) Character {
 	// A slot with 0 dice carries no characteristic value — the Caste C6 of a
 	// caste species, whose caste comes from the table roll below. RollValue rolls
 	// nothing for it, leaving the score at its 0 sentinel and the stream intact.
+	//
+	// This loop trusts species.Chars[i] to be slot C(i+1), matching
+	// Characteristic(i)'s own C1..C6 order (Strength=C1 ... Social=C6) — it never
+	// reads species.Chars[i].Name, only .Dice. That correspondence currently holds
+	// because sophont.rollCharacteristics is the sole constructor of Chars and
+	// always fills it in fixed C1..C6 order, but nothing here checks it: a
+	// reordered build or a second constructor would silently misassign scores.
 	for i := range c.scores {
 		c.scores[i] = sophont.RollValue(r, species.Chars[i].Dice)
 	}

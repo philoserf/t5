@@ -25,10 +25,10 @@ type MishapCheck struct {
 	Triggered bool
 }
 
-// CheckMishap evaluates one failure consequence. It performs no roll so a
+// EvaluateMishap evaluates one failure consequence. It performs no roll so a
 // referee may keep the Flux private; pass dice.Roller.Flux() as flux when a
 // random result is wanted.
-func CheckMishap(kind MishapKind, flux, rating int) MishapCheck {
+func EvaluateMishap(kind MishapKind, flux, rating int) MishapCheck {
 	total := flux + rating
 
 	return MishapCheck{Kind: kind, Flux: flux, Rating: rating, Total: total, Triggered: total < 0}

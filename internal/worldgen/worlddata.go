@@ -29,7 +29,7 @@ var nobleRanks = []struct {
 // capital designation (Duke F), or from an Importance of 4+ on a non-capital
 // (Duke f). Archduke (G) is assigned at the domain level and is not derived
 // here. isCapital marks a subsector or sector capital.
-func Nobility(tcs []tradecode.Code, ix int, isCapital bool) string {
+func Nobility(tcs []tradecode.Code, importance int, isCapital bool) string {
 	var b strings.Builder
 	b.WriteString("B") // Knight, always present
 
@@ -46,7 +46,7 @@ func Nobility(tcs []tradecode.Code, ix int, isCapital bool) string {
 	switch {
 	case isCapital:
 		b.WriteString("F") // Duke of a capital
-	case ix >= 4:
+	case importance >= 4:
 		b.WriteString("f") // Duke of an important, non-capital world
 	}
 

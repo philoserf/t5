@@ -36,15 +36,15 @@ const (
 	Merchant                    // a dual-track (Rating/Officer) career with Ship Shares (Book 1 p. 80)
 )
 
-// CCMode controls how a career's Controlling Characteristic is chosen each term:
+// ControllingCharMode controls how a career's Controlling Characteristic is chosen each term:
 // rotated through the available set (the default) or fixed for the whole career
 // (Rogue).
-type CCMode int
+type ControllingCharMode int
 
 // Controlling-Characteristic selection modes for the term engine.
 const (
-	RotateCC CCMode = iota
-	FixedCC
+	RotatingCC ControllingCharMode = iota
+	FixedControllingChar
 )
 
 // A Qualification is a career's entry gate: roll 2D at or under the best of the
@@ -121,7 +121,7 @@ type Career struct {
 	ID               CareerID
 	Name             string
 	Qualify          Qualification
-	CCMode           CCMode
+	CCMode           ControllingCharMode
 	ControllingChars []Characteristic
 	Continue         ContinueRule
 	EligPerTerm      int         // number of skill rolls a surviving term grants
@@ -226,7 +226,7 @@ type CareerRecord struct {
 // generation (kept out of Character, like systemgen's orbit bookkeeping).
 type careerRun struct {
 	ccPool      []Characteristic // Controlling Characteristics not yet used this cycle
-	fixed       Characteristic   // the chosen Controlling Characteristic under FixedCC
+	fixed       Characteristic   // the chosen Controlling Characteristic under FixedControllingChar
 	fixedChosen bool             // whether fixed has been selected yet
 	rank        int              // current rank number (1-based) for a rank career
 	officer     bool             // whether rank is on the officer track
@@ -340,7 +340,7 @@ func beginCareer(r *dice.Roller, p Policy, c *Character, run *careerRun, career 
 	}
 
 	var target int
-	if career.CCMode == FixedCC {
+	if career.CCMode == FixedControllingChar {
 		target = c.Score(selectCC(p, *c, run, career))
 	} else {
 		target = career.Qualify.target(*c)
@@ -629,12 +629,12 @@ func classifyInjury(original, negMods, flux int) (Injury, int) {
 	}
 }
 
-// selectCC picks the term's Controlling Characteristic. Under RotateCC a
+// selectCC picks the term's Controlling Characteristic. Under RotatingCC a
 // characteristic cannot be reused until the whole set has been used; under
-// FixedCC the policy chooses one characteristic on the first term and it serves
+// FixedControllingChar the policy chooses one characteristic on the first term and it serves
 // the entire career.
 func selectCC(p Policy, c Character, run *careerRun, career Career) Characteristic {
-	if career.CCMode == FixedCC {
+	if career.CCMode == FixedControllingChar {
 		if !run.fixedChosen {
 			run.fixed = p.ChooseCC(c, career.ControllingChars)
 			run.fixedChosen = true

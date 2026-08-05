@@ -70,7 +70,7 @@ func fuelMul(base int, stage Stage) int {
 
 // structureAV is the per-layer armor value of a hull structure (Book 2 p.75 B):
 // Plate = TL, Shell/Polymer/Organic = TL/2, FeNi = 20, Charged = TL*2.
-func structureAV(structure Structure, tl int) int {
+func structureAV(structure HullMaterial, tl int) int {
 	switch structure {
 	case Shell, Polymer, Organic:
 		return tl / 2
@@ -87,7 +87,7 @@ func structureAV(structure Structure, tl int) int {
 // (no tonnage), and each further layer costs 4% of the hull's tonnage (Shell
 // 2%). The armor value is the per-layer value (identical layers are not summed
 // on the record); armor imposes no monetary cost.
-func armor(tl, hullTons int, structure Structure, layers int) Armor {
+func armor(tl, hullTons int, structure HullMaterial, layers int) Armor {
 	if layers < 1 {
 		layers = 1
 	}
