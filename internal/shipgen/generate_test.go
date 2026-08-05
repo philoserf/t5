@@ -73,7 +73,40 @@ func TestStructureByName(t *testing.T) {
 		t.Errorf("StructureByName(plate) = %v,%v, want FramePlate", s, ok)
 	}
 
+	// The display name resolves too, case/space/hyphen-insensitively — not just
+	// the short CLI form.
+	if s, ok := StructureByName("Frame-and-Plate"); !ok || s != FramePlate {
+		t.Errorf("StructureByName(Frame-and-Plate) = %v,%v, want FramePlate", s, ok)
+	}
+
+	if s, ok := StructureByName("frameandplate"); !ok || s != FramePlate {
+		t.Errorf("StructureByName(frameandplate) = %v,%v, want FramePlate", s, ok)
+	}
+
+	// "frame-plate"/"frameplate" were reachable under the old two-table version
+	// (via a live "frameplate" map key) — preserved here as an explicit alias.
+	if s, ok := StructureByName("frame-plate"); !ok || s != FramePlate {
+		t.Errorf("StructureByName(frame-plate) = %v,%v, want FramePlate", s, ok)
+	}
+
 	if _, ok := StructureByName("bogus"); ok {
 		t.Errorf("StructureByName(bogus) should be unknown")
+	}
+}
+
+// TestStructureNamesMatchesString checks StructureNames and String stay in
+// step: every name StructureNames advertises must itself resolve back via
+// StructureByName to the structure whose position it holds.
+func TestStructureNamesMatchesString(t *testing.T) {
+	names := StructureNames()
+	if len(names) != int(Charged)+1 {
+		t.Fatalf("StructureNames() has %d entries, want %d", len(names), int(Charged)+1)
+	}
+
+	for i, name := range names {
+		s, ok := StructureByName(name)
+		if !ok || s != Structure(i) {
+			t.Errorf("StructureByName(%q) = %v,%v, want %v,true", name, s, ok, Structure(i))
+		}
 	}
 }

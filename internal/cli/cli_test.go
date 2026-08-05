@@ -14,6 +14,7 @@ import (
 
 	"github.com/philoserf/t5/internal/cli"
 	"github.com/philoserf/t5/internal/clitest"
+	"github.com/philoserf/t5/internal/dice"
 )
 
 // childKind selects which stand-in command the child runs. clitest.Run hands the
@@ -118,6 +119,43 @@ func TestRollerReportsFreshSeed(t *testing.T) {
 	second := rollgen.Run(t, "-seed", seed)
 	if second.Stdout != first.Stdout {
 		t.Errorf("replay with -seed %s gave %q, want %q", seed, second.Stdout, first.Stdout)
+	}
+}
+
+// TestRollerHonorsExplicitSeedZero guards against collapsing an explicit "-seed 0"
+// into "no -seed given, draw fresh" — a real bug elsewhere in the ecosystem (a
+// nil-vs-0 mixup) that would make seed 0 unrequestable and, on top of that, leak a
+// seed report for a run the caller explicitly seeded. Roller avoids it by asking
+// flag.Visit whether -seed was set, never by comparing *seed against its zero-value
+// default; this test is what would catch a regression back to the value-comparison
+// form.
+func TestRollerHonorsExplicitSeedZero(t *testing.T) {
+	rollgen := child(t, kindRoll)
+
+	got := rollgen.Run(t, "-seed", "0")
+
+	if cli.HasSeedReport(got.Stderr) {
+		t.Errorf("-seed 0 is an explicit seed; Roller should stay silent, got stderr %q", got.Stderr)
+	}
+
+	// Deterministic: a second run with -seed 0 must reproduce it exactly.
+	again := rollgen.Run(t, "-seed", "0")
+	if again.Stdout != got.Stdout {
+		t.Errorf("-seed 0 run 1 = %q, run 2 = %q; want identical", got.Stdout, again.Stdout)
+	}
+
+	// And it must be seed 0 specifically, not some other seed a "0 means omitted"
+	// mixup would have drawn fresh instead.
+	r := dice.NewWithSeed(0)
+
+	rolls := make([]string, 0, 10)
+	for range 10 {
+		rolls = append(rolls, strconv.Itoa(r.Dice(2)))
+	}
+
+	want := strings.Join(rolls, " ") + "\n"
+	if got.Stdout != want {
+		t.Errorf("-seed 0 stdout = %q, want %q (dice.NewWithSeed(0) directly)", got.Stdout, want)
 	}
 }
 

@@ -76,13 +76,23 @@ const (
 	Charged // x2 cost
 )
 
-var structureNames = [...]string{
-	"Frame-and-Plate",
-	"Shell",
-	"Polymer",
-	"FeNi",
-	"Organic",
-	"Charged",
+// structureData is the single table backing String, StructureNames, and
+// StructureByName, so the display name and the CLI's short lookup key cannot
+// drift apart the way structureNames and generate.go's separate
+// structureByName map once could — that map's own "frame-plate" entry could
+// never be reached, since StructureByName squashes hyphens out of its input
+// before the lookup.
+var structureData = [...]struct {
+	display string   // rendered form, e.g. in a ship card
+	cliName string   // -structure flag's short form, e.g. "plate"
+	aliases []string // other accepted -structure spellings, squashed at lookup
+}{
+	FramePlate: {"Frame-and-Plate", "plate", []string{"frameplate"}},
+	Shell:      {"Shell", "shell", nil},
+	Polymer:    {"Polymer", "polymer", nil},
+	FeNi:       {"FeNi", "feni", nil},
+	Organic:    {"Organic", "organic", nil},
+	Charged:    {"Charged", "charged", nil},
 }
 
 func (s Structure) String() string {
@@ -90,7 +100,19 @@ func (s Structure) String() string {
 		return "?"
 	}
 
-	return structureNames[s]
+	return structureData[s].display
+}
+
+// StructureNames returns the six structures' CLI short names in order
+// (plate, shell, polymer, feni, organic, charged), for building flag help and
+// error text that cannot drift from what StructureByName actually accepts.
+func StructureNames() []string {
+	names := make([]string, len(structureData))
+	for i, d := range structureData {
+		names[i] = d.cliName
+	}
+
+	return names
 }
 
 // DriveKind is a drive type. Design covers the three core drives; Potential

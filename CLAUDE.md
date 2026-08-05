@@ -263,3 +263,15 @@ dependencies. (The former `docs/automation-catalog.md` planning doc has been ret
   placeholder packages, or `.gitkeep` trees ahead of real content. Add structure when something
   goes in it.
 - Commit only when asked (see the user's global git guidance).
+- **A fix that changes nothing measurable usually means the reading is wrong.** If a rules
+  correction (a formula tweak, a re-derived cell, a re-read chart) lands and every golden test
+  still passes byte-for-byte, treat that as a signal to re-check the transcription rather than as
+  confirmation the old code was already fine — a genuine fix should move at least one pinned
+  value. (Adopted from `../traveller`'s PLAN.md lessons.)
+- **Named, scoped exceptions for reproducibility tests**, not blanket ones. When a
+  cross-record derivation legitimately breaks a general invariant for a specific, known case (the
+  `../traveller` precedent: one hand-named town in an `assignCapitals`-style derivation), carve out
+  that one case by name in the test with a comment saying why, rather than loosening the invariant
+  itself or skipping the check wholesale. Keep this in mind for any future cross-record derivation
+  in `sectorgen`/`survey`/`route` (capital assignment, route selection) that needs a documented
+  one-off.
