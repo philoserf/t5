@@ -281,7 +281,7 @@ func TestInsulationAt(t *testing.T) {
 	}
 }
 
-func TestSizeAt(t *testing.T) {
+func TestSize(t *testing.T) {
 	for _, c := range []struct {
 		code       SizeCode
 		descriptor string

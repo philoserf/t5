@@ -237,12 +237,12 @@ func (w World) Extensions() string {
 
 // importance renders the Importance Extension {Ix}. It is signed when non-zero
 // but bare at zero, matching the book's Importance table (0, +4, -2).
-func importance(importance int) string {
-	if importance == 0 {
+func importance(value int) string {
+	if value == 0 {
 		return "{0}"
 	}
 
-	return fmt.Sprintf("{%+d}", importance)
+	return fmt.Sprintf("{%+d}", value)
 }
 
 // BaseNames names the bases the world hosts, in the order their codes appear in
