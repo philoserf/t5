@@ -34,7 +34,7 @@ cell's correctness is in question.
   **Diagnosis Severity** (p.269) has NINE.
 - The chart 03/07/12 "Flux" tables (pp.265–267) run **-6..+6** — 13 rows,
   wider than plain Flux.
-- `Dice` strings not parseable by `dice.Parse` are allowlisted by exact
+- `Notation` strings not parseable by `dice.Parse` are allowlisted by exact
   string in the tests: `Bad Flux`, `2x1D`, `Hits/2`. A typo fails the suite.
 - **Printed typos are preserved, not corrected** (verified against the
   rendered PDF pages, not the text extract): `Truthfullness` (p.267 — also

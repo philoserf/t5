@@ -88,12 +88,12 @@ var knownSpecialDice = map[string]bool{
 func TestDiceNotationParseable(t *testing.T) {
 	for _, name := range Names() {
 		tbl, _ := Get(name)
-		if knownSpecialDice[tbl.Dice] {
+		if knownSpecialDice[tbl.Notation] {
 			continue
 		}
 
-		if _, err := dice.Parse(tbl.Dice); err != nil {
-			t.Errorf("%q: dice notation %q is neither Parse-able nor allowlisted: %v", name, tbl.Dice, err)
+		if _, err := dice.Parse(tbl.Notation); err != nil {
+			t.Errorf("%q: dice notation %q is neither Parse-able nor allowlisted: %v", name, tbl.Notation, err)
 		}
 	}
 }

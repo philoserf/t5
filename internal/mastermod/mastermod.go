@@ -16,16 +16,16 @@ import (
 	"strings"
 )
 
-// Table is a named die-total lookup. Dice documents the source roll notation.
-// With Rolls empty the keys are contiguous and Rows[0] corresponds to Minimum;
-// a non-empty Rolls lists each row's key explicitly, for sparse or
+// Table is a named die-total lookup. Notation documents the source roll
+// notation. With Rolls empty the keys are contiguous and Rows[0] corresponds
+// to Minimum; a non-empty Rolls lists each row's key explicitly, for sparse or
 // non-contiguous source columns.
 type Table struct {
-	Name    string
-	Dice    string
-	Minimum int
-	Rows    []string
-	Rolls   []int // optional explicit keys for sparse/non-contiguous source columns
+	Name     string
+	Notation string
+	Minimum  int
+	Rows     []string
+	Rolls    []int // optional explicit keys for sparse/non-contiguous source columns
 }
 
 // Maximum returns the largest accepted total.
@@ -40,7 +40,7 @@ func (t Table) Maximum() int {
 // Valid reports whether a table has a name, roll notation, and at least one
 // non-placeholder row. Blank source cells are omitted when tables are built.
 func (t Table) Valid() bool {
-	if strings.TrimSpace(t.Name) == "" || strings.TrimSpace(t.Dice) == "" || len(t.Rows) == 0 {
+	if strings.TrimSpace(t.Name) == "" || strings.TrimSpace(t.Notation) == "" || len(t.Rows) == 0 {
 		return false
 	}
 
@@ -126,14 +126,14 @@ func register(tables ...Table) {
 	}
 }
 
-func table(name, dice string, minimum int, rows ...string) Table {
-	return Table{Name: name, Dice: dice, Minimum: minimum, Rows: rows}
+func table(name, notation string, minimum int, rows ...string) Table {
+	return Table{Name: name, Notation: notation, Minimum: minimum, Rows: rows}
 }
 
-func sparse(name, dice string, rolls []int, rows ...string) Table {
+func sparse(name, notation string, rolls []int, rows ...string) Table {
 	if len(rolls) == 0 {
 		panic(fmt.Sprintf("mastermod: sparse table %q has no rolls", name))
 	}
 
-	return Table{Name: name, Dice: dice, Minimum: rolls[0], Rolls: rolls, Rows: rows}
+	return Table{Name: name, Notation: notation, Minimum: rolls[0], Rolls: rolls, Rows: rows}
 }

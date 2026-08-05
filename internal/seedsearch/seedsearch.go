@@ -15,25 +15,25 @@ package seedsearch
 
 import "testing"
 
-// Find returns the first seed in 1..limit whose generated outcome satisfies
-// want, and fails t if none does.
+// Find returns the first seed in 1..limit for which matches reports true, and
+// fails t if none does.
 //
-// want's ONLY job is testing the precondition the fixture needs — the rare or
-// hard-to-construct situation under test — never the behavior the fixture
-// goes on to assert. Folding the assertion itself into want makes the search
-// find a seed that already passes and the test then merely confirm it again:
-// vacuous. Keep the two separate even when it is tempting to combine them for
-// one term of a compound condition.
+// matches's ONLY job is testing the precondition the fixture needs — the rare
+// or hard-to-construct situation under test — never the behavior the fixture
+// goes on to assert. Folding the assertion itself into matches makes the
+// search find a seed that already passes and the test then merely confirm it
+// again: vacuous. Keep the two separate even when it is tempting to combine
+// them for one term of a compound condition.
 //
 // Calibrate limit from the rarest outcome the specific caller needs, measured
 // (e.g. by a throwaway frequency probe), not guessed: a bound picked too
 // small fails intermittently as a generator's dice consumption shifts over
 // time even when nothing about the mechanic itself is wrong.
-func Find(t *testing.T, limit uint64, what string, want func(seed uint64) bool) uint64 {
+func Find(t *testing.T, limit uint64, what string, matches func(seed uint64) bool) uint64 {
 	t.Helper()
 
 	for seed := uint64(1); seed <= limit; seed++ {
-		if want(seed) {
+		if matches(seed) {
 			return seed
 		}
 	}

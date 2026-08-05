@@ -30,9 +30,10 @@ type Act struct {
 	Scenes  []Scene
 }
 
-// A Finale is the climax after Act 4. Unlike an act, it has as many scenes as
-// the authored resolution needs, so a scaffold begins with no fixed slots.
-type Finale struct {
+// A Climax is the freeform final block of scenes after Act 4. Unlike an act,
+// it has as many scenes as the authored resolution needs, so a scaffold
+// begins with no fixed slots.
+type Climax struct {
 	Purpose string
 	Scenes  []Scene
 }
@@ -42,7 +43,7 @@ type Finale struct {
 type Adventure struct {
 	Theme  string
 	Acts   []Act
-	Climax Finale
+	Climax Climax
 }
 
 var actPurposes = [...]string{
@@ -68,7 +69,7 @@ func Scaffold() Adventure {
 
 	return Adventure{
 		Acts:   acts,
-		Climax: Finale{Purpose: climaxPurpose},
+		Climax: Climax{Purpose: climaxPurpose},
 	}
 }
 

@@ -96,7 +96,7 @@ with both key columns blank, so they cannot be rolled and are correctly excluded
 **None.** `mastermod.Table.Lookup` accepts an already-rolled total (the caller's own dice, rolled
 however the caller's context requires) — it never calls a `*dice.Roller` itself, so there is
 nothing to audit here the way `vehiclegen.Generate`'s roll sequence needs auditing. Dispatching a
-table's own `Dice` notation (e.g. "2x1D", "Hits/2") through `dice.Parse`/`Eval` to actually
+table's own `Notation` string (e.g. "2x1D", "Hits/2") through `dice.Parse`/`Eval` to actually
 produce that total is the deferred roll bridge, #366 — deliberately not built ahead of a
 consumer (YAGNI), per that issue's own text.
 
@@ -107,8 +107,8 @@ Confirmed against the rendered pages in this pass — all three are genuine excl
 - **Barrier Height/Width/Depth** (chart 14, p.268): blank cells in the printed appendix.
 - **Scene Mods** (chart 15, p.268): a formula, not a die table.
 - **Imperiallines and Hortalez** (chart 21, p.269): no 2×1D key printed, so unrollable.
-- **The roll bridge** (dispatching a table's `Dice` string through `dice.Parse`/`Eval` to actually
-  produce a Lookup-ready total) — tracked as #366, waiting on a first consumer.
+- **The roll bridge** (dispatching a table's `Notation` string through `dice.Parse`/`Eval` to
+  actually produce a Lookup-ready total) — tracked as #366, waiting on a first consumer.
 
 ## Errata / resolved conflicts
 

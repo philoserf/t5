@@ -81,6 +81,13 @@ func (c CharName) gpLetter() byte {
 
 // A CharSpec is one slot of a species' characteristic profile: which
 // characteristic it is, and how many dice it rolls at character generation.
+//
+// A species' six-element []CharSpec is always built in fixed C1..C6 slot
+// order (see rollCharacteristics) — index i is slot C(i+1) regardless of which
+// CharName occupies it. chargen.GenerateSophont depends on this: it reads
+// Chars[i].Dice into the score for chargen.Characteristic(i), whose own
+// Strength..Social order is C1..C6, and never checks Chars[i].Name against
+// that assumption.
 type CharSpec struct {
 	Name CharName
 	Dice int
