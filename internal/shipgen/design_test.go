@@ -50,11 +50,15 @@ func TestDesignMurphy(t *testing.T) {
 		t.Errorf("drive costs = %d/%d/%d, want 4,000,000/10,000,000/4,000,000",
 			s.Maneuver.Cost, s.Jump.Cost, s.Power.Cost)
 	}
-	// Core cost is the sum of the components just checked above, not a
-	// separately hand-added total — so it can't drift from them while still
-	// passing. (The book's MCr 70.3 full-ship figure additionally includes the
-	// deferred staterooms, turret, and sensors.)
-	if want := s.Hull.Cost + s.Maneuver.Cost + s.Jump.Cost + s.Power.Cost + s.Fuel.Cost; s.Cost != want {
+	// Core cost is the sum of the components just checked above. Fuel is
+	// pinned by its own formula (TestFuelMurphy: 22t x Cr500 + KCr100 scoop +
+	// MCr1 purifier), not read back off s.Fuel.Cost — reading it back would
+	// make this assertion tautological with respect to design.go's own
+	// ship.Cost formula and unable to catch a wrong fuel price. (The book's
+	// MCr 70.3 full-ship figure additionally includes the deferred
+	// staterooms, turret, and sensors.)
+	const fuelCost = 22*500 + 100_000 + 1_000_000
+	if want := s.Hull.Cost + s.Maneuver.Cost + s.Jump.Cost + s.Power.Cost + fuelCost; s.Cost != want {
 		t.Errorf("core cost = %d, want %d (Hull+Maneuver+Jump+Power+Fuel)", s.Cost, want)
 	}
 }

@@ -83,16 +83,16 @@ const (
 // never be reached, since StructureByName squashes hyphens out of its input
 // before the lookup.
 var structureData = [...]struct {
-	display string   // rendered form, e.g. in a ship card
-	cliName string   // -structure flag's short form, e.g. "plate"
-	aliases []string // other accepted -structure spellings, squashed at lookup
+	display string // rendered form, e.g. in a ship card
+	cliName string // -structure flag's short form, e.g. "plate"
+	alias   string // another accepted -structure spelling, squashed at lookup ("" if none)
 }{
-	FramePlate: {"Frame-and-Plate", "plate", []string{"frameplate"}},
-	Shell:      {"Shell", "shell", nil},
-	Polymer:    {"Polymer", "polymer", nil},
-	FeNi:       {"FeNi", "feni", nil},
-	Organic:    {"Organic", "organic", nil},
-	Charged:    {"Charged", "charged", nil},
+	FramePlate: {"Frame-and-Plate", "plate", "frameplate"},
+	Shell:      {"Shell", "shell", ""},
+	Polymer:    {"Polymer", "polymer", ""},
+	FeNi:       {"FeNi", "feni", ""},
+	Organic:    {"Organic", "organic", ""},
+	Charged:    {"Charged", "charged", ""},
 }
 
 func (s Structure) String() string {
