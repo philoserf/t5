@@ -30,7 +30,7 @@ func main() {
 	structure := flag.String(
 		"structure",
 		"plate",
-		"hull structure (plate/shell/polymer/feni/organic/charged)",
+		"hull structure ("+strings.Join(shipgen.StructureNames(), "/")+")",
 	)
 	armorLayers := flag.Int("armor", 1, "armor layers")
 	maneuver := flag.String("maneuver", "A", "maneuver drive letter (blank = none)")
@@ -142,8 +142,9 @@ func specFromFlags(f flags) (shipgen.ShipSpec, error) {
 	structure, ok := shipgen.StructureByName(f.structure)
 	if !ok {
 		return shipgen.ShipSpec{}, fmt.Errorf(
-			"invalid structure %q (want plate/shell/polymer/feni/organic/charged)",
+			"invalid structure %q (want %s)",
 			f.structure,
+			strings.Join(shipgen.StructureNames(), "/"),
 		)
 	}
 

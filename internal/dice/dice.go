@@ -96,6 +96,20 @@ func NewScripted(faces ...int) *Roller {
 	})
 }
 
+// Fixed returns a Roller where every die shows face, forever. It pins one
+// variable in a property sweep — e.g. holding a die at 6 while another
+// Roller varies the rest — where NewScripted's exact, finite script would be
+// the wrong shape.
+//
+// It panics if face is not a real die face in 1..6.
+func Fixed(face int) *Roller {
+	if face < 1 || face > 6 {
+		panic(fmt.Sprintf("dice: Fixed face %d is not a die face (want 1..6)", face))
+	}
+
+	return NewSource(func() int { return face })
+}
+
 // Seed reports the seed the Roller was built from and whether it has one. A
 // Roller from NewSource or NewScripted draws from a supplied sequence rather
 // than a seeded generator, so it reports ok false.

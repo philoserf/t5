@@ -25,17 +25,26 @@ func ConfigByLetter(letter string) (Config, bool) {
 	return 0, false
 }
 
-// structureByName maps a hull-structure name (case-insensitive) to its value.
-var structureByName = map[string]Structure{
-	"plate": FramePlate, "frame-plate": FramePlate, "frameplate": FramePlate,
-	"shell": Shell, "polymer": Polymer, "feni": FeNi, "organic": Organic, "charged": Charged,
-}
-
-// StructureByName returns the Structure for a name and whether it was found.
+// StructureByName returns the Structure for a name and whether it was found,
+// matching case-, space-, and hyphen-insensitively against the structure's CLI
+// short name (see StructureNames), its display name, or any of its aliases —
+// so "plate", "Frame-and-Plate", and "frame-plate" all resolve to FramePlate.
 func StructureByName(name string) (Structure, bool) {
-	s, ok := structureByName[squash(name)]
+	key := squash(name)
 
-	return s, ok
+	for i, d := range structureData {
+		if squash(d.cliName) == key || squash(d.display) == key {
+			return Structure(i), true
+		}
+
+		for _, alias := range d.aliases {
+			if squash(alias) == key {
+				return Structure(i), true
+			}
+		}
+	}
+
+	return 0, false
 }
 
 // Generate rolls a plausible ship and designs it. Ship design is deterministic,
