@@ -11,11 +11,14 @@ Insulated, Sealed, and KCr. `SpeedKPH`, `CollisionDicePerTon`, `Beastpower`, `En
 `FlyerAccess`, `SeafaringAccess`, `Altitudes`, and `Depths` expose the readable pp.143-148
 operating/design tables.
 
-The creation charts (pp.150-152) are dense and the docs/reference text extract is **column-lossy**
-for them — every cell here was transcribed from the rendered PDF pages, and
-`TestEnhancerColumnsAgainstPage` pins all 43 Chart 12 rows with literals transcribed independently
-of the registry. `TestStdMilitaryCatalogGolden` reproduces seven vehicles from the p.140 Std military
-catalog.
+The creation charts (**pp.150-153** — corrected from a previously-cited pp.150-152 that missed
+Chart 13's Endurance table on p.153, found while writing `docs/rules/vehiclegen.md`) are dense
+and the docs/reference text extract is **column-lossy** for them — every cell here was
+transcribed from the rendered PDF pages, and `TestEnhancerColumnsAgainstPage` pins all 43 Chart 12
+rows with literals transcribed independently of the registry. `TestStdMilitaryCatalogGolden`
+reproduces seven vehicles from the p.140 Std military catalog. **`docs/rules/vehiclegen.md`** is
+the verified, cell-by-cell source of truth these registries mirror (#358) — check it, not
+docs/reference/, when a cell's correctness is in question.
 
 ## Settled rulings (each verified against the rendered pages — do not re-open)
 

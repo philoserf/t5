@@ -8,7 +8,10 @@ source cells are not invented. Rows are book-literal text — the seven
 literally; there is no placeholder-substitution engine (removed as YAGNI: no
 real `<…>` tokens exist in the data, and substitution would corrupt `<none>`).
 
-Table files are split by printed page: `tables_p264.go` … `tables_p269.go`.
+Table files are split by printed page: `tables_p264.go` … `tables_p269.go`. **`docs/rules/mastermod.md`**
+is the verified, page-by-page source of truth these files mirror (#358), including a full chart
+index and cell-by-cell transcription of every quirk below — check it, not docs/reference/, when a
+cell's correctness is in question.
 
 ## Deliberate exclusions — do not re-add
 

@@ -286,6 +286,14 @@ dependencies. (The former `docs/automation-catalog.md` planning doc has been ret
   hand-patch when the extraction pipeline changes.
 - **PDF-to-markdown extraction approach is undecided.** Confirm the chosen tool before doing
   or scripting an extraction; don't assume one.
+- **`docs/rules/<topic>.md`** (#358) holds verified, cell-by-cell chart transcriptions for the
+  packages that have burned us on a transcription error: rendered from the PDF (`pdftoppm`, not
+  the column-lossy `docs/reference/` text extract), dated, and declared the source of truth the
+  Go registry mirrors — plus a draw-order note, a deferred/out-of-scope ledger, and an
+  errata-resolution ledger pointing at the fuller reasoning in the package's own CLAUDE.md. Grown
+  opportunistically (YAGNI) as a chart family burns someone, not converted in bulk. Started with
+  `vehiclegen.md` (Book 3 pp.150-153; found and fixed a stale page citation in the process) and
+  `mastermod.md` (Book 1 pp.264-269).
 
 ## Working conventions
 
