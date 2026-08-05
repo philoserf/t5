@@ -141,14 +141,14 @@ type Cultural struct {
 // RollCultural rolls the Cultural Extension: Heterogeneity = Pop+Flux,
 // Acceptance = Pop+Ix, Strangeness = Flux+5, Symbols = Flux+TL. Every value is
 // floored at 1, except that a population-0 world has all values 0.
-func RollCultural(r *dice.Roller, p uwp.Profile, ix int) Cultural {
+func RollCultural(r *dice.Roller, p uwp.Profile, importance int) Cultural {
 	if p.Population == 0 {
 		return Cultural{}
 	}
 
 	return Cultural{
 		Heterogeneity: max(p.Population+r.Flux(), 1),
-		Acceptance:    max(p.Population+ix, 1),
+		Acceptance:    max(p.Population+importance, 1),
 		Strangeness:   max(r.Flux()+5, 1),
 		Symbols:       max(r.Flux()+p.TechLevel, 1),
 	}

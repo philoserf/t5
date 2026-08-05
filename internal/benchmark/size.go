@@ -33,8 +33,8 @@ var sizes = map[SizeCode]SizeEntry{
 	Size7: {Size7, "Ship"}, Size8: {Size8, "Big Ship"}, Size9: {Size9, "Moonlet"},
 }
 
-// SizeAt returns a broad benchmark size.
-func SizeAt(code SizeCode) (SizeEntry, bool) {
+// Size returns a broad benchmark size.
+func Size(code SizeCode) (SizeEntry, bool) {
 	value, ok := sizes[code]
 
 	return value, ok

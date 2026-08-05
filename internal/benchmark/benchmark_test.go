@@ -287,9 +287,9 @@ func TestSizeAt(t *testing.T) {
 		descriptor string
 		ok         bool
 	}{{SizeR, "Reading", true}, {Size5, "Person", true}, {Size9, "Moonlet", true}, {"X", "", false}} {
-		got, ok := SizeAt(c.code)
+		got, ok := Size(c.code)
 		if ok != c.ok || got.Descriptor != c.descriptor {
-			t.Errorf("SizeAt(%q) = (%+v, %v), want descriptor %q ok %v", c.code, got, ok, c.descriptor, c.ok)
+			t.Errorf("Size(%q) = (%+v, %v), want descriptor %q ok %v", c.code, got, ok, c.descriptor, c.ok)
 		}
 	}
 }

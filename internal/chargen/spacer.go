@@ -65,7 +65,7 @@ var SpacerCareer = Career{
 	ID:               Spacer,
 	Name:             "Spacer",
 	Qualify:          Qualification{Chars: []Characteristic{Intelligence}},
-	CCMode:           RotateCC,
+	CCMode:           RotatingCC,
 	ControllingChars: []Characteristic{Strength, Dexterity, Intelligence}, // C1 C2 C4
 	Continue:         ContinueRule{UseChar: true, Char: Strength},         // C1
 	EligPerTerm:      4,

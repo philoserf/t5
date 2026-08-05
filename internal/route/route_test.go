@@ -7,7 +7,7 @@ import (
 )
 
 func TestBuildDirectLinks(t *testing.T) {
-	worlds := []World{
+	worlds := []Node{
 		{sectorgen.Hex{Col: 1, Row: 1}, 4},   // A: Important
 		{sectorgen.Hex{Col: 1, Row: 3}, 5},   // B: Important, 2 pc from A
 		{sectorgen.Hex{Col: 1, Row: 2}, 2},   // unimportant, ignored
@@ -29,7 +29,7 @@ func TestBuildDirectLinks(t *testing.T) {
 
 func TestBuildThresholdAndRange(t *testing.T) {
 	// A world at Ix 3 is not Important; no link even when in range.
-	worlds := []World{
+	worlds := []Node{
 		{sectorgen.Hex{Col: 1, Row: 1}, 4},
 		{sectorgen.Hex{Col: 1, Row: 3}, 3}, // in range but below the threshold
 	}
@@ -38,7 +38,7 @@ func TestBuildThresholdAndRange(t *testing.T) {
 	}
 
 	// Two Important worlds exactly J-4 apart link; one parsec farther does not.
-	near := []World{{sectorgen.Hex{Col: 1, Row: 1}, 4}, {sectorgen.Hex{Col: 5, Row: 3}, 4}}
+	near := []Node{{sectorgen.Hex{Col: 1, Row: 1}, 4}, {sectorgen.Hex{Col: 5, Row: 3}, 4}}
 	if d := near[0].Hex.Distance(near[1].Hex); d != 4 {
 		t.Fatalf("test fixture distance = %d, want 4", d)
 	}
@@ -47,7 +47,7 @@ func TestBuildThresholdAndRange(t *testing.T) {
 		t.Errorf("J-4 pair not linked: %+v", links)
 	}
 
-	far := []World{{sectorgen.Hex{Col: 1, Row: 1}, 4}, {sectorgen.Hex{Col: 6, Row: 3}, 4}}
+	far := []Node{{sectorgen.Hex{Col: 1, Row: 1}, 4}, {sectorgen.Hex{Col: 6, Row: 3}, 4}}
 	if links := Build(far, 0); len(links) != 0 {
 		t.Errorf("beyond-J-4 pair linked: %+v", links)
 	}
@@ -64,7 +64,7 @@ func TestBuildIntermediateHops(t *testing.T) {
 		t.Fatalf("fixture A-B distance = %d, want > %d", d, DefaultJump)
 	}
 
-	worlds := []World{{a, 4}, {mid, 0}, {b, 5}}
+	worlds := []Node{{a, 4}, {mid, 0}, {b, 5}}
 
 	links := Build(worlds, 0)
 	if len(links) != 2 {
@@ -79,7 +79,7 @@ func TestBuildIntermediateHops(t *testing.T) {
 	}
 
 	// With no stepping stone, the far Important pair stays unlinked.
-	if links := Build([]World{{a, 4}, {b, 5}}, 0); len(links) != 0 {
+	if links := Build([]Node{{a, 4}, {b, 5}}, 0); len(links) != 0 {
 		t.Errorf("unreachable Important pair linked: %+v", links)
 	}
 }
@@ -96,7 +96,7 @@ func TestExpectedTraffic(t *testing.T) {
 func TestBuildStableOrder(t *testing.T) {
 	// Three mutually-close Important worlds -> three links in CCRR order,
 	// regardless of input order.
-	worlds := []World{
+	worlds := []Node{
 		{sectorgen.Hex{Col: 3, Row: 1}, 4},
 		{sectorgen.Hex{Col: 1, Row: 1}, 4},
 		{sectorgen.Hex{Col: 2, Row: 1}, 4},

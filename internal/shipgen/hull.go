@@ -34,15 +34,15 @@ var configAttr = [...]struct {
 	Lifting:       {-5, 1, 9, 3, true},
 }
 
-// validConfig reports whether a Config names a real row of the p.70/p.71 tables.
+// validConfig reports whether a HullConfig names a real row of the p.70/p.71 tables.
 // Design uses it to raise a Problem; configIndex is what keeps the lookups safe.
-func validConfig(c Config) bool { return c >= Cluster && int(c) < len(configAttr) }
+func validConfig(c HullConfig) bool { return c >= Cluster && int(c) < len(configAttr) }
 
-// configIndex bounds a Config to the tables, so an out-of-range one reads as
+// configIndex bounds a HullConfig to the tables, so an out-of-range one reads as
 // Cluster rather than panicking — the same guard-of-last-resort stageIndex gives
 // a Stage. It is not a silent default: Design reports the substitution as a
 // Problem, because a hull nobody asked for is its own kind of infeasible.
-func configIndex(c Config) Config {
+func configIndex(c HullConfig) HullConfig {
 	if !validConfig(c) {
 		return Cluster
 	}
@@ -52,7 +52,7 @@ func configIndex(c Config) Config {
 
 // hullCostMCr returns a hull's cost in MCr for the given size ordinal and config
 // (Book 2 p.70). Structure multipliers are applied by hullCost.
-func hullCostMCr(ordinal int, config Config) int {
+func hullCostMCr(ordinal int, config HullConfig) int {
 	c := configCost[configIndex(config)]
 
 	return c.slope*ordinal + c.intercept
@@ -60,7 +60,7 @@ func hullCostMCr(ordinal int, config Config) int {
 
 // hullCost returns a hull's cost in Cr, applying the structure multiplier
 // (Organic x0.5, Charged x2; Book 2 p.52).
-func hullCost(ordinal int, config Config, structure Structure) int {
+func hullCost(ordinal int, config HullConfig, structure HullMaterial) int {
 	cr := hullCostMCr(ordinal, config) * 1_000_000
 
 	switch structure {
@@ -80,7 +80,7 @@ func hullCost(ordinal int, config Config, structure Structure) int {
 // overtonnage (>49t over) rounds up to the next hull size, and lesser variance
 // adjusts Agility (and, when over, Stability). Base armor value is the TL
 // (Shell: TL/2). Hardpoints are one per 100 tons.
-func hull(tl, ordinal, tons int, config Config, structure Structure) Hull {
+func hull(tl, ordinal, tons int, config HullConfig, structure HullMaterial) Hull {
 	nominal := HullTons(ordinal)
 	if tons == 0 {
 		tons = nominal

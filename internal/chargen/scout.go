@@ -73,7 +73,7 @@ var ScoutCareer = Career{
 	ID:               Scout,
 	Name:             "Scout",
 	Qualify:          Qualification{Chars: []Characteristic{Strength, Dexterity, Endurance}},
-	CCMode:           RotateCC,
+	CCMode:           RotatingCC,
 	ControllingChars: []Characteristic{Strength, Dexterity, Endurance},
 	Continue:         ContinueRule{UseChar: true, Char: Intelligence},
 	EligPerTerm:      8, // Explorer duty

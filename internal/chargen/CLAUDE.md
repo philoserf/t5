@@ -33,8 +33,8 @@ auto-begin Citizen life (T5 has no draft — no one ends up careerless). Educati
 `Policy.PursueEducation`, so a no-education policy leaves any dice trace (e.g. the golden
 Scout's) untouched.
 
-The term engine (`career.go`) is career-agnostic with pluggable seams (`CCMode` Rotate/Fixed —
-under FixedCC the policy picks one CC that serves the whole career, `AdvanceRule`
+The term engine (`career.go`) is career-agnostic with pluggable seams (`ControllingCharMode`
+Rotating/Fixed — under FixedControllingChar the policy picks one CC that serves the whole career, `AdvanceRule`
 RollLow/RollHigh, `Qualification` char-set, `ContinueRule` fixed/char/UseCC/TermsMod, `BenefitDM`
 selecting the muster Benefit-column die modifier (`MusterDM`: Terms/OfficerRank/Rank/FameHalf),
 and the rank ladders `EnlistedRanks`/`OfficerRanks` +
@@ -49,7 +49,7 @@ character's `Medals` — earned on a held Risk (an XS) as well as a passed Rewar
 documented at `promoted`. Each rank grants its automatic skill.
 
 Careers are data, each a file + hand-traced golden: `ScoutCareer` (`scout.go`, p. 79),
-`RogueCareer` (`rogue.go`, p. 84 — FixedCC), `SoldierCareer` (`soldier.go`, p. 82 — the first
+`RogueCareer` (`rogue.go`, p. 84 — FixedControllingChar), `SoldierCareer` (`soldier.go`, p. 82 — the first
 ranked career), `MarineCareer` (`marine.go`, p. 86), `SpacerCareer` (`spacer.go`, p. 81 — the
 naval career, whose Rating ladder uses the engine's EnlistedPromote), `AgentCareer` (`agent.go`,
 p. 83 — a rankless `Term UndercoverTerm` whose `awardUndercover` borrows one skill from a rolled

@@ -167,10 +167,10 @@ func TestDesignOutOfRangeSpecFields(t *testing.T) {
 			s.Power.Stage = -7
 		}, DriveStageInvalid},
 		{"config above the table", func(s *ShipSpec) {
-			s.Config = Config(7)
+			s.Config = HullConfig(7)
 		}, ConfigInvalid},
 		{"negative config", func(s *ShipSpec) {
-			s.Config = Config(-1)
+			s.Config = HullConfig(-1)
 		}, ConfigInvalid},
 		{"hull letter above Z", func(s *ShipSpec) {
 			s.HullLetter = 25
@@ -229,7 +229,7 @@ func TestFuelMulOutOfRangeStage(t *testing.T) {
 
 // hull is total for the same reason Design is: it is the first thing Design calls.
 func TestHullOutOfRangeConfig(t *testing.T) {
-	for _, config := range []Config{-1, 7, 99} {
+	for _, config := range []HullConfig{-1, 7, 99} {
 		h := hull(12, 1, 0, config, Shell) // must not panic
 		if h.MaxG != configAttr[Cluster].maxG {
 			t.Errorf("hull(config %d).MaxG = %d, want the Cluster %d",

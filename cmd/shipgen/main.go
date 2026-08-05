@@ -245,18 +245,18 @@ func missionCode(s string) (string, error) {
 // name and the default spec differ.
 type installation struct {
 	name  string
-	mount Mount
-	rng   Range
+	mount optionalMount
+	rng   optionalRange
 }
 
-// Mount and Range here are the optional halves of an entry — "unset" is a real
-// state, meaning "use the component's own default".
+// optionalMount and optionalRange here are the optional halves of an entry —
+// "unset" is a real state, meaning "use the component's own default".
 type (
-	Mount struct {
+	optionalMount struct {
 		set   bool
 		value shipgen.Mount
 	}
-	Range struct {
+	optionalRange struct {
 		set   bool
 		value shipgen.Range
 	}
@@ -290,7 +290,7 @@ func parseInstallations(list, kind string) ([]installation, error) {
 					parts[1], strings.Join(shipgen.MountCodes(), ", "))
 			}
 
-			inst.mount = Mount{set: true, value: m}
+			inst.mount = optionalMount{set: true, value: m}
 		}
 
 		if len(parts) > 2 && parts[2] != "" {
@@ -300,7 +300,7 @@ func parseInstallations(list, kind string) ([]installation, error) {
 					parts[2], strings.Join(shipgen.RangeNames(), ", "))
 			}
 
-			inst.rng = Range{set: true, value: r}
+			inst.rng = optionalRange{set: true, value: r}
 		}
 
 		out = append(out, inst)

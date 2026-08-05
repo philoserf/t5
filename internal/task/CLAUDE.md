@@ -30,7 +30,7 @@ analog-characteristic substitution, and certification rank are small pure
 helpers. They do not silently alter `Resolve`; callers know whether a task uses
 a default skill, lacks an asset, or is a test.
 
-`CheckMishap` implements the p. 131 failure roll exactly as printed: Flux plus
+`EvaluateMishap` implements the p. 131 failure roll exactly as printed: Flux plus
 Reliability for an ordinary mishap, or Flux plus Safety for Dangerous and
 Destructive tasks, triggers when negative. It classifies the consequence but
 does not roll location, diagnosis, injury, or equipment damage: those use the

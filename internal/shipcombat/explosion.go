@@ -33,13 +33,13 @@ var missileMassiveExplosion = [...]MassiveExplosion{
 // (Book 2 p.196) — is keyed by the missile option that detonates, i.e. a designed
 // round's warhead and size rather than anything primitive, so it lives with the
 // other designed-component bridges in ship.go, as WeaponsMassiveExplosion.
-func MissileMassiveExplosion(szPlus1D int) MassiveExplosion {
+func MissileMassiveExplosion(detonationRoll int) MassiveExplosion {
 	switch {
-	case szPlus1D <= 6:
+	case detonationRoll <= 6:
 		return MassiveExplosion{Proximity: "Direct Hit", Vaporized: true, Blast: 100}
-	case szPlus1D >= 12:
+	case detonationRoll >= 12:
 		return MassiveExplosion{Proximity: "Miss"}
 	default:
-		return missileMassiveExplosion[szPlus1D-7]
+		return missileMassiveExplosion[detonationRoll-7]
 	}
 }

@@ -19,10 +19,10 @@ const Important = 4
 // "linked by established Trade Routes of J-4 or less").
 const DefaultJump = 4
 
-// A World is one surveyed system relevant to routing: its hex and its Importance
+// A Node is one surveyed system relevant to routing: its hex and its Importance
 // value. Worlds below the Important threshold are never route endpoints but may
 // serve as intermediate stepping stones.
-type World struct {
+type Node struct {
 	Hex        sectorgen.Hex
 	Importance int
 }
@@ -40,13 +40,13 @@ type Link struct {
 // nearest reachable Important world by a shortest hop-path through intermediate
 // worlds (each hop <= maxJump). A non-positive maxJump uses DefaultJump. Links
 // are returned de-duplicated, in stable CCRR order.
-func Build(worlds []World, maxJump int) []Link { //nolint:gocognit,cyclop // trade-route graph; irreducibly branchy
+func Build(worlds []Node, maxJump int) []Link { //nolint:gocognit,cyclop // trade-route graph; irreducibly branchy
 	if maxJump <= 0 {
 		maxJump = DefaultJump
 	}
 
 	// Work in a stable CCRR order so adjacency (and thus BFS) is deterministic.
-	sorted := append([]World(nil), worlds...)
+	sorted := append([]Node(nil), worlds...)
 	sort.Slice(sorted, func(i, j int) bool { return before(sorted[i].Hex, sorted[j].Hex) })
 
 	// adj[i] lists the indices within maxJump of world i, in ascending (CCRR)

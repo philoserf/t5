@@ -6,7 +6,7 @@ func TestHullCostLinear(t *testing.T) {
 	// Spot-check the p.70 grid against the linear formulas.
 	cases := []struct {
 		ordinal int
-		config  Config
+		config  HullConfig
 		mcr     int
 	}{
 		{1, Lifting, 16},

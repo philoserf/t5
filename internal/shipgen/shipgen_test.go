@@ -101,7 +101,7 @@ func TestConfigAndStructureLetters(t *testing.T) {
 		t.Errorf("names wrong")
 	}
 
-	if Config(99).Letter() != '?' || Structure(99).String() != "?" {
+	if HullConfig(99).Letter() != '?' || HullMaterial(99).String() != "?" {
 		t.Errorf("out-of-range guards wrong")
 	}
 }
