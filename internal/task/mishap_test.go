@@ -2,7 +2,7 @@ package task
 
 import "testing"
 
-func TestCheckMishap(t *testing.T) {
+func TestEvaluateMishap(t *testing.T) {
 	for _, tc := range []struct {
 		name          string
 		kind          MishapKind
