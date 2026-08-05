@@ -5,7 +5,7 @@ import "github.com/philoserf/t5/internal/dice"
 const assumedUncertainFace = 3
 
 // An UncertainResult separates what the player can infer from the result the
-// referee secretly administers (Book 1 pp. 126-127).
+// referee secretly administers (Book 1 pp.126-127).
 type UncertainResult struct {
 	Actual             dice.CheckResult
 	ApparentRoll       int

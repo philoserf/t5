@@ -1,5 +1,5 @@
 // Package skill models a Traveller5 character's skills and knowledges (Book 1,
-// Skills pp. 132-171). A plain skill has a level; a cascade skill (Pilot,
+// Skills pp.132-171). A plain skill has a level; a cascade skill (Pilot,
 // Gunner, Engineer, …) contains named Knowledges, and a knowledge acquired
 // through a career follows the Knowledge-Knowledge-Skill progression. The
 // package holds no dice — it is a pure inventory.
@@ -44,10 +44,10 @@ func (s Set) TaskLevel(parent, knowledge string) int {
 // or above minLevel, skipping any skill named in exclude (a knowledge is skipped
 // when its parent skill is excluded — which is how "but not languages" is
 // expressed, "Language" being both the parent skill's name and its cascade key).
-// Used for Craftsman Master Points (Book 1 p. 75: the Craftsman skill and "up to
+// Used for Craftsman Master Points (Book 1 p.75: the Craftsman skill and "up to
 // FIVE Skills at level 6+ (or Knowledges at level-6) (but not languages)"). The
 // n slots are shared between skills and knowledges, highest first. Since
-// KnowledgeMax is 6, a qualifying knowledge sits exactly at the p. 75 threshold.
+// KnowledgeMax is 6, a qualifying knowledge sits exactly at the p.75 threshold.
 func (s Set) TopLevels(n, minLevel int, exclude ...string) int {
 	skip := make(map[string]bool, len(exclude))
 	for _, name := range exclude {

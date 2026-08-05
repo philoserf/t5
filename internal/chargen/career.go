@@ -7,7 +7,7 @@ import (
 	"github.com/philoserf/t5/internal/worldgen"
 )
 
-// Career resolution (Book 1 pp. 63-74): the term-engine spine. A character serves
+// Career resolution (Book 1 pp.63-74): the term-engine spine. A character serves
 // a career in four-year Terms; each term selects a Controlling Characteristic,
 // resolves Risk & Reward, awards skills, and rolls to Continue. The per-variant
 // terms live in variant.go, the rank/branch machinery in branch.go, mid-career
@@ -22,18 +22,18 @@ type CareerID int
 // The implemented careers, in checklist order.
 const (
 	Scout       CareerID = iota // the first implemented career
-	Rogue                       // a fixed-CC career (Book 1 p. 84)
-	Soldier                     // the first armed-forces (ranked) career (Book 1 p. 82)
-	Marine                      // a second armed-forces career (Book 1 p. 86)
-	Spacer                      // the naval armed-forces career (Book 1 p. 81)
-	Agent                       // a rankless career (Book 1 p. 83)
-	Citizen                     // an auto-begin career using Citizen Life (Book 1 p. 78)
-	Entertainer                 // a Fame/Talent career (Book 1 p. 77)
-	Craftsman                   // a Masterpiece career (Book 1 p. 75)
-	Scholar                     // a single-ladder rank career with Publications (Book 1 p. 76)
-	Functionary                 // an Office Politics career (Book 1 p. 87)
-	Noble                       // a Return & Intrigue career (Book 1 p. 85)
-	Merchant                    // a dual-track (Rating/Officer) career with Ship Shares (Book 1 p. 80)
+	Rogue                       // a fixed-CC career (Book 1 p.84)
+	Soldier                     // the first armed-forces (ranked) career (Book 1 p.82)
+	Marine                      // a second armed-forces career (Book 1 p.86)
+	Spacer                      // the naval armed-forces career (Book 1 p.81)
+	Agent                       // a rankless career (Book 1 p.83)
+	Citizen                     // an auto-begin career using Citizen Life (Book 1 p.78)
+	Entertainer                 // a Fame/Talent career (Book 1 p.77)
+	Craftsman                   // a Masterpiece career (Book 1 p.75)
+	Scholar                     // a single-ladder rank career with Publications (Book 1 p.76)
+	Functionary                 // an Office Politics career (Book 1 p.87)
+	Noble                       // a Return & Intrigue career (Book 1 p.85)
+	Merchant                    // a dual-track (Rating/Officer) career with Ship Shares (Book 1 p.80)
 )
 
 // ControllingCharMode controls how a career's Controlling Characteristic is chosen each term:
@@ -135,13 +135,13 @@ type Career struct {
 
 	// AutoBenefits are the mustering-out awards a career grants unconditionally,
 	// outside its muster-out rolls — the "Automatic:" lines some career pages
-	// print under the table (Book 1 p. 87's Gold Watch). It is a function because
+	// print under the table (Book 1 p.87's Gold Watch). It is a function because
 	// such an award can be valued from the record (100 x Terms). nil for the
 	// careers whose pages print no automatic award.
 	AutoBenefits func(rec CareerRecord) []Benefit
 
 	// Rank ladders and promotion rules — set only for the armed-forces careers.
-	// EnlistedRanks empty means the career has no rank (Book 1 p. 64).
+	// EnlistedRanks empty means the career has no rank (Book 1 p.64).
 	EnlistedRanks   []Rank
 	OfficerRanks    []Rank
 	Commission      PromotionRule // enlisted -> officer track
@@ -157,7 +157,7 @@ type Career struct {
 // held reports whether a career roll succeeded, applying the career's
 // automatic-failure rule.
 //
-// The Rogue's box (Book 1 p. 84) prints three targets — "To Begin CC", "Risk &
+// The Rogue's box (Book 1 p.84) prints three targets — "To Begin CC", "Risk &
 // Reward CC*", "Continue CC*" — and then two footnotes under the block:
 // "*Mod +Terms." and "But, 12 is always automatic failure." The first is already
 // read as covering every starred line; the second sits at the same level and is
@@ -216,7 +216,7 @@ type CareerRecord struct {
 	// Branch is the armed-forces Branch of service the character last held in this
 	// career ("" for a career with no Branch table). It is recorded per career
 	// rather than on the Character because a character may serve several, and it
-	// is the LAST branch held rather than the first: Book 1 p. 66 lets a non-officer
+	// is the LAST branch held rather than the first: Book 1 p.66 lets a non-officer
 	// reselect or reroll at the end of each Term, and the Commission re-reads it.
 	Branch  string
 	Outcome TermOutcome
@@ -232,7 +232,7 @@ type careerRun struct {
 	officer     bool             // whether rank is on the officer track
 	citizenWins int              // Citizen Life successes so far (drives the Job/Hobby schedule)
 	job, hobby  string           // the Citizen's Job and Hobby skills, set on the 1st/2nd success
-	exiled      bool             // the Noble is currently in Exile (Book 1 p. 85)
+	exiled      bool             // the Noble is currently in Exile (Book 1 p.85)
 	rewards     int              // Reward successes so far (the Merchant's escalating Ship Shares)
 	commends    int              // Commendations earned this career (per-career muster rolls/DM)
 	branchMod   int              // the chosen armed-forces Branch's R&R mod
@@ -240,11 +240,11 @@ type careerRun struct {
 	branchName  string           // the chosen Branch's name, for the career record
 	branchRoll  int              // the roll that chose the current Branch (re-read at Commission)
 	terms       int              // terms served before the current one (the Rogue's "Mod +Terms")
-	inPrison    bool             // the Rogue serves the coming term in prison (Book 1 p. 84)
+	inPrison    bool             // the Rogue serves the coming term in prison (Book 1 p.84)
 }
 
 // GenerateCareered generates a character on the given homeworld and runs their
-// careers. It follows the checklist order (Book 1 p. 72): roll the UPP (A), take
+// careers. It follows the checklist order (Book 1 p.72): roll the UPP (A), take
 // homeworld skills (B), optionally run the education stage (C — ED5, Trade
 // School, or the College→Professors ladder), then attempt careers (D) and muster
 // out (E).
@@ -312,7 +312,7 @@ func newCareerRun(career Career) careerRun {
 	return careerRun{ccPool: append([]Characteristic(nil), career.ControllingChars...)}
 }
 
-// beginCareer resolves a career's Begin (Book 1 p. 63): an AutoBegin career (the
+// beginCareer resolves a career's Begin (Book 1 p.63): an AutoBegin career (the
 // Citizen) enters unconditionally; otherwise the character rolls 2D at or under
 // the best qualifying characteristic (Book 1 p.65). The roll is made once: Begin
 // retry is a per-career property ("Some Careers allow Retry", shown on the career's
@@ -372,7 +372,7 @@ func runCareer(r *dice.Roller, p Policy, c *Character, run *careerRun, career Ca
 
 	rec := CareerRecord{Career: career.ID}
 	if career.hasRanks() {
-		run.rank = 1 // armed forces begin at enlisted rank 1 (Book 1 p. 64)
+		run.rank = 1 // armed forces begin at enlisted rank 1 (Book 1 p.64)
 		if career.amateur(c) {
 			run.rank = 0 // an Amateur Scholar (Book 1 p.76): serves but cannot be promoted
 		} else {
@@ -381,7 +381,7 @@ func runCareer(r *dice.Roller, p Policy, c *Character, run *careerRun, career Ca
 	}
 
 	if career.Term == FameTerm {
-		// One 2D roll opens the career (Book 1 p. 77: "roll initial Fame and Talent
+		// One 2D roll opens the career (Book 1 p.77: "roll initial Fame and Talent
 		// (with one 2D roll; they are equal)"). Returning to it is a Comeback, and
 		// the p.64/p.77 Fame-and-Talent table says what a Comeback does with the
 		// same roll: "Comeback: Reset Fame to 2D; Talent is unchanged." A career of
@@ -438,7 +438,7 @@ func runCareer(r *dice.Roller, p Policy, c *Character, run *careerRun, career Ca
 		rec.Branch = run.branchName
 
 		// The term is over and the character survived it: a non-officer may change
-		// Branch (Book 1 p. 66, "at the end of each Term"). It runs before the
+		// Branch (Book 1 p.66, "at the end of each Term"). It runs before the
 		// Continue roll — the change belongs to the term that just ended, and the
 		// Continue roll reads no Branch, so the order is not observable.
 		rerollBranch(r, p, c, run, career, rec)
@@ -496,7 +496,7 @@ func resolveRiskInjury(
 	return Ongoing
 }
 
-// runTerm resolves one term (Book 1 p. 64). It selects the Controlling
+// runTerm resolves one term (Book 1 p.64). It selects the Controlling
 // Characteristic, rolls Risk (2D <= CC + mod) and, on survival, Reward
 // (2D <= CC - mod, mods flipped). A failed Risk injures the character; a
 // surviving armed-forces character then resolves rank. It returns Ongoing,
@@ -540,7 +540,7 @@ func runTerm(r *dice.Roller, p Policy, c *Character, run *careerRun, career Care
 	bo := branchOpsMod(r, c, run, career)
 
 	// Branch & Operations mods are negative on Risk (riskier) and positive on
-	// Reward (Book 1 p. 82); Caution/Bravery keep their usual signs.
+	// Reward (Book 1 p.82); Caution/Bravery keep their usual signs.
 	riskOK := r.Resolve(dice.Check{Dice: 2, Target: ccVal + mod - bo}).Success
 
 	// outcome is the term's verdict, decided by the Risk roll but not returned
@@ -579,7 +579,7 @@ func runTerm(r *dice.Roller, p Policy, c *Character, run *careerRun, career Care
 	}
 
 	// An Agent runs an Undercover Assignment; everyone else takes their term
-	// skills, with one extra on a term they commission or promote (Book 1 p. 82:
+	// skills, with one extra on a term they commission or promote (Book 1 p.82:
 	// "1 skill because he was promoted").
 	if career.Term == UndercoverTerm {
 		awardUndercover(r, p, c, career, riskOK)
@@ -656,7 +656,7 @@ func selectCC(p Policy, c Character, run *careerRun, career Career) Characterist
 // continues resolves the end-of-term Continue decision: a natural 2 forces
 // another term (Mandatory Continue); otherwise the character continues only if
 // the policy wishes to and the 2D Continue roll succeeds. A UseCC rule targets
-// the career's fixed Controlling Characteristic (Book 1 p. 84, the Rogue).
+// the career's fixed Controlling Characteristic (Book 1 p.84, the Rogue).
 func continues(
 	r *dice.Roller,
 	p Policy,
@@ -681,7 +681,7 @@ func continues(
 	}
 
 	if career.Continue.TermsMod {
-		target += rec.Terms // more experience makes staying in easier (Book 1 p. 83, Agent)
+		target += rec.Terms // more experience makes staying in easier (Book 1 p.83, Agent)
 	}
 
 	if career.Continue.PubsMod {

@@ -1,5 +1,5 @@
 // Package personals implements Traveller5's social-interaction system, the
-// Personals (Book 1 pp. 181-185). A Personal is resolved roll-low: the Purpose
+// Personals (Book 1 pp.181-185). A Personal is resolved roll-low: the Purpose
 // sets the dice, and Target = Strategy value × Tactic multiplier + the best
 // applicable Law + up to two situational Mods (three if the Personal is
 // Deliberate). That allowance is the caller's to keep: Resolve takes unbounded

@@ -1,6 +1,6 @@
 package chargen
 
-// Scholar career data, transcribed from Book 1 p. 76. The Scholar's life is
+// Scholar career data, transcribed from Book 1 p.76. The Scholar's life is
 // Research and Publication: it runs the standard Risk & Reward (Research is the
 // Risk, so a failure still injures; Publication is the Reward, and a success is
 // a Publication — the Scholar's reward token). Publications raise the Promotion
@@ -22,7 +22,7 @@ package chargen
 // Tenure waiver (an adverse roll may be waived vs Soc); and the muster
 // Money-column +Scholar-Rank DM (treated as the standard +Terms).
 
-// ScholarCareer is the Scholar (Book 1 p. 76).
+// ScholarCareer is the Scholar (Book 1 p.76).
 var ScholarCareer = Career{
 	ID:   Scholar,
 	Name: "Scholar",
@@ -42,7 +42,7 @@ var ScholarCareer = Career{
 	RewardKind:      RewardPublication,
 	EnlistedPromote: PromotionRule{Char: Intelligence, PubsMod: true}, // Int, Mod +Pubs
 	Tenure:          &TenureRule{Rank: 3, EduMin: 10, PubsMult: 3},    // Scholar3, Edu 10+, Pub×3
-	// A single rank ladder (Book 1 p. 76): rank 1 is Lecturer. No auto-skills.
+	// A single rank ladder (Book 1 p.76): rank 1 is Lecturer. No auto-skills.
 	EnlistedRanks: []Rank{
 		{Title: "Lecturer"},
 		{Title: "Instructor"},
@@ -102,7 +102,7 @@ var ScholarCareer = Career{
 			choose(theTrades...),
 		},
 	},
-	// Muster-out (Book 1 p. 76), indexed 1-12 by (1D + DM). Money passages are
+	// Muster-out (Book 1 p.76), indexed 1-12 by (1D + DM). Money passages are
 	// recorded at cash value. Row 12 repeats row 11 (the printed table ends at 11).
 	MusterOut: MusterTable{
 		1:  {Money: cash(1_000), Benefit: charAward(Education)},  // Low Passage

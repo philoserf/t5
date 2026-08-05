@@ -39,7 +39,7 @@ func (rec Record) SecondSurvey() string {
 }
 
 // A Survey is a surveyed region: its per-hex system records and the trade routes
-// linking their Important worlds (Book 3 pp. 21, 27).
+// linking their Important worlds (Book 3 pp.21, 27).
 type Survey struct {
 	Records    []Record
 	Routes     []route.Link

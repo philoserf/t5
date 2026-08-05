@@ -139,7 +139,7 @@ func TestGrantCascadeKKS(t *testing.T) {
 	}
 }
 
-// Book 1 p. 75 counts "up to FIVE Skills at level 6+ (or Knowledges at level-6)
+// Book 1 p.75 counts "up to FIVE Skills at level 6+ (or Knowledges at level-6)
 // (but not languages)" toward Master Points, so a level-6 knowledge counts and a
 // Language knowledge does not. KnowledgeMax is 6, so a qualifying knowledge is
 // always exactly at the threshold.

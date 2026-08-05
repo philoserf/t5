@@ -6,12 +6,12 @@ import (
 	"github.com/philoserf/t5/internal/dice"
 )
 
-// Muster-out machinery for the term engine (Book 1 pp. 67-70): the benefit
+// Muster-out machinery for the term engine (Book 1 pp.67-70): the benefit
 // tables, the per-term award rolls, and their Money/Benefit column DMs. Split
 // from career.go (#331); all one package.
 
 // A MusterDM selects the die modifier a career's Benefit muster-out column adds
-// to each 1D roll (Book 1 pp. 67-70, each career page's muster DM line).
+// to each 1D roll (Book 1 pp.67-70, each career page's muster DM line).
 type MusterDM int
 
 // Sources of the muster-out Benefit-column die modifier.
@@ -106,7 +106,7 @@ type MusterRow struct {
 // roll (1D plus a column DM — see MusterOut).
 type MusterTable [13]MusterRow // index 1-12 used
 
-// MusterOut resolves a character's mustering-out benefits (Book 1 pp. 67-70).
+// MusterOut resolves a character's mustering-out benefits (Book 1 pp.67-70).
 // The character rolls once per term served (doubled when disabled); each roll is
 // 1D plus the column DM. The Money column adds +Terms; the Benefit column adds
 // the career's BenefitDM. The policy chooses the column.

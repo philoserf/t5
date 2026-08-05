@@ -7,7 +7,7 @@ import (
 )
 
 // Mid-career awards for the term engine: a successful Reward roll's token
-// (Book 1 p. 65), the Imperial Medals table (p. 70), and the skill-grid the term
+// (Book 1 p.65), the Imperial Medals table (p.70), and the skill-grid the term
 // draws its per-term skills from. Split from career.go (#331); all one package.
 
 // A RewardKind is the token a successful Reward roll earns for a career.
@@ -19,8 +19,8 @@ const (
 	RewardMedal                          // armed forces: a Medal
 	RewardPublication                    // the Scholar: a Publication
 	RewardShipShares                     // the Merchant: escalating Ship Shares (Nth reward = N shares)
-	RewardDiscovery                      // the Scout: a Discovery — a Land Grant and Fame +1 (Book 1 p. 79)
-	RewardCommendation                   // the Agent: an official Commendation (Book 1 p. 83)
+	RewardDiscovery                      // the Scout: a Discovery — a Land Grant and Fame +1 (Book 1 p.79)
+	RewardCommendation                   // the Agent: an official Commendation (Book 1 p.83)
 )
 
 // A Medal is one award from the Imperial Medals table (Book 1 p.70). Mod is the
@@ -149,7 +149,7 @@ func grantReward(
 	}
 }
 
-// awardSkills grants the term's skill eligibility (Book 1 p. 65).
+// awardSkills grants the term's skill eligibility (Book 1 p.65).
 func awardSkills(r *dice.Roller, p Policy, c *Character, career Career) {
 	awardSkillsN(r, p, c, career, career.EligPerTerm)
 }

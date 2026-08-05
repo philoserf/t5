@@ -11,10 +11,10 @@ import (
 )
 
 // The Extensions summarize a world beyond its UWP, in the notation
-// {Ix}(Ex)[Cx] (Book 3 pp. 18, 27, Chart E). Importance feeds both the others,
+// {Ix}(Ex)[Cx] (Book 3 pp.18, 27, Chart E). Importance feeds both the others,
 // so compute it first.
 
-// importanceTradeCodes each add +1 to Importance when present (Chart E, B3 p.27:
+// importanceTradeCodes each add +1 to Importance when present (Chart E, Book 3 p.27:
 // "Per Ag Hi In Ri +1" — Pre-Agricultural is not on the list).
 var importanceTradeCodes = []tradecode.Code{tradecode.Ag, tradecode.Hi, tradecode.In, tradecode.Ri}
 
@@ -114,7 +114,7 @@ func (e Economic) RU() int {
 		nonZeroFactor(e.Infrastructure) * nonZeroFactor(e.Efficiency)
 }
 
-// nonZeroFactor returns v, substituting 1 for 0 (the RU zero rule, B3 p.27).
+// nonZeroFactor returns v, substituting 1 for 0 (the RU zero rule, Book 3 p.27).
 func nonZeroFactor(v int) int {
 	if v == 0 {
 		return 1

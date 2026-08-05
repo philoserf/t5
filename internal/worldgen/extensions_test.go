@@ -70,7 +70,7 @@ func TestRollEconomicRegina(t *testing.T) {
 }
 
 func TestRUZeroSubstitution(t *testing.T) {
-	// "If any value = 0, use 1" (B3 p.27): a zero factor becomes 1, not a zeroed product.
+	// "If any value = 0, use 1" (Book 3 p.27): a zero factor becomes 1, not a zeroed product.
 	e := Economic{Resources: 13, Labor: 7, Infrastructure: 14, Efficiency: 0}
 	if got := e.RU(); got != 13*7*14 {
 		t.Errorf("RU with Efficiency 0 = %d, want %d", got, 13*7*14)

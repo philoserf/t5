@@ -48,7 +48,7 @@ func TestClassify(t *testing.T) {
 }
 
 // TestCheckResultSpectacular checks that a CheckResult reports its dice's
-// classification. Resolve classifies but does not act: the p. 127 override is
+// classification. Resolve classifies but does not act: the p.127 override is
 // the task layer's (see internal/task), so Success here stays arithmetic even
 // when the faces are spectacular.
 func TestCheckResultSpectacular(t *testing.T) {
@@ -60,7 +60,7 @@ func TestCheckResultSpectacular(t *testing.T) {
 	}
 
 	if res.Success {
-		t.Errorf("dice.Resolve must report arithmetic; the p. 127 override is task's")
+		t.Errorf("dice.Resolve must report arithmetic; the p.127 override is task's")
 	}
 
 	if got := res.Spectacular(); got != SpectacularSuccess {
@@ -74,7 +74,7 @@ func TestCheckResultSpectacular(t *testing.T) {
 	}
 
 	if !res6.Success {
-		t.Errorf("dice.Resolve must report arithmetic; the p. 127 override is task's")
+		t.Errorf("dice.Resolve must report arithmetic; the p.127 override is task's")
 	}
 
 	if got := res6.Spectacular(); got != SpectacularFailure {

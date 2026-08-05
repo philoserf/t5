@@ -1,5 +1,5 @@
 // Package sectorgen implements Traveller5's interstellar mapping (Book 3
-// pp. 12-15): the sector/subsector hex geometry, CCRR coordinates, and the
+// pp.12-15): the sector/subsector hex geometry, CCRR coordinates, and the
 // System Contents tables that populate a sector with star systems, gas giants,
 // and asteroid-belt mainworlds at a chosen stellar density.
 package sectorgen
@@ -135,7 +135,7 @@ func (h Hex) Subsector() byte {
 // which sets how likely a hex holds a star system.
 type Density int
 
-// System-presence densities (Book 3 p. 12).
+// System-presence densities (Book 3 p.12).
 const (
 	ExtraGalactic Density = iota // 3D <= 3 (~1%)
 	Rift                         // 2D <= 2 (~3%)

@@ -1,4 +1,4 @@
-// Package senses implements Traveller5's six senses (Book 1 pp. 186-199),
+// Package senses implements Traveller5's six senses (Book 1 pp.186-199),
 // including their fixed-format sense identifiers and sense Actions.
 package senses
 
@@ -41,7 +41,7 @@ type PerceptionDetail struct {
 	Poice int
 }
 
-// Human sense IDs (Book 1 pp. 188, 190-198). Humans lack Awareness and
+// Human sense IDs (Book 1 pp.188, 190-198). Humans lack Awareness and
 // Perception, represented by Constant zero while retaining canonical details.
 var (
 	Vision     = Sense{'V', 16, "RGB"}
@@ -202,7 +202,7 @@ func validEHex(detail string, width int) bool {
 }
 
 // NoticeAtRange resolves an at-range sense Action (Vision/Hearing/Awareness/
-// Perception; Book 1 p. 190). It rolls R=Range dice — Range 0 and the R/T
+// Perception; Book 1 p.190). It rolls R=Range dice — Range 0 and the R/T
 // sub-bands count as 1 — and succeeds on a roll at or under Constant plus the
 // Benchmark (objectSize - Range) plus any situational mods (Master Mods;
 // higher is better). A sense the sophont lacks automatically fails.
@@ -215,7 +215,7 @@ func NoticeAtRange(r *dice.Roller, s Sense, objectSize, rng int, mods ...int) di
 }
 
 // NoticeInContact resolves an in-contact sense Action (Touch, and Smell by
-// scent intensity; Book 1 p. 187): 2D at or under Constant + benchmark + mods.
+// scent intensity; Book 1 p.187): 2D at or under Constant + benchmark + mods.
 // A sense the sophont lacks automatically fails.
 func NoticeInContact(r *dice.Roller, s Sense, benchmark int, mods ...int) dice.CheckResult {
 	if !s.Available() {
@@ -226,7 +226,7 @@ func NoticeInContact(r *dice.Roller, s Sense, benchmark int, mods ...int) dice.C
 }
 
 // RangeBand returns the sense Range band (0-9) for a distance in meters, using
-// the shared world-range ladder (Book 1 pp. 24, 188).
+// the shared world-range ladder (Book 1 pp.24, 188).
 func RangeBand(meters float64) int {
 	n, ok := rangeband.WorldForDistance(meters).Number()
 	if !ok {

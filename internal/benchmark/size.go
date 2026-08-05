@@ -1,7 +1,7 @@
 package benchmark
 
 // SizeCode is a benchmark size digit. R (Reading) and T (Talking) are the two
-// sub-unit codes between 0 and 1 (Book 1 pp. 42-43).
+// sub-unit codes between 0 and 1 (Book 1 pp.42-43).
 type SizeCode string
 
 // Benchmark size codes.

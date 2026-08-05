@@ -14,7 +14,7 @@ import (
 // A Locomotion is a sophont's natural mode of movement (chart 05B).
 type Locomotion int
 
-// Locomotion modes (Book 3 p. 227).
+// Locomotion modes (Book 3 p.227).
 const (
 	Walker Locomotion = iota
 	Amphibian

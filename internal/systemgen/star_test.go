@@ -21,7 +21,7 @@ func TestStarString(t *testing.T) {
 
 func TestClassifyTable(t *testing.T) {
 	// typeFlux picks the spectral type; sizeFlux picks the row, the type picks
-	// the column. Values read from the Book 3 p. 28 table.
+	// the column. Values read from the Book 3 p.28 table.
 	cases := []struct {
 		name                     string
 		typeFlux, sizeFlux, deci int

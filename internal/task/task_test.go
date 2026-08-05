@@ -60,7 +60,7 @@ func TestDiceVocabularyDoesNotCollide(t *testing.T) {
 }
 
 func TestPace(t *testing.T) {
-	// Hasty is +1D; Cautious is -1D, floored at 1D (Book 1 p. 129 columns).
+	// Hasty is +1D; Cautious is -1D, floored at 1D (Book 1 p.129 columns).
 	cases := []struct {
 		d               Difficulty
 		hasty, cautious int

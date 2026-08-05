@@ -7,8 +7,8 @@
 // D6 results into ranges like 1-9 or 0-9.
 //
 // All randomness flows through a Roller so callers can seed it for
-// reproducible results. See Book 1, "Traveller Uses Dice" (pp. 18-19) and the
-// Dice Appendix (pp. 253-260).
+// reproducible results. See Book 1, "Traveller Uses Dice" (pp.18-19) and the
+// Dice Appendix (pp.253-260).
 package dice
 
 import (
@@ -162,8 +162,8 @@ func (r *Roller) Dice(n int) int {
 
 // DiceFaces rolls nD and returns the individual faces in roll order (nil for
 // n <= 0). The sum of DiceFaces(n) equals Dice(n); DiceFaces additionally
-// preserves each face, which Spectacular detection (Book 1 p. 127) and the
-// Genetics gene (the first face, Book 1 p. 102) need. Dice stays allocation-free
+// preserves each face, which Spectacular detection (Book 1 p.127) and the
+// Genetics gene (the first face, Book 1 p.102) need. Dice stays allocation-free
 // for the hot paths that only want the sum.
 func (r *Roller) DiceFaces(n int) []int {
 	if n <= 0 {

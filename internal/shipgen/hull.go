@@ -1,6 +1,6 @@
 package shipgen
 
-// Hull design (Book 2 pp. 51-53, 70-71). All hull attributes are deterministic
+// Hull design (Book 2 pp.51-53, 70-71). All hull attributes are deterministic
 // lookups/formulas over the hull size ordinal, configuration, structure, and TL.
 
 // configCost is each configuration's hull cost in MCr as a linear function of the
@@ -75,7 +75,7 @@ func hullCost(ordinal int, config HullConfig, structure HullMaterial) int {
 	return cr
 }
 
-// hull designs a hull (Book 2 pp. 51-53, 70-71). A tons of 0 uses the ordinal's
+// hull designs a hull (Book 2 pp.51-53, 70-71). A tons of 0 uses the ordinal's
 // nominal tonnage; a non-zero tons applies the over/undertonnage rules — gross
 // overtonnage (>49t over) rounds up to the next hull size, and lesser variance
 // adjusts Agility (and, when over, Stability). Base armor value is the TL

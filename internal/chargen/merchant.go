@@ -1,6 +1,6 @@
 package chargen
 
-// Merchant career data, transcribed from Book 1 p. 80. The Merchant runs the
+// Merchant career data, transcribed from Book 1 p.80. The Merchant runs the
 // standard Risk & Reward (a failed Risk still injures), but each Reward success
 // is escalating Ship Shares (the Nth success is worth N shares — RewardShipShares)
 // toward owning a starship. It has a dual rank track: a Rating ladder (Temp …
@@ -14,7 +14,7 @@ package chargen
 // muster "Ship Share" benefits stay named strings (they do not add to ShipShares),
 // and the +Officer-Rank muster Money DM is treated as +Terms.
 
-// MerchantCareer is the Merchant (Book 1 p. 80).
+// MerchantCareer is the Merchant (Book 1 p.80).
 var MerchantCareer = Career{
 	ID:               Merchant,
 	Name:             "Merchant",
@@ -27,7 +27,7 @@ var MerchantCareer = Career{
 	Commission:       PromotionRule{Char: Intelligence}, // Int
 	EnlistedPromote:  PromotionRule{Char: Dexterity},    // Rating Promotion, Dex
 	OfficerPromote:   PromotionRule{Char: Intelligence}, // approximates the book's Terms x2
-	// Rating ladder (Temp is rank 1); auto-skills on some rungs (Book 1 p. 80).
+	// Rating ladder (Temp is rank 1); auto-skills on some rungs (Book 1 p.80).
 	EnlistedRanks: []Rank{
 		{Title: "Temp"},
 		{Title: "Spacehand"},
@@ -79,7 +79,7 @@ var MerchantCareer = Career{
 			choose(theTrades...),
 		},
 	},
-	// Muster-out (Book 1 p. 80), indexed 1-12 by (1D + DM). Passages are recorded
+	// Muster-out (Book 1 p.80), indexed 1-12 by (1D + DM). Passages are recorded
 	// at cash value.
 	MusterOut: MusterTable{ //nolint:dupl // per-career muster-out table; parallel by design
 		1:  {Money: cash(40_000), Benefit: charAward(Strength)},

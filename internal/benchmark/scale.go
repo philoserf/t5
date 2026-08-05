@@ -1,5 +1,5 @@
 // Package benchmark provides Traveller's shared benchmark scales and formulas
-// (Book 1 pp. 36-43).
+// (Book 1 pp.36-43).
 package benchmark
 
 // ScaleEntry is one level on the shared Fame, Danger, and Threat scale.

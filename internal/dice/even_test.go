@@ -3,7 +3,7 @@ package dice
 import "testing"
 
 func TestEvenDist1to9(t *testing.T) {
-	// (row, col) -> value, sampled from the Even 1-9 table (p. 259).
+	// (row, col) -> value, sampled from the Even 1-9 table (p.259).
 	cases := []struct {
 		row, col, want int
 	}{

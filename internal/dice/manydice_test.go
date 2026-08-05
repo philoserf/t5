@@ -3,7 +3,7 @@ package dice
 import "testing"
 
 func TestManyDice10(t *testing.T) {
-	// Ten faces 1,2,3,1,2,3,1,2,3,1 reused cyclically through 100D = 190 (B1 p.260).
+	// Ten faces 1,2,3,1,2,3,1,2,3,1 reused cyclically through 100D = 190 (Book 1 p.260).
 	if got := scripted(1, 2, 3, 1, 2, 3, 1, 2, 3, 1).ManyDice10(100); got != 190 {
 		t.Errorf("ManyDice10(100) = %d, want 190", got)
 	}
@@ -14,7 +14,7 @@ func TestManyDice10(t *testing.T) {
 }
 
 func TestManyDice2D(t *testing.T) {
-	// 2D=5 (2+3); subsample 1,2,4,5,5 reused through 100D = 340 (B1 p.260).
+	// 2D=5 (2+3); subsample 1,2,4,5,5 reused through 100D = 340 (Book 1 p.260).
 	if got := scripted(2, 3, 1, 2, 4, 5, 5).ManyDice2D(100); got != 340 {
 		t.Errorf("ManyDice2D(100) = %d, want 340", got)
 	}

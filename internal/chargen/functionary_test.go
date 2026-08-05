@@ -49,7 +49,7 @@ func TestGoldenFunctionary(t *testing.T) {
 	}
 
 	// Both muster rolls landed on characteristics, so the only benefit on the
-	// sheet is the automatic one the p. 87 page prints beside the table: a Gold
+	// sheet is the automatic one the p.87 page prints beside the table: a Gold
 	// Watch worth "100 x Terms as Functionary" = 100 x 2 = Cr200. It costs no
 	// dice, which is why the script above is unchanged.
 	want := []string{"Gold Watch (Cr200)"}
@@ -88,7 +88,7 @@ func TestGoldenFunctionary(t *testing.T) {
 	}
 }
 
-// TestFunctionaryGoldWatchScalesWithTerms locks the p. 87 valuation formula
+// TestFunctionaryGoldWatchScalesWithTerms locks the p.87 valuation formula
 // itself: "Value= 100 x Terms as Functionary". A one-term clerk's watch is
 // Cr100, a five-term secretary's Cr500.
 func TestFunctionaryGoldWatchScalesWithTerms(t *testing.T) {

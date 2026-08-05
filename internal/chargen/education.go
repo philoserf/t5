@@ -6,7 +6,7 @@ import (
 	"github.com/philoserf/t5/internal/dice"
 )
 
-// Pre-career education (Book 1, "Pre-Career Education", pp. 59-60). Before a
+// Pre-career education (Book 1, "Pre-Career Education", pp.59-60). Before a
 // career, a character may attend an educational institution: they Apply (a
 // characteristic Check, with an optional Waiver on failure), then make one
 // Pass/Fail Check per year, and on completing every year Graduate for a degree
@@ -42,7 +42,7 @@ const (
 	tradeSchoolMajorBump = 2 // and, on completion, raises a vocational Major +2
 )
 
-// An academicProgram is a degree course (Book 1 p. 60): apply, one Pass/Fail
+// An academicProgram is a degree course (Book 1 p.60): apply, one Pass/Fail
 // Check per year, then graduate for a degree and an Edu bump. All five higher-
 // education programs — College, University, Service Academy, Masters, and
 // Professors — share one merged "Provides" cell on p.60: Major+1 per Pass and
@@ -109,7 +109,7 @@ var academicMajors = []string{
 	"Biology", "Economics", "Philosophy", "Astronomy", "Sophontology",
 }
 
-// educate runs a character's pre-career education (Book 1 pp. 59-60). It rolls
+// educate runs a character's pre-career education (Book 1 pp.59-60). It rolls
 // dice, so callers gate it on Policy.PursueEducation to keep generation
 // deterministic where no education is wanted. A character below the College
 // prerequisite first attempts the remedial ED5, then attends the most
@@ -148,7 +148,7 @@ func (c Character) hasDegree(degree string) bool {
 	return slices.Contains(c.Degrees, degree)
 }
 
-// attendTradeSchool runs a one-year Trade School (Book 1 p. 60): apply with a
+// attendTradeSchool runs a one-year Trade School (Book 1 p.60): apply with a
 // Check Int (Waiver on failure), then a single Pass/Fail Check (the better of
 // Int or Edu, Waiver on failure). Completing the year declares a vocational
 // Major and raises it +2. Unlike an academic program it grants no Minor, no Edu
@@ -175,7 +175,7 @@ func attendTradeSchool(r *dice.Roller, p Policy, c *Character) {
 	c.Skills.Raise(c.Major, tradeSchoolMajorBump)
 }
 
-// attemptED5 runs the ED5 remedial program (Book 1 p. 60): a character of Edu 4
+// attemptED5 runs the ED5 remedial program (Book 1 p.60): a character of Edu 4
 // or less may Check Int once to raise their Edu to 5, reaching the College
 // prerequisite. DefaultPolicy does not pursue education this low, so ED5 serves
 // policies that deliberately educate a low-Edu character. ED5 admission is
@@ -191,7 +191,7 @@ func attemptED5(r *dice.Roller, c *Character) {
 	}
 }
 
-// attendAcademic runs a character through an academic program (Book 1 p. 60). A
+// attendAcademic runs a character through an academic program (Book 1 p.60). A
 // character who fails to meet the program's prerequisite — an Edu level, or a
 // prior degree for a post-graduate program — cannot attend and is left
 // unchanged.
@@ -246,7 +246,7 @@ func admitted(r *dice.Roller, p Policy, c *Character, ch Characteristic, priorWa
 	return waiverGranted(r, p, c, priorWaivers)
 }
 
-// waiverGranted attempts an Educational Waiver (Book 1 p. 59): Check Social, at a
+// waiverGranted attempts an Educational Waiver (Book 1 p.59): Check Social, at a
 // cumulative -1 per prior waiver attempt (successful or not). It returns whether
 // the character may continue, and counts the attempt.
 func waiverGranted(r *dice.Roller, p Policy, c *Character, priorWaivers *int) bool {
@@ -260,7 +260,7 @@ func waiverGranted(r *dice.Roller, p Policy, c *Character, priorWaivers *int) bo
 	return res.Success
 }
 
-// awardAcademicPass applies one passed year (Book 1 p. 60: "Major+1 per Pass" and
+// awardAcademicPass applies one passed year (Book 1 p.60: "Major+1 per Pass" and
 // "Minor+1 per 2 Passes"): the Major rises each pass, and every second pass raises
 // the Minor. All five higher-education programs share this rule.
 func awardAcademicPass(c *Character, p Policy, prog academicProgram, passNum int) {
@@ -292,7 +292,7 @@ func (prog academicProgram) majorPool() []string {
 }
 
 // graduate applies a program's graduation benefit: Edu rises to the program's
-// graduation level, or +1 if already there (Book 1 p. 60 note), and the
+// graduation level, or +1 if already there (Book 1 p.60 note), and the
 // program's degree is recorded.
 func graduate(c *Character, prog academicProgram) {
 	if c.scores[Education] < prog.gradEdu {

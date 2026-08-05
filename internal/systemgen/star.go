@@ -28,7 +28,7 @@ func (s Star) String() string {
 	}
 }
 
-// spectralRow is one row of the Spectral Type and Size table (Book 3 p. 28):
+// spectralRow is one row of the Spectral Type and Size table (Book 3 p.28):
 // the spectral type for that Flux, and the luminosity size indexed by the
 // star's spectral column (O, B, A, F, G, K, M).
 type spectralRow struct {
@@ -40,7 +40,7 @@ type spectralRow struct {
 var column = map[string]int{"O": 0, "B": 1, "A": 2, "F": 3, "G": 4, "K": 5, "M": 6}
 
 // spectralTable is indexed by Flux+6, covering Flux -6..+8. Transcribed from
-// the Spectral Type and Size table on Book 3 p. 28 and verified against a
+// the Spectral Type and Size table on Book 3 p.28 and verified against a
 // rendered image of that page (Flux -1 is type G, not F).
 //
 // Note: the book's Regina worked example states "Primary Spectral Type = Flux
@@ -94,7 +94,7 @@ func classify(typeFlux, sizeFlux, decimal int, pickB bool) Star {
 		return Star{Type: sp, Decimal: -1, Size: "D"}
 	}
 
-	// Forbidden type/size combinations fall back to main-sequence V (p. 28).
+	// Forbidden type/size combinations fall back to main-sequence V (p.28).
 	switch {
 	case size == "IV" && (sp == "M" || (sp == "K" && decimal >= 5)):
 		size = "V"

@@ -1,6 +1,6 @@
 package trade
 
-// Broker terms (Book 2 pp. 220-221). A broker negotiates a sale, adding a DM on
+// Broker terms (Book 2 pp.220-221). A broker negotiates a sale, adding a DM on
 // the Actual Value Table for a percentage commission, and is only available at
 // starports of sufficient class.
 
@@ -41,7 +41,7 @@ func BrokerAvailable(brokerSkill int, starport byte) bool {
 	return starport >= 'A' && starport <= worst
 }
 
-// NetSale is a sale's proceeds after the broker's commission (Book 2 pp. 220-221):
+// NetSale is a sale's proceeds after the broker's commission (Book 2 pp.220-221):
 // the realized selling price less the broker's percentage cut.
 func NetSale(sellingPrice, brokerSkill int) int {
 	return sellingPrice - sellingPrice*BrokerCommissionPercent(brokerSkill)/100

@@ -619,14 +619,14 @@ func TestMultiCareer(t *testing.T) {
 	}
 }
 
-// rerollingPolicy always takes the p. 66 end-of-term Branch reroll, and rolls
+// rerollingPolicy always takes the p.66 end-of-term Branch reroll, and rolls
 // for a new Branch on Commission — the opposite of every default.
 type rerollingPolicy struct{ stopAfter }
 
 func (rerollingPolicy) RerollBranch(Character, CareerRecord) bool { return true }
 func (rerollingPolicy) RerollBranchOnCommission(Character) bool   { return true }
 
-// TestCommissionBranchColumnSwitch locks the one Branch mapping Book 1 p. 66
+// TestCommissionBranchColumnSwitch locks the one Branch mapping Book 1 p.66
 // names by hand: "for Spacers, Crew becomes Line". A commissioned Spacer keeps
 // his Branch, but reads it from the Officer column — Crew has no officer
 // counterpart and becomes Line, while a branch printed in both columns is
@@ -703,7 +703,7 @@ func TestRerollBranchIsDiceNeutralByDefault(t *testing.T) {
 		t.Errorf("reroll = roll %d mod %d, want roll 6 mod 1 (enlisted Gunnery)", run.branchRoll, run.branchMod)
 	}
 
-	// An Officer may not change Branch (p. 66), whatever the policy wants.
+	// An Officer may not change Branch (p.66), whatever the policy wants.
 	officer := careerRun{officer: true, branchRoll: 1, branchMod: 9}
 	rerollBranch(dice.NewScripted(6), rerollingPolicy{}, &c, &officer, SpacerCareer, CareerRecord{})
 

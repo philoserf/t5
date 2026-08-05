@@ -20,7 +20,7 @@ type tcRule struct {
 }
 
 // tcRules holds the trade classifications that can be decided from a mainworld
-// UWP alone (Book 3, Chart D, p. 26), in table order.
+// UWP alone (Book 3, Chart D, p.26), in table order.
 //
 // Deliberately excluded are classifications that need information beyond the
 // UWP. The climate / habitable-zone codes (Tropic, Tundra, Frozen, Twilight

@@ -1,6 +1,6 @@
 package shipgen
 
-// Fuel and armor (Book 2 pp. 75, 79).
+// Fuel and armor (Book 2 pp.75, 79).
 
 // Fitting costs (Book 2 p.79 F): the fuel scoop and purifier a wilderness
 // refueler carries, each 1 ton.

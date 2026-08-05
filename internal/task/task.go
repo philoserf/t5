@@ -1,5 +1,5 @@
 // Package task implements Traveller5's Universal Task Format (Book 1, Tasks
-// pp. 120-131). A task rolls a number of dice set by its Difficulty and
+// pp.120-131). A task rolls a number of dice set by its Difficulty and
 // succeeds when the total is at or under a target number built from a
 // characteristic, a skill, and modifiers — the roll-low resolution the dice
 // engine already provides.
@@ -11,12 +11,12 @@ import (
 	"github.com/philoserf/t5/internal/dice"
 )
 
-// Difficulty is a task's difficulty level (Book 1 p. 129). It sets how many
+// Difficulty is a task's difficulty level (Book 1 p.129). It sets how many
 // dice are rolled: more dice make a low roll harder, so higher difficulty is
 // harder. The ladder runs Easy (1D) through Beyond Impossible (8D).
 type Difficulty int
 
-// Task difficulties (Book 1 p. 120).
+// Task difficulties (Book 1 p.120).
 const (
 	Easy Difficulty = iota
 	Average
@@ -59,7 +59,7 @@ func (d Difficulty) Hasty() int {
 }
 
 // ExtraHasty returns the dice count for a task rushed ahead of every competing
-// non-Extra-Hasty task: two levels harder (+2D, Book 1 p. 125).
+// non-Extra-Hasty task: two levels harder (+2D, Book 1 p.125).
 func (d Difficulty) ExtraHasty() int {
 	return d.Dice() + 2
 }
@@ -103,13 +103,13 @@ func ResolveDice(r *dice.Roller, numDice, target int, mods ...int) dice.CheckRes
 }
 
 // applySpectacular overrides a task's arithmetic pass/fail with its Spectacular
-// result (Book 1 p. 127). Three ones make the task succeed "even if the result
+// result (Book 1 p.127). Three ones make the task succeed "even if the result
 // would otherwise be a failure"; three sixes make it "fail to produce the
 // results desired".
 //
-// This lives here, not in dice, because p. 127 states the rule about tasks —
+// This lives here, not in dice, because p.127 states the rule about tasks —
 // "Sometimes the task result is Spectacular" — and this package owns
-// pp. 120-131. dice keeps what is genuinely a dice observation (counting ones
+// pp.120-131. dice keeps what is genuinely a dice observation (counting ones
 // and sixes on the faces, dice.Classify) and this layer keeps the consequence.
 // A caller rolling a dice.Check that is not a task therefore gets arithmetic,
 // with no flag to remember.

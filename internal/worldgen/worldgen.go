@@ -1,6 +1,6 @@
 // Package worldgen creates a Traveller5 mainworld Universal World Profile from
 // the dice, following the world-creation rules in Book 3 (the Chart C
-// checklist and the World Creation card, pp. 16-25).
+// checklist and the World Creation card, pp.16-25).
 //
 // Each characteristic is a small formula over the dice and the characteristics
 // already rolled. The pure formula functions (atmosphere, hydrographics, …)

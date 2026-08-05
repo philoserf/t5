@@ -1,12 +1,12 @@
 package chargen
 
-// Soldier career data, transcribed from Book 1 p. 82. The Soldier is the first
+// Soldier career data, transcribed from Book 1 p.82. The Soldier is the first
 // armed-forces career, exercising the rank engine: it begins enlisted (Private),
 // may earn a Commission to the officer track, and promotes up the enlisted or
 // officer ladder — promotion rolls sweetened by Medals (from Reward successes)
 // and Wound Badges.
 //
-// The Branch and Operations modifiers to Risk & Reward (p. 82) are wired via
+// The Branch and Operations modifiers to Risk & Reward (p.82) are wired via
 // soldierBranchOps and the engine's branchOpsMod; the term's extra skill for a
 // Commission or Promotion is granted by runTerm; "Retire x2" is a real
 // RetirementX2 benefit that doubles the character's retirement pay (see
@@ -18,7 +18,7 @@ package chargen
 // skill is currently drawn from the policy's usual column), and the Command
 // College at O4.
 
-// soldierBranchOps is the Soldier's Branch and Operations tables (Book 1 p. 82).
+// soldierBranchOps is the Soldier's Branch and Operations tables (Book 1 p.82).
 var soldierBranchOps = BranchOps{
 	Branches: [9]Branch{
 		1: {"Infantry", 1, 1},
@@ -35,7 +35,7 @@ var soldierBranchOps = BranchOps{
 	OpsMods: [10]int{1: 2, 2: 2, 3: 1, 4: 2, 5: 0, 6: 3, 7: 1, 8: 2, 9: 0},
 }
 
-// SoldierCareer is the Soldier (Book 1 p. 82): an armed-forces career with
+// SoldierCareer is the Soldier (Book 1 p.82): an armed-forces career with
 // enlisted and officer rank ladders.
 var SoldierCareer = Career{
 	ID:               Soldier,
@@ -119,7 +119,7 @@ var SoldierCareer = Career{
 			choose(theTrades...),
 		},
 	},
-	// Muster-out (Book 1 p. 82), indexed 1-12 by (1D + DM). Money passages are
+	// Muster-out (Book 1 p.82), indexed 1-12 by (1D + DM). Money passages are
 	// recorded at cash value; "Retire x2" is a named retirement benefit. Rows 11
 	// and 12 repeat row 10 (the printed table ends at 10; higher rolls clamp).
 	MusterOut: MusterTable{

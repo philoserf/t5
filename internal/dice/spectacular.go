@@ -1,6 +1,6 @@
 package dice
 
-// A Spectacular classifies a roll's exceptional outcome (Book 1 p. 127): three
+// A Spectacular classifies a roll's exceptional outcome (Book 1 p.127): three
 // or more ones force a Spectacular Success, three or more sixes a Spectacular
 // Failure, and both together (only possible with six or more dice) is
 // Spectacularly Interesting.
@@ -10,7 +10,7 @@ package dice
 // task.Resolve. CheckResult.Success here is the arithmetic result alone.
 type Spectacular int
 
-// Spectacular classifications of a check (Book 1 p. 127).
+// Spectacular classifications of a check (Book 1 p.127).
 const (
 	NotSpectacular           Spectacular = iota
 	SpectacularSuccess                   // three or more ones
@@ -33,11 +33,11 @@ func (s Spectacular) String() string {
 }
 
 // minSpectacularDice is the smallest pool that can hold three of a kind, so the
-// smallest that can be spectacular at all (Book 1 p. 127: three ones are "not
+// smallest that can be spectacular at all (Book 1 p.127: three ones are "not
 // possible on 1D or 2D").
 const minSpectacularDice = 3
 
-// Classify inspects the raw dice faces (Book 1 p. 127). Ones and sixes are
+// Classify inspects the raw dice faces (Book 1 p.127). Ones and sixes are
 // counted across all dice; fewer than three dice can never be spectacular.
 func Classify(faces []int) Spectacular {
 	if len(faces) < minSpectacularDice {

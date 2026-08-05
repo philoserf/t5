@@ -1,6 +1,6 @@
 package chargen
 
-// Marine career data, transcribed from Book 1 p. 86. The Marine is a second
+// Marine career data, transcribed from Book 1 p.86. The Marine is a second
 // armed-forces career, pure data on the rank engine: it differs from the Soldier
 // only in which characteristics govern its rolls (Risk & Reward rotates Str/Int,
 // Enlisted Promotion is vs Str, Officer Promotion vs Int, Continue vs Str), its
@@ -11,7 +11,7 @@ package chargen
 // College are deferred. Everything else the Soldier's header once listed has
 // shipped — see there.
 
-// marineBranchOps is the Marine's Branch and Operations tables (Book 1 p. 86).
+// marineBranchOps is the Marine's Branch and Operations tables (Book 1 p.86).
 var marineBranchOps = BranchOps{
 	Branches: [9]Branch{
 		1: {"Infantry", 1, 2},
@@ -28,7 +28,7 @@ var marineBranchOps = BranchOps{
 	OpsMods: [10]int{1: 2, 2: 2, 3: 1, 4: 2, 5: 0, 6: 3, 7: 1, 8: 2, 9: 0},
 }
 
-// MarineCareer is the Marine (Book 1 p. 86).
+// MarineCareer is the Marine (Book 1 p.86).
 var MarineCareer = Career{
 	ID:               Marine,
 	Name:             "Marine",
@@ -118,7 +118,7 @@ var MarineCareer = Career{
 			choose(theTrades...),
 		},
 	},
-	// Muster-out (Book 1 p. 86), indexed 1-12 by (1D + DM). Money passages are
+	// Muster-out (Book 1 p.86), indexed 1-12 by (1D + DM). Money passages are
 	// recorded at cash value; "Retire x2" is a named retirement benefit. Rows 11
 	// and 12 repeat row 10 (the printed table ends at 10; higher rolls clamp).
 	MusterOut: MusterTable{

@@ -311,6 +311,12 @@ dependencies. (The former `docs/automation-catalog.md` planning doc has been ret
   (`revive`) — e.g. `route.World` renamed to `route.Node` to stop colliding with
   `worldgen.World` without stuttering as `route.RouteWorld` would) win over literal
   transcription generally.
+- **Rules citations: `Book N p.NN` / `pp.NN-MM`, no space after the period, cite the PDF
+  never `docs/reference/`.** The extract under `docs/reference/` is a search/greppability
+  convenience only — it's derived output that can drift from the PDF (printed footers have
+  disagreed with the PDF's own page index; see `docs/rules/`'s rationale). Cite and verify
+  against `docs/pdf/`. Keep the page-number spacing consistent (`p.24`, not `p. 24`) so a
+  file doesn't end up mixing both, which has happened before.
 - Commit only when asked (see the user's global git guidance).
 - **A fix that changes nothing measurable usually means the reading is wrong.** If a rules
   correction (a formula tweak, a re-derived cell, a re-read chart) lands and every golden test

@@ -1,5 +1,5 @@
 // Package shipcombat implements the Traveller5 Space Combat resolution engine
-// (Book 2 pp. 193-204): the Space Weapon, Missile, and Defensive Fire tasks, hit
+// (Book 2 pp.193-204): the Space Weapon, Missile, and Defensive Fire tasks, hit
 // location by Flux, penetration against layered armor, damage application, and
 // the missile Massive Explosion. Each attack follows the five-step sequence —
 // Declared, Defenses, To Hit, Penetration, Damage.

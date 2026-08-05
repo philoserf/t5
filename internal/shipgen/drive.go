@@ -2,7 +2,7 @@ package shipgen
 
 import "fmt"
 
-// Drive design (Book 2 pp. 54-56, 76-78). Drive Potential — the core performance
+// Drive design (Book 2 pp.54-56, 76-78). Drive Potential — the core performance
 // number — turns out to be a clean formula, not the irregular grid it appears
 // to be: the p.78 Z1 table is exactly Potential = floor(2 * driveOrdinal /
 // hullOrdinal), capped at 9, with 0 meaning "not possible". Verified against the
@@ -167,7 +167,7 @@ func availabilityMax(kind DriveKind, tl int) int {
 // baseline (zero value).
 type Stage int
 
-// TL stages for a drive (Book 2 p. 76).
+// TL stages for a drive (Book 2 p.76).
 const (
 	Standard Stage = iota
 	Experimental
@@ -268,7 +268,7 @@ func driveLabel(ord int) string {
 	}
 }
 
-// designDrive builds one drive for a hull (Book 2 pp. 76-78): its Potential from
+// designDrive builds one drive for a hull (Book 2 pp.76-78): its Potential from
 // Z1 — scaled by the stage's efficiency, then capped by TL availability at the
 // stage's shifted TL — and its stage-adjusted tonnage and cost. It returns the
 // drive and a problem string when the combination cannot function or TL

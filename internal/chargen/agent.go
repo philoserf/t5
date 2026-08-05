@@ -1,6 +1,6 @@
 package chargen
 
-// Agent career data, transcribed from Book 1 p. 83. The Agent is a rankless
+// Agent career data, transcribed from Book 1 p.83. The Agent is a rankless
 // career (no rank ladders) with a standard Risk & Reward and a Continue roll
 // that eases with experience ("Str, Mod +Terms").
 //
@@ -13,7 +13,7 @@ package chargen
 // Vocation column is a representative academic-subject choice; the specific
 // C-column skill of the Undercover table is overridden by the Agent's selection.
 
-// AgentCareer is the Agent (Book 1 p. 83).
+// AgentCareer is the Agent (Book 1 p.83).
 var AgentCareer = Career{
 	ID:               Agent,
 	Name:             "Agent",
@@ -87,7 +87,7 @@ var AgentCareer = Career{
 			choose(theTrades...),
 		},
 	},
-	// Muster-out (Book 1 p. 83), indexed 1-12 by (1D + DM). Money passages are
+	// Muster-out (Book 1 p.83), indexed 1-12 by (1D + DM). Money passages are
 	// recorded at cash value.
 	MusterOut: MusterTable{ //nolint:dupl // per-career muster-out table; parallel by design
 		1:  {Money: cash(1_000), Benefit: named("Ship Share")},          // Low Passage
