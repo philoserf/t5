@@ -153,11 +153,24 @@ Tooling (go, go-task, golangci-lint, poppler's `pdftotext`) is pinned in `Brewfi
   reports it via `Notef` ("`sectorgen: seed 16919235832026294750`"), so a run worth keeping can always
   be replayed — re-run with that `-seed` for byte-identical records, or to select another view of the
   same survey (`-hex`, `-sector`). The report is on stderr, so piped records are unaffected.
-  **`README.md` pins actual generated records** (the `sectorgen -seed 42` sample), and nothing in
-  the suite checks them — no test pins CLI output. So a change that shifts a seeded dice stream
-  silently falsifies the README's own reproducibility promise. #321 did exactly that and it
-  survived to review. When a generator's draw sequence changes, grep for pinned sample output and
-  regenerate it, then diff the regenerated block against a fresh run.
+  **`README.md` pins actual generated records** (the `sectorgen -seed 42` sample, among others). A
+  change that shifts a seeded dice stream can silently falsify the README's own reproducibility
+  promise — #321 did exactly that and it survived to review, because at the time nothing in the
+  suite checked the pinned samples against a fresh run. `clitest`'s golden-fixture support (#361,
+  see `internal/clitest` below) now closes that structurally for worldgen/chargen/sectorgen/shipgen:
+  `Result.AssertReadmeUpToDate` fails a test the moment a README sample and a live run diverge, so a
+  shifted dice stream is caught by `task check` rather than by a person noticing. When a generator's
+  draw sequence changes, run `go test ./cmd/... -update` to regenerate the golden fixtures, eyeball
+  the diff, and let the README-parity tests confirm the README block itself still needs no manual
+  edit (or tell you which lines do).
+  **`worldgen` also takes `-format text|json`** (#360): JSON is a re-rendering of the exact same
+  generated records, one per line, never a richer or different generation — the same `-seed` must
+  name the same worlds under either format (`TestFormatIsDiceInvariant`,
+  `cmd/worldgen/golden_test.go`). The JSON shape is CLI-local (`jsonWorld`), not a
+  `worldgen.World.MarshalJSON`: this command only ever builds a bare `uwp.Profile`
+  (`worldgen.Generate`), never a full `World` — that would need system context (gas giants, belts,
+  capital status) this command doesn't have. A `World`-level JSON shape waits for a consumer that
+  actually builds one (`systemgen`, `survey`).
 
   It is **deferred, not printed at construction**: `Roller`/`SeededRoller` hand back a `reportSeed`
   func alongside the roller, and each command calls it only once its own flags validate, so a run
