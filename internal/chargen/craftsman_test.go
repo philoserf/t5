@@ -8,6 +8,31 @@ import (
 	"github.com/philoserf/t5/internal/worldgen"
 )
 
+// TestMasterpieceValue pins masterpieceValue's formula (Book 1 p.75:
+// Cr150,000 plus Cr10,000 per Master Point over 40, doubled at 55+) against
+// literals computed independently of the function itself — a Copilot review
+// on #370 correctly flagged that TestCraftsmanMasterpiece below now builds
+// its expectation by CALLING masterpieceValue, so a bug in the function's own
+// arithmetic needs coverage that doesn't also call it.
+func TestMasterpieceValue(t *testing.T) {
+	cases := []struct {
+		points int
+		want   int
+	}{
+		{40, 150_000},                   // the minimum: no points over 40
+		{48, 230_000},                   // 150,000 + 8*10,000
+		{54, 290_000},                   // just under Perfect
+		{55, (150_000 + 15*10_000) * 2}, // Perfect threshold: doubling begins here
+		{60, (150_000 + 20*10_000) * 2},
+	}
+
+	for _, tc := range cases {
+		if got := masterpieceValue(tc.points); got != tc.want {
+			t.Errorf("masterpieceValue(%d) = %d, want %d", tc.points, got, tc.want)
+		}
+	}
+}
+
 // TestGoldenCraftsman traces a two-term fresh Craftsman. From scratch the
 // character cannot reach 40 Master Points, so both Masterpiece attempts fail
 // (no 9D roll), each raising the Craftsman skill +1 and granting one extra

@@ -7,6 +7,43 @@ import (
 	"github.com/philoserf/t5/internal/worldgen"
 )
 
+// TestPayScheme pins payScheme's formula (Book 1 p.84: a credit Scheme pays
+// V x (1 + CC - R), halved when the Risk failed) against literals computed
+// independently of the function itself — the case a Copilot review on #370
+// correctly flagged: the golden tests below build their expectations by
+// CALLING payScheme, so a bug in payScheme's own arithmetic needs coverage
+// that doesn't also call it.
+func TestPayScheme(t *testing.T) {
+	cases := []struct {
+		name                  string
+		value                 schemeValue
+		target, roll          int
+		riskOK                bool
+		wantCredits, wantSubs int
+	}{
+		{"roll equals target", schemeValue{credits: 100_000}, 7, 7, true, 100_000, 0},
+		{"roll under target pays more", schemeValue{credits: 100_000}, 8, 5, true, 400_000, 0},
+		{"failed risk halves the payoff", schemeValue{credits: 500_000}, 7, 7, false, 250_000, 0},
+		{"ship-share scheme grants a share, no credits", schemeValue{share: true}, 7, 7, true, 0, 1},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			var c Character
+
+			payScheme(&c, tc.value, tc.target, tc.roll, tc.riskOK)
+
+			if c.Credits != tc.wantCredits {
+				t.Errorf("Credits = %d, want %d", c.Credits, tc.wantCredits)
+			}
+
+			if c.ShipShares != tc.wantSubs {
+				t.Errorf("ShipShares = %d, want %d", c.ShipShares, tc.wantSubs)
+			}
+		})
+	}
+}
+
 // TestGoldenRogue traces a complete two-term Rogue whose Schemes both succeed,
 // exercising the fixed-CC seam and the Scheme payoff end-to-end. The character
 // is all 7s, so the policy's fixed CC (the first controlling characteristic,
