@@ -44,6 +44,9 @@ Shared flags: `-n` (count) and `-seed`. Command-specific ones:
 - **shipgen** — `-hull -tl -config -structure -armor -maneuver -jump -power -mission -weapon
 -defense`: the design is deterministic (no dice); infeasibility is reported, not fatal.
 - **sophont** — `-char`: also roll an individual of the generated species.
+- **worldgen** — `-format text|json`: JSON emits one record per line (raw UWP characteristics
+  plus the rendered `uwp` string and trade codes); it never changes what is generated or how
+  many dice a world draws, so the same `-seed` names the same worlds under either format.
 
 ### Sample output
 

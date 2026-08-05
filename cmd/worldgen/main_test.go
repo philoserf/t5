@@ -19,15 +19,16 @@ func TestMainReportsSeedOnValidRun(t *testing.T) {
 	command.Run(t, "-n", "3").AssertReportedSeed(t)
 }
 
-// TestMainRejectsBadFlags: worldgen defines no flags of its own, so the input it
-// can reject is the shared -n (checked inside SeededRoller, before the roller is
-// handed back) and anything flag itself refuses. Either way: exit 2, the reason on
-// stderr, no records, and no seed named for a run that generated nothing.
+// TestMainRejectsBadFlags: the input worldgen can reject is the shared -n
+// (checked inside SeededRoller, before the roller is handed back), its own
+// -format, and anything flag itself refuses. Either way: exit 2, the reason
+// on stderr, no records, and no seed named for a run that generated nothing.
 func TestMainRejectsBadFlags(t *testing.T) {
 	cases := map[string][]string{
 		"zero count":     {"-n", "0"},
 		"negative count": {"-n", "-4"},
 		"unknown flag":   {"-nosuchflag"},
+		"unknown format": {"-format", "yaml"},
 	}
 	for name, args := range cases {
 		t.Run(name, func(t *testing.T) {
