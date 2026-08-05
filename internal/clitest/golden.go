@@ -32,7 +32,12 @@ func (r Result) AssertGolden(t *testing.T, name string) {
 	path := filepath.Join("testdata", name+".txt")
 
 	if *Update {
-		if err := os.WriteFile(path, []byte(r.Stdout), 0o600); err != nil {
+		// 0o644, matching every other tracked text file: 0o600 would make a
+		// freshly-created fixture unreadable to anyone but its owner, and
+		// would disagree with core.filemode's usual 644 the moment a second
+		// fixture in the same directory needs group/other read access.
+		err := os.WriteFile(path, []byte(r.Stdout), 0o644) //nolint:gosec // golden fixture, not a secret
+		if err != nil {
 			t.Fatalf("writing golden %s: %v", path, err)
 		}
 
@@ -66,7 +71,13 @@ func ReadmeBlock(t *testing.T, readmePath, marker string) string {
 		t.Fatalf("reading %s: %v", readmePath, err)
 	}
 
-	lines := strings.Split(string(data), "\n")
+	// Normalize CRLF/CR to LF before splitting: a Windows checkout with
+	// core.autocrlf can give README.md \r\n line endings, which would leave a
+	// trailing \r on every captured line and fail every comparison against a
+	// command's LF-only stdout even when the visible text is identical.
+	normalized := strings.ReplaceAll(strings.ReplaceAll(string(data), "\r\n", "\n"), "\r", "\n")
+
+	lines := strings.Split(normalized, "\n")
 
 	start := -1
 
