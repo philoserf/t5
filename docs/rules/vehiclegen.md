@@ -6,8 +6,10 @@
 > pages instead (see [Extraction workflow](#extraction-workflow) below). This file is the source
 > of truth `internal/vehiclegen`'s `typeRows`/`missionRows`/`motiveRows`/`enhancerRows` and
 > `enduranceModifier` mirror. Every cell below was independently transcribed from the rendered
-> page image, then cross-checked against the registry; the one disagreement found is recorded
-> under [Errata](#errata--resolved-conflicts).
+> page image, then cross-checked against the registry — zero cell-value disagreements found. The
+> [Errata](#errata--resolved-conflicts) section below records every settled ruling for these
+> charts, most already known from `internal/vehiclegen/CLAUDE.md`; only its first entry, a stale
+> page citation, is new to this pass.
 
 A blank cell (`-`) is a genuine no-op in the printed chart: the book itself uses blank and a
 literal `0` interchangeably to mean "no change," never "set to zero" (see Errata). `×N`/`/N`
