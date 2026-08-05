@@ -79,14 +79,18 @@ func TestCraftsmanMasterpiece(t *testing.T) {
 	// Master Points = Str 8 + Craftsman 10 + (5 x 6) = 48. A 9D of nine 5s = 45 <= 48.
 	// The term draws sixteen dice: the 9D Masterpiece attempt, then the term's
 	// skill and Continue rolls. Every one is a 5.
+	const points = 8 + 10 + 5*6
+
 	runCraftsmanTerm(dice.NewScripted(slices.Repeat([]int{5}, 16)...), DefaultPolicy{}, &c, CraftsmanCareer, Strength)
 
 	if c.Masterpieces != 1 {
 		t.Errorf("Masterpieces = %d, want 1", c.Masterpieces)
 	}
-	// 48 Master Points: Cr150,000 + 8 x Cr10,000 = Cr230,000 (not Perfect).
-	if c.MasterpieceValue != 230_000 {
-		t.Errorf("MasterpieceValue = %d, want 230000", c.MasterpieceValue)
+	// Derived from the same formula the term runner calls, not hand-traced
+	// separately: a points-vs-formula mismatch on both sides would otherwise
+	// pass unnoticed (#357).
+	if want := masterpieceValue(points); c.MasterpieceValue != want {
+		t.Errorf("MasterpieceValue = %d, want %d (masterpieceValue(%d))", c.MasterpieceValue, want, points)
 	}
 
 	if c.Skills.Level("Craftsman") != 11 {

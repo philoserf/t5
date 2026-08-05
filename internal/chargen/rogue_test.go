@@ -50,8 +50,16 @@ func TestGoldenRogue(t *testing.T) {
 		t.Errorf("Pilot = %d, want 12 (6 Successful-Scheme rolls x 2 terms)", got)
 	}
 
-	if c.Credits != 300_000 {
-		t.Errorf("Credits = %d, want 300000 (Cr100,000 + Cr200,000 Scheme payoffs)", c.Credits)
+	// Derived by calling payScheme itself rather than hand-tracing its formula
+	// into a comment (#357): each term's Spacer Scheme (Cr100,000) pays out at
+	// the CC target/roll that term actually rolled, held both times.
+	var want Character
+
+	payScheme(&want, schemeValue{credits: 100_000}, 7, 7, true) // term 1: CC 7, roll 7
+	payScheme(&want, schemeValue{credits: 100_000}, 8, 7, true) // term 2: CC 7 +1 term, roll 7
+
+	if c.Credits != want.Credits {
+		t.Errorf("Credits = %d, want %d (two Spacer Scheme payoffs via payScheme)", c.Credits, want.Credits)
 	}
 
 	if c.Fame != 0 {
@@ -174,6 +182,12 @@ func TestRogueSchemeInfamy(t *testing.T) {
 	c := Character{scores: [count]int{7, 7, 7, 7, 7, 7}}
 	run := careerRun{fixed: Strength, fixedChosen: true} // fixed CC already chosen
 
+	// Derived by calling payScheme directly (#357) rather than hand-tracing its
+	// halving into a comment: Noble Scheme (Cr500,000), CC target/roll both 7,
+	// halved for the failed Risk.
+	var want Character
+	payScheme(&want, schemeValue{credits: 500_000}, 7, 7, false)
+
 	// Failure term: Scheme Flux 6-2 = +4 -> Noble, Cr500,000.
 	seq := []int{
 		6, 2, // Scheme Flux = +4 -> Noble, Cr500,000
@@ -193,10 +207,10 @@ func TestRogueSchemeInfamy(t *testing.T) {
 		t.Fatalf("failure term outcome = %v, want Ongoing (a Scheme carries no injury)", out)
 	}
 
-	if c.Credits != 250_000 {
+	if c.Credits != want.Credits {
 		t.Errorf(
-			"Credits = %d, want 250000 (Cr500,000 payoff halved by the failed Risk)",
-			c.Credits,
+			"Credits = %d, want %d (Cr500,000 Noble payoff halved by the failed Risk, via payScheme)",
+			c.Credits, want.Credits,
 		)
 	}
 
@@ -234,8 +248,8 @@ func TestRogueSchemeInfamy(t *testing.T) {
 		t.Errorf("Soc = %d, want 9 (two In-Prison Personal bumps for an uneducated Rogue)", got)
 	}
 
-	if c.Credits != 250_000 {
-		t.Errorf("Credits = %d, want 250000 unchanged (no Scheme in prison)", c.Credits)
+	if c.Credits != want.Credits {
+		t.Errorf("Credits = %d, want %d unchanged (no Scheme in prison)", c.Credits, want.Credits)
 	}
 }
 

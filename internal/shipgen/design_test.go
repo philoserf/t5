@@ -43,11 +43,19 @@ func TestDesignMurphy(t *testing.T) {
 	if s.Tonnage.Used != 42 || s.Tonnage.Payload != 58 {
 		t.Errorf("budget = %+v, want 42 used / 58 payload", s.Tonnage)
 	}
-	// Core cost = hull 16 + drives 18 + fuel 1.111 MCr. (The book's MCr 70.3
-	// full-ship figure additionally includes the deferred staterooms, turret,
-	// and sensors.)
-	if s.Cost != 16_000_000+18_000_000+1_111_000 {
-		t.Errorf("core cost = %d, want %d", s.Cost, 35_111_000)
+	// Each drive priced individually (#357: a folded "18 MCr drives" total let
+	// a dropped addend go unnoticed, since nothing pinned Maneuver/Jump/Power
+	// separately).
+	if s.Maneuver.Cost != 4_000_000 || s.Jump.Cost != 10_000_000 || s.Power.Cost != 4_000_000 {
+		t.Errorf("drive costs = %d/%d/%d, want 4,000,000/10,000,000/4,000,000",
+			s.Maneuver.Cost, s.Jump.Cost, s.Power.Cost)
+	}
+	// Core cost is the sum of the components just checked above, not a
+	// separately hand-added total — so it can't drift from them while still
+	// passing. (The book's MCr 70.3 full-ship figure additionally includes the
+	// deferred staterooms, turret, and sensors.)
+	if want := s.Hull.Cost + s.Maneuver.Cost + s.Jump.Cost + s.Power.Cost + s.Fuel.Cost; s.Cost != want {
+		t.Errorf("core cost = %d, want %d (Hull+Maneuver+Jump+Power+Fuel)", s.Cost, want)
 	}
 }
 

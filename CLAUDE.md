@@ -275,3 +275,39 @@ dependencies. (The former `docs/automation-catalog.md` planning doc has been ret
   itself or skipping the check wholesale. Keep this in mind for any future cross-record derivation
   in `sectorgen`/`survey`/`route` (capital assignment, route selection) that needs a documented
   one-off.
+- **Fail-open assertions are this codebase's recurring defect family.** A check that passes both
+  when the code is right and when the mechanism it depends on is simply absent ships green and
+  fools everyone, including the person who wrote it the same session. Found three in one day
+  (2026-07-19): `clitest.AssertRejected` accepting any exit-2, including an unrecovered panic, as a
+  valid rejection; a drive-cost catalog test with an `mcr == 0` sentinel that silently opted the one
+  disputed cell out of the check; a panic-expecting test whose input already panicked at
+  construction, before the code under test ran at all. When a test checks for the ABSENCE of
+  something (no seed line, no output, an expected panic, a skipped row), ask what else produces that
+  same absence, and assert the reason, not just the symptom — match a panic's message, not just that
+  it panicked; reject `"panic:"` in stderr alongside a bare exit code. Never add a sentinel that
+  opts a row out of a check; delete the row or assert it.
+- **Test discipline against the same defect family, from `../traveller`'s postmortem (#357):**
+  eight of its fixtures broke from one extra die roll, and four more had been passing only by
+  compensating errors.
+  - **`internal/seedsearch.Find`** locates a real `dice.Roller` seed producing a rare or
+    hard-to-hand-construct outcome (a career of unknown length, a variable term count) where no
+    fixed `dice.NewScripted` sequence stands in — use it in place of a hand-found seed pinned with a
+    "confirmed by direct inspection"-style comment, which breaks silently the moment a rule change
+    shifts the dice stream. Its predicate must capture only the precondition under test, never the
+    behavior being asserted, or the search is vacuous (see the function's own doc for the reasoning).
+  - **Per-mechanic reachability.** A conditional mechanic can be correct, unit-tested in isolation
+    (a hand-built `Character`/state driving it directly), and never actually exercised by the
+    top-level generation path — nothing proves it is _reachable_, only that it behaves once forced.
+    `internal/systemgen/systemgen_test.go`'s `TestGenerateForMapDiceAlignment` and
+    `internal/chargen/scholar_test.go`'s `TestTenureReachableFromFullGeneration` are the pattern:
+    sweep real seeds through the actual entry point and assert the mechanic fires at least once,
+    with a count if the frequency itself is worth recording.
+  - **Prefer derived bounds over lucky equalities in fixtures.** A test that pins a rolled/derived
+    total (mustering-out cash, a Masterpiece's value, a ship's core cost) as a bare literal, arrived
+    at by the test author hand-tracing the same formula the production code runs, gives a "passing"
+    test no independent authority over either side: a bug reproduced in both the code and the
+    author's mental trace cancels out. Prefer calling the same function/table the code reads (e.g.
+    `masterpieceValue(points)`, `payScheme(&want, ...)`), or summing the struct's own
+    already-validated component fields, over a memorized total — unless the total is itself a book
+    worked-example figure (a genuine golden, checked against an external authority), which is fine
+    as a literal.
