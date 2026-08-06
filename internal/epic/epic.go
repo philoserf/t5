@@ -1,5 +1,5 @@
 // Package epic builds Traveller5 EPIC adventure checklists and rolls their
-// session themes (Book 3 pp. 274-279).
+// session themes (Book 3 pp.274-279).
 //
 // An EPIC is deliberately a scaffold rather than a plotted story: four ordered
 // acts each contain five scenes that may be played in any order, followed by a
@@ -54,7 +54,7 @@ var actPurposes = [...]string{
 }
 
 // Scaffold returns a fresh canonical EPIC structure: four acts of five scenes,
-// then a climactic final resolution (Book 3 p. 275). Each call owns its slices,
+// then a climactic final resolution (Book 3 p.275). Each call owns its slices,
 // so callers may fill in scenes without changing later scaffolds.
 func Scaffold() Adventure {
 	acts := make([]Act, actCount)
@@ -83,7 +83,7 @@ func Generate(r *dice.Roller) Adventure {
 }
 
 // Theme returns the Typical Mods theme at a 1D-by-1D coordinate (Book 3
-// p. 279). column and row must each be a die face in 1..6.
+// p.279). column and row must each be a die face in 1..6.
 func Theme(column, row int) (string, bool) {
 	if column < 1 || column > 6 || row < 1 || row > 6 {
 		return "", false

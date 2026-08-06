@@ -1,6 +1,6 @@
 package shipcombat
 
-// Movement and ranging (Book 2 pp. 195, 200-201).
+// Movement and ranging (Book 2 pp.195, 200-201).
 
 // Agility is a ship's combat agility (Book 2 p.200): its maximum (or Power Plant
 // Potential) Gs minus the Gs currently used for other maneuvering. Greater

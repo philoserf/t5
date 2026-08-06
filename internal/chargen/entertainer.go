@@ -1,6 +1,6 @@
 package chargen
 
-// Entertainer career data, transcribed from Book 1 p. 77. The Entertainer's
+// Entertainer career data, transcribed from Book 1 p.77. The Entertainer's
 // success is measured by Fame, not Risk & Reward: each term (see runFameTerm) a
 // Flux roll shifts Fame, and a rise grants Talent +1 and two extra skills. There
 // is no career injury. Initial Fame and Talent are one 2D roll (rolled at career
@@ -15,7 +15,7 @@ package chargen
 // reachable at very high Fame), and the muster Money-column +Fame/3 DM (treated
 // as the standard +Terms).
 
-// EntertainerCareer is the Entertainer (Book 1 p. 77), modelled as the Actor
+// EntertainerCareer is the Entertainer (Book 1 p.77), modelled as the Actor
 // specialty.
 var EntertainerCareer = Career{
 	ID:   Entertainer,
@@ -85,7 +85,7 @@ var EntertainerCareer = Career{
 			choose(theTrades...),
 		},
 	},
-	// Muster-out (Book 1 p. 77), indexed 1-12 by (1D + DM). Money passages are
+	// Muster-out (Book 1 p.77), indexed 1-12 by (1D + DM). Money passages are
 	// recorded at cash value. Row 13 (TAS Life) is deferred (reachable only at
 	// very high Fame); row 12 stands.
 	MusterOut: MusterTable{

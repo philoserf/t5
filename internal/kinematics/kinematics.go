@@ -1,5 +1,5 @@
 // Package kinematics provides Traveller's closed-form distance, signal-delay,
-// and constant-acceleration calculations (Book 1 pp. 31-35).
+// and constant-acceleration calculations (Book 1 pp.31-35).
 package kinematics
 
 import (

@@ -12,7 +12,7 @@ const (
 	DestructiveMishap
 )
 
-// A MishapCheck records the p. 131 failure-consequence roll. Ordinary mishaps
+// A MishapCheck records the p.131 failure-consequence roll. Ordinary mishaps
 // use Reliability; Dangerous and Destructive mishaps use Safety. The printed
 // test is Flux + rating, with a negative result triggering the consequence.
 // Injury/damage location, diagnosis, and repair are separate tables and remain

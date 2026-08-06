@@ -1,6 +1,6 @@
 package chargen
 
-// Citizen career data, transcribed from Book 1 p. 78. The Citizen is entered
+// Citizen career data, transcribed from Book 1 p.78. The Citizen is entered
 // automatically (To Begin = Auto) and replaces Risk & Reward with the benign
 // Citizen Life roll (see runCitizenTerm): a success grants a Job or Hobby skill
 // on a fixed schedule, a failure nothing — there is no career injury. It still
@@ -9,10 +9,10 @@ package chargen
 //
 // Slice scope: the Job/Hobby skill is chosen from a representative list
 // (citizenJobs) rather than rolled on the book's full Citizen Skills-and-
-// Knowledges table (the big A/B/C table on p. 78), and the Edu-select option for
+// Knowledges table (the big A/B/C table on p.78), and the Edu-select option for
 // a Job/Hobby in the character's Major/Minor is deferred.
 
-// CitizenCareer is the Citizen (Book 1 p. 78).
+// CitizenCareer is the Citizen (Book 1 p.78).
 var CitizenCareer = Career{
 	ID:               Citizen,
 	Name:             "Citizen",
@@ -73,7 +73,7 @@ var CitizenCareer = Career{
 			choose(theTrades...),
 		},
 	},
-	// Muster-out (Book 1 p. 78), indexed 1-12 by (1D + DM). Money passages are
+	// Muster-out (Book 1 p.78), indexed 1-12 by (1D + DM). Money passages are
 	// recorded at cash value. Row 12 repeats row 11 (the printed table ends at 11).
 	MusterOut: MusterTable{
 		1:  {Money: cash(1_000), Benefit: charAward(Strength)},   // Low Passage

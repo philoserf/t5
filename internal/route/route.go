@@ -1,5 +1,5 @@
 // Package route builds Traveller5 trade routes over a surveyed region (Book 3
-// pp. 21, 27). Trade routes are deterministic — no dice: Important worlds
+// pp.21, 27). Trade routes are deterministic — no dice: Important worlds
 // (Ix >= 4) are linked to other Important worlds within jump range, and where no
 // direct link is possible they are joined through intermediate lesser worlds.
 // The result is a pure graph over each world's hex location and Importance.
@@ -34,7 +34,7 @@ type Link struct {
 	Jump     int
 }
 
-// Build returns the trade-route links among the given worlds (Book 3 pp. 21,
+// Build returns the trade-route links among the given worlds (Book 3 pp.21,
 // 27). A link joins every pair of Important worlds (Ix >= Important) within
 // maxJump parsecs; an Important world with no such direct link is joined to the
 // nearest reachable Important world by a shortest hop-path through intermediate

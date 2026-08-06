@@ -2,7 +2,7 @@ package chargen
 
 import "github.com/philoserf/t5/internal/dice"
 
-// Aging (Book 1, "The Aging Process", p. 89). Once aging begins it strikes every
+// Aging (Book 1, "The Aging Process", p.89). Once aging begins it strikes every
 // four years: each applicable characteristic makes an Aging Check, and a
 // character "wants to fail" it.
 
@@ -29,7 +29,7 @@ func lifeStage(age int) int {
 // aging check.
 type Illness int
 
-// Illness outcomes from an aging crisis (Book 1 p. 89).
+// Illness outcomes from an aging crisis (Book 1 p.89).
 const (
 	NoIllness      Illness = iota
 	MajorIllness           // two characteristics zeroed: four weeks R&R

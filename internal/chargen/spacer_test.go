@@ -75,7 +75,7 @@ func TestGoldenSpacer(t *testing.T) {
 }
 
 // TestSpacerNavalBranchColumns locks both columns of the NAVAL BRANCH table
-// (Book 1 p. 81), which prints "1D Officer Mod Enlisted Mod". The two columns
+// (Book 1 p.81), which prints "1D Officer Mod Enlisted Mod". The two columns
 // disagree on rolls 1, 2, 3, and 6; every other roll is shared.
 func TestSpacerNavalBranchColumns(t *testing.T) {
 	for _, tc := range []struct {
@@ -107,7 +107,7 @@ func TestSpacerNavalBranchColumns(t *testing.T) {
 }
 
 // TestArmedForcesSingleBranchColumn guards the other two armed-forces Branch
-// tables: the Soldier (p. 82) and Marine (p. 86) print a single Branch column,
+// tables: the Soldier (p.82) and Marine (p.86) print a single Branch column,
 // so both statuses read the same row and neither carries an Enlisted column.
 func TestArmedForcesSingleBranchColumn(t *testing.T) {
 	for _, career := range []Career{SoldierCareer, MarineCareer} {

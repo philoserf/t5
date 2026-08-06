@@ -22,7 +22,8 @@ var allCareers = [...]Career{
 	Merchant:    MerchantCareer,
 }
 
-// CareerByID returns the career data for a CareerID.
+// CareerByID returns the career data for id. id must be one of the CareerID
+// constants; any other value panics via the underlying array index.
 func CareerByID(id CareerID) Career { return allCareers[id] }
 
 // CareerByName returns the career with the given name (case-insensitive) and

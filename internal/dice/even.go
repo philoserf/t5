@@ -3,7 +3,7 @@ package dice
 // Even distributions contort D6 results into ranges that a single D6 cannot
 // produce evenly. Each is rolled as two dice — one selecting a row band, the
 // other a column offset — and read off the Even Distribution tables in the
-// Dice Appendix (p. 259).
+// Dice Appendix (p.259).
 
 // EvenDist1to9 returns an evenly distributed value in 1..9. It is most often
 // used for the population multiplier of a world, where 0 and 10 are not
@@ -38,7 +38,7 @@ func (r *Roller) EvenDist0to9() int {
 }
 
 // EvenDist1to10 returns an evenly distributed value in 1..10, reusing the 0..9
-// table with a result of 0 substituted by 10 (Dice Appendix, p. 259).
+// table with a result of 0 substituted by 10 (Dice Appendix, p.259).
 func (r *Roller) EvenDist1to10() int {
 	if v := r.EvenDist0to9(); v != 0 {
 		return v

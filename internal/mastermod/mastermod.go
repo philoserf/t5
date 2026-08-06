@@ -1,13 +1,6 @@
 // Package mastermod provides the named random-reference tables from Traveller5
-// Book 1 pp. 264-269.
-//
-// Rows are book-literal text; the seven "<none>" entries transcribe the
-// printed instruction "Treat blank entries as <none>." (Book 1 p.267).
-//
-// Deliberate exclusions (do not re-add): Barrier Height/Width/Depth (blank
-// cells in the appendix, Book 1 p.268), Scene Mods (a formula, not a die
-// table, p.268), and the unrolled Imperiallines/Hortalez MegaCorporation rows
-// (printed without 2x1D keys, p.269). See CLAUDE.md.
+// Book 1 pp.264-269. Rows are book-literal text; see CLAUDE.md for the
+// deliberate exclusions and print-typo preservations this package holds to.
 package mastermod
 
 import (

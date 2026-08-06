@@ -1,6 +1,6 @@
 package chargen
 
-// Noble career data, transcribed from Book 1 p. 85. The Noble plays Return &
+// Noble career data, transcribed from Book 1 p.85. The Noble plays Return &
 // Intrigue (see runIntrigueTerm) instead of Risk & Reward: a contest for power
 // that risks Exile and offers Elevation (a rise in Social Standing and Noble
 // rank, each awarding a Land Grant). A Noble's rank is their Social Standing —
@@ -13,7 +13,7 @@ package chargen
 // (Proxy) column, and the StarPass courtesy upgrade (StarPass is recorded at its
 // standard cash value).
 
-// NobleTitle returns the Noble title for a Social Standing (Book 1 p. 85), or ""
+// NobleTitle returns the Noble title for a Social Standing (Book 1 p.85), or ""
 // below noble rank. Titles above Viscount need Soc past the human maximum of 15.
 func NobleTitle(soc int) string {
 	switch soc {
@@ -34,7 +34,7 @@ func NobleTitle(soc int) string {
 	}
 }
 
-// NobleCareer is the Noble (Book 1 p. 85).
+// NobleCareer is the Noble (Book 1 p.85).
 var NobleCareer = Career{
 	ID:        Noble,
 	Name:      "Noble",
@@ -107,7 +107,7 @@ var NobleCareer = Career{
 			choose(theTrades...),
 		},
 	},
-	// Muster-out (Book 1 p. 85), indexed 1-12 by (1D + DM). StarPass is recorded
+	// Muster-out (Book 1 p.85), indexed 1-12 by (1D + DM). StarPass is recorded
 	// at cash value; the Power (Proxy) column is deferred.
 	MusterOut: MusterTable{
 		1:  {Money: cash(250_000), Benefit: named("Forbidden Knowledge")}, // StarPass

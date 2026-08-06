@@ -1,6 +1,6 @@
 package chargen
 
-// Craftsman career data, transcribed from Book 1 p. 75. The Craftsman does not
+// Craftsman career data, transcribed from Book 1 p.75. The Craftsman does not
 // roll Risk & Reward; instead each term attempts a Masterpiece (see
 // runCraftsmanTerm): Master Points total the Controlling Characteristic, the
 // Craftsman skill, and up to five other skills at level 6+, and with 40+ points
@@ -13,7 +13,7 @@ package chargen
 // skills from failed attempts. Also deferred: the Masterpiece Value table and
 // QREBS allocation, the Perfect Masterpiece, and Vintage value.
 
-// CraftsmanCareer is the Craftsman (Book 1 p. 75).
+// CraftsmanCareer is the Craftsman (Book 1 p.75).
 var CraftsmanCareer = Career{
 	ID:               Craftsman,
 	Name:             "Craftsman",
@@ -77,7 +77,7 @@ var CraftsmanCareer = Career{
 			choose(theTrades...),
 		},
 	},
-	// Muster-out (Book 1 p. 75), indexed 1-12 by (1D + DM). Money passages are
+	// Muster-out (Book 1 p.75), indexed 1-12 by (1D + DM). Money passages are
 	// recorded at cash value.
 	MusterOut: MusterTable{
 		1:  {Money: cash(1_000), Benefit: named("Forbidden Knowledge")}, // Low Passage

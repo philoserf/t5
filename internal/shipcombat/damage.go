@@ -1,6 +1,6 @@
 package shipcombat
 
-// Hit location, penetration, and damage (Book 2 pp. 195-198).
+// Hit location, penetration, and damage (Book 2 pp.195-198).
 
 // Damage-application capacities (Book 2 p.198): a SubCompartment absorbs up to 10
 // damage points before overflowing to an adjacent one; 60 points knock out a

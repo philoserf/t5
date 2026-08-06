@@ -5,13 +5,13 @@ import (
 	"github.com/philoserf/t5/internal/worldgen"
 )
 
-// Homeworld skills (Book 1, "Birthworlds and Homeworlds", p. 56). A character
+// Homeworld skills (Book 1, "Birthworlds and Homeworlds", p.56). A character
 // receives one skill for each Trade Classification of their homeworld — e.g. a
 // character from an Agricultural (Ag) world receives Animals-1. Homeworld skills
 // are granted flat at level 1 (the book's "-1" notation), not through the
 // cascade progression.
 
-// oneArt and theTrades are the canonical "choose one" lists (Book 1 p. 56),
+// oneArt and theTrades are the canonical "choose one" lists (Book 1 p.56),
 // shared by the homeworld Rich/Industrial grants and the career skill grids.
 var (
 	oneArt    = []string{"Actor", "Artist", "Author", "Chef", "Dancer", "Musician"}
@@ -22,7 +22,7 @@ var (
 )
 
 // homeworldSkill maps a Trade Classification to the flat skill(s) it grants
-// (Book 1 p. 56). Codes that grant no skill are absent; the two "choose one"
+// (Book 1 p.56). Codes that grant no skill are absent; the two "choose one"
 // codes, In (One Trade) and Ri (One Art), are handled in ApplyHomeworldSkills.
 // The full table is transcribed (not only the UWP-determinable codes worldgen
 // currently emits) so a selected or charted homeworld resolves too.
@@ -66,7 +66,7 @@ var homeworldSkill = map[tradecode.Code][]string{
 }
 
 // homeworldNoSkill is every Chart D code that intentionally grants no homeworld
-// skill (Book 1 p. 56 lists none for them, and In/Ri are handled in
+// skill (Book 1 p.56 lists none for them, and In/Ri are handled in
 // ApplyHomeworldSkills rather than here). It exists so TestHomeworldSkillCoversEveryCode
 // can assert that every tradecode.Code is accounted for by exactly one of the two
 // sets — a newly added code can never silently fall through the switch's default.

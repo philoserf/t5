@@ -1,7 +1,7 @@
 // Package systemgen creates a Traveller5 star system: its stars, the number of
 // gas giants, planetoid belts, and worlds, and the mainworld profile. It builds
 // on internal/worldgen for the mainworld and follows Book 3's Master System
-// Generation Checklist and the System Generation card (pp. 16-17, 28).
+// Generation Checklist and the System Generation card (pp.16-17, 28).
 //
 // Secondary stars are placed in orbit bands; per-world detailing (worlds in
 // orbits, habitable zone) is deferred.
@@ -18,7 +18,7 @@ import (
 )
 
 // starPresent is the Flux threshold at or above which an optional star exists
-// (Book 3 p. 28: present on a Flux of +3, +4, or +5).
+// (Book 3 p.28: present on a Flux of +3, +4, or +5).
 const starPresent = 3
 
 // A System is a generated star system. The Primary always exists; the other
@@ -34,7 +34,7 @@ type System struct { //nolint:recvcheck // deliberate value-reader / pointer-mut
 	Far              *Star
 	FarCompanion     *Star
 
-	// Orbit numbers of the secondary stars around the Primary (Book 3 p. 28),
+	// Orbit numbers of the secondary stars around the Primary (Book 3 p.28),
 	// valid only when the corresponding star is present. A companion orbits
 	// inside its own star's orbit and has no separate number; the Primary's
 	// companion sits inside Orbit 0.
@@ -120,7 +120,7 @@ func generate(r *dice.Roller, gg ggConstraint, asteroidMainworld bool) System {
 	s.MainworldOrbit, s.MainworldSatellite = placeMainworld(r, s.Primary, &s.Mainworld)
 
 	// Every non-primary star — secondaries and companions alike — derives from
-	// the primary's Flux values (Book 3 p. 28). present rolls one optional star,
+	// the primary's Flux values (Book 3 p.28). present rolls one optional star,
 	// returning nil unless its presence Flux clears the threshold.
 	present := func() *Star {
 		if r.Flux() < starPresent {
@@ -177,7 +177,7 @@ func generate(r *dice.Roller, gg ggConstraint, asteroidMainworld bool) System {
 }
 
 // closeOrbit is 1D-1 (orbits 0-5); nearOrbit is 5+1D (orbits 6-11); farOrbit is
-// 11+1D (orbits 12-17). Book 3 p. 28, "Place Stars in Orbits".
+// 11+1D (orbits 12-17). Book 3 p.28, "Place Stars in Orbits".
 func closeOrbit(r *dice.Roller) int { return r.Die() - 1 }
 func nearOrbit(r *dice.Roller) int  { return 5 + r.Die() }
 func farOrbit(r *dice.Roller) int   { return 11 + r.Die() }
@@ -381,7 +381,7 @@ type StarSlot struct {
 }
 
 // Stars lists the system's stellar family in rotation order — the Primary, then
-// each secondary and companion that is present (Book 3 p. 28). This is the single
+// each secondary and companion that is present (Book 3 p.28). This is the single
 // ordered enumeration of the star slots; every renderer of the family reads it
 // rather than walking the eight pointers again.
 func (s System) Stars() []StarSlot {

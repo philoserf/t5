@@ -22,7 +22,7 @@ func (p *eduPolicy) ChooseSkill(_ Character, _ []string) string {
 	return s
 }
 
-// TestGoldenCollege reproduces the Book 1 p. 60 worked example: Eneri Dinsha
+// TestGoldenCollege reproduces the Book 1 p.60 worked example: Eneri Dinsha
 // (9AB56A) goes to the College of Regina — rejected then admitted on a Waiver,
 // passes years 1 and 4, waives the failures of years 2 and 3, and graduates
 // with a BA (Edu 6 -> 8), a Psychology Major-2 and a Robotics Minor-1: 9AB58A.

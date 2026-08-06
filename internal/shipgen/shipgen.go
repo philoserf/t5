@@ -1,4 +1,4 @@
-// Package shipgen designs Traveller5 Adventure Class Ships (Book 2, pp. 30-95).
+// Package shipgen designs Traveller5 Adventure Class Ships (Book 2, pp.30-95).
 // Ship design is deterministic: the designer chooses tonnage, tech level,
 // configuration, structure, armor, and drive sizes, and Design computes the
 // derived performance, fuel, and cost. The compact result is the Quick Ship

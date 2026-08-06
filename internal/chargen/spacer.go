@@ -1,6 +1,6 @@
 package chargen
 
-// Spacer career data, transcribed from Book 1 p. 81. The Spacer (Navy) is the
+// Spacer career data, transcribed from Book 1 p.81. The Spacer (Navy) is the
 // third armed-forces career and, like the Marine, pure data on the rank engine.
 // Its enlisted track is the naval Rating ladder, so its "Rating Promotion" is
 // the engine's EnlistedPromote. It differs from the Soldier/Marine in data: it
@@ -12,7 +12,7 @@ package chargen
 // spacerBranchOps and the engine's branchOpsMod.
 //
 // The page's "Enlisted may select a new Branch upon Promotion" is the Spacer's
-// shorthand for the general rule at p. 66, which the engine follows instead: a
+// shorthand for the general rule at p.66, which the engine follows instead: a
 // non-officer may change Branch at the end of every term, and a Commission
 // re-reads the Branch from the Officer column, where the Spacer's Crew becomes
 // Line. That is what makes the Officer column below reachable — see BranchOps.
@@ -22,7 +22,7 @@ package chargen
 // College.
 
 // spacerBranchOps is the Spacer's Naval Branch and Operations tables (Book 1
-// p. 81). Naval Operations use no per-branch DM, so every branch's OpsDM is 0.
+// p.81). Naval Operations use no per-branch DM, so every branch's OpsDM is 0.
 //
 // NAVAL BRANCH is the one Branch table in the book that prints two columns —
 // "1D Officer Mod Enlisted Mod" — and they disagree on four rolls: 1 and 2 are
@@ -60,7 +60,7 @@ var spacerBranchOps = BranchOps{
 	OpsMods: [10]int{1: 2, 2: 2, 3: 0, 4: 1, 5: 3, 6: 0, 7: 0, 8: 0},
 }
 
-// SpacerCareer is the Spacer (Book 1 p. 81).
+// SpacerCareer is the Spacer (Book 1 p.81).
 var SpacerCareer = Career{
 	ID:               Spacer,
 	Name:             "Spacer",
@@ -153,7 +153,7 @@ var SpacerCareer = Career{
 			choose(theTrades...),
 		},
 	},
-	// Muster-out (Book 1 p. 81), indexed 1-12 by (1D + DM). Money passages are
+	// Muster-out (Book 1 p.81), indexed 1-12 by (1D + DM). Money passages are
 	// recorded at cash value; "Retire x2" is a named retirement benefit. Row 12
 	// repeats row 11 (the printed table ends at 11; higher rolls clamp).
 	MusterOut: MusterTable{

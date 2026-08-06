@@ -16,7 +16,7 @@ import "github.com/philoserf/t5/internal/dice"
 // A CasteStructure is one of the six caste organizations (Book 3 p.229).
 type CasteStructure int
 
-// Caste structures (Book 3 p. 229).
+// Caste structures (Book 3 p.229).
 const (
 	Body CasteStructure = iota
 	Economic

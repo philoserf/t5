@@ -9,7 +9,7 @@ import (
 	"github.com/philoserf/t5/internal/uwp"
 )
 
-// Additional per-world data from Book 3 Chart F (p. 28): Nobility, Bases,
+// Additional per-world data from Book 3 Chart F (p.28): Nobility, Bases,
 // Travel Zone, and Native Status.
 
 // nobleRank pairs a nobility code with the trade codes that grant it.
@@ -24,7 +24,7 @@ var nobleRanks = []struct {
 	{"E", []tradecode.Code{tradecode.In, tradecode.Hi}}, // Count
 }
 
-// Nobility returns the string of noble codes a world holds (Book 3 p. 28). A
+// Nobility returns the string of noble codes a world holds (Book 3 p.28). A
 // Knight (B) is always present; further ranks follow from trade codes, from a
 // capital designation (Duke F), or from an Importance of 4+ on a non-capital
 // (Duke f). Archduke (G) is assigned at the domain level and is not derived
@@ -54,7 +54,7 @@ func Nobility(tcs []tradecode.Code, importance int, isCapital bool) string {
 }
 
 // RollBases rolls for the presence of Naval and Scout bases, each present when
-// 2D rolls at or under a starport-dependent threshold (Book 3 p. 28). Starports
+// 2D rolls at or under a starport-dependent threshold (Book 3 p.28). Starports
 // C, E, and X support no Naval base; E and X support no Scout base. Naval Depot
 // and Way Station need region context and are not rolled here.
 func RollBases(r *dice.Roller, starport byte) (bool, bool) {
@@ -81,7 +81,7 @@ func RollBases(r *dice.Roller, starport byte) (bool, bool) {
 	return naval, scout
 }
 
-// ZoneName names a travel-zone code (Book 3 p. 28); anything but Amber or Red is
+// ZoneName names a travel-zone code (Book 3 p.28); anything but Amber or Red is
 // Green, the common case.
 func ZoneName(zone byte) string {
 	switch zone {
@@ -95,7 +95,7 @@ func ZoneName(zone byte) string {
 }
 
 // TravelZone classifies a world as Green ('G'), Amber ('A'), or Red ('R') from
-// its Government+Law level and starport (Book 3 p. 28): Gov+Law of 20+ is Amber,
+// its Government+Law level and starport (Book 3 p.28): Gov+Law of 20+ is Amber,
 // 22+ is Red, and a class-X starport is Red.
 func TravelZone(p uwp.Profile) byte {
 	switch {
@@ -111,7 +111,7 @@ func TravelZone(p uwp.Profile) byte {
 }
 
 // ZoneCodes returns the trade classifications a world's travel zone earns it
-// (Book 3 p. 28, and the same rows on Chart D p. 26): an Amber world is Dangerous
+// (Book 3 p.28, and the same rows on Chart D p.26): an Amber world is Dangerous
 // (Da) if its population is 6 or less and Puzzling (Pz) if 7 or more, and a Red
 // world is Forbidden (Fo). A Green world earns none.
 //
@@ -134,7 +134,7 @@ func ZoneCodes(p uwp.Profile) []tradecode.Code {
 	}
 }
 
-// NativeStatus describes the origin of a world's inhabitants (Book 3 p. 28,
+// NativeStatus describes the origin of a world's inhabitants (Book 3 p.28,
 // NIL), classified from Population, Atmosphere, Tech Level, and Government. A
 // Government of 1 or 6 overrides to Corporate or Colonists. Atmosphere is read
 // in three bands: thin (0–1), exotic (A–C), and standard (2–9, D–F).

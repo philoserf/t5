@@ -1,6 +1,6 @@
 package chargen
 
-// Scout career data, transcribed from Book 1 p. 79 (the Scout career page).
+// Scout career data, transcribed from Book 1 p.79 (the Scout career page).
 //
 // Each term a Scout chooses a Duty (Policy.ChooseExplorerDuty): Courier (avoid
 // Risk & Reward, 4 skill rolls) or Explorer (run Risk & Reward, EligPerTerm = 8
@@ -39,7 +39,7 @@ func pensionX2() Benefit                  { return Benefit{Kind: PensionX2} }
 func retirementX2() Benefit               { return Benefit{Kind: RetirementX2} }
 func fameAwardN(n int) Benefit            { return Benefit{Kind: FameBump, Value: n} }
 
-// major and minor award the character's College Major/Minor (Book 1 p. 79
+// major and minor award the character's College Major/Minor (Book 1 p.79
 // Academic column). The page's footnote — "lost if the character has no
 // Major/Minor" — is honored by applyCell: an uneducated character gains nothing.
 var (
@@ -59,7 +59,7 @@ var (
 	languages    = []string{"Galanglic", "Vilani", "Zdetl"}
 )
 
-// ScoutCareer is the Scout career (Book 1 p. 79). Qualify vs the best of
+// ScoutCareer is the Scout career (Book 1 p.79). Qualify vs the best of
 // Str/Dex/End; Risk & Reward rotates Str/Dex/End; Continue vs Int.
 //
 // Deferred: the Scout's box entry "Retry R&R C5" is a term-level retry of a failed
@@ -138,7 +138,7 @@ var ScoutCareer = Career{
 			choose(theTrades...),
 		},
 	},
-	// Muster-out (Book 1 p. 79), indexed 1-12 by (1D + DM). Money-column passages
+	// Muster-out (Book 1 p.79), indexed 1-12 by (1D + DM). Money-column passages
 	// are recorded at their standard cash value.
 	MusterOut: MusterTable{ //nolint:dupl // per-career muster-out table; parallel by design
 		1:  {Money: cash(1_000), Benefit: named("Ship Share")},          // Low Passage

@@ -13,7 +13,7 @@ import "github.com/philoserf/t5/internal/dice"
 // A GenderStructure is one of the five reproductive structures (Book 3 p.230).
 type GenderStructure int
 
-// Gender structures (Book 3 p. 230).
+// Gender structures (Book 3 p.230).
 const (
 	Solitaire GenderStructure = iota // one gender, self-reproducing
 	Dual                             // Female/Male

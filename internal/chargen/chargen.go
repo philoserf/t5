@@ -3,7 +3,7 @@
 // characteristics — and supports the Check Characteristic mechanic. Careers
 // (qualification, terms, skills, mustering out) are a later stage.
 //
-// See Book 1, "Characteristics" (pp. 47+): the six human characteristics are
+// See Book 1, "Characteristics" (pp.47+): the six human characteristics are
 // each rolled as 2D and recorded as an eHex UPP string such as "777777".
 package chargen
 
@@ -54,9 +54,9 @@ type Character struct {
 	Age    int  // years; a freshly generated character starts at 18
 	Dead   bool // set when aging (or a career mishap) kills the character
 
-	Homeworld        worldgen.World    // the world the character was raised on (Book 1 p. 56)
-	Gender           string            // the individual's gender, for a non-human sophont (Book 3 p. 230); "" for a human
-	Caste            string            // the individual's caste, for a casted sophont (Book 3 p. 229); "" if none
+	Homeworld        worldgen.World    // the world the character was raised on (Book 1 p.56)
+	Gender           string            // the individual's gender, for a non-human sophont (Book 3 p.230); "" for a human
+	Caste            string            // the individual's caste, for a casted sophont (Book 3 p.229); "" if none
 	Major            string            // College Major subject, if educated
 	Minor            string            // College Minor subject, if educated
 	Degrees          []string          // academic degrees earned (BA, …)
@@ -65,22 +65,22 @@ type Character struct {
 	Careers          []CareerRecord    // one record per career served
 	Credits          int               // cash mustered out
 	Benefits         []string          // named mustering-out benefits (Ship Share, TAS, …)
-	Entitlements     []Entitlement     // recurring annual income earned in careers (Book 1 p. 69)
+	Entitlements     []Entitlement     // recurring annual income earned in careers (Book 1 p.69)
 	WoundBadges      int               // career injuries survived
 	Medals           []Medal           // awards earned on Risk and Reward successes (armed forces)
-	Fame             int               // reputation, the Entertainer's measure of success (Book 1 p. 77)
+	Fame             int               // reputation, the Entertainer's measure of success (Book 1 p.77)
 	Talent           int               // the Entertainer's performance ability
-	Masterpieces     int               // works of art the Craftsman has created (Book 1 p. 75)
+	Masterpieces     int               // works of art the Craftsman has created (Book 1 p.75)
 	MasterpieceValue int               // total Cr value of those masterpieces
-	Publications     int               // research the Scholar has published (Book 1 p. 76)
-	Tenured          bool              // the Scholar has earned academic Tenure (Book 1 p. 76)
-	Commendations    int               // official recognitions the Agent has earned (Book 1 p. 83)
-	LandGrants       int               // fiefs to the Noble per Elevation and the Scout per Discovery (Book 1 pp. 79, 85)
-	Discoveries      int               // valuable worlds or features the Scout has found (Book 1 p. 79)
-	ShipShares       int               // ownership shares the Merchant accumulates (Book 1 p. 80)
+	Publications     int               // research the Scholar has published (Book 1 p.76)
+	Tenured          bool              // the Scholar has earned academic Tenure (Book 1 p.76)
+	Commendations    int               // official recognitions the Agent has earned (Book 1 p.83)
+	LandGrants       int               // fiefs to the Noble per Elevation and the Scout per Discovery (Book 1 pp.79, 85)
+	Discoveries      int               // valuable worlds or features the Scout has found (Book 1 p.79)
+	ShipShares       int               // ownership shares the Merchant accumulates (Book 1 p.80)
 
 	extremeAgings       int // aging checks that zeroed 3+ characteristics; the 2nd is fatal
-	pensionDoublings    int // "Pension x2" muster results; each adds one multiple (Book 1 p. 68)
+	pensionDoublings    int // "Pension x2" muster results; each adds one multiple (Book 1 p.68)
 	retirementDoublings int // "Retirement x2" muster results; each adds one multiple
 }
 
@@ -99,7 +99,7 @@ func Generate(r *dice.Roller) Character {
 	return c
 }
 
-// LifeStage returns the character's current life stage (Book 1 p. 89): 0 Infant,
+// LifeStage returns the character's current life stage (Book 1 p.89): 0 Infant,
 // 3 Young Adult (18), 5 Peak (34), 9 Retirement (66).
 func (c Character) LifeStage() int {
 	return lifeStage(c.Age)
@@ -143,21 +143,21 @@ func (c Character) String() string {
 // target the usual way (a positive mod makes success easier).
 //
 // A Check is a task, so this resolves through internal/task rather than against
-// the dice primitives directly. Book 1 p. 47 says so twice: "The Tasks chapter
+// the dice primitives directly. Book 1 p.47 says so twice: "The Tasks chapter
 // has more information on using Characteristics", and "Easy Checks and Hard
 // Checks. For very easy tasks, roll 1D; for very hard tasks, roll 3D." Routing
 // here is what makes a 3D Hard Check — a "very hard task" — eligible for the
-// p. 127 Spectacular override, which the task layer owns.
+// p.127 Spectacular override, which the task layer owns.
 //
 // numDice is a count of dice, not a difficulty level; 0 defaults to the standard
-// 2D. A caller working from the Book 1 p. 120 ladder converts with
+// 2D. A caller working from the Book 1 p.120 ladder converts with
 // task.Difficulty.Dice() — task.Easy.Dice() for 1D, task.Difficult.Dice() for 3D
 // — rather than passing the Difficulty itself, whose int value is a ladder index
 // one off from its dice count. The parameter stays a raw count rather than
 // narrowing to a task.Difficulty because a Check's dice count is FIXED BY HOW
 // THE CHARACTERISTIC WAS GENERATED, not chosen as a judgment of difficulty:
 // "Non-Humans: If the Characteristic checked was generated with other than 2D,
-// check Characteristic with the number of Dice used to generate it" (p. 47), so
+// check Characteristic with the number of Dice used to generate it" (p.47), so
 // a sophont whose Str is 5D checks Str on 5D. The ladder does name every count
 // (Easy 1D through BeyondImpossible 8D, Staggering being that 5D) — but calling
 // that sophont's routine Strength check "Staggering" would misdescribe it, and a

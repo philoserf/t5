@@ -6,12 +6,12 @@ import (
 	"github.com/philoserf/t5/internal/dice"
 )
 
-// Rank/branch machinery for the term engine (Book 1 pp. 64-66, 81-86): the rank
+// Rank/branch machinery for the term engine (Book 1 pp.64-66, 81-86): the rank
 // ladders and promotion/commission/tenure rolls, and the armed-forces Branch &
 // Operations tables. Split from career.go (#331); all one package.
 
 // A Rank is one rung of a career's rank ladder: a title and an optional skill
-// granted automatically on reaching it (Book 1 p. 82, "Automatic Skills by
+// granted automatically on reaching it (Book 1 p.82, "Automatic Skills by
 // Rank").
 type Rank struct {
 	Title string
@@ -40,7 +40,7 @@ type TenureRule struct {
 }
 
 // A Branch is one armed-forces branch of service: its officer Risk & Reward
-// modifier and the DM it adds to Operations rolls (Book 1 pp. 81-86).
+// modifier and the DM it adds to Operations rolls (Book 1 pp.81-86).
 type Branch struct {
 	Name  string
 	Mod   int
@@ -54,30 +54,30 @@ type Branch struct {
 // Reward riskier and more rewarding — negative on the Risk roll, positive on the
 // Reward roll.
 //
-// The Branch table can print two columns. The Soldier (p. 82) and Marine (p. 86)
-// print one, which serves either status; the Spacer's NAVAL BRANCH (p. 81)
+// The Branch table can print two columns. The Soldier (p.82) and Marine (p.86)
+// print one, which serves either status; the Spacer's NAVAL BRANCH (p.81)
 // prints Officer and Enlisted columns that disagree on four of its eight rolls,
 // so a character reads the column matching their status when they select a Branch
-// (branchFor). Every character enters a career enlisted (Book 1 p. 64), so the
+// (branchFor). Every character enters a career enlisted (Book 1 p.64), so the
 // Enlisted column is the one a career start reads; the Officer column is reached
 // at Commission (commissionBranch).
 //
 // WHEN Branch may change is a genuine conflict between two pages, resolved in
 // favor of the general rule. The career pages say "Enlisted may select a new
-// Branch upon Promotion" (p. 81), but p. 66 states the rule for the Armed Forces
+// Branch upon Promotion" (p.81), but p.66 states the rule for the Armed Forces
 // entire: "A non-officer character may change (reselect or reroll) Branch at the
 // end of each Term. A character who receives a Commission may roll for Branch or
 // keep his current Branch (for Spacers, Crew becomes Line). An Officer may not
-// change Branch." The engine follows p. 66 — end of every term, not only a
-// promoted one — because p. 81 is a career-page shorthand for a rule the general
+// change Branch." The engine follows p.66 — end of every term, not only a
+// promoted one — because p.81 is a career-page shorthand for a rule the general
 // section spells out, and the wider trigger subsumes the narrower one.
 //
 // The choice itself is the policy's (Policy.RerollBranch, Policy.RerollBranchOnCommission),
 // defaulting to keeping the current Branch: keeping rolls no die, so a default
 // character's dice stream is exactly what it was before this rule existed.
 //
-// The p. 66 option to *select* rather than roll a Branch is offered, and priced:
-// "He must roll Soc or less to select Branch" (the p. 72 worked example; the
+// The p.66 option to *select* rather than roll a Branch is offered, and priced:
+// "He must roll Soc or less to select Branch" (the p.72 worked example; the
 // checklists print "Select Branch  Soc"). See selectBranch. Selection without
 // that gate would hand a character their best Branch for nothing, which is why
 // the gate and the option landed together.
@@ -106,13 +106,13 @@ type BranchOps struct {
 func (c Career) armedForces() bool { return c.BranchOps != nil }
 
 // branchFor returns the Branch for a branch roll, read from the column matching
-// the character's status at the moment they select a Branch (Book 1 p. 81).
+// the character's status at the moment they select a Branch (Book 1 p.81).
 func (bo *BranchOps) branchFor(officer bool, roll int) Branch {
 	return bo.column(officer)[roll]
 }
 
 // commissionBranch is the Branch a newly commissioned character keeps (Book 1
-// p. 66: "A character who receives a Commission may roll for Branch or keep his
+// p.66: "A character who receives a Commission may roll for Branch or keep his
 // current Branch (for Spacers, Crew becomes Line)"). roll is the branch roll
 // that chose their enlisted Branch.
 //
@@ -121,7 +121,7 @@ func (bo *BranchOps) branchFor(officer bool, roll int) Branch {
 // enlisted Spacer's Crew has no officer counterpart, so it becomes Line. That is
 // derived here rather than special-cased — the Branch is matched by name in the
 // Officer column, and only a name absent from it (Crew) falls back to the
-// officer entry at the same roll, which on the p. 81 table is Line. A career
+// officer entry at the same roll, which on the p.81 table is Line. A career
 // printing a single Branch table returns the same Branch it already had.
 func (bo *BranchOps) commissionBranch(roll int) Branch {
 	if bo.EnlistedBranches == nil {
@@ -223,7 +223,7 @@ func chooseBranch(r *dice.Roller, p Policy, c *Character, run *careerRun, career
 	}
 }
 
-// rollBranch rolls a Branch (1D, +2 if Edu 10+; Book 1 pp. 81-86) and makes it
+// rollBranch rolls a Branch (1D, +2 if Edu 10+; Book 1 pp.81-86) and makes it
 // the run's current Branch, read from the column matching the character's
 // status. It serves both the career-start selection and a non-officer's
 // end-of-term reroll.
@@ -238,7 +238,7 @@ func holdBranch(run *careerRun, b Branch) {
 }
 
 // rerollBranch offers a surviving non-officer the end-of-term Branch change of
-// Book 1 p. 66 ("A non-officer character may change (reselect or reroll) Branch
+// Book 1 p.66 ("A non-officer character may change (reselect or reroll) Branch
 // at the end of each Term"). An officer may not change Branch, and a career
 // without a Branch table has nothing to change. Keeping — the default policy —
 // rolls no die.
@@ -258,7 +258,7 @@ func rerollBranch(r *dice.Roller, p Policy, c *Character, run *careerRun, career
 }
 
 // changeBranchOnCommission resolves the Branch of a character who has just been
-// commissioned (Book 1 p. 66: "A character who receives a Commission may roll
+// commissioned (Book 1 p.66: "A character who receives a Commission may roll
 // for Branch or keep his current Branch"). The policy chooses; the default keeps
 // it, which rolls no die but still re-reads the Branch from the Officer column
 // (BranchOps.commissionBranch), since that is the column an officer serves in.
@@ -277,7 +277,7 @@ func changeBranchOnCommission(r *dice.Roller, p Policy, c *Character, run *caree
 }
 
 // branchOpsMod returns an armed-forces term's combined Branch & Operations mod
-// (Book 1 p. 82): the chosen Branch's mod plus the highest of four Operations
+// (Book 1 p.82): the chosen Branch's mod plus the highest of four Operations
 // rolls. It is 0 (and rolls nothing) for a career without Branch/Operations.
 func branchOpsMod(r *dice.Roller, c *Character, run *careerRun, career Career) int {
 	if career.BranchOps == nil {
@@ -295,8 +295,8 @@ func branchOpsMod(r *dice.Roller, c *Character, run *careerRun, career Career) i
 	return run.branchMod + best
 }
 
-// resolveRank runs a surviving ranked character's rank step (Book 1 p. 64 for
-// the mechanic, p. 82 for the Soldier). An armed-forces enlisted character first
+// resolveRank runs a surviving ranked character's rank step (Book 1 p.64 for
+// the mechanic, p.82 for the Soldier). An armed-forces enlisted character first
 // rolls for Commission (success moves them to the officer track at Officer 1);
 // failing that, they roll Enlisted Promotion, and an officer rolls Officer
 // Promotion. A single-ladder career (no officer track, e.g. the Scholar) only
@@ -304,7 +304,7 @@ func branchOpsMod(r *dice.Roller, c *Character, run *careerRun, career Career) i
 // Medal mods or Publications — not Wound Badges (see promoted). Reaching a rank
 // grants its auto-skill.
 // It reports whether the character commissioned or promoted this term (which
-// earns one extra skill, Book 1 p. 82).
+// earns one extra skill, Book 1 p.82).
 func resolveRank(r *dice.Roller, p Policy, c *Character, run *careerRun, career Career) bool {
 	if !career.hasRanks() {
 		return false
@@ -399,7 +399,7 @@ func promoted(r *dice.Roller, c Character, rule PromotionRule) bool {
 	return r.Resolve(dice.Check{Dice: 2, Target: target}).Success
 }
 
-// grantRankSkill grants the automatic skill of a rank (Book 1 p. 82), if any.
+// grantRankSkill grants the automatic skill of a rank (Book 1 p.82), if any.
 // rank is 1-based; a rank past the top of the ladder grants nothing.
 func grantRankSkill(c *Character, ranks []Rank, rank int) {
 	if rank >= 1 && rank <= len(ranks) && ranks[rank-1].Skill != "" {

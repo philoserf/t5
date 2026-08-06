@@ -1,5 +1,5 @@
 // Package calendar implements the Traveller Imperial Calendar (Book 1
-// Appendix 02, p. 262): a 365-day year with no leap days, written as a
+// Appendix 02, p.262): a 365-day year with no leap days, written as a
 // day-of-year and a year. Day 1 of each year is Holiday; the remaining 364 days
 // form 52 seven-day weeks.
 package calendar

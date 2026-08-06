@@ -1,11 +1,11 @@
 package chargen
 
 // Entitlements are the recurring annual income a character carries out of their
-// careers (Book 1 p. 69). Retirement Pay (Soldier/Spacer/Marine on active duty
+// careers (Book 1 p.69). Retirement Pay (Soldier/Spacer/Marine on active duty
 // for 4+ combined terms) is collectible immediately — retirement is the act of
 // leaving the service to adventure. Pensions (Citizen/Functionary) begin at Life
 // Stage 9 Retirement (age 66). A "Pension x2" or "Retirement x2" muster result
-// doubles the base per the p. 68 stacking (the first x2 doubles it, the second
+// doubles the base per the p.68 stacking (the first x2 doubles it, the second
 // triples it, and so on: multiplier = 1 + the number of doublings).
 //
 // Deferred: the Reserve Pension (the engine models no Reserves/OTC/NOTC).
@@ -13,7 +13,7 @@ package chargen
 // retirementAge is Life Stage 9, when Citizen/Functionary pensions begin.
 const retirementAge = 66
 
-// An Entitlement is one stream of recurring annual income (Book 1 p. 69).
+// An Entitlement is one stream of recurring annual income (Book 1 p.69).
 type Entitlement struct {
 	Source  string // e.g. "Officer Retirement", "Functionary's Pension"
 	PerYear int    // credits per year
@@ -42,7 +42,7 @@ func computeEntitlements(c *Character) {
 	}
 }
 
-// professorsPension is the tenured Professor's pension (Book 1 p. 69): a flat
+// professorsPension is the tenured Professor's pension (Book 1 p.69): a flat
 // Cr10,000/year from age 66. It stacks with any other pension (p.69 allows
 // duplicate entitlements), and takes no "Pension x2" doubling — there is no such
 // muster result for it, and the Functionary doubling stays scoped to civilPension.
@@ -54,7 +54,7 @@ func professorsPension(c *Character) (Entitlement, bool) {
 	return Entitlement{Source: "Professor's Pension", PerYear: 10000, FromAge: retirementAge}, true
 }
 
-// retirementPay is the armed-forces Retirement Pay (Book 1 p. 69): a Soldier,
+// retirementPay is the armed-forces Retirement Pay (Book 1 p.69): a Soldier,
 // Spacer, or Marine with 4+ combined active-duty terms collects, per term,
 // Cr3,000 if they mustered as an officer, else Cr2,000. Collection begins at once.
 // The rate follows the character's final armed-forces muster status (the book's
@@ -85,7 +85,7 @@ func retirementPay(c *Character) (Entitlement, bool) {
 	}, true
 }
 
-// civilPension is the Citizen's Pension (Book 1 p. 69): a Functionary of 1+ terms
+// civilPension is the Citizen's Pension (Book 1 p.69): a Functionary of 1+ terms
 // collects Cr15,000/year, or a Citizen of 1+ terms Cr5,000/year (the Functionary
 // pension replaces the Citizen one). It begins at Retirement, age 66.
 func civilPension(c *Character) (Entitlement, bool) {

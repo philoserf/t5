@@ -31,10 +31,10 @@ type Policy interface { //nolint:interfacebloat // intentionally aggregates ever
 	PursueEducation(c Character) bool
 	// ChooseTradeSchool reports whether an educated character attends a vocational
 	// Trade School (Major +2) rather than the academic College/University path
-	// (Book 1 p. 60).
+	// (Book 1 p.60).
 	ChooseTradeSchool(c Character) bool
 	// PursueGraduateSchool reports whether a degree-holding character goes on to a
-	// post-graduate program (the Masters) after their Bachelor's (Book 1 p. 60).
+	// post-graduate program (the Masters) after their Bachelor's (Book 1 p.60).
 	PursueGraduateSchool(c Character) bool
 	// TakeWaiver reports whether the character attempts an Educational Waiver
 	// after an adverse roll, given the number of waivers already attempted.
@@ -44,11 +44,11 @@ type Policy interface { //nolint:interfacebloat // intentionally aggregates ever
 	// more than one career).
 	NextCareer(c Character) (Career, bool)
 	// ChooseExplorerDuty reports whether a Scout takes Explorer duty this term
-	// (Risk & Reward, more skills) rather than the safer Courier duty (Book 1 p. 79).
+	// (Risk & Reward, more skills) rather than the safer Courier duty (Book 1 p.79).
 	ChooseExplorerDuty(c Character) bool
 	// RerollBranch reports whether a surviving non-officer rerolls their
-	// armed-forces Branch at the end of a term (Book 1 p. 66). False keeps the
-	// current Branch and rolls no die. True offers the p. 66 "change (reselect or
+	// armed-forces Branch at the end of a term (Book 1 p.66). False keeps the
+	// current Branch and rolls no die. True offers the p.66 "change (reselect or
 	// reroll)" in full: the character may attempt a Soc-gated selection via
 	// SelectBranch below, and rolls when that is declined or failed.
 	RerollBranch(c Character, rec CareerRecord) bool
@@ -63,7 +63,7 @@ type Policy interface { //nolint:interfacebloat // intentionally aggregates ever
 	// and panics.
 	SelectBranch(c Character, available []Branch) (int, bool)
 	// RerollBranchOnCommission reports whether a newly commissioned character
-	// rolls for a new Branch rather than keeping their current one (Book 1 p. 66).
+	// rolls for a new Branch rather than keeping their current one (Book 1 p.66).
 	// False keeps it, re-read from the Officer column.
 	RerollBranchOnCommission(c Character) bool
 }

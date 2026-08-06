@@ -6,13 +6,13 @@ import (
 	"github.com/philoserf/t5/internal/dice"
 )
 
-// TestSpectacularOverride locks the Book 1 p. 127 override, including its
+// TestSpectacularOverride locks the Book 1 p.127 override, including its
 // boundaries: exactly two ones or sixes is ordinary, and the both-at-once
 // Spectacularly Interesting case leaves the arithmetic outcome standing.
 //
-// The rule lives here rather than in dice because p. 127 states it about tasks
+// The rule lives here rather than in dice because p.127 states it about tasks
 // ("Sometimes the task result is Spectacular") and this package owns
-// pp. 120-131. dice.Resolve reports arithmetic; these cases are what the task
+// pp.120-131. dice.Resolve reports arithmetic; these cases are what the task
 // layer adds on top of it.
 func TestSpectacularOverride(t *testing.T) {
 	cases := []struct {
@@ -22,7 +22,7 @@ func TestSpectacularOverride(t *testing.T) {
 		wantArith   bool // what Total <= Target says on its own
 		wantSuccess bool // what Success must report after the override
 	}{
-		// Book 1 p. 127, Charles "Buzz" Van Sickle 596B77 Computer-3, a
+		// Book 1 p.127, Charles "Buzz" Van Sickle 596B77 Computer-3, a
 		// Difficult (3D) computer search. Edu 7 + Computer-3 = target 10.
 		{"buzz rolls 1-1-1", []int{1, 1, 1}, 10, true, true},
 		{"buzz rolls 6-6-6", []int{6, 6, 6}, 10, false, false},
@@ -54,7 +54,7 @@ func TestSpectacularOverride(t *testing.T) {
 	}
 }
 
-// TestSpectacularHadwonUniverse2 locks the p. 127 Gazelle example, the book's
+// TestSpectacularHadwonUniverse2 locks the p.127 Gazelle example, the book's
 // clearest statement that the override beats the arithmetic: Astrogator The
 // Hadwon 7777A7 Astrogator-3 needs 13 or less on 5D (Staggering). He rolls
 // 1,1,5,6 and the referee's Uncertain die is 1 — a total of 14, which "look[s]

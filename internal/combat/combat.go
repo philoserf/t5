@@ -1,4 +1,4 @@
-// Package combat implements Traveller5 personal combat (Book 1 pp. 200-227): the
+// Package combat implements Traveller5 personal combat (Book 1 pp.200-227): the
 // Move-Attack-Damage round resolved as roll-low Tasks over range bands. It
 // provides the three attack Numbers, the three attack tasks (Ranged, Melee,
 // Impact), and damage resolution against armor and characteristics.

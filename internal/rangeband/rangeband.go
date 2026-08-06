@@ -1,4 +1,4 @@
-// Package rangeband implements Traveller5's range bands (Book 1 pp. 24-29): the
+// Package rangeband implements Traveller5's range bands (Book 1 pp.24-29): the
 // standardized distance ladder used by senses, combat, and travel. There are two
 // scales over one underlying set of distances — World-surface ranges R= (Contact
 // and 0-9) and Space ranges S= (0-13) — related by S = R - 5.

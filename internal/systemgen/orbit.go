@@ -2,7 +2,7 @@ package systemgen
 
 // Orbital geometry primitives (Book 1 p.31 orbital distances, Book 3 p.29
 // habitable-zone table). These are the pure lookups the per-world placement and
-// climate steps build on. The stellar-surface / precluded-orbit table (B1 p.31
+// climate steps build on. The stellar-surface / precluded-orbit table (Book 1 p.31
 // "Sub-Orbit" columns), consumed only by the placement scheduler, is transcribed
 // with that scheduler.
 

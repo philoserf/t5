@@ -1,5 +1,5 @@
 // Package trade implements the Traveller5 Trade and Commerce pricing engine
-// (Book 2 pp. 209-221): the Cargo ID, the source-world Cost of goods, the
+// (Book 2 pp.209-221): the Cargo ID, the source-world Cost of goods, the
 // market-world Price, and the Actual Value Table that turns an expected Price
 // into a realized selling price. Speculative cargo is bought at a Source World
 // for its Cost and sold at a Market World for a fraction or multiple of its
