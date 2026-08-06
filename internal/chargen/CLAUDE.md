@@ -88,4 +88,39 @@ Branch/Operations R&R mods and commission/promotion skill eligibility, and each 
 documented flavor deferrals (in its own file header). See the per-career `.go` files for the exact
 deferred pieces.
 
+## Settled rulings — do not re-open
+
+- **Branch column and Branch-change conflicts (`branch.go`, `BranchOps`).** The Spacer's
+  NAVAL BRANCH (p.81) prints Officer and Enlisted columns that disagree on four of its
+  eight rolls; every character enters a career enlisted (Book 1 p.64), so the Enlisted
+  column is read at career start (`branchFor`) and the Officer column only from Commission
+  (`commissionBranch`). WHEN Branch may change is a genuine conflict between two pages,
+  resolved in favor of the general rule: the career pages say "Enlisted may select a new
+  Branch upon Promotion" (p.81), but p.66 states the rule for the Armed Forces entire — "A
+  non-officer character may change (reselect or reroll) Branch at the end of each Term...
+  An Officer may not change Branch." The engine follows p.66 (end of every term, not only a
+  promoted one) because p.81 is a career-page shorthand for the general section's wider
+  rule. The choice itself is the policy's (`Policy.RerollBranch`,
+  `Policy.RerollBranchOnCommission`), defaulting to keeping the current Branch — keeping
+  rolls no die, so a default character's dice stream is unchanged from before this rule
+  existed.
+- **Pre-career education cost, verified against the book's own worked example
+  (`education.go`).** ED5 alone is free ("no time required", p.60 chart and p.61). The
+  book's Eneri Dinsha walkthrough (p.61) prices the rest out: he enters at 18, fails his
+  College application, is admitted on Waiver, and completes four years — 18 + 1 + 4 = age
+  23, the age the book prints. That confirms both cost rules the code applies: a failed
+  application costs the year whether or not a Waiver then rescues it (Waiver attempts
+  themselves are free), and each Success spends one year of the program's Duration (p.62's
+  training example: "he rolls 8 and fails. A year passes").
+- **`Character.Check`'s numDice is a raw dice count, not a `task.Difficulty`
+  (`chargen.go`).** A Check's dice count is fixed by how the characteristic was generated,
+  not chosen as a judgment of difficulty: "Non-Humans: If the Characteristic checked was
+  generated with other than 2D, check Characteristic with the number of Dice used to
+  generate it" (Book 1 p.47) — a sophont whose Str is 5D checks Str on 5D. The Book 1 p.120
+  Difficulty ladder does name every dice count (Easy 1D through Beyond Impossible 8D,
+  Staggering being 5D), but calling that sophont's routine Strength check "Staggering"
+  would misdescribe it, and a `task.Difficulty` parameter would invite exactly that
+  confusion. Callers working from the ladder convert explicitly with
+  `task.Difficulty.Dice()` instead.
+
 The sophont bridge (`sophont.go`) is documented in `internal/sophont/CLAUDE.md`.
