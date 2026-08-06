@@ -117,7 +117,7 @@ deferred pieces.
   not chosen as a judgment of difficulty: "Non-Humans: If the Characteristic checked was
   generated with other than 2D, check Characteristic with the number of Dice used to
   generate it" (Book 1 p.47) — a sophont whose Str is 5D checks Str on 5D. The Book 1 p.120
-  Difficulty ladder does name every dice count (Easy 1D through BeyondImpossible 8D,
+  Difficulty ladder does name every dice count (Easy 1D through Beyond Impossible 8D,
   Staggering being 5D), but calling that sophont's routine Strength check "Staggering"
   would misdescribe it, and a `task.Difficulty` parameter would invite exactly that
   confusion. Callers working from the ladder convert explicitly with
