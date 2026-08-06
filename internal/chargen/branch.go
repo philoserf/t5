@@ -52,35 +52,9 @@ type Branch struct {
 // rolled four times per term (1D + the branch's OpsDM, +2 if Edu 10+), taking
 // the highest mod. The combined mod (branch + best operations) makes Risk &
 // Reward riskier and more rewarding — negative on the Risk roll, positive on the
-// Reward roll.
-//
-// The Branch table can print two columns. The Soldier (p.82) and Marine (p.86)
-// print one, which serves either status; the Spacer's NAVAL BRANCH (p.81)
-// prints Officer and Enlisted columns that disagree on four of its eight rolls,
-// so a character reads the column matching their status when they select a Branch
-// (branchFor). Every character enters a career enlisted (Book 1 p.64), so the
-// Enlisted column is the one a career start reads; the Officer column is reached
-// at Commission (commissionBranch).
-//
-// WHEN Branch may change is a genuine conflict between two pages, resolved in
-// favor of the general rule. The career pages say "Enlisted may select a new
-// Branch upon Promotion" (p.81), but p.66 states the rule for the Armed Forces
-// entire: "A non-officer character may change (reselect or reroll) Branch at the
-// end of each Term. A character who receives a Commission may roll for Branch or
-// keep his current Branch (for Spacers, Crew becomes Line). An Officer may not
-// change Branch." The engine follows p.66 — end of every term, not only a
-// promoted one — because p.81 is a career-page shorthand for a rule the general
-// section spells out, and the wider trigger subsumes the narrower one.
-//
-// The choice itself is the policy's (Policy.RerollBranch, Policy.RerollBranchOnCommission),
-// defaulting to keeping the current Branch: keeping rolls no die, so a default
-// character's dice stream is exactly what it was before this rule existed.
-//
-// The p.66 option to *select* rather than roll a Branch is offered, and priced:
-// "He must roll Soc or less to select Branch" (the p.72 worked example; the
-// checklists print "Select Branch  Soc"). See selectBranch. Selection without
-// that gate would hand a character their best Branch for nothing, which is why
-// the gate and the option landed together.
+// Reward roll. See CLAUDE.md for the book conflicts this type resolves: which
+// Branch column applies when (branchFor vs commissionBranch), and when Branch
+// may change (Policy.RerollBranch, Policy.RerollBranchOnCommission).
 type BranchOps struct {
 	Branches [9]Branch // indexed 1-8 by the branch roll (index 0 unused)
 	// EnlistedBranches is the separate Enlisted column, for a career that prints

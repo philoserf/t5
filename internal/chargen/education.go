@@ -18,21 +18,11 @@ import (
 // (Service Academy, Medical/Law, Honors, OTC/NOTC, Flight School), the full
 // Available-Skills matrix, and the Tra-based training path.
 //
-// Education costs time (Book 1 p.59). Two rules set the price, and every
-// institution reads its years off the p.60 Educational Institutions chart's
-// Duration column:
-//
-//   - "A failure disallows admission and consumes one year" — a failed
-//     application costs the year whether or not a Waiver then rescues it. Waiver
-//     attempts themselves are free.
-//   - "Each Success is one year" — a program's Duration is spent year by year,
-//     and a year is spent whether it passed, was waived, or ended attendance
-//     (Book 1 p.62's training example: "he rolls 8 and fails. A year passes").
-//
-// ED5 alone is free ("no time required", p.60 chart and p.61). The book's own
-// Eneri Dinsha walkthrough (p.61) prices this out: he enters at 18, fails his
-// College application, is admitted on Waiver, and completes four years —
-// 18 + 1 + 4 = age 23, the age the book prints.
+// Education costs time (Book 1 p.59): a failed application still consumes a
+// year whether or not a Waiver then rescues it (Waiver attempts themselves are
+// free), and each Success spends one year of the program's Duration (the p.60
+// Educational Institutions chart). See CLAUDE.md for the book's own
+// Eneri Dinsha worked example verifying this cost rule.
 
 const (
 	ed5MaxEdu   = 4 // ED5 admits a character of Edu 4 or less
