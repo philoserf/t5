@@ -17,18 +17,9 @@ This directory is a git repo sitting under the `philoserf` umbrella workspace
 
 ## Commands
 
-Machine-level workflow runs through `task` (go-task, version 3; see `Taskfile.yml`):
-
-```sh
-task            # = task test
-task check      # golangci-lint run (subsumes format + vet), go test — the pre-commit gate
-task test       # go test ./...
-task cover      # go test -cover ./...
-task deps       # brew bundle — install tooling from the Brewfile
-```
-
-Or drive `go` directly (e.g. `go test ./internal/dice` for a single package).
-Tooling (go, go-task, golangci-lint, poppler's `pdftotext`) is pinned in `Brewfile`.
+Machine-level workflow runs through `task` (go-task, version 3; run `task --list` for the
+current set). `task check` is the pre-commit gate — golangci-lint plus go test. Tooling
+(go, go-task, golangci-lint, poppler's `pdftotext`) is pinned in `Brewfile`.
 
 ## Code
 
