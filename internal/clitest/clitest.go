@@ -89,8 +89,7 @@ func (c Command) Run(t *testing.T, args ...string) Result {
 
 	code := 0
 
-	var exit *exec.ExitError
-	if errors.As(err, &exit) {
+	if exit, ok := errors.AsType[*exec.ExitError](err); ok {
 		code = exit.ExitCode()
 	} else if err != nil {
 		t.Fatalf("child failed: %v (stderr %q)", err, stderr.String())
