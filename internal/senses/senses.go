@@ -20,7 +20,7 @@ const visionSpectrum = "VHDUSPBGRCANIFXZ"
 // frequency, span, voice, and voice range; one eHex digit for Smell sharpness,
 // Touch sensitivity, or Awareness acuity; and two eHex digits for Perception
 // tone and Poice. Constant zero means the sense is absent.
-type Sense struct { //nolint:recvcheck // value readers + pointer UnmarshalText
+type Sense struct {
 	ID       byte
 	Constant int
 	Detail   string

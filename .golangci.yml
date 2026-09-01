@@ -8,7 +8,8 @@ version: "2"
 linters:
   default: all
   disable:
-    - exhaustruct # positional records / partial inits are intentional
+    - exhaustruct # deprecated; superseded by exhaustruct_v5
+    - exhaustruct_v5 # positional records / partial inits are intentional
     - mnd # the codebase IS transcribed rulebook tables (magic numbers by nature)
     - goconst # domain vocabulary (skills/careers) is string map keys, not consts
     - varnamelen # terse dice vars (r, c, d6) are idiomatic here

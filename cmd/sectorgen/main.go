@@ -85,7 +85,8 @@ func selectView(hex string, sector bool, subsector string) (view, error) {
 		if !ok {
 			return nil, fmt.Errorf(
 				"invalid hex %q (want CCRR, columns 1-%d, rows 1-%d, e.g. 0436)",
-				hex, sectorgen.Columns, sectorgen.Rows)
+				hex, sectorgen.Columns, sectorgen.Rows,
+			)
 		}
 
 		return func(r *dice.Roller, d sectorgen.Density) { printHex(r, d, h) }, nil

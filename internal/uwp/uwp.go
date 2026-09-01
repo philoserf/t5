@@ -16,7 +16,7 @@ import (
 // table 1), a secondary world a spaceport class F, G, H or Y (Book 3 p.29 table
 // 1B). Code switching on this field must cover both sets — worldgen's portTable
 // does — because a Profile alone does not say which kind of world it describes.
-type Profile struct { //nolint:recvcheck // value readers + pointer UnmarshalText (encoding.TextUnmarshaler)
+type Profile struct {
 	Starport      byte
 	Size          int
 	Atmosphere    int
