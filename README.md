@@ -1,5 +1,16 @@
 # t5
 
+> [!NOTE]
+> **Archived 2026-09-09 — finished, not abandoned.** This repository is read-only: no further
+> development, no issues, no pull requests. What is here works and is reproducible — the
+> generators below run as documented, and `task check` (lint + the full golden-test suite)
+> passed on the final commit. The remaining backlog is frozen in the closed issues.
+>
+> Character generation continues in **[philoserf/t5chargen](https://github.com/philoserf/t5chargen)**,
+> a focused CLI with an auditable lifepath. The rest of the engine — systems, sectors,
+> starships, vehicles, trade, combat — ends here. The sibling
+> [philoserf/traveller](https://github.com/philoserf/traveller) is likewise archived.
+
 A [Traveller5](https://www.farfuture.net/) (T5) toolkit in Go: a faithful, seedable
 implementation of the T5 generators — worlds, star systems, characters, alien species,
 sectors, and starships — alongside the extracted rules reference and worldbuilding notes that
@@ -11,10 +22,10 @@ Jump to what you need:
 
 - [**Run the generators**](#run-the-generators) — the command-line tools.
 - [**Build on the engine**](#build-on-the-engine) — the Go packages.
-- [**Understand & contribute**](#understand--contribute) — design, layout, and how to help.
+- [**Understand it**](#understand-it) — design, layout, and how the work was done.
 
-Requires [Go](https://go.dev/) 1.26+ (`go run` needs nothing else). Contributors can install
-the full toolchain — go, go-task, golangci-lint, poppler — with `task deps` (Homebrew).
+Requires [Go](https://go.dev/) 1.27+ (`go run` needs nothing else). The full toolchain — go,
+go-task, golangci-lint, poppler — installs with `task deps` (Homebrew).
 
 ---
 
@@ -139,7 +150,7 @@ the same output — which is exactly what makes the golden tests possible.
 
 ---
 
-## Understand & contribute
+## Understand it
 
 This repo holds three kinds of work in one place:
 
@@ -164,7 +175,10 @@ YAGNI: structure arrives when real content fills it.
 - `docs/pdf/` — the source rulebooks, **git-ignored** (see below)
 - `docs/reference/` — text extracted from those PDFs, git-ignored and regenerable
 
-### Working on it
+### Running the checks
+
+The tooling still works on a fork or a local clone, even though this repo no longer takes
+changes:
 
 ```sh
 task              # run the tests
@@ -178,10 +192,11 @@ task deps         # install the toolchain from the Brewfile
 
 The lint config (`.golangci.yml`) is deliberately aggressive — `default: all`, disabling only
 where a linter fights the repo's transcribed-table design (magic numbers, data globals, terse
-dice idioms). `task audit` reports what those exceptions hide, for periodic review. To add a
-generator: transcribe its tables from `docs/reference/`, build it on a `*dice.Roller`, and lock
-it with a golden test from a worked example. The backlog lives in **GitHub issues** (the
-"Triage and Tracking" project) — one issue per unstarted generator and per deferred piece.
+dice idioms). `task audit` reports what those exceptions hide. The recipe every generator here
+followed: transcribe its tables from the rulebooks, build it on a `*dice.Roller`, and lock it
+with a golden test from a worked example. The unbuilt remainder is recorded in this repo's
+**closed issues** — one per unstarted generator and per deferred piece, each carrying its book
+page references, scope, and dependencies.
 
 ### Rulebooks
 
@@ -198,3 +213,9 @@ Then `task extract` runs `pdftotext` over them into `docs/reference/*.txt` for l
 That extracted text is git-ignored too, for the same copyright reason — a local, regenerable
 derivation. The Go generators encode only the rules' _mechanics_ (formulas and small tables),
 hand-authored from the reference and validated against the books' worked examples.
+
+### License
+
+The code and documentation in this repository are [MIT licensed](LICENSE). Traveller and
+Traveller5 are the property of Marc Miller / Far Future Enterprises; the rulebooks themselves
+are not covered by that license and are not distributed here.

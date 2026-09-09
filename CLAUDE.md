@@ -261,14 +261,22 @@ These have each been re-litigated at least once. The full reasoning lives in the
 
 ## Current state
 
+**Archived 2026-09-09.** The repository is read-only and takes no further changes. The final
+commit passed `task check` (golangci-lint plus the full golden-test suite), so everything
+described below is true of a working tree, not an aspiration. The backlog was closed out rather
+than left open: the unbuilt generators and deferred pieces live in this repo's **closed**
+issues, each still carrying its book page refs, scope, and dependencies — read them as a record
+of what was planned, not as work waiting to be picked up. Character generation continues in
+`philoserf/t5chargen`; the sibling `philoserf/traveller` is archived too. Everything from here
+down describes the design as it stands and is retained for anyone reading the code.
+
 The world/system/character census is complete, and so is the starship tier: a sector can be
 surveyed, its worlds and systems detailed, characters generated to crew a ship, the ship designed
 and armed, and the ship flown into a fight. Sophont creation (#17) now has its **core spine**
 (`internal/sophont` + the `chargen.GenerateSophont` bridge), so chargen works for aliens; its
-physical/flavor tier is deferred. The Tier-5 content makers are now the largest open pieces. The
-backlog lives in **GitHub issues** (the "Triage and Tracking" project) — one issue per unstarted
-generator/primitive and one per deferred piece, each carrying its book page refs, scope, and
-dependencies. (The former `docs/automation-catalog.md` planning doc has been retired.)
+physical/flavor tier is deferred. The Tier-5 content makers were the largest remaining pieces
+and were never built; they are among the closed issues described above. (The former
+`docs/automation-catalog.md` planning doc had already been retired.)
 
 - **Source of truth** for rules is `docs/pdf/` (T5 Core Rules Books 1–3 + Read Me). These PDFs
   are **git-ignored and not distributed** (copyrighted Far Future Enterprises material) — each
