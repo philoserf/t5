@@ -1,15 +1,7 @@
 # t5
 
-> [!NOTE]
-> **Archived 2026-09-09 — finished, not abandoned.** This repository is read-only: no further
-> development, no issues, no pull requests. What is here works and is reproducible — the
-> generators below run as documented, and `task check` (lint + the full golden-test suite)
-> passed on the final commit. The remaining backlog is frozen in the closed issues.
->
-> Character generation continues in **[philoserf/t5chargen](https://github.com/philoserf/t5chargen)**,
-> a focused CLI with an auditable lifepath. The rest of the engine — systems, sectors,
-> starships, vehicles, trade, combat — ends here. The sibling
-> [philoserf/traveller](https://github.com/philoserf/traveller) is likewise archived.
+> **Archived.** This repository is no longer maintained. Character generation continues in [philoserf/t5chargen](https://github.com/philoserf/t5chargen); the rest of the engine — systems, sectors, starships, vehicles, trade, combat — ends here. The sibling [philoserf/traveller](https://github.com/philoserf/traveller) is archived too.
+> Finished rather than abandoned: `task check` (lint plus the full golden-test suite) passed at the final commit, tagged `v0.1.0`, so the seeded sample records below are reproducible. The unbuilt remainder is recorded in the closed issues.
 
 A [Traveller5](https://www.farfuture.net/) (T5) toolkit in Go: a faithful, seedable
 implementation of the T5 generators — worlds, star systems, characters, alien species,
